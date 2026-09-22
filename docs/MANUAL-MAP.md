@@ -19,3 +19,11 @@ Five areas: **Format · Performance · Cache · Quality · Bypass-traffic valida
 - `glm53-b200-bypass` (gateway): `/v1/models` lists only `glm-5.3`, not the `minimax-m3` alias → `models_endpoint` FAIL; a client
   that validates the model list before chatting will refuse the bypass pool. Fix: gateway should list aliases. Chat probes could
   not run: gateway saturated (`MAX_INFLIGHT=12`) by live bypass traffic → 429 "Server is at capacity" (correct §2 behavior).
+- **Official `m3_format_check` (text+stream files, 171 cases) vs `minimax-m3-prod` (2026-09-22): 161 pass / 5 fail / 4 skip / 1 xfail, 6 min.**
+  Failures: `test_20_05_no_authorization`, `test_20_07_invalid_api_key` — the internal Dynamo port has no auth (Kong adds it;
+  re-run against the public `api-v1` host to clear); `test_13_13_undefined_tool_retry_after_error`;
+  `test_tool_call_stream_packet_length_distribution[01_04_…500_chars]` and `[01_07_parallel_5_tool_calls]` — how the frontend
+  chunks tool-call SSE packets differs from the official distribution. The last three are real §1 findings to raise with the serving team.
+- `ibench load` quick, `minimax-m3-prod` c1/c4: SR 100%, P50 TTFT 0.33 s, per-stream 208–244 tok/s, §3 cache probe 99.5% → PASS.
+- `ibench bypass` replay of 6 captured requests on `minimax-m3-prod`: 6/6; input-token distribution matches the reference exactly,
+  cache-hit 12% (cold node) vs 92% (reference) — the §5 dimension a bypass pool will be judged on.
