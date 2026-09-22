@@ -42,7 +42,8 @@ def replay(t: Target, recs: list[dict], *, concurrency: int = 1, progress=None) 
             row = {"i": i, "ok": r.ok, "status": r.status, "code": r.error_code, "features": sorted(fs),
                    "elapsed_s": round(r.elapsed_s, 3), "ttft_s": round(r.ttft_s, 3) if r.ttft_s else None,
                    "prompt_tokens": r.prompt_tokens, "completion_tokens": r.completion_tokens, "cached_tokens": r.cached_tokens,
-                   "reasoning_tokens": ((r.usage or {}).get("completion_tokens_details") or {}).get("reasoning_tokens"),
+                   "reasoning_tokens": (((r.usage or {}).get("completion_tokens_details") or {}).get("reasoning_tokens")
+                                        or (r.usage or {}).get("reasoning_tokens") or (r.reasoning_tokens_seen or None)),
                    "finish": r.finish_reason, "tool_calls": len(m.get("tool_calls") or []),
                    "expect": rec.get("expect"), "error": (r.error or "")[:160] if not r.ok else None}
             with lock:
