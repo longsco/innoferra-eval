@@ -30,12 +30,18 @@ def capture(*, kibana: str, index: str, n: int, uri: str, out: str | None) -> Pa
             except Exception: continue
             llm = (s.get("response") or {}).get("llm") or {}
             f.write(json.dumps({"ts": s.get("@timestamp"), "host": (s.get("request") or {}).get("host"),
-                                "body": body, "expect": {"status": (s.get("response") or {}).get("status"),
-                                "prompt_tokens": llm.get("prompt_tokens"), "completion_tokens": llm.get("completion_tokens"),
-                                "cached_tokens": llm.get("cached_tokens"), "model": llm.get("model")}}) + "\n")
+                                "body": body, "expect": {"status": _int((s.get("response") or {}).get("status")),
+                                "prompt_tokens": _int(llm.get("prompt_tokens")), "completion_tokens": _int(llm.get("completion_tokens")),
+                                "cached_tokens": _int(llm.get("cached_tokens")), "model": llm.get("model")}}) + "\n")
             n_ok += 1
     print(f"[capture] {n_ok}/{len(hits)} usable request bodies → {out_p}")
     return out_p
+
+
+def _int(v):
+    """The log store keeps numeric usage fields as strings ('' when absent) — coerce or None."""
+    try: return int(v) if v not in (None, "") else None
+    except (TypeError, ValueError): return None
 
 
 def newest() -> Path | None:

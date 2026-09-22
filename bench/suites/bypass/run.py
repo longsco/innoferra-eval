@@ -16,7 +16,7 @@ def run(t: Target, *, capture: str | None, limit: int, concurrency: int) -> None
     print(f"[bypass] target={t.name} base={t.base_url} capture={src.name} n={len(recs)} conc={concurrency} -> {out}")
     t0 = time.time()
     rows = rp.replay(t, recs, concurrency=concurrency,
-                     progress=lambda d, n: print(f"  {d}/{n}  ok={sum(1 for _ in ())}", end="\r") if d % 25 == 0 else None)
+                     progress=lambda d, n: print(f"  {d}/{n}", flush=True) if d % 25 == 0 else None)
     el = time.time() - t0
     ok = sum(1 for r in rows if r["ok"]); n = len(rows)
     print(f"\n[bypass] {ok}/{n} ok ({100*ok/max(n,1):.1f}%) in {el:.0f}s")

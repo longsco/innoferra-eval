@@ -6,8 +6,13 @@ from __future__ import annotations
 from ...report import pct
 
 
+def _num(v):
+    try: return float(v) if v not in (None, "") else None
+    except (TypeError, ValueError): return None
+
+
 def _q(a):
-    a = [x for x in a if x is not None]
+    a = [y for y in (_num(x) for x in a) if y is not None]
     return {"n": len(a), "p50": pct(a, .5), "p90": pct(a, .9), "p99": pct(a, .99), "mean": (sum(a) / len(a)) if a else None} if a else None
 
 
@@ -20,10 +25,11 @@ def report(rows: list[dict]) -> dict:
     trig = [1 if (r.get("reasoning_tokens") or 0) > 0 else 0 for r in ok]
     cache = [(r["cached_tokens"] / r["prompt_tokens"]) for r in ok if r.get("cached_tokens") is not None and r.get("prompt_tokens")]
     tool_rows = [r for r in ok if "tools" in r["features"]]
-    ref_out = [r["expect"]["completion_tokens"] for r in rows if (r.get("expect") or {}).get("completion_tokens")]
-    ref_in = [r["expect"]["prompt_tokens"] for r in rows if (r.get("expect") or {}).get("prompt_tokens")]
-    ref_cache = [(r["expect"]["cached_tokens"] / r["expect"]["prompt_tokens"]) for r in rows
-                 if (r.get("expect") or {}).get("cached_tokens") is not None and (r.get("expect") or {}).get("prompt_tokens")]
+    ex = [(r.get("expect") or {}) for r in rows]
+    ref_out = [_num(e.get("completion_tokens")) for e in ex]
+    ref_in = [_num(e.get("prompt_tokens")) for e in ex]
+    ref_cache = [(_num(e.get("cached_tokens")) / _num(e.get("prompt_tokens"))) for e in ex
+                 if _num(e.get("cached_tokens")) is not None and _num(e.get("prompt_tokens"))]
     return {
         "1_success_rate": {"replay": (len(ok) / n) if n else None, "n": n,
                            "by_status": {str(k): v for k, v in sorted(_count(r["status"] for r in rows).items())}},
