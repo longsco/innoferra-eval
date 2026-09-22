@@ -1,5 +1,6 @@
 # Copy to <name>.yaml (or <name>.local.yaml, gitignored, for secrets).
 name: my-endpoint
+spec: minimax-m3                        # model spec this endpoint claims to serve (models/<spec>/spec.yaml)
 base_url: http://host:port/v1        # OpenAI-compatible root, WITHOUT /chat/completions
 model: minimax-m3                     # value sent in the request "model" field
 api_key_env: MY_ENDPOINT_KEY          # env var holding the bearer key; omit or empty = no auth

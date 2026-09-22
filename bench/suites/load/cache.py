@@ -8,7 +8,7 @@ from ...target import Target
 BAR = 0.85
 
 
-def probe(t: Target, *, prefix_tokens: int = 20000, n: int = 12) -> dict:
+def probe(t: Target, *, prefix_tokens: int = 20000, n: int = 12, bar: float = BAR) -> dict:
     prefix = "You are a meticulous assistant. Context: " + ("alpha beta gamma delta epsilon " * (prefix_tokens // 5))
     rows = []
     for i in range(n):
@@ -20,4 +20,4 @@ def probe(t: Target, *, prefix_tokens: int = 20000, n: int = 12) -> dict:
     warm = [x for x in rows[1:] if x["cached"] is not None]
     ratio = (sum(x["cached"] for x in warm) / sum(x["prompt"] for x in warm)) if warm else None
     return {"n": n, "n_ok": len(rows), "reported": any(x["cached"] is not None for x in rows),
-            "hit_ratio_after_first": ratio, "pass": (ratio is not None and ratio > BAR), "bar": BAR, "rows": rows}
+            "hit_ratio_after_first": ratio, "pass": (ratio is not None and ratio > bar), "bar": bar, "rows": rows}

@@ -1,0 +1,42 @@
+# GLM-5.3 — partner onboarding spec.
+# NO official Z.AI provider manual exists (as of 2026-09-22). This spec is INTERNAL: request contract from the GLM-5.3
+# chat template + our gateway (halyard-lab/deploy/gateway/shim.py), SLO bars carried over from the MiniMax manual and the
+# Tencent endpoint contract (RPM ≥1000, TPM ≥10M), quality anchors from the RadixArk/GLM-5.3-NVFP4 model card.
+name: glm-5.3
+display: GLM-5.3
+model_ids: [glm-5.3, GLM-5.3]
+authority: "INTERNAL (no vendor manual). Contract: GLM-5.3 chat template; halyard-lab serving-plan/08-glm53.md; model card RadixArk/GLM-5.3-NVFP4"
+capabilities_required:
+  thinking: true          # ALWAYS-ON thinking; budget steered by reasoning_effort low|high|max; no enable_thinking switch in the 5.3 template
+  tools: true             # glm47 tool-call format (OpenAI tool_calls shape)
+  root_role: false        # not part of the GLM protocol (sglang rejects it; only our M3-bypass gateway rewrites it)
+  images: false           # text-only checkpoint (GlmMoeDsaForCausalLM, no vision tower)
+  video: false
+request_contract:
+  sampling_defaults: {temperature: 1.0, top_p: 0.95}
+  thinking_field: reasoning_effort          # low|medium|high|max|none (OpenAI field) — or thinking:{type:enabled|disabled} via gateway
+  template_kwargs: [reasoning_effort, clear_thinking]   # chat_template_kwargs the 5.3 template honors
+  default_effort_warning: "model default is max; with a small max_tokens the whole budget is reasoning and content is empty — clients must send reasoning_effort or a large budget"
+  usage_must_report: [prompt_tokens, completion_tokens, total_tokens, cached_tokens, reasoning_tokens]   # reasoning_tokens nested in completion_tokens_details
+  max_output_tokens: 131072
+slo:
+  workload: {input_tokens: [70000, 90000], output_tokens: [500, 700], midpoint: {input_tokens: 80000, output_tokens: 600}}
+  load_levels_pct: [60, 80, 100, 120]
+  full: {success_rate_min: 1.0, p50_ttft_s_max: 3.0, p50_tps_min: 60}
+  at_120pct: {success_rate_min: 0.80, p50_ttft_s_max: 30.0}
+  overload_status: 429
+  cache_hit_min: 0.85
+  contract_floors: {rpm: 1000, tpm: 10000000}      # Tencent endpoint contract
+  reference_points:                                 # our 8xB300 TP8+CP NEXTN 5/1/6 (serving-plan/08-glm53.md), 80k in / 600 out
+    cold_compliant: {tpm: 2080000, p50_ttft_s: 1.40, p50_tps: 61.3}
+    warm_compliant: {tpm: 5270000, p50_ttft_s: 0.48, p50_tps: 59.6}
+quality:
+  sampling: {temperature: 1.0, top_p: 0.95}
+  benchmarks:                                      # model-card anchors for the NVFP4 checkpoint; NOT vendor acceptance bars
+    gsm8k:  {baseline: 0.9742, source: "RadixArk/GLM-5.3-NVFP4 card (= FP8)"}
+    aime26: {baseline: 0.9417, source: "RadixArk/GLM-5.3-NVFP4 card"}
+  tolerance_note: "no vendor bars; treat as parity anchors for the quantized checkpoint"
+official_verifier: null
+bypass:
+  sample: samples/glm-5.3-synthetic.jsonl
+  dimensions: [success_rate, ttft_tps, input_length, output_length_distribution, thinking_length_and_trigger, cache_hit, tool_trigger_parallel_illegal]

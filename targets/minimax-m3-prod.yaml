@@ -1,6 +1,7 @@
 name: minimax-m3-prod
 # One Dynamo frontend of the production fleet (24 nodes x 2 frontends). No auth on the internal port.
 # Use any of 10.10.100.109-132 :8000/:8001. Requires the fleet VPN.
+spec: minimax-m3                        # model spec this endpoint claims to serve (models/<spec>/spec.yaml)
 base_url: http://10.10.100.118:8000/v1
 model: minimax-m3
 api_key_env: ""

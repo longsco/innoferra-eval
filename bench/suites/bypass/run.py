@@ -6,13 +6,13 @@ from ...target import Target
 from . import capture as cap, replay as rp, distribution as dist
 
 
-def run(t: Target, *, capture: str | None, limit: int, concurrency: int) -> None:
+def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=None) -> dict:
     src = Path(capture) if capture else cap.newest()
     if not src or not src.exists():
-        raise SystemExit("no capture file; run `ibench capture` first (needs access to the log store) or pass --capture")
+        raise SystemExit("no capture/sample file; run `ibench capture` (internal) or pass --capture samples/<model>-synthetic.jsonl")
     recs = [json.loads(l) for l in src.open() if l.strip()]
     if limit: recs = recs[:limit]
-    out = run_dir(t.name, "bypass")
+    out = out or run_dir(t.name, "bypass")
     print(f"[bypass] target={t.name} base={t.base_url} capture={src.name} n={len(recs)} conc={concurrency} -> {out}")
     t0 = time.time()
     rows = rp.replay(t, recs, concurrency=concurrency,
@@ -50,3 +50,4 @@ def run(t: Target, *, capture: str | None, limit: int, concurrency: int) -> None
     write_json(out, "rows.json", rows); write_json(out, "distribution.json", D)
     write_json(out, "summary.json", {"target": t.name, "capture": str(src), "n": n, "ok": ok, "by_feature": by, "errors": codes})
     write_md(out, "REPORT.md", "\n".join(md)); print(f"[bypass] → {out}/REPORT.md")
+    return {"n": n, "ok": ok, "by_feature": by, "errors": codes, "distribution": D, "pass": (ok == n)}

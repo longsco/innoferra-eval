@@ -1,6 +1,7 @@
 name: glm53-b200-engine
 # Same B200 box, engine port :8001 — bypasses the gateway (no MAX_INFLIGHT cap, no alias/role rewrite).
 # Use for engine-capacity measurement and probe validation while the gateway is saturated.
+spec: glm-5.3                        # model spec this endpoint claims to serve (models/<spec>/spec.yaml)
 base_url: http://162.43.172.203:8001/v1
 model: glm-5.3
 api_key_env: GLM53_API_KEY

@@ -20,6 +20,7 @@ class Target:
     capabilities: dict[str, bool] = field(default_factory=dict)
     load: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
+    spec: str | None = None                  # model spec name (models/<spec>/spec.yaml) this endpoint claims to serve
 
     @property
     def chat_url(self) -> str:
@@ -64,7 +65,7 @@ def load_target(name: str) -> Target:
     return Target(
         name=cfg["name"], base_url=cfg["base_url"], model=cfg["model"], api_key=key,
         timeout_s=float(cfg.get("timeout_s", 600)), capabilities=cfg.get("capabilities") or {},
-        load=cfg.get("load") or {}, notes=cfg.get("notes") or "",
+        load=cfg.get("load") or {}, notes=cfg.get("notes") or "", spec=cfg.get("spec"),
     )
 
 

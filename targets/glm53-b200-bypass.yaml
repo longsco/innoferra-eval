@@ -1,6 +1,7 @@
 name: glm53-b200-bypass
 # GLM-5.3 (RadixArk NVFP4) on 8x B200 behind the innoferra gateway, configured to accept MiniMax-M3
 # traffic unchanged (model alias + root-role rewrite + image 503). Public IP - key required.
+spec: minimax-m3                        # model spec this endpoint claims to serve (models/<spec>/spec.yaml)
 base_url: http://162.43.172.203:8000/v1
 model: minimax-m3                     # the gateway echoes this back; served model is glm-5.3
 api_key_env: GLM53_API_KEY

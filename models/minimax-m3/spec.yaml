@@ -1,0 +1,43 @@
+# MiniMax-M3 — partner onboarding spec. Source of truth: "M3 External Vendor Quality Inspection Manual" (26.06.10)
+# digest at innomatrix-eval/models/minimax-m3/requirements/M3_supplier_manual.md, plus the official verifier.
+name: minimax-m3
+display: MiniMax-M3
+model_ids: [minimax-m3, MiniMax-M3]              # names a partner endpoint must accept in "model" and list in /v1/models
+authority: "MiniMax M3 外部供应商质检手册 26.06.10 (official); MiniMax-Provider-Verifier/m3_format_check (official)"
+capabilities_required:
+  thinking: true          # thinking:{type: adaptive|disabled|enabled}, reasoning_content on the message
+  tools: true             # OpenAI function calling; tool_calls in message and in stream deltas
+  root_role: true         # MiniMax "root" protocol: a leading {"role":"root"} identity message (99.3% of real traffic)
+  images: true            # image_url (URL/base64); ≤20 images/request in the official suite
+  video: false            # may be declared "no video traffic" → video cases skipped (manual §1 note)
+request_contract:
+  sampling_defaults: {temperature: 1.0, top_p: 0.95}
+  thinking_field: thinking            # {"type": "adaptive"|"disabled"|"enabled"}
+  passthrough_fields: [prompt_cache_key, user, metadata, stream_options]
+  usage_must_report: [prompt_tokens, completion_tokens, total_tokens, cached_tokens]
+slo:                                     # manual §2
+  workload: {input_tokens: [70000, 90000], output_tokens: [500, 700], midpoint: {input_tokens: 80000, output_tokens: 600}}
+  load_levels_pct: [60, 80, 100, 120]
+  full: {success_rate_min: 1.0, p50_ttft_s_max: 3.0, p50_tps_min: 60}      # ≥1 level must satisfy all three
+  at_120pct: {success_rate_min: 0.80, p50_ttft_s_max: 30.0}
+  overload_status: 429
+  cache_hit_min: 0.85                    # manual §3 (checked by MiniMax; non-mandatory for vendor self-check)
+quality:                                 # manual §4.1/§4.3 baselines — run via innomatrix-eval, not here
+  sampling: {temperature: 1.0, top_p: 0.95}
+  benchmarks:
+    aime25:          {baseline: 0.927, repeats: 16, max_tokens: 98304,  metric: "pass_avg,all"}
+    gpqa_diamond:    {baseline: 0.939, repeats: 5,  max_tokens: 98304,  metric: "exact_match,AAregex"}
+    aa_lcr:          {baseline: 0.808, repeats: 5,  max_tokens: 30000,  metric: "correct,all", judge: "Qwen3-235B-A22B-Instruct-2507"}
+    aa_omniscience:  {baseline: 0.508, repeats: 4,  max_tokens: 98304,  judge: "Gemini 3 Flash"}
+    hle:             {baseline: 0.362, repeats: 1,  max_tokens: 128000, judge: "OpenAI"}
+    scicode:         {baseline: 0.472, repeats: 1,  max_tokens: 66566}
+    mmmu_pro:        {baseline: 0.754, repeats: 1,  max_tokens: 65536}
+    video_mmmu:      {baseline: 0.819, repeats: 1,  max_tokens: 32768}
+    omnidocbench:    {baseline: 0.895, repeats: 1,  max_tokens: 55000, note: "serve at max_long_side 3584 / 1008² min"}
+  tolerance_note: "manual gives no numeric tolerance ('basically align'); fleet convention ±0.02–0.03, borderline → ask MiniMax"
+official_verifier:
+  path: third_party/m3_format_check      # pytest; env M3_BASE_URL / M3_API_KEY / M3_MODEL
+  files: {text: m3_text_tests.py, stream: m3_stream_tests.py, image: m3_image_tests.py, video: m3_video_tests.py}
+bypass:                                  # manual §5 — MiniMax-run on real traffic; partner self-check uses the shipped synthetic sample
+  sample: samples/minimax-m3-synthetic.jsonl
+  dimensions: [success_rate, ttft_tps, input_length, output_length_distribution, thinking_length_and_trigger, cache_hit, tool_trigger_parallel_illegal]

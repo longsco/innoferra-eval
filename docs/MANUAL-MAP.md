@@ -1,4 +1,6 @@
-# Manual § → suite → threshold
+# Manual § → suite → threshold (MiniMax-M3)
+
+> Machine-readable form: `models/minimax-m3/spec.yaml`. GLM-5.3's (internal) equivalent: `models/glm-5.3/spec.yaml`.
 
 Source of truth: `innomatrix-eval/models/minimax-m3/requirements/M3_supplier_manual.{md,pdf}` (digest of the 26.06.10 PDF).
 Five areas: **Format · Performance · Cache · Quality · Bypass-traffic validation**. Matrix (who checks what): format/perf/quality
