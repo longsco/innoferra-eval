@@ -1,0 +1,10 @@
+name: glm53-b200-engine
+# Same B200 box, engine port :8001 — bypasses the gateway (no MAX_INFLIGHT cap, no alias/role rewrite).
+# Use for engine-capacity measurement and probe validation while the gateway is saturated.
+base_url: http://162.43.172.203:8001/v1
+model: glm-5.3
+api_key_env: GLM53_API_KEY
+timeout_s: 600
+capabilities: {images: false, video: false, thinking: true, tools: true}
+load: {input_tokens: 80000, output_tokens: 600, shared_prefix_tokens: 80000, question_tokens: 128, concurrency_grid: [1, 4, 8, 16], target_concurrency: 16}
+notes: "Raw sglang. role:root is REJECTED here (400) — that rewrite lives in the gateway."

@@ -1,0 +1,8 @@
+results/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.jsonl.gz
+targets/*.local.yaml
+.env

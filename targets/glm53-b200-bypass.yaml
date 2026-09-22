@@ -1,0 +1,23 @@
+name: glm53-b200-bypass
+# GLM-5.3 (RadixArk NVFP4) on 8x B200 behind the innoferra gateway, configured to accept MiniMax-M3
+# traffic unchanged (model alias + root-role rewrite + image 503). Public IP - key required.
+base_url: http://162.43.172.203:8000/v1
+model: minimax-m3                     # the gateway echoes this back; served model is glm-5.3
+api_key_env: GLM53_API_KEY
+timeout_s: 600
+capabilities:
+  images: false                       # text-only checkpoint: image parts -> 503 unsupported_content_type
+  video: false
+  thinking: true
+  tools: true
+load:
+  input_tokens: 80000
+  output_tokens: 600
+  shared_prefix_tokens: 80000
+  question_tokens: 128
+  concurrency_grid: [1, 4, 8, 16]
+  target_concurrency: 16              # engine crashed at c32 before B200 retune; 16 validated
+notes: >
+  Engine: sglang v0.5.18-cu130, TP8 + DSA context-parallel, EAGLE 5/1/6, mem-frac 0.78,
+  chunked-prefill 8192, ctx 262144 (B200-tuned; the B300 recipe 0.85/32768/1M OOMs here).
+  Gateway MAX_INFLIGHT=12 caps admitted concurrency; hit :8001 directly to measure the engine.

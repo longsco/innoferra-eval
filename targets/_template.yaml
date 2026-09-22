@@ -1,0 +1,22 @@
+# Copy to <name>.yaml (or <name>.local.yaml, gitignored, for secrets).
+name: my-endpoint
+base_url: http://host:port/v1        # OpenAI-compatible root, WITHOUT /chat/completions
+model: minimax-m3                     # value sent in the request "model" field
+api_key_env: MY_ENDPOINT_KEY          # env var holding the bearer key; omit or empty = no auth
+api_key: ""                           # OR inline (only in *.local.yaml)
+timeout_s: 600
+# What this endpoint claims to support. Suites skip/xfail accordingly.
+capabilities:
+  images: false
+  video: false
+  thinking: true
+  tools: true
+# Load-test shape defaults (manual §2: 70-90k in / 500-700 out, midpoint 80k/600).
+load:
+  input_tokens: 80000
+  output_tokens: 600
+  shared_prefix_tokens: 80000         # gsp system-prompt len (cache-warm frame A)
+  question_tokens: 128
+  concurrency_grid: [1, 2, 4, 8, 16, 32]
+  target_concurrency: 16              # the "100% load" watermark; 60/80/100/120% derive from it
+notes: ""

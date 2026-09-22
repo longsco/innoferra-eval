@@ -1,0 +1,23 @@
+name: minimax-m3-prod
+# One Dynamo frontend of the production fleet (24 nodes x 2 frontends). No auth on the internal port.
+# Use any of 10.10.100.109-132 :8000/:8001. Requires the fleet VPN.
+base_url: http://10.10.100.118:8000/v1
+model: minimax-m3
+api_key_env: ""
+timeout_s: 600
+capabilities:
+  images: true
+  video: true
+  thinking: true
+  tools: true
+load:
+  input_tokens: 80000
+  output_tokens: 600
+  shared_prefix_tokens: 80000
+  question_tokens: 128
+  concurrency_grid: [1, 2, 4, 8, 16, 24, 32, 48]
+  target_concurrency: 25              # measured prefill saturation point per node (2026-09-18)
+notes: >
+  Production MiniMax-M3 on NVIDIA Dynamo + SGLang, 8x B300 per node, TP2 workers, NVFP4, fp8 KV,
+  DFlash block-4 spec-decode. This target hits ONE node; the fleet is 24x. Do not run load suites
+  against it during peak (00-02h and 18-21h local) without coordination.
