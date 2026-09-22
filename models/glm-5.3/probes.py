@@ -6,8 +6,14 @@ from bench.suites.format.common import Probe, chat, body_for, ok_content, SYS, U
 MATH = {"role": "user", "content": "What is 17*23? Think it through, then answer with just the number."}
 
 
-def _rt(r):  # reasoning tokens, nested per the 5.3 usage shape
-    return ((r.usage or {}).get("completion_tokens_details") or {}).get("reasoning_tokens")
+def _rt(r):
+    """Reasoning tokens wherever the server put them (nested = contract, top-level = bare sglang, or counted from
+    streamed deltas). Placement itself is checked separately by glm.reasoning_tokens_nested."""
+    u = r.usage or {}
+    v = (u.get("completion_tokens_details") or {}).get("reasoning_tokens")
+    if v is None: v = u.get("reasoning_tokens")
+    if v is None and r.reasoning_tokens_seen: v = r.reasoning_tokens_seen
+    return v
 
 def p_model_id_listed(t):
     from bench.http import models

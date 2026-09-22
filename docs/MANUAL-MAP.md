@@ -29,3 +29,11 @@ Five areas: **Format · Performance · Cache · Quality · Bypass-traffic valida
 - `ibench load` quick, `minimax-m3-prod` c1/c4: SR 100%, P50 TTFT 0.33 s, per-stream 208–244 tok/s, §3 cache probe 99.5% → PASS.
 - `ibench bypass` replay of 6 captured requests on `minimax-m3-prod`: 6/6; input-token distribution matches the reference exactly,
   cache-hit 12% (cold node) vs 92% (reference) — the §5 dimension a bypass pool will be judged on.
+
+## GLM-5.3 spec — what passes today (2026-09-22)
+- `ibench onboard -m glm-5.3` vs the **raw sglang engine** (:8001, no gateway): **FAIL 22/28 probes**, load PASS, synthetic bypass 8/8.
+  The 6 failures are all bare-engine contract gaps the innoferra gateway closes: accepts any model id (200 not 404), accepts
+  `temperature=99` and `max_tokens=200000` (200 not 400), reports `reasoning_tokens` top-level instead of nested in
+  `completion_tokens_details`, and (first run only) budget probes could not read top-level reasoning tokens — fixed.
+  Budget control verified on the engine: `reasoning_effort` low → 7 reasoning tokens, max → 61 on the same prompt.
+- The gateway-fronted target (`glm53-b200-bypass`) could not be probed: saturated by live bypass traffic (`MAX_INFLIGHT=12` → 429).
