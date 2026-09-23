@@ -28,7 +28,7 @@ def p_thinking_enabled_reasoning(t):
     return has, "reasoning_content present" if has else "thinking enabled but no reasoning_content / reasoning_tokens", r
 
 def p_prompt_cache_key(t):
-    r = chat(t, body_for(t, messages=[ROOT_MSG, SYS, USER], prompt_cache_key="ibench-probe")); ok, why = ok_content(r); return ok, why, r
+    r = chat(t, body_for(t, messages=[ROOT_MSG, SYS, USER], prompt_cache_key="innoferra-probe")); ok, why = ok_content(r); return ok, why, r
 
 def p_real_shape_stream_tools(t):
     """The single most common real request: root + system + user, tools, stream, thinking adaptive, prompt_cache_key."""

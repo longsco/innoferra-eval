@@ -14,9 +14,9 @@ cp -r /tmp/MiniMax-Provider-Verifier-main/m3_format_check third_party/ && date -
 
 ## 1. Format (§1)
 ```bash
-ibench format -t <target>                           # probes + official suite (skips image/video files if target lacks the capability)
-ibench format -t <target> --no-official             # probes only, ~1 min
-ibench format -t <target> --official-args "-k text -x -n 4"   # pass-through pytest args (xdist -n for parallel)
+innoferra format -t <target>                           # probes + official suite (skips image/video files if target lacks the capability)
+innoferra format -t <target> --no-official             # probes only, ~1 min
+innoferra format -t <target> --official-args "-k text -x -n 4"   # pass-through pytest args (xdist -n for parallel)
 ```
 Official suite env mapping (done for you): `M3_BASE_URL` = target base_url without `/v1`, `M3_API_KEY`, `M3_MODEL`,
 `M3_RUN_LOG` → `results/.../official_calls.jsonl`; junit → `official_junit.xml`. Other knobs the suite honors if you export them:
@@ -25,13 +25,13 @@ Official suite env mapping (done for you): `M3_BASE_URL` = target base_url witho
 ## 2. Load / TPM (§2) + cache (§3)
 **quick** (minutes, apples-to-apples frame, unique prompts):
 ```bash
-ibench load -t <target> --grid 1,4,8,16,32 --duration 45 --input-tokens 2000 --output-tokens 512
-ibench load -t glm53-b200-bypass --engine-url http://162.43.172.203:8001/v1   # skip the gateway's MAX_INFLIGHT cap
+innoferra load -t <target> --grid 1,4,8,16,32 --duration 45 --input-tokens 2000 --output-tokens 512
+innoferra load -t glm53-b200-bypass --engine-url http://162.43.172.203:8001/v1   # skip the gateway's MAX_INFLIGHT cap
 ```
 **manual** (the vendor's §2 frame — cache-warm 80k shared prefix / 600 out; needs `sglang` + tokenizer in this venv):
 ```bash
 uv pip install sglang
-ibench load -t <target> --mode manual --tokenizer /path/to/MiniMax-M3 --grid 1,2,4,8,16,24,32,48
+innoferra load -t <target> --mode manual --tokenizer /path/to/MiniMax-M3 --grid 1,2,4,8,16,24,32,48
 ```
 This runs, per level: `python -m sglang.bench_serving --backend sglang-oai-chat --dataset-name generated-shared-prefix
 --gsp-num-groups 1 --gsp-system-prompt-len 80000 --gsp-question-len 128 --gsp-output-len 600 --gsp-prompts-per-group 5×C
@@ -47,9 +47,9 @@ no heavy IO on the host during a measured cell · n ≥ 5×C requests per level 
 
 ## 3. Bypass (§5)
 ```bash
-ibench capture --n 300                                            # → results/captures/<index>-<ts>.jsonl (real prompts! never commit)
-ibench capture --index 'innomatrix-api-tencent-full-access*'      # the GLM/tencent endpoint's log instead
-ibench bypass -t glm53-b200-bypass --limit 100 --concurrency 1    # replay unmodified; conc>1 only if you own the box
+innoferra capture --n 300                                            # → results/captures/<index>-<ts>.jsonl (real prompts! never commit)
+innoferra capture --index 'innomatrix-api-tencent-full-access*'      # the GLM/tencent endpoint's log instead
+innoferra bypass -t glm53-b200-bypass --limit 100 --concurrency 1    # replay unmodified; conc>1 only if you own the box
 ```
 Capture reads `innomatrix-api-v1-full-access*` via Kibana `10.10.200.20:5601` console proxy (headers `kbn-xsrf`,
 `x-elastic-internal-origin: Kibana`); the Mac must reach 10.10.200.0/24. The B200 box cannot — capture on the Mac, replay from anywhere.

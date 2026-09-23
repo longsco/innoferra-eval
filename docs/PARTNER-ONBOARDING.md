@@ -8,9 +8,9 @@ It sends only synthetic prompts. Nothing from our production traffic leaves our 
 ```bash
 git clone <this repo> innoferra-eval && cd innoferra-eval && uv sync
 export API_KEY=sk-...                                 # your key (any env var name works: --api-key-env NAME)
-.venv/bin/ibench models                               # which model specs exist
-.venv/bin/ibench onboard --model minimax-m3 --base-url https://your-host/v1
-.venv/bin/ibench onboard --model glm-5.3    --base-url https://your-host/v1 --api-key-env MY_KEY
+.venv/bin/innoferra models                               # which model specs exist
+.venv/bin/innoferra onboard --model minimax-m3 --base-url https://your-host/v1
+.venv/bin/innoferra onboard --model glm-5.3    --base-url https://your-host/v1 --api-key-env MY_KEY
 ```
 Options you may need: `--model-id` if you serve the model under a different id (must still be one of the spec's `model_ids`),
 `--no-images` / `--no-video` to declare you carry no such traffic (the manual allows it; those cases are skipped, not failed),
@@ -35,7 +35,7 @@ Sections, common to all models:
 | **bypass** | 100% of the shipped synthetic sample (real traffic *shape*: root role, agentic tool histories, streaming, thinking modes, images where the model supports them) returns 200 | 2–20 min |
 
 The `load` section's quick mode uses short unique prompts, so its TPM is **not** the vendor's cache-warm 80k-input TPM — it validates
-the SLO shape, not capacity. For the vendor frame run `ibench load --mode manual` with `sglang` + the model tokenizer (see RUNBOOK).
+the SLO shape, not capacity. For the vendor frame run `innoferra load --mode manual` with `sglang` + the model tokenizer (see RUNBOOK).
 
 ## 3. Not self-checkable here
 - **§4 quality** (AIME/GPQA/…): we run it on our side with innomatrix-eval against the spec's baselines.

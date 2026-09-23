@@ -1,4 +1,4 @@
-"""ibench — one CLI, three suites. `ibench <suite> --target <name> [opts]`."""
+"""innoferra — one CLI, three suites. `innoferra <suite> --target <name> [opts]`."""
 from __future__ import annotations
 import click
 import os
@@ -102,7 +102,7 @@ def load(target, model, mode, grid, input_tokens, output_tokens, duration, engin
 
 @main.command()
 @click.option("--target", "-t", required=True)
-@click.option("--capture", default="", help="captured request JSONL (from `ibench capture`); default = newest in results/captures/")
+@click.option("--capture", default="", help="captured request JSONL (from `innoferra capture`); default = newest in results/captures/")
 @click.option("--limit", type=int, default=0, help="replay at most N requests (0 = all)")
 @click.option("--concurrency", type=int, default=1)
 def bypass(target, capture, limit, concurrency):

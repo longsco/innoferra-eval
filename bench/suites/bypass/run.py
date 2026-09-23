@@ -9,7 +9,7 @@ from . import capture as cap, replay as rp, distribution as dist
 def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=None) -> dict:
     src = Path(capture) if capture else cap.newest()
     if not src or not src.exists():
-        raise SystemExit("no capture/sample file; run `ibench capture` (internal) or pass --capture samples/<model>-synthetic.jsonl")
+        raise SystemExit("no capture/sample file; run `innoferra capture` (internal) or pass --capture samples/<model>-synthetic.jsonl")
     recs = [json.loads(l) for l in src.open() if l.strip()]
     if limit: recs = recs[:limit]
     out = out or run_dir(t.name, "bypass")

@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ibench = "bench.cli:main"
+innoferra = "bench.cli:main"
 
 [build-system]
 requires = ["hatchling"]

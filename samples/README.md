@@ -5,4 +5,4 @@ production MiniMax-M3 traffic — root role 99%, tools 64%, streaming 67%, think
 multi-turn agentic histories with `tool_calls` and `tool` messages, size buckets from 1k to 180k chars — with generated text only.
 No customer content. Regenerate with the script in git history (`samples/` generator) if the mix changes.
 
-Real captures (`ibench capture`) are internal-only, land in `results/captures/`, and are gitignored.
+Real captures (`innoferra capture`) are internal-only, land in `results/captures/`, and are gitignored.

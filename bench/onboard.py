@@ -1,4 +1,4 @@
-"""`ibench onboard` — the partner-facing entry point. One model spec, one endpoint, all self-checkable sections,
+"""`innoferra onboard` — the partner-facing entry point. One model spec, one endpoint, all self-checkable sections,
 one ONBOARDING-REPORT.md with a verdict. Partners need only: base URL, API key, and this repo."""
 from __future__ import annotations
 import time

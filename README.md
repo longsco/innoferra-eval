@@ -6,8 +6,8 @@ against our own deployments for regression.
 
 ```bash
 uv sync
-.venv/bin/ibench models                                              # minimax-m3 · glm-5.3
-.venv/bin/ibench onboard --model minimax-m3 --base-url https://host/v1   # → results/…/ONBOARDING-REPORT.md
+.venv/bin/innoferra models                                              # minimax-m3 · glm-5.3
+.venv/bin/innoferra onboard --model minimax-m3 --base-url https://host/v1   # → results/…/ONBOARDING-REPORT.md
 ```
 → **[docs/PARTNER-ONBOARDING.md](docs/PARTNER-ONBOARDING.md)** is the page to hand a partner.
 
@@ -25,10 +25,10 @@ Adding a model = one directory.
 |---|---|---|
 | `format` | 18 common probes (OpenAI shape, usage, cached_tokens, tools unary+stream, streaming, 4xx handling, auth) + model probes + the spec's official verifier | §1 |
 | `load` | concurrency sweep → SR / P50 TTFT / per-stream P50 TPS (=1000/TPOT, ≤250 guard) / TPM; scored vs the spec's SLO (full bar, 120% rule, 429); cache-hit probe | §2 §3 |
-| `bypass` | replay requests **unmodified**: the shipped synthetic sample (partners) or real captures via `ibench capture` (internal); per-feature success + the 7 §5 distribution dims vs reference | §5 |
+| `bypass` | replay requests **unmodified**: the shipped synthetic sample (partners) or real captures via `innoferra capture` (internal); per-feature success + the 7 §5 distribution dims vs reference | §5 |
 | quality | delegated to `innomatrix-eval` (graders/judges live there); baselines are in the spec | §4 |
 
-Individual sections also run against a saved target: `ibench format|load|bypass -t <targets/name.yaml>` (`spec:` in the target picks the model).
+Individual sections also run against a saved target: `innoferra format|load|bypass -t <targets/name.yaml>` (`spec:` in the target picks the model).
 
 ## Layout
 ```
