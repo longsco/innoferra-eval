@@ -1,4 +1,4 @@
-# innoferra-bench
+# innoferra-eval
 
 **Partner onboarding and regression suite for hosted LLM endpoints, organized by model.** A partner who wants to serve a
 model for innoferra runs one command against their endpoint and gets a PASS/FAIL onboarding report; we run the same suite

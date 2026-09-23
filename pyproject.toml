@@ -1,5 +1,5 @@
 [project]
-name = "innoferra-bench"
+name = "innoferra-eval"
 version = "0.1.0"
 description = "Innoferra serving test suite: format conformance, quality benchmarks, TPM/load, and bypass-traffic replay for hosted LLM endpoints (MiniMax M3 first)."
 requires-python = ">=3.12"

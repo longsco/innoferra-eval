@@ -14,7 +14,7 @@ def _spec_for(t, model):
 
 @click.group()
 def main():
-    """innoferra-bench: format · load · bypass suites for hosted LLM endpoints."""
+    """innoferra-eval: format · load · bypass suites for hosted LLM endpoints."""
 
 
 @main.command()

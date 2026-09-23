@@ -6,7 +6,7 @@ It sends only synthetic prompts. Nothing from our production traffic leaves our 
 
 ## 1. Run
 ```bash
-git clone <this repo> innoferra-bench && cd innoferra-bench && uv sync
+git clone <this repo> innoferra-eval && cd innoferra-eval && uv sync
 export API_KEY=sk-...                                 # your key (any env var name works: --api-key-env NAME)
 .venv/bin/ibench models                               # which model specs exist
 .venv/bin/ibench onboard --model minimax-m3 --base-url https://your-host/v1
