@@ -17,6 +17,17 @@ Node of record: `innomatrix-us-adc-smb300-0008` (`ssh 0008`; 8×B300 275 GB, 256
 | spec-decode | **none** (vendor demo ships without DSpark) | expect per-stream TPS well below M3's DFlash serve; the §2 >60 bar is NOT expected to pass until DSpark lands — record it, don't chase it |
 | gate before test | `gate.sh`: health → model listed → 3 greedy canaries (+filler variant) → effort low/max answers | fleet rule: a TP8 captured serve can be silently wrong while SR/speed look fine |
 
+## Node prerequisites (a freshly reimaged node has NONE of these — learned on 0008, 2026-09-25)
+```bash
+# docker must be able to see the GPUs; Docker ≥25 resolves `--gpus all` through CDI, so BOTH the runtime and a CDI spec are needed
+sudo apt-get install -y nvidia-container-toolkit            # was absent; apt candidate 1.20.1-1 came from the driver-local repo
+sudo nvidia-ctk runtime configure --runtime=docker          # adds the "nvidia" runtime to /etc/docker/daemon.json, keeps data-root
+sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml  # without this: "failed to discover GPU vendor from CDI"
+sudo systemctl restart docker
+sudo docker run --rm --gpus all lmsysorg/sglang:v0.5.17 nvidia-smi -L   # must list 8 GPUs
+```
+Also needed in the image (handled by the Dockerfile): `libdw-dev libelf-dev` (DeepGEMM's JIT includes `elfutils/libdwfl.h`) and `build`.
+
 ## Steps
 ```bash
 # 0. sources (once; host-side, PAT from ~/.config/minimax/github_pat)     → /data01/minimax31/src/{0922-sglang,DeepGEMM}

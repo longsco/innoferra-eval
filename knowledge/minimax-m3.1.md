@@ -50,6 +50,15 @@ Image-bake → persistent container → gate → test. Decisions and rationale i
 `build_image.sh` (refuses off-pin or PAT-in-config) · `launch.sh` (vendor env+flags verbatim, parameterized paths) ·
 `gate.sh` (health, model listed, 3 greedy canaries + filler variant, effort low/max answer "391").
 
+## 4b. Build/launch gotchas found on the way (all fixed in the kit)
+| symptom | cause | fix |
+|---|---|---|
+| `fatal error: elfutils/libdwfl.h: No such file` building DeepGEMM | base image has no elfutils | Dockerfile installs `libdw-dev libelf-dev` (+ `build`) first |
+| `ImportError: DeepGEMM extension is missing` right after a successful wheel install | `import deep_gemm` run from `/opt/DeepGEMM` picked the bare source tree, not the wheel | verify from `/` |
+| `docker: failed to discover GPU vendor from CDI: no known GPU vendor found` | fresh reimage: no `nvidia-container-toolkit`, no nvidia runtime, no CDI spec; Docker 29 needs CDI for `--gpus all` | install toolkit, `nvidia-ctk runtime configure`, `nvidia-ctk cdi generate`, restart docker |
+| DeepGEMM pinned commit "not a tree" | `7fec51c2` exists only in `sgl-project/DeepGEMM`, not `deepseek-ai` | clone the sgl fork |
+Image `minimax-m31-sglang:demo-bef87f4` built in 114 s once deps were right: 33 GB, `deep_gemm 0.2.0` from the wheel, fork `sglang 0.0.0` on Torch 2.11.0+cu130.
+
 ## 5. Node 0008 state (2026-09-25)
 Reimaged, empty, `ssh 0008` (port 22 fleet-only, jump via 10.10.100.118). 8×B300 275 GB, 256 cores, 3 TB RAM, 14 TB `/data01`.
 Weights `/data01/minimax31/MiniMax-M3.1-preview-private` — **download complete 2026-09-25** (62/62 files, 48 safetensors, 0 incomplete,
