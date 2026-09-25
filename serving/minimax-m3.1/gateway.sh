@@ -20,6 +20,7 @@ export REWRITE_ROLES= REJECT_CONTENT_TYPES=${REJECT_CONTENT_TYPES:-video_url} RE
 export ROUTE_DP_SIZE=${ROUTE_DP_SIZE:-8} ROUTE_PREFIX_CHARS=${ROUTE_PREFIX_CHARS:-2048} ALIGN_SUPERSET=0
 export MAX_INFLIGHT=${MAX_INFLIGHT:-16} RPM_LIMIT=${RPM_LIMIT:-1000} TPM_LIMIT=${TPM_LIMIT:-10000000}
 export MAX_OUTPUT_TOKENS=${MAX_OUTPUT_TOKENS:-1048576} SAMPLE_2XX=${SAMPLE_2XX:-1.0}   # real traffic sends max_tokens 262144; official returns 200 at 524288; engine 400s only when prompt+max > 1M ctx
+export DEFAULT_REASONING_EFFORT=${DEFAULT_REASONING_EFFORT:-medium}   # M3.1 ships no thinking budget: adaptive ran past max_tokens=4096 with EMPTY content (verifier 12_06); medium -> ~1.5k reasoning tokens. Set "" to disable.
 export VALIDATE_TOOL_HISTORY=1 NORMALIZE_IMAGE_DETAIL=1 STREAM_COALESCE_CHARS=${STREAM_COALESCE_CHARS:-12} STREAM_COALESCE_MS=${STREAM_COALESCE_MS:-120} STREAM_COALESCE_MAX_CHARS=160
 export ACCESS_NAME=m31_access.log KEYS_FILE=${KEYS_FILE:-$HOME/.m31_apikey} UPSTREAM_KEY="" LOGDIR=${LOGDIR:-/data01/minimax31/logs}
 [ -s "$KEYS_FILE" ] || { umask 077; head -c 24 /dev/urandom | base64 | tr -d "/+=" > "$KEYS_FILE"; umask 022; echo "generated $KEYS_FILE"; }

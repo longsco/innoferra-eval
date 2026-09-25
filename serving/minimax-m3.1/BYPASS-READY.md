@@ -61,6 +61,11 @@ at 41 tok/s per stream. Gateway admission `MAX_INFLIGHT=32` (429 above).
 | official `m3_format_check` | (pending full run after fixes; first run 232/280, subset after fixes 111/123) |
 | replay of 294 captured prod requests | **292/294 = 99.3%** (2026-09-25 08:10Z, conc 8; first run 84.4% before fixes). The 2 failures: engine 500 on two ≥500k-char requests carrying images + 440k-token prompts (under investigation, engine-side). |
 
+## One behaviour decision to know about
+`DEFAULT_REASONING_EFFORT=medium` is applied to requests that send no `reasoning_effort` (and have thinking on). Without it M3.1 has no
+thinking budget and answered a "be thorough" prompt with 4096 tokens of reasoning and **empty content**; with `medium` it thinks ~1k
+tokens and answers. Set `DEFAULT_REASONING_EFFORT=` (empty) in `gateway.sh` to get the raw vendor behaviour.
+
 ## Known limits (engine-side, reported to MiniMax)
 No speculative decoding (DSpark not shipped) → per-stream ~35–65 tok/s · attention must be TP1 → 8 (or 2×4) separate prefix caches ·
 model reasons through small `max_tokens` budgets (empty content) · `reasoning_tokens` counter hard-wired to 0 · local-path media loading.
