@@ -14,19 +14,20 @@ distribution comparison, and keep the door open for the production-grade (Dynamo
 ## Two architectures
 | | A. vendor engine + innoferra gateway | B. Dynamo-fronted (production pattern) |
 |---|---|---|
-| shape | 1 sglang process (DP8 or TP4×DP2) ← shim (auth, alias, 429, prefix→rank pinning, usage normalize, logs) | N TP-sharded `dynamo.sglang` workers ← `dynamo.frontend --router-mode kv` (KV-aware placement, replica-sync, migration) ← shim |
+| shape | 1 sglang process (DP8, the only legal layout) ← shim (auth, alias, 429, prefix→rank pinning, usage normalize, logs) | one DP8 `dynamo.sglang` worker per node ← `dynamo.frontend --router-mode kv` routing to a specific dp_rank from KV events (+ cross-node, replica-sync, migration) ← shim |
 | reuse | halyard-lab gateway (built for GLM bypass) with a new profile | `halyard-lab/deploy/serve_glm52_dynamo.sh` = the live M3 prod command adapted; prod image lineage + build on the B200 box (`/data01/zhouzhixiang/dynamo-m3/{build,patches,docs}`) |
 | new work | ~1 day | 2–3 days + one numerics gate |
-| risk | none new | the fork's W4A4 MoE is implemented in `mega_moe_nvfp4.py` (MegaMoE/EP); per-worker TP layouts run the non-megamoe branch — **must prove it is the same quantizer** before trusting outputs; dynamo needs a 0.5.17-fork-compatible build |
+| risk | none new | TP-sharded workers are impossible on this fork (attention-TP1 constraint), so B = Dynamo over DP8 workers; needs a 0.5.17-fork-compatible dynamo build and dp-rank routing verified against the fork's KV events |
 | when | this week | phase 3, gated |
 
 **Recommendation: ship A now, build B behind a gate.** A gets mirrored traffic flowing and produces the §5 evidence; B is what we
 would run at fleet scale and is where the production learnings pay off.
 
 ## Phases
-### 0 — engine layout (running)
-TP4×DP2 vs DP8 (vs TP8) on the same 80k-warm sweep; pick by **compliant TPM** (SR100 ∧ TTFT<3 s ∧ TPS>60), record max-batch.
-Gate: variant loads + chat canaries deterministic. Owner: me. Today.
+### 0 — engine layout (CLOSED 2026-09-25)
+**DP8 is the only layout this fork accepts** — TP4×DP2 fails at scheduler init with "M3 training-compatible arithmetic requires
+attention TP1"; TP8 is ruled out by the same check. Baseline stays the vendor DP8 sweep (§4e: compliant c1 0.48 M, max-batch 7.4 M).
+Cache placement across the 8 ranks is therefore a router problem, not an engine flag.
 
 ### 1 — gateway profile for M3.1 (architecture A)
 Shim changes (halyard-lab `deploy/gateway/shim.py`): `THINKING_MODE=passthrough` (leave `thinking`/`reasoning_effort`/
@@ -43,13 +44,12 @@ The mirror source is external; 0008's ports are closed to the internet. Either a
 Gate: the mirror's health probe 200s over TLS. External dependency — start the request now.
 
 ### 3 — Dynamo topology (architecture B), gated
-1. **Numerics gate first (½ day):** launch the fork as ONE TP4 (or TP2) worker **without dp-attention/megamoe** on 4 GPUs; run the
-   chat canaries + 50 fixed prompts at temp 0 vs the DP8 outputs, and `innoferra format`. If the non-megamoe MoE branch is not the
-   vendor quantizer (`SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE`, row-scale FC1) the outputs will differ — stop and ask MiniMax.
+1. **Routing gate first (½ day):** verify the fork emits KV events per dp_rank and honors dynamo's dp-rank dispatch (the same
+   `x-data-parallel-rank` mechanism the shim uses); if not, B has no advantage over A on one node — stop.
 2. **Image (½–1 day):** add `ai-dynamo[sglang]` matching the prod lineage to `minimax-m31-sglang` (recipe: B200 `/data01/zhouzhixiang/dynamo-m3/build`);
    dynamo must tolerate the fork's `0.0.0` sglang version.
-3. **Topology (½ day):** 2×TP4 workers (EP4 each, experts replicated 2× ≈ 62 GB/GPU — fits 275 GB) or 4×TP2 exactly like prod;
-   `dynamo.frontend --router-mode kv --router-replica-sync --migration-limit 3` per prod, **but with the learnings applied**:
+3. **Topology (½ day):** one DP8 worker per node (the fork's only layout), `dynamo.frontend --router-mode kv --router-replica-sync
+   --migration-limit 3` per prod, **but with the learnings applied**:
    `--router-prefill-load-scale` **finite** (prod's `inf` = strict affinity ignoring load → 4× concurrency imbalance measured),
    `--admission-control token-capacity` + `--router-queue-threshold` on (prod has both off → HOL blocking at cron boundaries),
    consider `--router-queue-policy wspt`. HiCache: prod uses `--enable-hierarchical-cache`; the demo has none — test on the fork.

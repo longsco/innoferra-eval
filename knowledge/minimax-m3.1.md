@@ -100,10 +100,17 @@ without a prefix-aware router in front.
 | TP2 × DP4 (prod M3) | 4× TP2 | 4 | what production runs — but behind Dynamo's KV-aware router, which is what makes it work | needs that router |
 | + DSpark (when shipped) | any | — | the per-stream TPS lever, orthogonal to topology | not in the demo |
 
-**Recommendation:** keep the vendor DP8 as the baseline (it is the only layout they validated), put the gateway's prefix-hash
-DP pinning in front (`ROUTE_DP_SIZE=8`, already implemented in the shim), and A/B `DP_SIZE=2` and `DP_SIZE=1 DP_ATTN=0` on the
-same 80k/600 sweep — each is one env var on `launch.sh`. Decide on the interactive frame (SR100 ∧ TTFT<3 s ∧ TPS>60), not on
-max-batch TPM. The first DP8 sweep is `bench_tpm.sh` (2026-09-25, results in §4e when done).
+**A/B result (2026-09-25 05:53Z): TP4×DP2 does not load.** Every scheduler raises
+`ValueError: M3 training-compatible arithmetic requires attention TP1 (TP1, or --enable-dp-attention with tp == dp) and PP1`
+and the container restart-loops (9 restarts before I killed it). The training-compatible numerics (`SGLANG_M3_TRAINING_COMPATIBLE=1`,
+the Q8KV4 / W4A4 paths) are implemented for attention-TP1 only. **On this fork DP8 (attention TP1 × 8, EP8 megamoe) is the only
+legal single-node layout; TP8 is ruled out for the same reason.** `launch.sh` now refuses other topologies unless `FORCE_TOPOLOGY=1`.
+The KV-head replication argument for TP4 stands as physics, but it cannot be exercised until MiniMax ships TP-capable kernels.
+
+**Consequences.** (1) Cache placement across the 8 ranks must come from OUTSIDE the engine: the gateway's prefix-hash pinning
+(`ROUTE_DP_SIZE=8`) today; a Dynamo KV-aware router (which routes to a specific `dp_rank` from KV events) as the production-grade
+version. (2) A "Dynamo topology" for M3.1 is therefore **not** N TP-sharded workers as in prod M3 — it is one DP8 worker per node
+with Dynamo doing dp-rank-aware and cross-node placement, replica-sync and migration. (3) The per-stream lever is unchanged: DSpark.
 
 ## 4e. First §2 TPM sweep — vendor DP8 layout, no DSpark (2026-09-25 04:58–05:13Z, `bench_tpm.sh`)
 Frame: `sglang.bench_serving` generated-shared-prefix, 1 group, **80,000 system / 128 question / 600 out**, cache-WARM

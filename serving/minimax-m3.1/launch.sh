@@ -15,6 +15,13 @@ MEMFRAC=${MEMFRAC:-0.85}; MAXREQ=${MAXREQ:-256}; CHUNK=${CHUNK:-131072}
 #   DP_SIZE=2            → 2 replicas of attention-TP4 (natural shard for 4 KV heads, 2 caches)
 #   DP_SIZE=1 DP_ATTN=0  → single attention-TP8 replica, ONE cache (the fleet's certified interactive layout on M3)
 TP_SIZE=${TP_SIZE:-8}; EP_SIZE=${EP_SIZE:-8}; DP_SIZE=${DP_SIZE:-8}; DP_ATTN=${DP_ATTN:-1}; MOE_DENSE_TP=${MOE_DENSE_TP:-1}
+# FORK CONSTRAINT (measured 2026-09-25, container restart-looped): "M3 training-compatible arithmetic requires attention TP1
+# (TP1, or --enable-dp-attention with tp == dp) and PP1". So on this fork attention-TP must be 1: DP_SIZE == TP_SIZE with
+# dp-attention on. TP4xDP2 and TP8 are NOT possible. Refuse early instead of burning 10 minutes.
+if [ "$DP_ATTN" != 1 ] || [ "$DP_SIZE" != "$TP_SIZE" ]; then
+  echo "REFUSING: this fork requires attention TP1 (DP_SIZE == TP_SIZE with DP_ATTN=1); got tp$TP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN. Override with FORCE_TOPOLOGY=1." >&2
+  [ "${FORCE_TOPOLOGY:-0}" = 1 ] || exit 2
+fi
 JIT=${JIT:-/data01/minimax31/jit-cache}; LOGS=${LOGS:-/data01/minimax31/logs}; EXTRA_ARGS=${EXTRA_ARGS:-}
 FOLLOW=${FOLLOW:-1}                      # 1 = stay attached and log startup milestones until /health (or WAIT s); 0 = return right after docker run
 WAIT=${WAIT:-3600}
