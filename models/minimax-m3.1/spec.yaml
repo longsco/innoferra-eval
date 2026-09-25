@@ -1,0 +1,47 @@
+# MiniMax-M3.1 (preview) — partner onboarding spec. Authority: M3 manual 26.06.10 (until a 3.1 manual ships) + the vendor
+# preview "20260922 Preview: MiniMax-M3.1" (PREVIEW-20260922.md, verbatim). Deltas vs M3 are marked ★.
+name: minimax-m3.1
+display: MiniMax-M3.1 (preview)
+model_ids: [minimax-m3.1, MiniMax-M3.1, MiniMax-M3.1-preview]
+authority: "M3 manual 26.06.10 (carried) + MiniMax preview doc 2026-09-22 (★ deltas); final form subject to actual release"
+capabilities_required:
+  thinking: true          # thinking:{type: adaptive|disabled} still valid; ★ plus top-level reasoning_effort
+  tools: true
+  root_role: true
+  images: true            # checkpoint ships preprocessor_config.json
+  video: true             # ★ checkpoint ships video_preprocessor_config.json
+request_contract:
+  sampling_defaults: {temperature: 1.0, top_p: 0.95}
+  thinking_field: thinking
+  reasoning_effort:                                   # ★ NEW top-level field
+    values: [max, xhigh, high, medium, low]
+    validate: false                                    # vendor: "no validation, no default required"
+    default: null
+    template_marker: "<effort>{effort}</effort>"      # injected into the system prompt by the chat template
+  passthrough_fields: [prompt_cache_key, user, metadata, stream_options]
+  usage_must_report: [prompt_tokens, completion_tokens, total_tokens, cached_tokens]
+serving_notes:                                        # ★ from the preview doc — what an engine must implement
+  attention: "first 3 layers sparse (was full); indexer+sparse main q8kv4: Q=FP8 E4M3 cast, KV=E2M1 block-16, scale=E4M3(amax/6) clamped [1/512,448], tensor_scale=1, RNE ladder, +0 only"
+  moe: "routed experts W4A4 NVFP4 (shared expert excluded): FC1 w1/w3 share G_w, FC2 own G_w; FC1 A4 = dynamic row scale (S_enc=2688/row_amax) + UE4M3 block scale; FC2 A4 = fixed S_enc=16 + block scale, GEMM out × 1/16"
+  spec_decode: "DSpark (vanilla Markov head, NO confidence head) replaces EAGLE-like MTP"
+  checkpoint: "MiniMaxAI/MiniMax-M3.1-preview-private, 62 files / 48 safetensors / 250 GB, multimodal"
+  reference_engine: "MiniMax-AI/0922-sglang branch demo @ bef87f479eff (SGLang v0.5.17 + 8 commits); base image lmsysorg/sglang:v0.5.17, Torch 2.11.0+cu130, CUDA 13.0.1; DeepGEMM v0.2.0 @7fec51c2 built from source (PyPI wheel = Torch 2.13 ABI, incompatible); CUTLASS DSL 4.6.2; NO MSA — see SGLANG-DEMO-20260922.md"
+  reference_launch: "TP8 EP8 DP8 dp-attention, --quantization mxfp8 (+ env SGLANG_MINIMAX_SPARSE_KV4=1 = Q8KV4, SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE=16 = FC2 S_enc, SGLANG_M3_TRAINING_COMPATIBLE=1), megamoe a2a, deep_gemm runner, fp8_e4m3 KV, chunked-prefill 131072, mem 0.85, max-running 256, parsers minimax-m3, served name minimax-m3.1-nvfp4, port 19191"
+  reference_status: "demo = correctness-sufficient, NOT throughput-optimized; DSpark and HiCache NOT included yet; MTP omitted -> expect lower per-stream TPS than M3 with spec-decode until DSpark lands"
+slo:                                                  # carried from M3 manual §2/§3 until a 3.1 manual exists
+  workload: {input_tokens: [70000, 90000], output_tokens: [500, 700], midpoint: {input_tokens: 80000, output_tokens: 600}}
+  load_levels_pct: [60, 80, 100, 120]
+  full: {success_rate_min: 1.0, p50_ttft_s_max: 3.0, p50_tps_min: 60}
+  at_120pct: {success_rate_min: 0.80, p50_ttft_s_max: 30.0}
+  overload_status: 429
+  cache_hit_min: 0.85
+quality:
+  sampling: {temperature: 1.0, top_p: 0.95}
+  benchmarks: {}                                      # no 3.1 baselines published yet; M3's are in models/minimax-m3/spec.yaml
+  tolerance_note: "no 3.1 baselines yet; do not reuse M3 numbers as acceptance bars"
+official_verifier:
+  path: third_party/m3_format_check                   # M3's suite; does NOT cover reasoning_effort yet
+  files: {text: m3_text_tests.py, stream: m3_stream_tests.py, image: m3_image_tests.py, video: m3_video_tests.py}
+bypass:
+  sample: samples/minimax-m3-synthetic.jsonl          # M3 shape; effort field added by the 3.1 probes
+  dimensions: [success_rate, ttft_tps, input_length, output_length_distribution, thinking_length_and_trigger, cache_hit, tool_trigger_parallel_illegal]
