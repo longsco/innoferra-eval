@@ -150,6 +150,14 @@ carries M3's §2/§3 SLO bars and leaves §4 empty on purpose.
 | **DSpark** | **Not yet — code present, draft weights absent.** | Fork: `--speculative-algorithm DSPARK` with `--speculative-dspark-block-size`, `--speculative-dspark-sps-table-path` (offline-profiled cost table via `sglang.benchmark.dspark_sps_profiler`), `--speculative-dspark-confidence-sts-path`; `DSparkDraftModel`/`DSparkDraftMixin` classes; 47 files. Missing: the trained DSpark **draft model** for M3.1 (vendor: "will do our best to add support as soon as possible"). When it ships we need: draft weights + block size (gamma) + an SPS table profiled on B300. |
 | **MSA** | **Not installable here, and it is a speed lever, not a quality one.** | MSA = MiniMax's fused sparse-attention kernel package (`fmha_sm100`, python module `msa`) — the index-score and sparse-main kernels. The image has **no `msa` module**; the fork ships a **Triton bit-for-bit reproduction** (`kernels/ops/attention/minimax_sparse/q8kv4_msa.py`) used when `SGLANG_DISABLE_MSA=1`. `minimax_sparse_backend.py`: with MSA on, the training-compatible path builds `fmha_sm100` plans per call (host work) and **requires CUDA graphs disabled** — the Triton path is graph-safe. That is why the vendor says "do not install MSA" for the demo. So today: Triton kernels + CUDA graphs. Turning MSA on would need the `msa` package (not distributed to us), a KV4-capable build, and losing CUDA graphs — a net loss until MiniMax ships a graph-safe MSA. |
 
+**Searched 2026-09-25 (HF with our token, GitHub with the PAT):** MiniMaxAI shows 22 models, only `MiniMax-M3.1-preview-private`
+matches 3.1 — single `main` branch, no draft files; the `0922-sglang` repo has one branch (`demo`), no releases, and its only
+DSpark+minimax hits are env/arg plumbing; the PAT sees no other MiniMax-AI repo. **No M3.1 draft exists anywhere we can reach.**
+Public drafts exist for **M3** only: `nvidia/MiniMax-M3-DSpark` (Qwen3DSparkModel, 6 layers, hidden 6144, block 8, 10.7 GB, ModelOpt
+v0.45, trained on 2 M synthetic M3 responses, 2026-07-22) and `olka-fi/MiniMax-M3-MXFP4-DSpark` (4.2 GB). They target M3's hidden
+states and M3's post-training; M3.1 has different weights, KV4 attention, and sparse first layers, so acceptance on M3.1 is
+unknown and likely poor — a cheap experiment (hidden size matches, fork has the loader), not a plan.
+
 **Net:** the only path to per-stream TPS above 60 under load is **DSpark from MiniMax**. Nothing in this checkpoint or image lets us
 add speculation ourselves; a self-trained draft (as the fleet did with DSpark/EAGLE3 on M3) is the fallback if the vendor drop slips.
 
