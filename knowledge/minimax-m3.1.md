@@ -247,9 +247,11 @@ engine commit that goes with this drop** (their config `_name_or_path` points at
 --disable-shared-experts-fusion"** — the NVFP4 expert kernels themselves only exist on the MegaMoE path, so DSpark + this checkpoint is
 impossible on `bef87f4` under any flag combination. Closed until MiniMax ships the matching engine.
 
-**State after the try-out:** GPUs 0-3 `m31-a` = preview1, GPUs 4-7 `m31-b2` = preview2 (no DSpark), gateway `:8000` → preview1 only,
-second gateway `:8001` → preview2 for gating (`targets/m31-b300-bypass-p2.yaml`). Plan: gate preview2 (format + official + replay); if it
-passes, move GPUs 0-3 to preview2 and go back to `UPSTREAMS=2` — MiniMax calls preview2 the production candidate.
+**State 17:10Z (user: "latest model only"):** preview1 stopped; `m31-a2` (GPUs 0-3, :19191) and `m31-b2` (GPUs 4-7, :19291) both preview2
+without DSpark, gateway `:8000` `UPSTREAMS=2 ROUTE_DP_SIZE=4`; `:8001` → :19291 only for the preview2 gate (running). Gate canary note:
+on preview2 the `tens` canary is non-deterministic at temperature 0 (second run answered `50` only) on both launches; preview1 passed it ×2 —
+report to MiniMax with the DSpark engine question. **Gateway bug caught:** `ROUTE_DP_SIZE` defaulted to 8 while the engines are dp4 → half of
+new prompts would 400 (`routed_dp_rank=6 out of range`); default is now 4 = engine DP.
 
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.

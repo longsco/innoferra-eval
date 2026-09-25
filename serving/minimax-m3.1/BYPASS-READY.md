@@ -1,6 +1,8 @@
 # MiniMax-M3.1 on node 0008 — ready sheet for the TokenHub bypass (prod MiniMax-M3 traffic)
 
-**READY 2026-09-25 10:10Z** — engines `m31-a`/`m31-b` (2×tp4/dp4) + `m31-gateway` up on 0008, all `--restart unless-stopped`; gates passed (below).
+**READY 2026-09-25 17:10Z on preview2** — engines `m31-a2`/`m31-b2` (2×tp4/dp4, weights `MiniMax-M3.1-preview2-dspark-private`, no DSpark)
++ `m31-gateway` (`UPSTREAMS=2 ROUTE_DP_SIZE=4`) on 0008, all `--restart unless-stopped`. preview1 is stopped (user decision: latest model only).
+Gates: the 10:10Z results below were on preview1; the preview2 re-gate (format + official + replay via `:8001`) is running and is recorded in knowledge §6c when done.
 
 ## What TokenHub points at
 | | |
@@ -21,14 +23,16 @@ every request logged with tokens/TTFT/reasoning/tool-calls/finish (`/data01/mini
 ## Operate
 ```
 # on 0008
-sudo docker ps | grep m31                      # m31-a + m31-b (engines) + m31-gateway
+sudo docker ps | grep m31                      # m31-a2 + m31-b2 (engines) + m31-gateway (+ m31-gateway-p2 :8001, gating only)
 bash /data01/minimax31/serving/gate.sh         # engine correctness canaries
 bash /data01/minimax31/serving/gateway.sh      # (re)start gateway with the M3.1 profile
 tail -f /data01/minimax31/logs/m31_access.log  # live requests: status, ms, pt/ct, rt (reasoning tokens), tc, fin, ttft, cached
-# engines (2 x tp4/dp4, the deployed layout):
-NAME=m31-a PORT=19191 GPUS=0,1,2,3 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 bash /data01/minimax31/serving/launch.sh
-NAME=m31-b PORT=19291 GPUS=4,5,6,7 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 bash /data01/minimax31/serving/launch.sh
-UPSTREAMS=2 MAX_INFLIGHT=32 bash /data01/minimax31/serving/gateway.sh
+# engines (2 x tp4/dp4 on preview2, the deployed layout):
+M=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private
+MODEL_PATH=$M NAME=m31-a2 PORT=19191 GPUS=0,1,2,3 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 bash /data01/minimax31/serving/launch.sh
+MODEL_PATH=$M NAME=m31-b2 PORT=19291 GPUS=4,5,6,7 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 bash /data01/minimax31/serving/launch.sh
+UPSTREAMS=2 ROUTE_DP_SIZE=4 MAX_INFLIGHT=32 bash /data01/minimax31/serving/gateway.sh
+# when MiniMax ships the DSpark-capable engine: add SPEC=dspark (draft at $M/dspark) to both launches, rebuild the image first
 # single tp8/dp8 engine (vendor demo layout, slower at scale): NAME=m31-demo bash launch.sh ; bash gateway.sh
 ```
 Both containers are `--restart unless-stopped`; the node's JIT cache is mounted so a relaunch is minutes, not the first-run 10 min.
