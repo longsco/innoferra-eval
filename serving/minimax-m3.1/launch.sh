@@ -16,6 +16,8 @@ MEMFRAC=${MEMFRAC:-0.85}; MAXREQ=${MAXREQ:-256}; CHUNK=${CHUNK:-131072}
 #   DP_SIZE=1 DP_ATTN=0  → single attention-TP8 replica, ONE cache (the fleet's certified interactive layout on M3)
 TP_SIZE=${TP_SIZE:-8}; EP_SIZE=${EP_SIZE:-8}; DP_SIZE=${DP_SIZE:-8}; DP_ATTN=${DP_ATTN:-1}; MOE_DENSE_TP=${MOE_DENSE_TP:-1}
 GPUS=${GPUS:-all}                         # "all" or a CUDA_VISIBLE_DEVICES list, e.g. GPUS=0,1,2,3 for one of two tp4/dp4 engines
+SPEC=${SPEC:-none}                        # none | dspark  (dspark: draft at $MODEL_PATH/dspark, block size from DSPARK_BLOCK, default = draft config's dspark_block_size)
+DSPARK_BLOCK=${DSPARK_BLOCK:-}
 # FORK CONSTRAINT (measured 2026-09-25, container restart-looped): "M3 training-compatible arithmetic requires attention TP1
 # (TP1, or --enable-dp-attention with tp == dp) and PP1". So on this fork attention-TP must be 1: DP_SIZE == TP_SIZE with
 # dp-attention on. TP4xDP2 and TP8 are NOT possible. Refuse early instead of burning 10 minutes.
@@ -32,7 +34,7 @@ TS=$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$JIT" "$LOGS"; LOG="$LOGS/launch-$TS.lo
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
 hdr(){ printf '\n== %s ==\n' "$*" | tee -a "$LOG"; }
 
-hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  gpus=$GPUS  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
+hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  gpus=$GPUS  spec=$SPEC  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
 # --- preflight -------------------------------------------------------------------------------------------------
 hdr "preflight"
 [ -f "$MODEL_PATH/config.json" ] || { log "FATAL no config.json under $MODEL_PATH"; exit 1; }
@@ -73,6 +75,11 @@ ARGV=(python3 -m sglang.launch_server
   --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints
   --reasoning-parser minimax-m3 --tool-call-parser minimax-m3
   --mem-fraction-static "$MEMFRAC" --max-running-requests "$MAXREQ" $EXTRA_ARGS)
+if [ "$SPEC" = dspark ]; then
+  [ -f "$MODEL_PATH/dspark/config.json" ] || { echo "FATAL SPEC=dspark but no $MODEL_PATH/dspark/config.json" >&2; exit 1; }
+  ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark)
+  [ -z "$DSPARK_BLOCK" ] || ARGV+=(--speculative-dspark-block-size "$DSPARK_BLOCK")
+fi
 DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
   --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864
   --log-driver json-file --log-opt max-size=100m --log-opt max-file=5
@@ -89,8 +96,8 @@ ENV_FLAGS=(); for e in "${ENV_VARS[@]}"; do ENV_FLAGS+=(-e "$e"); done
 T0=$(date +%s)
 CID=$($DOCKER run "${DOCKER_OPTS[@]}" "${ENV_FLAGS[@]}" "$IMAGE" "${ARGV[@]}")
 log "container ${CID:0:12} started (t0)"
-printf '{"ts":"%s","name":"%s","container":"%s","image":"%s","image_id":"%s","engine_commit":"%s","model_path":"%s","weights_files":%s,"weights_mb":%s,"served":"%s","topology":"tp%s-ep%s-dp%s-dpattn%s","gpus":"%s","port":%s,"memfrac":%s,"maxreq":%s,"chunk":%s,"extra_args":"%s","log":"%s"}\n' \
-  "$TS" "$NAME" "${CID:0:12}" "$IMAGE" "${IMG_ID:7:12}" "${ENGINE:0:12}" "$MODEL_PATH" "$NFILES" "$MB" "$SERVED" "$TP_SIZE" "$EP_SIZE" "$DP_SIZE" "$DP_ATTN" "$GPUS" "$PORT" "$MEMFRAC" "$MAXREQ" "$CHUNK" "$EXTRA_ARGS" "$LOG" >> "$LOGS/launches.jsonl"
+printf '{"ts":"%s","name":"%s","container":"%s","image":"%s","image_id":"%s","engine_commit":"%s","model_path":"%s","weights_files":%s,"weights_mb":%s,"served":"%s","topology":"tp%s-ep%s-dp%s-dpattn%s","gpus":"%s","spec":"%s","port":%s,"memfrac":%s,"maxreq":%s,"chunk":%s,"extra_args":"%s","log":"%s"}\n' \
+  "$TS" "$NAME" "${CID:0:12}" "$IMAGE" "${IMG_ID:7:12}" "${ENGINE:0:12}" "$MODEL_PATH" "$NFILES" "$MB" "$SERVED" "$TP_SIZE" "$EP_SIZE" "$DP_SIZE" "$DP_ATTN" "$GPUS" "$SPEC" "$PORT" "$MEMFRAC" "$MAXREQ" "$CHUNK" "$EXTRA_ARGS" "$LOG" >> "$LOGS/launches.jsonl"
 [ "$FOLLOW" = 1 ] || { log "FOLLOW=0: not waiting. logs: $DOCKER logs -f $NAME"; exit 0; }
 
 # --- startup milestones, with timings ----------------------------------------------------------------------------
