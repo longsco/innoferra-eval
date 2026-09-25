@@ -2,7 +2,7 @@
 
 **READY 2026-09-25 17:10Z on preview2** — engines `m31-a2`/`m31-b2` (2×tp4/dp4, weights `MiniMax-M3.1-preview2-dspark-private`, no DSpark)
 + `m31-gateway` (`UPSTREAMS=2 ROUTE_DP_SIZE=4`) on 0008, all `--restart unless-stopped`. preview1 is stopped (user decision: latest model only).
-Gates: the 10:10Z results below were on preview1; the preview2 re-gate (format + official + replay via `:8001`) is running and is recorded in knowledge §6c when done.
+Gates on preview2 (2026-09-25 16:58–18:03Z): innoferra M3 format **25/25**, official verifier **268 pass / 8 fail** (same model-behaviour set as preview1; two harness timeouts), replay **294/294**. Same as preview1 — the 10:10Z table below stands.
 
 ## What TokenHub points at
 | | |

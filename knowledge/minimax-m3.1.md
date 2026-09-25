@@ -250,7 +250,7 @@ impossible on `bef87f4` under any flag combination. Closed until MiniMax ships t
 **State 17:10Z (user: "latest model only"):** preview1 stopped; `m31-a2` (GPUs 0-3, :19191) and `m31-b2` (GPUs 4-7, :19291) both preview2
 without DSpark, gateway `:8000` `UPSTREAMS=2 ROUTE_DP_SIZE=4`; `:8001` → :19291 only for the preview2 gate (running). Gate canary note:
 on preview2 the `tens` canary is non-deterministic at temperature 0 (second run answered `50` only) on both launches; preview1 passed it ×2 —
-report to MiniMax with the DSpark engine question. **Gateway bug caught:** `ROUTE_DP_SIZE` defaulted to 8 while the engines are dp4 → half of
+report to MiniMax with the DSpark engine question. **preview2 gate (16:58–18:03Z, via `:8001`):** format 25/25, official 268/8 (root-identity ×2, missed tool calls ×2, number-as-string, noise image, 02_07 and 05_01 harness timeouts), replay 294/294 — equal to preview1; `:8001` gateway removed afterwards. **Gateway bug caught:** `ROUTE_DP_SIZE` defaulted to 8 while the engines are dp4 → half of
 new prompts would 400 (`routed_dp_rank=6 out of range`); default is now 4 = engine DP.
 
 ## 7. Open questions (answer by measurement, not assumption)
