@@ -43,3 +43,4 @@ Five areas: **Format · Performance · Cache · Quality · Bypass-traffic valida
   accepted; `cached_tokens` absent when the 2-call probe lands on cold DP ranks; effort validation probe relaxed), **load PASS**
   (per-stream 65–68 tok/s, TTFT <2 s, SR 100%, cache 99.6% on the 2k quick frame), **bypass 8/8**.
 - Structural finding: **DP8 round-robin over 8 per-rank prefix caches** — 8 cold prefills per new prefix. See `knowledge/minimax-m3.1.md` §4c.
+- **§2 sweep (80k-warm/600, no DSpark): compliant only at c1 = 0.48 M TPM/node (TPS 63.9, TTFT 1.0 s); max-batch 7.4 M TPM at c64 (TTFT 24 s).** Per-stream falls below 60 by c4. DSpark is the lever. §4e.

@@ -105,6 +105,31 @@ DP pinning in front (`ROUTE_DP_SIZE=8`, already implemented in the shim), and A/
 same 80k/600 sweep — each is one env var on `launch.sh`. Decide on the interactive frame (SR100 ∧ TTFT<3 s ∧ TPS>60), not on
 max-batch TPM. The first DP8 sweep is `bench_tpm.sh` (2026-09-25, results in §4e when done).
 
+## 4e. First §2 TPM sweep — vendor DP8 layout, no DSpark (2026-09-25 04:58–05:13Z, `bench_tpm.sh`)
+Frame: `sglang.bench_serving` generated-shared-prefix, 1 group, **80,000 system / 128 question / 600 out**, cache-WARM
+(16-request warm-up so all 8 DP ranks hold the prefix), requests = 5×C, seed 1, no gateway in front (engine round-robin).
+
+| conc | SR | **total TPM** | out TPM | per-stream P50 tok/s | P50 TTFT | P99 TTFT | full-SLO |
+|---|---|---|---|---|---|---|---|
+| 1 | 100% | 0.479 M | 0.003 M | **63.9** | 1.02 s | 1.06 s | **✅** |
+| 4 | 100% | 1.650 M | 0.012 M | 58.3 | 1.32 s | 2.90 s | ✗ TPS |
+| 8 | 100% | 2.885 M | 0.021 M | 53.5 | 1.80 s | 5.86 s | ✗ TPS |
+| 16 | 100% | 4.781 M | 0.035 M | 43.8 | 1.24 s | 9.48 s | ✗ TPS |
+| 32 | 100% | 7.010 M | 0.051 M | 36.6 | 3.60 s | 19.4 s | ✗ |
+| 64 | 100% | **7.410 M** | 0.054 M | 37.9 | 24.4 s | 57.5 s | ✗ |
+
+**Readings.** (a) **Compliant point = c1 only: 0.48 M total TPM/node** (SR100 ∧ TTFT<3 s ∧ TPS>60) — per-stream crosses below 60
+between c1 and c4. (b) **Max-batch ceiling ≈ 7.4 M total TPM/node** (c64; +6 % over c32 = saturated) at an unusable 24 s TTFT.
+(c) Per-stream 63.9 @c1 is slightly ABOVE the M3 fleet's no-spec sglang reference (50.6 @c1) and ≈ vLLM-TP8 nospec (60.9), i.e.
+the NVFP4 QAT + KV4 stack decodes at parity-or-better with M3 — **but without spec-decode it cannot hold 60 under load**. M3 needed
+EAGLE3 (accept ≈2.5) to reach a c32 compliant point; M3.1's lever is **DSpark**, not yet in the demo. (d) Cache-warm total TPM is
+the vendor frame and counts the 80k cached input ≈ 130× output; out-TPM is the honest decode number (0.054 M at saturation).
+(e) P99 TTFT grows much faster than P50 (2.9 s vs 1.3 s at c4) — queueing/round-robin tail; gateway prefix pinning + a real
+admission cap are the next knobs. (f) Vendor caps (max-running 32/rank) were never hit; memory headroom is large (§4d).
+
+**Next sweeps (in order):** same frame with gateway `ROUTE_DP_SIZE=8` pinning → `DP_SIZE=2` (TP4×DP2) → `DP_SIZE=1 DP_ATTN=0`
+(TP8) → cold-distinct frame (bench B) → DSpark when shipped. Raw CSV/log: `results/minimax-m3.1/bench/tpm-20260925T045802Z.*`.
+
 ## 5. Node 0008 state (2026-09-25)
 Reimaged, empty, `ssh 0008` (port 22 fleet-only, jump via 10.10.100.118). 8×B300 275 GB, 256 cores, 3 TB RAM, 14 TB `/data01`.
 Weights `/data01/minimax31/MiniMax-M3.1-preview-private` — **download complete 2026-09-25** (62/62 files, 48 safetensors, 0 incomplete,

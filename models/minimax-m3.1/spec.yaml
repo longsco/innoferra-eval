@@ -35,6 +35,9 @@ slo:                                                  # carried from M3 manual Â
   at_120pct: {success_rate_min: 0.80, p50_ttft_s_max: 30.0}
   overload_status: 429
   cache_hit_min: 0.85
+  reference_points:                                 # our 8xB300, vendor DP8 demo layout, NO DSpark, 80k-warm/600 (bench_tpm.sh 2026-09-25)
+    compliant: {conc: 1, tpm: 479000, p50_ttft_s: 1.02, p50_tps: 63.9}
+    max_batch: {conc: 64, tpm: 7410000, p50_ttft_s: 24.4, p50_tps: 37.9, note: "not SLO-valid"}
 quality:
   sampling: {temperature: 1.0, top_p: 0.95}
   benchmarks: {}                                      # no 3.1 baselines published yet; M3's are in models/minimax-m3/spec.yaml
