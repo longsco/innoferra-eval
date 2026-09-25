@@ -243,7 +243,13 @@ Tried: `/models/dspark` as draft path with dp-lm-head (→ rule 1 a2a), then a2a
 **no draft-architecture remap for MiniMax** (`model_config.py` remaps only DeepSeek-V4 → `DeepseekV4ForCausalLMDSpark`; `models/dspark.py`
 registers `Qwen3DSparkModel`/`DSparkDraftModel` only), so even past the rules the draft class would be unresolved. **MiniMax must ship the
 engine commit that goes with this drop** (their config `_name_or_path` points at an internal tree). Experiment with training-compat OFF
-(`TRAINING_COMPAT=0`, `try_dspark4.sh`) is informational only — see below.
+(`TRAINING_COMPAT=0`, `try_dspark4.sh`) fails one rule deeper: **"M3 NVFP4 experts require --moe-a2a-backend megamoe and
+--disable-shared-experts-fusion"** — the NVFP4 expert kernels themselves only exist on the MegaMoE path, so DSpark + this checkpoint is
+impossible on `bef87f4` under any flag combination. Closed until MiniMax ships the matching engine.
+
+**State after the try-out:** GPUs 0-3 `m31-a` = preview1, GPUs 4-7 `m31-b2` = preview2 (no DSpark), gateway `:8000` → preview1 only,
+second gateway `:8001` → preview2 for gating (`targets/m31-b300-bypass-p2.yaml`). Plan: gate preview2 (format + official + replay); if it
+passes, move GPUs 0-3 to preview2 and go back to `UPSTREAMS=2` — MiniMax calls preview2 the production candidate.
 
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.

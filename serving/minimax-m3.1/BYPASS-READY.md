@@ -66,6 +66,11 @@ at 41 tok/s per stream. Gateway admission `MAX_INFLIGHT=32` (429 above).
 thinking budget and answered a "be thorough" prompt with 4096 tokens of reasoning and **empty content**; with `medium` it thinks ~1k
 tokens and answers. Set `DEFAULT_REASONING_EFFORT=` (empty) in `gateway.sh` to get the raw vendor behaviour.
 
+## preview2 / DSpark (2026-09-25 evening)
+MiniMax dropped `MiniMax-M3.1-preview2-dspark-private` (target + 2.3 GB DSpark draft). The target runs at the same speed as preview1 and is
+being gated on GPUs 4-7 behind `:8001`. **DSpark cannot start on the 09-22 engine** (dp-attention DSpark needs the built-in TP MoE; the
+NVFP4 experts need MegaMoE; no MiniMax draft class) — waiting on MiniMax for the matching engine commit. Details: knowledge §6c.
+
 ## Known limits (engine-side, reported to MiniMax)
 No speculative decoding (DSpark not shipped) → per-stream ~35–65 tok/s · attention must be TP1 → 8 (or 2×4) separate prefix caches ·
 model reasons through small `max_tokens` budgets (empty content) · `reasoning_tokens` counter hard-wired to 0 · local-path media loading.

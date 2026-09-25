@@ -1,0 +1,24 @@
+name: m31-b300-bypass-p2
+# MiniMax-M3.1 preview2 (2026-09-25 dspark drop, run WITHOUT DSpark) on GPUs 4-7 tp4/dp4 behind a second gateway :8001 on B300 node 0008 behind the innoferra gateway,
+# profile serving/minimax-m3.1/gateway.sh: accepts MiniMax-M3 traffic UNCHANGED (aliases, thinking passthrough, root role native).
+spec: minimax-m3                        # the traffic shape it must accept (bypass mirror); use minimax-m3.1 for the native spec
+base_url: http://127.0.0.1:18001/v1     # ssh -N -L 18001:127.0.0.1:8001 0008   (gateway p2 -> preview2 engine :19291)
+model: minimax-m3
+api_key_env: M31_API_KEY                # export M31_API_KEY=$(cat ~/.m31_apikey)
+timeout_s: 1800                       # real requests with 37k-token outputs take >900 s at ~35 tok/s per stream
+capabilities:
+  images: true                          # engine reports image_tokens; verifier image cases pass
+  video: false                          # video_url -> 503 unsupported_content_type until verified
+  thinking: true
+  tools: true
+load:
+  input_tokens: 80000
+  output_tokens: 600
+  shared_prefix_tokens: 80000
+  question_tokens: 128
+  concurrency_grid: [1, 4, 8, 16]
+  target_concurrency: 16
+notes: >
+  Engine: MiniMax-AI/0922-sglang demo @ bef87f479eff on SGLang v0.5.17, TP8/EP8/DP8 dp-attention, mxfp8+NVFP4 MoE,
+  no spec-decode (DSpark weights not published). Gateway pins prompt-prefix -> DP rank (ROUTE_DP_SIZE=8),
+  logs every request with s5 fields (rt/rc/tc/fin/ttft/cached) to /data01/minimax31/logs/m31_access.log.
