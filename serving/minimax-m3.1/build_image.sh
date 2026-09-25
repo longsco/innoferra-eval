@@ -10,5 +10,6 @@ for d in 0922-sglang DeepGEMM; do [ -d "$SRC/$d" ] || { echo "missing $SRC/$d �
 grep -rq "x-access-token" "$SRC/0922-sglang/.git/config" && { echo "REFUSING: PAT present in .git/config — run: git remote set-url origin https://github.com/MiniMax-AI/0922-sglang.git"; exit 1; }
 cp "$(dirname "$0")/Dockerfile" "$SRC/Dockerfile"
 echo "building $TAG from $SRC (MAX_JOBS=$MAX_JOBS) …"; t0=$(date +%s)
-$DOCKER build --build-arg MAX_JOBS="$MAX_JOBS" -t "$TAG" "$SRC" 2>&1 | tee "$SRC/build.log" | grep -E "^#[0-9]+ (DONE|ERROR)|deep_gemm ok|sglang .* torch|error:" || true
+set +e; $DOCKER build --build-arg MAX_JOBS="$MAX_JOBS" -t "$TAG" "$SRC" 2>&1 | tee "$SRC/build.log" | grep -E "^#[0-9]+ (DONE|ERROR)|deep_gemm ok|sglang .* torch|error:|fatal error"; rc=${PIPESTATUS[0]}; set -e
+if [ "$rc" != 0 ]; then echo "BUILD FAILED (exit $rc) after $(( $(date +%s) - t0 )) s — see $SRC/build.log"; grep -E "fatal error|error:" "$SRC/build.log" | tail -5; exit "$rc"; fi
 echo "built $TAG in $(( $(date +%s) - t0 )) s"; $DOCKER image inspect "$TAG" --format '  size {{.Size}} bytes  id {{.Id}}'

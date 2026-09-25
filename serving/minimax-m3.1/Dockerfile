@@ -5,7 +5,13 @@ FROM lmsysorg/sglang:v0.5.17
 ARG MAX_JOBS=16
 ENV DEBIAN_FRONTEND=noninteractive PIP_NO_CACHE_DIR=1
 
-# 1. DeepGEMM v0.2.0 from source — the PyPI wheel is built against Torch 2.13 and is ABI-incompatible with this image's 2.11.
+# 0. System deps the base image lacks: DeepGEMM's deep_jit includes <elfutils/libdwfl.h> (learned 2026-09-25: build fails
+#    "fatal error: elfutils/libdwfl.h: No such file"); the wheel build uses `python -m build`.
+RUN apt-get update && apt-get install -y --no-install-recommends libdw-dev libelf-dev && rm -rf /var/lib/apt/lists/* \
+ && python3 -m pip install build
+
+# 1. DeepGEMM v0.2.0 from source (sgl-project/DeepGEMM @ 7fec51c2) — the PyPI wheel is built against Torch 2.13 and is
+#    ABI-incompatible with this image's 2.11.
 COPY DeepGEMM /opt/DeepGEMM
 RUN cd /opt/DeepGEMM && MAX_JOBS=${MAX_JOBS} bash build_sgl_deep_gemm.sh \
  && python3 -m pip install --no-deps --force-reinstall dist/*.whl \
