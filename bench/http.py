@@ -92,7 +92,15 @@ def chat(target: Target, body: dict[str, Any], *, timeout_s: float | None = None
                             rtok += 1
                         if delta.get("tool_calls"):
                             if ttft is None: ttft = time.time() - t0
-                            tool_calls.extend(delta["tool_calls"])
+                            for frag in delta["tool_calls"]:                       # merge fragments by index -> distinct calls
+                                if not isinstance(frag, dict): continue
+                                ix = frag.get("index", len(tool_calls))
+                                while len(tool_calls) <= ix: tool_calls.append({"index": len(tool_calls), "function": {"name": "", "arguments": ""}})
+                                cur = tool_calls[ix]; fn = frag.get("function") or {}
+                                for k in ("id", "type"):
+                                    if frag.get(k): cur[k] = frag[k]
+                                if fn.get("name"): cur["function"]["name"] = fn["name"]
+                                if fn.get("arguments"): cur["function"]["arguments"] += fn["arguments"]
                 el = time.time() - t0
                 msg = {"role": "assistant", "content": "".join(content_parts) or None}
                 if tool_calls: msg["tool_calls"] = tool_calls

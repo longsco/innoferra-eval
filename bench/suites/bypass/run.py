@@ -6,7 +6,7 @@ from ...target import Target
 from . import capture as cap, replay as rp, distribution as dist
 
 
-def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=None) -> dict:
+def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=None, image_substitute: bool = True) -> dict:
     src = Path(capture) if capture else cap.newest()
     if not src or not src.exists():
         raise SystemExit("no capture/sample file; run `innoferra capture` (internal) or pass --capture samples/<model>-synthetic.jsonl")
@@ -15,7 +15,7 @@ def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=Non
     out = out or run_dir(t.name, "bypass")
     print(f"[bypass] target={t.name} base={t.base_url} capture={src.name} n={len(recs)} conc={concurrency} -> {out}")
     t0 = time.time()
-    rows = rp.replay(t, recs, concurrency=concurrency,
+    rows = rp.replay(t, recs, concurrency=concurrency, image_substitute=image_substitute,
                      progress=lambda d, n: print(f"  {d}/{n}", flush=True) if d % 25 == 0 else None)
     el = time.time() - t0
     ok = sum(1 for r in rows if r["ok"]); n = len(rows)
@@ -32,6 +32,11 @@ def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=Non
     q = lambda d, k="p50": f(d[k]) if d else "—"
     md = [f"# bypass replay — {t.name}", f"capture `{src.name}` · n={n} · conc={concurrency} · {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}", "",
           f"**success {ok}/{n} = {100*ok/max(n,1):.1f}%** · errors: {codes or 'none'}", "",
+          (f"images: {sum(1 for r in rows if r.get('img_subst'))} requests / {sum(r.get('img_subst') or 0 for r in rows)} parts replayed with a synthetic PNG "
+           f"(the log store redacts base64 payloads to `/base64/` and signed object-store URLs expire) — image rows test request SHAPE, not vision quality"
+           if any(r.get("img_subst") for r in rows) else "images: replayed verbatim"), "",
+          "cache-hit caveat: a sampled capture replays isolated turns, so dim 6 measures the sample's own prefix reuse, not production's; "
+          "the §3 cache probe (`innoferra load`) is the cache-hit gate.", ""
           "## by request feature", table(["feature", "ok/total", "rate"],
               [[k, f"{v[1]}/{v[0]}", f"{100*v[1]/v[0]:.1f}%"] for k, v in sorted(by.items(), key=lambda x: -x[1][0])]), "",
           "## manual §5 — 7 distribution dimensions (replay vs captured reference)",

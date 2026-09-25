@@ -22,7 +22,7 @@ def capture(*, kibana: str, index: str, n: int, uri: str, out: str | None) -> Pa
     r = httpx.post(url, headers=hdr, json=q, timeout=180)
     r.raise_for_status()
     hits = r.json().get("hits", {}).get("hits", [])
-    n_ok = 0
+    n_ok = 0; n_red = 0
     with out_p.open("w") as f:
         for h in hits:
             s = h["_source"]
@@ -34,7 +34,14 @@ def capture(*, kibana: str, index: str, n: int, uri: str, out: str | None) -> Pa
                                 "prompt_tokens": _int(llm.get("prompt_tokens")), "completion_tokens": _int(llm.get("completion_tokens")),
                                 "cached_tokens": _int(llm.get("cached_tokens")), "model": llm.get("model")}}) + "\n")
             n_ok += 1
+            for m in (body.get("messages") or []):
+                if isinstance(m, dict) and isinstance(m.get("content"), list):
+                    for p in m["content"]:
+                        if isinstance(p, dict) and p.get("type") == "image_url":
+                            u = p.get("image_url"); u = u.get("url") if isinstance(u, dict) else u
+                            if u == "/base64/": n_red += 1
     print(f"[capture] {n_ok}/{len(hits)} usable request bodies → {out_p}")
+    if n_red: print(f"[capture] NOTE: {n_red} image parts are redacted to '/base64/' by the log store (base64 payloads are not stored); replay substitutes a synthetic PNG")
     return out_p
 
 

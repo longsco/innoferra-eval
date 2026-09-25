@@ -5,7 +5,7 @@ spec: minimax-m3                        # the traffic shape it must accept (bypa
 base_url: http://127.0.0.1:18000/v1     # ssh -N -L 18000:127.0.0.1:8000 0008   (node-local :8000 -> engine :19191)
 model: minimax-m3
 api_key_env: M31_API_KEY                # export M31_API_KEY=$(cat ~/.m31_apikey)
-timeout_s: 900
+timeout_s: 1800                       # real requests with 37k-token outputs take >900 s at ~35 tok/s per stream
 capabilities:
   images: true                          # engine reports image_tokens; verifier image cases pass
   video: false                          # video_url -> 503 unsupported_content_type until verified

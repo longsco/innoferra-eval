@@ -105,10 +105,11 @@ def load(target, model, mode, grid, input_tokens, output_tokens, duration, engin
 @click.option("--capture", default="", help="captured request JSONL (from `innoferra capture`); default = newest in results/captures/")
 @click.option("--limit", type=int, default=0, help="replay at most N requests (0 = all)")
 @click.option("--concurrency", type=int, default=1)
-def bypass(target, capture, limit, concurrency):
+@click.option("--no-image-substitute", is_flag=True, help="replay image parts verbatim (default: redacted '/base64/' and non-data URLs are replaced by a synthetic PNG)")
+def bypass(target, capture, limit, concurrency, no_image_substitute):
     """§5 Bypass: replay captured production requests unmodified; report per-feature success + 7-dim distribution."""
     from .suites.bypass.run import run
-    run(load_target(target), capture=capture or None, limit=limit, concurrency=concurrency)
+    run(load_target(target), capture=capture or None, limit=limit, concurrency=concurrency, image_substitute=not no_image_substitute)
 
 
 @main.command()

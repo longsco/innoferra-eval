@@ -48,6 +48,19 @@
   and `chat_template_kwargs.thinking_mode`. A "passthrough" gateway would have leaked reasoning on 29% of real requests while every
   probe that only checks `reasoning_tokens == 0` passed, because that counter is also broken. Test each control field end-to-end
   (engine-direct, look at `reasoning_content`), then translate in the gateway (`THINKING_MODE=m31`).
+- **A replay is only as honest as its capture.** The full-access log store rewrites base64 image payloads to the literal string
+  `/base64/` and signed image URLs expire; a naive replay reports "images 0/42" and blames the engine. Inspect the capture's
+  media parts before trusting a per-feature failure, then substitute a synthetic payload and *label* the rows as shape-only.
+- **The M3 format spec has a packet-size clause, and per-token SSE fails it.** Content packets must be 5–200 chars ≥95% of the
+  time; a vanilla SGLang stream is ~40% 1–4-char packets. Coalescing in the gateway (≥12 chars or 120 ms, same-kind deltas only,
+  tail carried in the finish chunk) passes without touching the engine. Short outputs are dominated by the trailing packet.
+- **Real M3 clients send `image_url.detail: "default"`** (not an OpenAI value) and `max_tokens: 262144`; a strict engine
+  schema or a GLM-era output cap rejects 15% of real traffic before it reaches the model. Check enum fields against the capture,
+  not the OpenAI docs.
+- **Never `asyncio.wait_for` an httpx `aiter_lines()` step.** A timed-out `wait_for` cancels the iterator's `__anext__`, which
+  kills the async generator: the stream silently ends with no finish chunk and no `[DONE]`. Under a coalescing timer this only
+  fires when the engine pauses (thinking before a tool call, long argument strings), so hand tests pass and the verifier's
+  tool-stream cases fail with "last chunk missing finish_reason". Pump lines into an `asyncio.Queue` and time out on `queue.get()`.
 - **When the engine's counter is broken, count with the model's tokenizer in the gateway** rather than reporting 0 or estimating:
   `tokenizers` + the checkpoint's `tokenizer.json` gives the same number the engine would. It costs one mount and ~1 ms per response.
 - **DP8 = eight separate prefix caches behind round-robin routing.** A never-seen prefix sent 10× missed on calls 1–8 (one per
