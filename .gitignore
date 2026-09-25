@@ -6,4 +6,3 @@ __pycache__/
 *.jsonl.gz
 targets/*.local.yaml
 .env
-.push.sh

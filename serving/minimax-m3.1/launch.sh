@@ -1,40 +1,101 @@
 #!/usr/bin/env bash
-# Launch MiniMax-M3.1 (NVFP4 QAT) with the vendor's verified demo configuration as a persistent container.
-# Every env var and flag below is the vendor's; only paths/ports/name are parameterized. Run ON THE NODE.
+# Launch MiniMax-M3.1 (NVFP4 QAT) with the vendor's verified demo configuration as a persistent container,
+# and write a DETAILED launch log: what was launched (image id, engine commit, weights fingerprint, resolved env + argv),
+# the state of the node before launch, and the engine's startup milestones with timings. Run ON THE NODE.
 #   MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview-private bash launch.sh
+# Log:  $LOGS/launch-<UTC ts>.log   (+ one JSON line per launch appended to $LOGS/launches.jsonl)
 set -euo pipefail
 IMAGE=${IMAGE:-minimax-m31-sglang:demo-bef87f4}
 MODEL_PATH=${MODEL_PATH:-/data01/minimax31/MiniMax-M3.1-preview-private}
 NAME=${NAME:-m31-demo}; PORT=${PORT:-19191}; SERVED=${SERVED:-minimax-m3.1-nvfp4}
 MEMFRAC=${MEMFRAC:-0.85}; MAXREQ=${MAXREQ:-256}; CHUNK=${CHUNK:-131072}
 JIT=${JIT:-/data01/minimax31/jit-cache}; LOGS=${LOGS:-/data01/minimax31/logs}; EXTRA_ARGS=${EXTRA_ARGS:-}
+FOLLOW=${FOLLOW:-1}                      # 1 = stay attached and log startup milestones until /health (or WAIT s); 0 = return right after docker run
+WAIT=${WAIT:-3600}
 DOCKER="docker"; $DOCKER ps >/dev/null 2>&1 || DOCKER="sudo -n docker"
-[ -f "$MODEL_PATH/config.json" ] || { echo "no config.json under $MODEL_PATH"; exit 1; }
-[ "$(find "$MODEL_PATH" -name '*.incomplete' | wc -l)" = 0 ] || { echo "download incomplete under $MODEL_PATH"; exit 1; }
-mkdir -p "$JIT" "$LOGS"; $DOCKER rm -f "$NAME" >/dev/null 2>&1 || true
-exec $DOCKER run -d --restart unless-stopped --name "$NAME" \
-  --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864 \
-  --log-driver json-file --log-opt max-size=100m --log-opt max-file=5 \
-  -v "$MODEL_PATH":/models:ro -v "$JIT":/root/.cache -v "$LOGS":/logs \
-  -e SGLANG_FORWARD_UNKNOWN_TOOLS=true \
-  -e SGLANG_ENABLE_METRICS_DEVICE_TIMER=true \
-  -e SGLANG_MINIMAX_M3_TRAINING_ROUTER=1 \
-  -e SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE=16 \
-  -e SGLANG_MINIMAX_SPARSE_KV4=1 \
-  -e SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK=16384 \
-  -e SGLANG_M3_TRAINING_COMPATIBLE=1 \
-  -e SGLANG_DP_USE_GATHERV=1 \
-  -e SGLANG_DISABLE_MSA=1 \
-  "$IMAGE" python3 -m sglang.launch_server \
-    --model-path /models --served-model-name "$SERVED" \
-    --trust-remote-code --host 0.0.0.0 --port "$PORT" \
-    --tp-size 8 --ep-size 8 --dp-size 8 --moe-dense-tp-size 1 \
-    --enable-dp-attention --quantization mxfp8 \
-    --disable-shared-experts-fusion \
-    --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \
-    --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul \
-    --kv-cache-dtype fp8_e4m3 --chunked-prefill-size "$CHUNK" \
-    --cuda-graph-backend-prefill breakable \
-    --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints \
-    --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \
-    --mem-fraction-static "$MEMFRAC" --max-running-requests "$MAXREQ" $EXTRA_ARGS
+
+TS=$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$JIT" "$LOGS"; LOG="$LOGS/launch-$TS.log"
+log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
+hdr(){ printf '\n== %s ==\n' "$*" | tee -a "$LOG"; }
+
+hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED"
+# --- preflight -------------------------------------------------------------------------------------------------
+hdr "preflight"
+[ -f "$MODEL_PATH/config.json" ] || { log "FATAL no config.json under $MODEL_PATH"; exit 1; }
+INC=$(find "$MODEL_PATH" -name '*.incomplete' | wc -l); [ "$INC" = 0 ] || { log "FATAL $INC .incomplete files under $MODEL_PATH"; exit 1; }
+NFILES=$(find "$MODEL_PATH" -type f -not -path '*/.cache/*' | wc -l); NST=$(ls "$MODEL_PATH"/*.safetensors 2>/dev/null | wc -l); MB=$(du -sm "$MODEL_PATH" | cut -f1)
+ARCH=$(python3 -c "import json;c=json.load(open('$MODEL_PATH/config.json'));print(c.get('architectures',['?'])[0],'|',c.get('model_type'),'| quant:',bool(c.get('quantization_config')))" 2>/dev/null || echo "?")
+log "weights   $MODEL_PATH  files=$NFILES safetensors=$NST size=${MB}MB  arch: $ARCH"
+IMG_ID=$($DOCKER image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || { log "FATAL image $IMAGE not present — run build_image.sh"; exit 1; })
+ENGINE=$($DOCKER run --rm --entrypoint cat "$IMAGE" /opt/ENGINE_COMMIT 2>/dev/null || echo "?")
+log "image     $IMAGE  id=${IMG_ID:7:12}  engine-commit=${ENGINE:0:12}  labels: $($DOCKER image inspect "$IMAGE" --format '{{index .Config.Labels "org.innoferra.base"}}')"
+log "gpus      $(nvidia-smi --query-gpu=name --format=csv,noheader | head -1) x$(nvidia-smi -L | wc -l)  used-mem: $(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | tr '\n' ' ')MiB  driver $(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1)"
+BUSY=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader | wc -l); [ "$BUSY" = 0 ] || log "WARN $BUSY compute process(es) already on the GPUs"
+OLD=$($DOCKER ps -a --filter "name=^/$NAME$" --format '{{.ID}} {{.Status}}'); [ -z "$OLD" ] || log "replacing existing container $OLD"
+log "host      $(hostname)  load $(cut -d' ' -f1-3 /proc/loadavg)  free-mem $(free -g | awk 'NR==2{print $7}')GB  /data01 free $(df -h /data01 | awk 'NR==2{print $4}')  jit-cache $(du -sh "$JIT" | cut -f1)"
+
+# --- the exact thing we run (vendor env + flags; only paths/ports/name parameterized) ------------------------------
+ENV_VARS=(
+  SGLANG_FORWARD_UNKNOWN_TOOLS=true
+  SGLANG_ENABLE_METRICS_DEVICE_TIMER=true
+  SGLANG_MINIMAX_M3_TRAINING_ROUTER=1
+  SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE=16
+  SGLANG_MINIMAX_SPARSE_KV4=1
+  SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK=16384
+  SGLANG_M3_TRAINING_COMPATIBLE=1
+  SGLANG_DP_USE_GATHERV=1
+  SGLANG_DISABLE_MSA=1
+)
+ARGV=(python3 -m sglang.launch_server
+  --model-path /models --served-model-name "$SERVED"
+  --trust-remote-code --host 0.0.0.0 --port "$PORT"
+  --tp-size 8 --ep-size 8 --dp-size 8 --moe-dense-tp-size 1
+  --enable-dp-attention --quantization mxfp8
+  --disable-shared-experts-fusion
+  --moe-a2a-backend megamoe --moe-runner-backend deep_gemm
+  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul
+  --kv-cache-dtype fp8_e4m3 --chunked-prefill-size "$CHUNK"
+  --cuda-graph-backend-prefill breakable
+  --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints
+  --reasoning-parser minimax-m3 --tool-call-parser minimax-m3
+  --mem-fraction-static "$MEMFRAC" --max-running-requests "$MAXREQ" $EXTRA_ARGS)
+DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
+  --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864
+  --log-driver json-file --log-opt max-size=100m --log-opt max-file=5
+  -v "$MODEL_PATH:/models:ro" -v "$JIT:/root/.cache" -v "$LOGS:/logs")
+hdr "resolved env"; for e in "${ENV_VARS[@]}"; do log "  $e"; done
+hdr "resolved docker opts"; log "  ${DOCKER_OPTS[*]}"
+hdr "resolved argv"; log "  ${ARGV[*]}"
+
+# --- run --------------------------------------------------------------------------------------------------------
+hdr "docker run"
+$DOCKER rm -f "$NAME" >/dev/null 2>&1 || true
+ENV_FLAGS=(); for e in "${ENV_VARS[@]}"; do ENV_FLAGS+=(-e "$e"); done
+T0=$(date +%s)
+CID=$($DOCKER run "${DOCKER_OPTS[@]}" "${ENV_FLAGS[@]}" "$IMAGE" "${ARGV[@]}")
+log "container ${CID:0:12} started (t0)"
+printf '{"ts":"%s","name":"%s","container":"%s","image":"%s","image_id":"%s","engine_commit":"%s","model_path":"%s","weights_files":%s,"weights_mb":%s,"served":"%s","port":%s,"memfrac":%s,"maxreq":%s,"chunk":%s,"extra_args":"%s","log":"%s"}\n' \
+  "$TS" "$NAME" "${CID:0:12}" "$IMAGE" "${IMG_ID:7:12}" "${ENGINE:0:12}" "$MODEL_PATH" "$NFILES" "$MB" "$SERVED" "$PORT" "$MEMFRAC" "$MAXREQ" "$CHUNK" "$EXTRA_ARGS" "$LOG" >> "$LOGS/launches.jsonl"
+[ "$FOLLOW" = 1 ] || { log "FOLLOW=0: not waiting. logs: $DOCKER logs -f $NAME"; exit 0; }
+
+# --- startup milestones, with timings ----------------------------------------------------------------------------
+hdr "startup milestones (engine log, filtered)"
+PAT='Load weight begin|Load weight end|KV Cache is allocated|Memory pool end|max_total_num_tokens|Capture .* graph end|cuda_graph|server is fired up|Uvicorn running|Traceback|Error|OutOfMemory|out of memory|Exited|watchdog'
+$DOCKER logs -f "$NAME" 2>&1 | grep --line-buffered -E "$PAT" | while IFS= read -r line; do
+  printf '%s +%4ds  %s\n' "$(date -u +%H:%M:%S)" "$(( $(date +%s) - T0 ))" "${line:0:220}" | tee -a "$LOG"
+  case "$line" in *"server is fired up"*|*"Uvicorn running"*) pkill -P $$ -f "docker logs -f $NAME" 2>/dev/null; break;; esac
+done &
+FOLLOWER=$!
+until curl -sf -m 5 "http://127.0.0.1:$PORT/health" >/dev/null; do
+  if ! $DOCKER ps --format '{{.Names}}' | grep -qx "$NAME"; then log "FATAL container exited after $(( $(date +%s) - T0 ))s — last lines:"; $DOCKER logs --tail 30 "$NAME" 2>&1 | tee -a "$LOG"; kill $FOLLOWER 2>/dev/null; exit 1; fi
+  [ $(( $(date +%s) - T0 )) -gt "$WAIT" ] && { log "TIMEOUT ${WAIT}s waiting for /health"; kill $FOLLOWER 2>/dev/null; exit 1; }
+  sleep 10
+done
+kill $FOLLOWER 2>/dev/null; wait $FOLLOWER 2>/dev/null || true
+hdr "ready"
+log "healthy after $(( $(date +%s) - T0 ))s"
+log "gpu-mem   $(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | tr '\n' ' ')MiB"
+log "models    $(curl -sf -m 10 "http://127.0.0.1:$PORT/v1/models" | python3 -c 'import json,sys;print([m["id"] for m in json.load(sys.stdin)["data"]])' 2>/dev/null)"
+log "engine    $($DOCKER logs "$NAME" 2>&1 | grep -oE 'max_total_num_tokens=[0-9]+|context_len=[0-9]+|available_gpu_mem=[0-9.]+ GB|Engine startup timings.*' | tail -4 | tr '\n' ' ')"
+log "next      bash $(dirname "$0")/gate.sh http://127.0.0.1:$PORT $SERVED"
+log "log       $LOG"

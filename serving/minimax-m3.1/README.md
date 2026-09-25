@@ -41,3 +41,14 @@ Logs: `sudo docker logs -f m31-demo` · metrics: `:19191/metrics` · stop: `sudo
 - No HiCache in the demo → §3 cache-hit is radix-only; the >85% bar on the 80k shared-prefix frame should still hold in RAM.
 - If OOM at CUDA-graph capture: lower `MEMFRAC` (0.85→0.80) before touching `CHUNK`; keep the vendor's DP8/EP8 topology.
 - Rollback = `docker rm -f m31-demo`; nothing else on the node depends on it.
+
+## What `launch.sh` logs (per launch → `/data01/minimax31/logs/launch-<ts>.log` + a line in `launches.jsonl`)
+1. **preflight** — weights path, file/safetensors count, size, `config.json` arch + quant flag; refuses on `.incomplete` files.
+   Image id + the engine commit baked into the image; GPU model/count/used-mem/driver; warns if any compute process is already on the GPUs;
+   host load, free RAM, free disk, JIT-cache size; notes if it is replacing an existing container.
+2. **resolved env / docker opts / argv** — the exact strings passed, so a log is a complete reproduction recipe.
+3. **docker run** — container id, t0; the JSONL ledger line (ts, container, image id, engine commit, weights fingerprint, served name, port, memfrac, maxreq, chunk, extra args, log path).
+4. **startup milestones with +seconds since t0** — filtered engine log: weight load begin/end, KV allocation, memory pool, `max_total_num_tokens`, CUDA-graph captures, "fired up"; any Traceback/OOM/Exited/watchdog line is captured verbatim.
+   If the container dies before `/health`, the last 30 engine lines are appended and the script exits 1.
+5. **ready** — seconds to healthy, per-GPU memory after load, `/v1/models` ids, engine summary (`max_total_num_tokens`, `context_len`, `available_gpu_mem`, startup timings), and the exact `gate.sh` command to run next.
+`FOLLOW=0` returns immediately after `docker run` (steps 1–3 only). `WAIT` (default 3600 s) caps the wait for `/health`.
