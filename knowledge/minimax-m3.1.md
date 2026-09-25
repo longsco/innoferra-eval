@@ -137,6 +137,24 @@ admission cap are the next knobs. (f) Vendor caps (max-running 32/rank) were nev
 **Next sweeps (in order):** same frame with gateway `ROUTE_DP_SIZE=8` pinning → `DP_SIZE=2` (TP4×DP2) → `DP_SIZE=1 DP_ATTN=0`
 (TP8) → cold-distinct frame (bench B) → DSpark when shipped. Raw CSV/log: `results/minimax-m3.1/bench/tpm-20260925T045802Z.*`.
 
+## 4f. Gateway profile for M3-shaped (bypass) traffic — findings while wiring it (2026-09-25)
+
+Kit: `serving/minimax-m3.1/gateway.sh` (profile) over halyard-lab `deploy/gateway/{shim.py,run_gateway.sh,Dockerfile}` copied to
+`/data01/minimax31/gateway`; node-local `:8000` → engine `:19191`; key in `~/.m31_apikey`; log `/data01/minimax31/logs/m31_access.log`.
+
+| Finding | Evidence | What the gateway does about it |
+|---|---|---|
+| **The demo fork ignores OpenAI-style `thinking:{type}`** — the field 100% of M3 traffic uses (29% `disabled`). | Engine-direct `thinking:{type:disabled}` still returned 55 chars of `reasoning_content` (ct 21 vs 2). `protocol.py normalize_reasoning_inputs` only reads `reasoning:{effort}` / `reasoning_effort`; the template gates no-think on `chat_template_kwargs.thinking_mode` (undefined ⇒ adaptive; `disabled` pre-fills `</think>`; `enabled` forces `<think>`). | `THINKING_MODE=m31`: pop `thinking`, `setdefault` `chat_template_kwargs.thinking_mode = type` for adaptive/disabled/enabled, leave `reasoning_effort` and everything else verbatim. Verified through the gateway: disabled ⇒ ct 2, no reasoning; adaptive ⇒ model's choice; enabled ⇒ reasoning present. |
+| **`reasoning_tokens` is always 0** on the fork (top-level, broken counter). | §4c; unchanged after DP8 relaunch. | Gateway mounts the model dir and counts `reasoning_content` with the model's own `tokenizer.json` (`tokenizers`), filling `completion_tokens_details.reasoning_tokens` when the engine reports 0/None — unary and stream (accumulated deltas, patched into the usage chunk). 63 chars → 20 tokens, 247 chars → 45. |
+| `/v1/models` lists only the served id. | Clients validate the list before chatting. | With `ECHO_REQUESTED_MODEL=1` the gateway appends every `ALLOWED_MODELS` alias (`minimax-m3, MiniMax-M3, minimax-m3.1, MiniMax-M3.1`) to the engine's listing. |
+| Manual §5 wants per-request distributions, the GLM profile sampled 2% of 2xx. | Earlier misread of the B200 success rate. | `SAMPLE_2XX=1.0` + new log fields per line: `rt=` reasoning tokens, `rc=` reasoning chars, `tc=` tool_calls, `fin=` finish_reason, `ttft=` ms to first content/reasoning/tool delta, `cached=` cached_tokens. |
+| `role:root` | Engine accepts natively (§4c). | `REWRITE_ROLES=` (empty) — no rewrite, unlike the GLM-5.3 profile. |
+| Images work on the engine (`image_tokens` reported); video untested. | §4c. | `REJECT_CONTENT_TYPES=video_url` → 503 + Retry-After until the official video file passes. |
+| DP8 = 8 prefix caches, round-robin. | §4c/§4d. | `ROUTE_DP_SIZE=8`: sha256(prompt head) → `X-Data-Parallel-Rank`, so a repeated prefix lands on the rank that has it. |
+
+Cost of the thinking fix alone: the `disabled` cohort went from ~20 reasoning tokens per trivial turn to 0 — on real prompts this is the
+difference between honouring the client's no-think request and burning decode on hidden reasoning.
+
 ## 5. Node 0008 state (2026-09-25)
 Reimaged, empty, `ssh 0008` (port 22 fleet-only, jump via 10.10.100.118). 8×B300 275 GB, 256 cores, 3 TB RAM, 14 TB `/data01`.
 Weights `/data01/minimax31/MiniMax-M3.1-preview-private` — **download complete 2026-09-25** (62/62 files, 48 safetensors, 0 incomplete,

@@ -43,6 +43,13 @@
   and always 0** even with hundreds of chars of `reasoning_content` (broken counter, wrong placement vs the manual's nested
   `completion_tokens_details`); `prompt_tokens_details` is **omitted entirely on a cache miss** instead of `{"cached_tokens": 0}`,
   present (`128`) on a hit. Both will fail `usage.cached_tokens_reported` / `reasoning_tokens_nested`-style probes.
+- **Never assume a fork honours a request field because the model card lists it.** M3.1's demo fork silently ignores the OpenAI-style
+  `thinking:{type}` that all M3 traffic sends — `disabled` still produced hidden reasoning (ct 21 vs 2). It only reads `reasoning_effort`
+  and `chat_template_kwargs.thinking_mode`. A "passthrough" gateway would have leaked reasoning on 29% of real requests while every
+  probe that only checks `reasoning_tokens == 0` passed, because that counter is also broken. Test each control field end-to-end
+  (engine-direct, look at `reasoning_content`), then translate in the gateway (`THINKING_MODE=m31`).
+- **When the engine's counter is broken, count with the model's tokenizer in the gateway** rather than reporting 0 or estimating:
+  `tokenizers` + the checkpoint's `tokenizer.json` gives the same number the engine would. It costs one mount and ~1 ms per response.
 - **DP8 = eight separate prefix caches behind round-robin routing.** A never-seen prefix sent 10× missed on calls 1–8 (one per
   DP rank) and hit on 9–10. Any §3 cache-hit or 80k shared-prefix number on a DP8 engine without a prefix-aware router in front
   measures the router, not the model. Prod M3 avoids this with Dynamo KV-aware routing; the demo has nothing in front.

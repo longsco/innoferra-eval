@@ -29,7 +29,11 @@ would run at fleet scale and is where the production learnings pay off.
 attention TP1"; TP8 is ruled out by the same check. Baseline stays the vendor DP8 sweep (§4e: compliant c1 0.48 M, max-batch 7.4 M).
 Cache placement across the 8 ranks is therefore a router problem, not an engine flag.
 
-### 1 — gateway profile for M3.1 (architecture A)
+### 1 — gateway profile for M3.1 (architecture A) — DEPLOYED 2026-09-25, gate running
+Status: shim + profile live on 0008 (`:8000` → `:19191`, `serving/minimax-m3.1/gateway.sh`). **Plan correction:** `passthrough` was
+wrong — the demo fork ignores OpenAI-style `thinking:{type}` entirely (disabled still reasoned), so the profile is `THINKING_MODE=m31`
+(maps `thinking.type` → `chat_template_kwargs.thinking_mode`, passes `reasoning_effort` through). `reasoning_tokens` cannot be
+"counted from the stream" (fork reports 0) — the gateway counts `reasoning_content` with the model tokenizer instead. Details: knowledge §4f.
 Shim changes (halyard-lab `deploy/gateway/shim.py`): `THINKING_MODE=passthrough` (leave `thinking`/`reasoning_effort`/
 `chat_template_kwargs` untouched); `/v1/models` lists `ALLOWED_MODELS` aliases; access log at `SAMPLE_2XX=1.0` with the §5 fields
 per response (`reasoning_tokens` counted from the stream, `tool_calls` count, `finish_reason`, input/output tokens, cached_tokens,
