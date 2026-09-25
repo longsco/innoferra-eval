@@ -70,6 +70,15 @@ Image `minimax-m31-sglang:demo-bef87f4` built in 114 s once deps were right: 33 
 | flags are per-DP-rank | argv chunk 131072 / max-running 256 → engine 16384 / 32; `max_total_num_tokens=5,028,096`, ctx 1,048,576 | capacity reasoning must use the engine's line |
 | first-launch startup 561 s | weights 19 s, prefill CUDA graph 220 s, decode graph 33 s; ~248 GB/GPU resident | JIT cache persisted → expect much faster relaunch |
 | small `max_tokens` → empty content | 48-token canary at effort=low returned '' | every probe/canary needs ≥256 budget |
+| **DP8 = 8 independent per-rank prefix caches, round-robin routed** | never-seen 3.3k-token prefix ×10: calls 1–8 land on DP6,7,0,1,2,3,4,5 with `cached=128` (chat header only); calls 9–10 hit `cached=3328` (`probe_dp_cache.py`) | a prefix must repeat ≥8× before the node is warm; low-repeat traffic gets ~1/8 the cache benefit; §3 (>85%) and the gold 80k frame need a **prefix-aware router in front** (as prod M3 uses Dynamo KV-routing) — or the fork's cache-aware DP balancing if it has one |
+| `reasoning_effort` unlisted value → 400 | `'ultra'` rejected | fork validates; vendor says validation is optional, so acceptable — probe records, doesn't fail |
+
+**Onboarding run (`innoferra onboard -m minimax-m3.1`, 2026-09-25 04:29Z, quick frame 2k in / 512 out):** format 29/33
+(fails: `cached_tokens_reported` = round-robin landed both calls on cold ranks + details omitted on miss; `unknown_model_404`
+and `bad_temperature_400` = bare engine, gateway territory; `effort_unknown_value` = probe was stricter than the vendor text,
+relaxed); **load PASS — per-stream 67.9 tok/s @c1, 65.1 @c4, TTFT 0.89 / 1.83 s, SR 100%, cache 99.6%** (that per-stream is
+ABOVE the 60 bar without DSpark, on 2k prompts; the 80k frame is the real question); bypass 8/8 on the M3 synthetic sample
+(root role, tools, stream all accepted natively).
 
 ## 5. Node 0008 state (2026-09-25)
 Reimaged, empty, `ssh 0008` (port 22 fleet-only, jump via 10.10.100.118). 8×B300 275 GB, 256 cores, 3 TB RAM, 14 TB `/data01`.
@@ -89,6 +98,7 @@ carries M3's §2/§3 SLO bars and leaves §4 empty on purpose.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
    2b. **NEW:** why is the raw `/generate` path non-deterministic at temp 0 while chat is stable? (DP8 rank routing? megamoe a2a?) — vendor question.
 3. Does `chunked-prefill 131072` + `mem 0.85` survive a 130k-token prompt on B300, or does prefill activation OOM as on the B200 GLM case?
+   3b. **NEW (load-bearing):** does the fork have cache-aware DP routing (a flag), or must a prefix-aware router sit in front? Without it §3 and the gold frame are not measurable honestly.
 4. Image/video inputs: do the official image/video test files pass on the demo engine?
 5. Cache-hit on the 80k shared-prefix frame without HiCache — still >85%?
 6. When DSpark ships: accept length on the gold 80k frame vs EAGLE3's 2.53 on M3.

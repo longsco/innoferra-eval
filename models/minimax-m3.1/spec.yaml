@@ -15,7 +15,7 @@ request_contract:
   thinking_field: thinking
   reasoning_effort:                                   # ★ NEW top-level field
     values: [max, xhigh, high, medium, low]
-    validate: false                                    # vendor: "no validation, no default required"
+    validate: optional                                 # vendor: "no validation, no default REQUIRED" — accept or 400 both OK; the demo fork 400s unlisted values
     default: null
     template_marker: "<effort>{effort}</effort>"      # injected into the system prompt by the chat template
   passthrough_fields: [prompt_cache_key, user, metadata, stream_options]

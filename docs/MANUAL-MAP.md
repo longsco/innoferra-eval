@@ -37,3 +37,9 @@ Five areas: **Format · Performance · Cache · Quality · Bypass-traffic valida
   `completion_tokens_details`, and (first run only) budget probes could not read top-level reasoning tokens — fixed.
   Budget control verified on the engine: `reasoning_effort` low → 7 reasoning tokens, max → 61 on the same prompt.
 - The gateway-fronted target (`glm53-b200-bypass`) could not be probed: saturated by live bypass traffic (`MAX_INFLIGHT=12` → 429).
+
+## MiniMax-M3.1 (preview) spec — what passes today (2026-09-25, vendor demo engine on 0008)
+- `innoferra onboard -m minimax-m3.1 --model-id minimax-m3.1-nvfp4`: **format 29/33** (bare-engine gaps: any model id, temperature 99
+  accepted; `cached_tokens` absent when the 2-call probe lands on cold DP ranks; effort validation probe relaxed), **load PASS**
+  (per-stream 65–68 tok/s, TTFT <2 s, SR 100%, cache 99.6% on the 2k quick frame), **bypass 8/8**.
+- Structural finding: **DP8 round-robin over 8 per-rank prefix caches** — 8 cold prefills per new prefix. See `knowledge/minimax-m3.1.md` §4c.

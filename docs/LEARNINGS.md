@@ -43,6 +43,9 @@
   and always 0** even with hundreds of chars of `reasoning_content` (broken counter, wrong placement vs the manual's nested
   `completion_tokens_details`); `prompt_tokens_details` is **omitted entirely on a cache miss** instead of `{"cached_tokens": 0}`,
   present (`128`) on a hit. Both will fail `usage.cached_tokens_reported` / `reasoning_tokens_nested`-style probes.
+- **DP8 = eight separate prefix caches behind round-robin routing.** A never-seen prefix sent 10× missed on calls 1–8 (one per
+  DP rank) and hit on 9–10. Any §3 cache-hit or 80k shared-prefix number on a DP8 engine without a prefix-aware router in front
+  measures the router, not the model. Prod M3 avoids this with Dynamo KV-aware routing; the demo has nothing in front.
 - **DP8 rescales the flags you pass.** `--chunked-prefill-size 131072` and `--max-running-requests 256` show up in the engine as
   `16384` and `32` — per-DP-rank values (÷8). Read the engine's `max_total_num_tokens` line, not your argv, when reasoning about
   capacity: 5,028,096 KV tokens across the node, context 1,048,576.

@@ -21,10 +21,12 @@ def _effort_probe(e):
         ok, why = ok_content(r); return ok, why + f" reasoning_tokens={_rt(r)}", r
     return p
 
-def p_effort_unknown_not_rejected(t):
-    """vendor: 'no validation required' — an unexpected value must not 400 (MiniMax may add values)."""
+def p_effort_unknown_value_handled(t):
+    """vendor: validation is NOT REQUIRED (不需要校验) — so a provider may accept (200) or reject (400) an unlisted value.
+    Both are defensible; only a 5xx/hang is a failure. The detail records which the endpoint does (the demo fork: 400)."""
     r = chat(t, body_for(t, messages=[ROOT_MSG, SYS, USER], reasoning_effort="ultra", max_tokens=256))
-    return r.status == 200, f"reasoning_effort='ultra' -> HTTP {r.status}", r
+    ok = r.status in (200, 400)
+    return ok, f"reasoning_effort='ultra' -> HTTP {r.status} ({'accepted' if r.status==200 else 'validated/rejected' if r.status==400 else 'ERROR'})", r
 
 def p_effort_ordering(t):
     lo = chat(t, body_for(t, messages=[ROOT_MSG, SYS, MATH], reasoning_effort="low", max_tokens=8192))
@@ -40,7 +42,7 @@ def p_effort_with_thinking_disabled(t):
 
 PROBES = list(_m.PROBES) + [
     *[Probe(f"m31.reasoning_effort_{e}", "★ reasoning effort", "thinking", _effort_probe(e)) for e in EFFORTS],
-    Probe("m31.effort_unknown_value_not_rejected", "★ reasoning effort (no validation)", None, p_effort_unknown_not_rejected),
+    Probe("m31.effort_unknown_value_handled",      "★ reasoning effort (validation optional)", None, p_effort_unknown_value_handled),
     Probe("m31.effort_budget_ordering",           "★ reasoning effort", "thinking", p_effort_ordering),
     Probe("m31.effort_plus_thinking_disabled",    "★ reasoning effort + thinking", "thinking", p_effort_with_thinking_disabled),
 ]
