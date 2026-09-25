@@ -42,10 +42,10 @@ TTFT). Profile: `ALLOWED_MODELS=minimax-m3,minimax-m3.1,minimax-m3.1-nvfp4 ECHO_
 Gate: `innoferra onboard -m minimax-m3` **33/33** through the gateway + official `m3_format_check` all four files + `innoferra bypass`
 replay of ≥300 captured real M3 requests ≥ 99% success with the 7-dim table populated. ~1 day.
 
-### 2 — reachability for the mirror
-The mirror source is external; 0008's ports are closed to the internet. Either a route + TLS on the `.247` openresty for a hostname
-(owner: whoever runs `.247`), or a firewall pinhole for the mirror's source CIDR to 0008:8000. Exchange the API key out of band.
-Gate: the mirror's health probe 200s over TLS. External dependency — start the request now.
+### 2 — reachability for the mirror — NOT OURS (decided 2026-09-25)
+Nothing goes live from this side. Phase 1 is a **simulation**: the official verifier and replays of captured requests against
+our gateway, on the box. The real bypass happens when the TokenHub project points at the endpoint (`:8000`, key in
+`~/.m31_apikey` on 0008); routing/TLS/firewall belong to that project.
 
 ### 3 — Dynamo topology (architecture B), gated
 1. **Routing gate first (½ day):** verify the fork emits KV events per dp_rank and honors dynamo's dp-rank dispatch (the same
