@@ -137,6 +137,25 @@ admission cap are the next knobs. (f) Vendor caps (max-running 32/rank) were nev
 **Next sweeps (in order):** same frame with gateway `ROUTE_DP_SIZE=8` pinning → `DP_SIZE=2` (TP4×DP2) → `DP_SIZE=1 DP_ATTN=0`
 (TP8) → cold-distinct frame (bench B) → DSpark when shipped. Raw CSV/log: `results/minimax-m3.1/bench/tpm-20260925T045802Z.*`.
 
+## 4e'. Same-day A/B: tp8/dp8 vs 2×tp4/dp4 (2026-09-25, `bench_configs.sh`)
+
+| node concurrency | tp8/dp8 TPM (M) | tok/s | TTFT p50 s | 2×tp4/dp4 TPM (M) | tok/s | TTFT p50 s | Δ TPM |
+|---|---|---|---|---|---|---|---|
+| 1 | 0.463 | 63.4 | 1.17 | 0.476 | 63.3 | 1.01 | +3% |
+| 4 | 1.595 | 57.3 | 1.42 | 1.752 | 61.0 | 1.53 | +10% |
+| 8 | 2.786 | 50.8 | 1.55 | 3.161 | 56.0 | 2.08 | +13% |
+| 16 | 4.570 | 44.1 | 1.97 | 5.468 | 49.1 | 1.49 | +20% |
+| 32 | 6.574 | 35.0 | 4.21 | 8.929 | 41.2 | 1.48 | +36% |
+| 64 | 6.936 | 35.8 | 26.58 | 12.594 | 33.8 | 5.30 | +82% |
+
+Both layouts satisfy the fork's attention-TP1 rule (`tp == dp`, dp-attention). Per-rank knobs held equal (chunked-prefill 16384/rank,
+max-running 32/rank: tp4 uses `CHUNK=65536 MAXREQ=128`). Launch gotchas for two engines on one host with `--network host`: sglang derives
+detokenizer/rpc/metrics ports as `port+235..` → base ports must be ≥100 apart (19191/19291); megamoe caps tokens/rank at 16384
+(`SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK`) so the chunk must be scaled with DP. Reading: identical single-stream speed,
+2×tp4 keeps scaling where dp8 flattens at ~7 M — the 8-rank MoE lock-step (one rank's prefill chunk stalls seven) is the cost, the same
+mechanism as the production DP8 head-of-line finding. **Deployed layout for the bypass: 2×tp4/dp4** with the gateway hash-routing across
+engines (`UPSTREAMS=2`, `ROUTE_DP_SIZE=4`). Caches are still 8 (2×4) — Architecture B remains the structural fix.
+
 ## 4f. Gateway profile for M3-shaped (bypass) traffic — findings while wiring it (2026-09-25)
 
 Kit: `serving/minimax-m3.1/gateway.sh` (profile) over halyard-lab `deploy/gateway/{shim.py,run_gateway.sh,Dockerfile}` copied to

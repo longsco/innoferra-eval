@@ -13,7 +13,7 @@ set -uo pipefail
 GW=${GW:-/data01/minimax31/gateway}; cd "$GW"
 export NAME=${NAME:-m31-gateway} PORT=${PORT:-8000} SGLANG_URL=${SGLANG_URL:-http://127.0.0.1:19191}
 # Two-engine layout (2 x tp4/dp4, bench_configs.sh): UPSTREAMS=2 -> hash-route across :19191/:19192, 4 DP ranks each
-if [ "${UPSTREAMS:-1}" = 2 ]; then export SGLANG_URLS=${SGLANG_URLS:-http://127.0.0.1:19191,http://127.0.0.1:19192} ROUTE_DP_SIZE=${ROUTE_DP_SIZE:-4}; fi
+if [ "${UPSTREAMS:-1}" = 2 ]; then export SGLANG_URLS=${SGLANG_URLS:-http://127.0.0.1:19191,http://127.0.0.1:19291} ROUTE_DP_SIZE=${ROUTE_DP_SIZE:-4}; fi
 export SERVED_MODEL=minimax-m3.1-nvfp4 ALLOWED_MODELS=minimax-m3,MiniMax-M3,minimax-m3.1,MiniMax-M3.1,minimax-m3.1-nvfp4
 export ECHO_REQUESTED_MODEL=1 THINKING_MODE=m31 DEFAULT_CLEAR_THINKING=0 TOKENIZER_DIR=${TOKENIZER_DIR:-/data01/minimax31/MiniMax-M3.1-preview-private}
 export REWRITE_ROLES= REJECT_CONTENT_TYPES=${REJECT_CONTENT_TYPES:-video_url} REJECT_CONTENT_STATUS=503

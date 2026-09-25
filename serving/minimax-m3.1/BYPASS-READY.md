@@ -21,22 +21,38 @@ every request logged with tokens/TTFT/reasoning/tool-calls/finish (`/data01/mini
 ## Operate
 ```
 # on 0008
-sudo docker ps | grep m31                      # m31-demo (engine) + m31-gateway
+sudo docker ps | grep m31                      # m31-a + m31-b (engines) + m31-gateway
 bash /data01/minimax31/serving/gate.sh         # engine correctness canaries
 bash /data01/minimax31/serving/gateway.sh      # (re)start gateway with the M3.1 profile
 tail -f /data01/minimax31/logs/m31_access.log  # live requests: status, ms, pt/ct, rt (reasoning tokens), tc, fin, ttft, cached
-NAME=m31-demo bash /data01/minimax31/serving/launch.sh   # relaunch engine (tp8/dp8 default)
+# engines (2 x tp4/dp4, the deployed layout):
+NAME=m31-a PORT=19191 GPUS=0,1,2,3 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 bash /data01/minimax31/serving/launch.sh
+NAME=m31-b PORT=19291 GPUS=4,5,6,7 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 bash /data01/minimax31/serving/launch.sh
+UPSTREAMS=2 MAX_INFLIGHT=32 bash /data01/minimax31/serving/gateway.sh
+# single tp8/dp8 engine (vendor demo layout, slower at scale): NAME=m31-demo bash launch.sh ; bash gateway.sh
 ```
 Both containers are `--restart unless-stopped`; the node's JIT cache is mounted so a relaunch is minutes, not the first-run 10 min.
 
 ## Capacity (same-day measurement; fill from `bench/configs-<ts>.log`)
 _Frame: manual §2, 80k shared prefix + 128-token question, 600 output tokens, cache-warm._
 
-| node concurrency | tp8/dp8 TPM (M) | per-stream tok/s | TTFT p50 s | 2×tp4/dp4 TPM (M) | tok/s | TTFT p50 s |
-|---|---|---|---|---|---|---|
-| (pending) | | | | | | |
+| node concurrency | tp8/dp8 TPM (M) | tok/s | TTFT p50 s | 2×tp4/dp4 TPM (M) | tok/s | TTFT p50 s | Δ TPM |
+|---|---|---|---|---|---|---|---|
+| 1 | 0.463 | 63.4 | 1.17 | 0.476 | 63.3 | 1.01 | +3% |
+| 4 | 1.595 | 57.3 | 1.42 | 1.752 | 61.0 | 1.53 | +10% |
+| 8 | 2.786 | 50.8 | 1.55 | 3.161 | 56.0 | 2.08 | +13% |
+| 16 | 4.570 | 44.1 | 1.97 | 5.468 | 49.1 | 1.49 | +20% |
+| 32 | 6.574 | 35.0 | 4.21 | 8.929 | 41.2 | 1.48 | +36% |
+| 64 | 6.936 | 35.8 | 26.58 | 12.594 | 33.8 | 5.30 | +82% |
 
-Compliance point (SR 100%, TTFT < 3 s, 60 < TPS ≤ 250) and the recommended `MAX_INFLIGHT` are stated once the table is in.
+Measured 2026-09-25 08:10–09:05Z on node 0008 (`bench/configs-20260925T084613Z.log`), same frame, same day, SR 100% everywhere.
+2×tp4 = two independent engines (GPUs 0-3 `:19191`, GPUs 4-7 `:19291`), each C/2; node TPM = sum. Single-stream speed is identical
+(attention is per-GPU in both); the gain is the smaller lock-step group for the MoE exchange (4 ranks instead of 8), which is exactly the
+DP8 head-of-line coupling seen on the production fleet.
+
+**Deployed for tomorrow: 2×tp4/dp4** behind one gateway (`UPSTREAMS=2`, prompt-hash routing across the two engines, 4-rank pinning inside each).
+Strict manual SLO (TPS > 60): node concurrency 4 → **1.75 M TPM**. Practical TTFT-bound point (TTFT p50 < 2 s): concurrency 32 → **8.9 M TPM**
+at 41 tok/s per stream. Gateway admission `MAX_INFLIGHT=32` (429 above).
 
 ## Simulation gates (through the gateway, this node)
 | gate | result |
