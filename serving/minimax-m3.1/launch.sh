@@ -18,6 +18,8 @@ TP_SIZE=${TP_SIZE:-8}; EP_SIZE=${EP_SIZE:-8}; DP_SIZE=${DP_SIZE:-8}; DP_ATTN=${D
 GPUS=${GPUS:-all}                         # "all" or a CUDA_VISIBLE_DEVICES list, e.g. GPUS=0,1,2,3 for one of two tp4/dp4 engines
 SPEC=${SPEC:-none}                        # none | dspark  (dspark: draft at $MODEL_PATH/dspark, block size from DSPARK_BLOCK, default = draft config's dspark_block_size)
 DSPARK_BLOCK=${DSPARK_BLOCK:-}
+MOE_A2A=${MOE_A2A:-megamoe}; MOE_RUNNER=${MOE_RUNNER:-deep_gemm}
+TRAINING_COMPAT=${TRAINING_COMPAT:-1}     # SGLANG_M3_TRAINING_COMPATIBLE; 0 ONLY for experiments (vendor: numerics no longer training-matched)   # vendor recipe; DSpark+dp-attention demands MOE_A2A=none (built-in TP MoE)
 # FORK CONSTRAINT (measured 2026-09-25, container restart-looped): "M3 training-compatible arithmetic requires attention TP1
 # (TP1, or --enable-dp-attention with tp == dp) and PP1". So on this fork attention-TP must be 1: DP_SIZE == TP_SIZE with
 # dp-attention on. TP4xDP2 and TP8 are NOT possible. Refuse early instead of burning 10 minutes.
@@ -34,7 +36,7 @@ TS=$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$JIT" "$LOGS"; LOG="$LOGS/launch-$TS.lo
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
 hdr(){ printf '\n== %s ==\n' "$*" | tee -a "$LOG"; }
 
-hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  gpus=$GPUS  spec=$SPEC  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
+hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  gpus=$GPUS  spec=$SPEC  moe=$MOE_A2A/$MOE_RUNNER  training-compat=$TRAINING_COMPAT  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
 # --- preflight -------------------------------------------------------------------------------------------------
 hdr "preflight"
 [ -f "$MODEL_PATH/config.json" ] || { log "FATAL no config.json under $MODEL_PATH"; exit 1; }
@@ -58,7 +60,7 @@ ENV_VARS=(
   SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE=16
   SGLANG_MINIMAX_SPARSE_KV4=1
   SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK=16384
-  SGLANG_M3_TRAINING_COMPATIBLE=1
+  SGLANG_M3_TRAINING_COMPATIBLE=$TRAINING_COMPAT
   SGLANG_DP_USE_GATHERV=1
   SGLANG_DISABLE_MSA=1
 )
@@ -68,7 +70,7 @@ ARGV=(python3 -m sglang.launch_server
   --tp-size "$TP_SIZE" --ep-size "$EP_SIZE" --dp-size "$DP_SIZE" --moe-dense-tp-size "$MOE_DENSE_TP"
   $([ "$DP_ATTN" = 1 ] && echo --enable-dp-attention) --quantization mxfp8
   --disable-shared-experts-fusion
-  --moe-a2a-backend megamoe --moe-runner-backend deep_gemm
+  --moe-a2a-backend "$MOE_A2A" --moe-runner-backend "$MOE_RUNNER"
   --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul
   --kv-cache-dtype fp8_e4m3 --chunked-prefill-size "$CHUNK"
   --cuda-graph-backend-prefill breakable
@@ -109,6 +111,8 @@ $DOCKER logs -f "$NAME" 2>&1 | grep --line-buffered -E "$PAT" | while IFS= read 
 done &
 FOLLOWER=$!
 until curl -sf -m 5 "http://127.0.0.1:$PORT/health" >/dev/null; do
+  RC=$($DOCKER inspect "$NAME" --format '{{.RestartCount}}' 2>/dev/null || echo 0)
+  if [ "${RC:-0}" -ge 2 ]; then log "FATAL container restart-looping (RestartCount=$RC); last error:"; $DOCKER logs --tail 200 "$NAME" 2>&1 | grep -E "Error|Exception" | tail -3 | cut -c1-220 | tee -a "$LOG"; $DOCKER rm -f "$NAME" >/dev/null 2>&1; exit 3; fi
   if ! $DOCKER ps --format '{{.Names}}' | grep -qx "$NAME"; then log "FATAL container exited after $(( $(date +%s) - T0 ))s — last lines:"; $DOCKER logs --tail 30 "$NAME" 2>&1 | tee -a "$LOG"; kill $FOLLOWER 2>/dev/null; exit 1; fi
   [ $(( $(date +%s) - T0 )) -gt "$WAIT" ] && { log "TIMEOUT ${WAIT}s waiting for /health"; kill $FOLLOWER 2>/dev/null; exit 1; }
   sleep 10

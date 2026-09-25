@@ -222,6 +222,29 @@ unknown and likely poor — a cheap experiment (hidden size matches, fork has th
 **Net:** the only path to per-stream TPS above 60 under load is **DSpark from MiniMax**. Nothing in this checkpoint or image lets us
 add speculation ourselves; a self-trained draft (as the fleet did with DSpark/EAGLE3 on M3) is the fallback if the vendor drop slips.
 
+## 6c. preview2 + DSpark drop (2026-09-25, `MiniMaxAI/MiniMax-M3.1-preview2-dspark-private`)
+
+**What arrived:** 101 files / 236 GB; the target checkpoint (`M3_1-512k-qat-0918-stage-0_merge_stage`, same architecture and quant config as
+the 09-22 preview, `num_mtp_modules`/`num_nextn_predict_layers` keys dropped) plus `dspark/` — a 2.3 GB **fp8 draft**, `architectures:
+["DSparkMiniMaxDraftModel"]`, 5 MiniMax decoder layers fed from target layers `[3, 17, 31, 45, 59]`, dense FFN 12288, vanilla Markov head
+(rank 256), **confidence head present** (`enable_confidence_head: true`, contradicting the 09-22 preview note), `dspark_block_size: 7`,
+noise token 200058. No README, no launch recipe. Vendor Slack: "production-ready", verification = simple cases + benchmarks + shadow traffic;
+default request params score ~65 on AIME-26 30×16 and ~76 on MMMU_Pro 3460.
+
+**preview2 target without DSpark works:** tp4/dp4 on GPUs 4-7 healthy in 290 s, gate canaries pass (one `tens` canary non-deterministic at
+temp 0 across two runs — the DP-rank nondeterminism from §4c, now on the chat path), c1 63.2 tok/s / 0.473 M TPM vs preview1 65.7 / 0.502 M
+on the same frame at the same time: **same speed, same numerics path**.
+
+**DSpark cannot start on the 09-22 engine (`bef87f4`) — three mutually exclusive rules:**
+1. `_handle_dspark`: DSpark + dp-attention requires `--enable-dp-lm-head` **and** `moe_a2a_backend='none'` (built-in TP MoE), no context parallel.
+2. `SGLANG_M3_TRAINING_COMPATIBLE=1` raises "M3 training-compatible arithmetic requires MegaMoE" for anything but `--moe-a2a-backend megamoe`.
+3. Attention-TP1 (tp == dp with dp-attention) is mandatory in training-compatible mode, so "DSpark without dp-attention" is not an option either.
+Tried: `/models/dspark` as draft path with dp-lm-head (→ rule 1 a2a), then a2a=none with ep4 / ep1 / runner auto (→ rule 2). The fork also has
+**no draft-architecture remap for MiniMax** (`model_config.py` remaps only DeepSeek-V4 → `DeepseekV4ForCausalLMDSpark`; `models/dspark.py`
+registers `Qwen3DSparkModel`/`DSparkDraftModel` only), so even past the rules the draft class would be unresolved. **MiniMax must ship the
+engine commit that goes with this drop** (their config `_name_or_path` points at an internal tree). Experiment with training-compat OFF
+(`TRAINING_COMPAT=0`, `try_dspark4.sh`) is informational only — see below.
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
