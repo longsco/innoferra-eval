@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends libdw-dev libel
 COPY DeepGEMM /opt/DeepGEMM
 RUN cd /opt/DeepGEMM && MAX_JOBS=${MAX_JOBS} bash build_sgl_deep_gemm.sh \
  && python3 -m pip install --no-deps --force-reinstall dist/*.whl \
- && python3 -c "import deep_gemm; print('deep_gemm ok', getattr(deep_gemm,'__version__','?'))"
+ && cd / && python3 -c "import deep_gemm; print('deep_gemm ok', getattr(deep_gemm,'__version__','?'), deep_gemm.__file__)"
+#    (import check from / — from /opt/DeepGEMM the bare source tree shadows the installed wheel and has no _C module)
 
 # 2. CUTLASS DSL 4.6.2 (vendor-pinned); everything else stays as in the base image; MSA is NOT installed.
 RUN python3 -m pip install 'nvidia-cutlass-dsl[cu13]==4.6.2'
