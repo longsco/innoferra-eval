@@ -30,3 +30,25 @@
   lag-matched → contention externality; prewarming is the wrong remedy; shaping/isolating the causer is.
 - Router `--router-prefill-load-scale inf` = strict cache affinity ignoring load; request counts across nodes vary 1.26× but
   concurrency 4× → residence time, not arrivals, is imbalanced.
+
+## MiniMax-M3.1 first bring-up (2026-09-25, node 0008, vendor demo engine)
+- **Gate a chat-templated model through its chat template.** The fleet's raw `/generate` greedy canary is the wrong instrument
+  for M3.1: the raw path is **non-deterministic at temperature 0** (the same prompt gave `7, 11, 13, 17, 19` / `7, 2, 2, 2` /
+  `7, 11, 11, 13` across runs) and corrupts on <~30-token contexts, while the same checks through `/v1/chat/completions` at
+  temperature 0 are correct and identical run-to-run. Kept raw `/generate` as an informational probe only. DP8 + dp-attention
+  routing across ranks with EP/megamoe reduction order is the leading suspect; report to the vendor, not a launch blocker.
+- **The reasoning-budget trap applies to canaries too.** `max_tokens 48` at `reasoning_effort=low` returned EMPTY content for a
+  list question (the model reasons first); 256 fixed it. Any probe with a small budget must expect empty content on this model.
+- **Usage shape gaps on the demo fork (format-suite findings, not launch blockers):** `reasoning_tokens` is reported **top-level
+  and always 0** even with hundreds of chars of `reasoning_content` (broken counter, wrong placement vs the manual's nested
+  `completion_tokens_details`); `prompt_tokens_details` is **omitted entirely on a cache miss** instead of `{"cached_tokens": 0}`,
+  present (`128`) on a hit. Both will fail `usage.cached_tokens_reported` / `reasoning_tokens_nested`-style probes.
+- **DP8 rescales the flags you pass.** `--chunked-prefill-size 131072` and `--max-running-requests 256` show up in the engine as
+  `16384` and `32` — per-DP-rank values (÷8). Read the engine's `max_total_num_tokens` line, not your argv, when reasoning about
+  capacity: 5,028,096 KV tokens across the node, context 1,048,576.
+- **Startup profile (first launch, cold JIT cache):** 561 s to healthy = weights 19 s (238 GB from NVMe with prefetch) +
+  prefill CUDA-graph capture **220 s** + decode capture 33 s + scheduler/JIT. Second launch should be far shorter (cache mounted).
+  Resident memory ~248 GB/GPU of 275.
+- **Whitespace-insensitive matchers.** The model answered `2,3,5,7,11,13,17,19`; a matcher wanting `2, 3, 5` flagged a false FAIL.
+- Build/launch prerequisites the vendor doc omits: `libdw-dev libelf-dev` in the image (DeepGEMM JIT), `nvidia-container-toolkit`
+  + `nvidia-ctk cdi generate` on a fresh Docker-29 node, DeepGEMM pinned commit lives only in `sgl-project/DeepGEMM`.

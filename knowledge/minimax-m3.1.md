@@ -59,6 +59,18 @@ Image-bake → persistent container → gate → test. Decisions and rationale i
 | DeepGEMM pinned commit "not a tree" | `7fec51c2` exists only in `sgl-project/DeepGEMM`, not `deepseek-ai` | clone the sgl fork |
 Image `minimax-m31-sglang:demo-bef87f4` built in 114 s once deps were right: 33 GB, `deep_gemm 0.2.0` from the wheel, fork `sglang 0.0.0` on Torch 2.11.0+cu130.
 
+## 4c. First-run findings (2026-09-25, gate + probes on the demo engine)
+| finding | evidence | consequence |
+|---|---|---|
+| chat path correct + deterministic | tens/alphabet/primes/17×23 at temp 0, each ×2 identical; medium prompt coherent | engine is serviceable for API traffic |
+| raw `/generate` NON-deterministic at temp 0 | identical prompt → `7, 11, 13, 17, 19` / `7, 2, 2, 2` / `7, 11, 11, 13` across runs; short (<20 tok) contexts fully corrupt | gate through the chat template only; raise with vendor (DP8/megamoe reduction order suspect) |
+| `reasoning_effort` low/max honored | low → "391" in 3 tokens, no reasoning; max → 54–281 chars `reasoning_content`, then "391" | contract works; template `<effort>` injection is live |
+| `reasoning_tokens` = 0, top-level | 281-char reasoning_content, usage `{"reasoning_tokens": 0}`, no `completion_tokens_details` | broken counter + wrong placement — §1 format finding for MiniMax |
+| `cached_tokens` omitted on miss | `prompt_tokens_details: null` on a miss, `{"cached_tokens": 128}` on a hit | manual requires the field; probe `cached_tokens_reported` will flag misses |
+| flags are per-DP-rank | argv chunk 131072 / max-running 256 → engine 16384 / 32; `max_total_num_tokens=5,028,096`, ctx 1,048,576 | capacity reasoning must use the engine's line |
+| first-launch startup 561 s | weights 19 s, prefill CUDA graph 220 s, decode graph 33 s; ~248 GB/GPU resident | JIT cache persisted → expect much faster relaunch |
+| small `max_tokens` → empty content | 48-token canary at effort=low returned '' | every probe/canary needs ≥256 budget |
+
 ## 5. Node 0008 state (2026-09-25)
 Reimaged, empty, `ssh 0008` (port 22 fleet-only, jump via 10.10.100.118). 8×B300 275 GB, 256 cores, 3 TB RAM, 14 TB `/data01`.
 Weights `/data01/minimax31/MiniMax-M3.1-preview-private` — **download complete 2026-09-25** (62/62 files, 48 safetensors, 0 incomplete,
@@ -73,8 +85,9 @@ Official `m3_format_check` runs as-is but **does not test `reasoning_effort`**. 
 carries M3's §2/§3 SLO bars and leaves §4 empty on purpose.
 
 ## 7. Open questions (answer by measurement, not assumption)
-1. Does the fork report `reasoning_tokens` in `usage` (nested) for the `minimax-m3` reasoning parser?
+1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
+   2b. **NEW:** why is the raw `/generate` path non-deterministic at temp 0 while chat is stable? (DP8 rank routing? megamoe a2a?) — vendor question.
 3. Does `chunked-prefill 131072` + `mem 0.85` survive a 130k-token prompt on B300, or does prefill activation OOM as on the B200 GLM case?
 4. Image/video inputs: do the official image/video test files pass on the demo engine?
 5. Cache-hit on the 80k shared-prefix frame without HiCache — still >85%?
