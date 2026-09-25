@@ -1,6 +1,6 @@
 # MiniMax-M3.1 on node 0008 — ready sheet for the TokenHub bypass (prod MiniMax-M3 traffic)
 
-_Status line updated by the operator; numbers below are measured, not planned._
+**READY 2026-09-25 10:10Z** — engines `m31-a`/`m31-b` (2×tp4/dp4) + `m31-gateway` up on 0008, all `--restart unless-stopped`; gates passed (below).
 
 ## What TokenHub points at
 | | |
@@ -58,8 +58,8 @@ at 41 tok/s per stream. Gateway admission `MAX_INFLIGHT=32` (429 above).
 | gate | result |
 |---|---|
 | innoferra `onboard -m minimax-m3` format | 25/25 |
-| official `m3_format_check` | (pending full run after fixes; first run 232/280, subset after fixes 111/123) |
-| replay of 294 captured prod requests | **292/294 = 99.3%** (2026-09-25 08:10Z, conc 8; first run 84.4% before fixes). The 2 failures: engine 500 on two ≥500k-char requests carrying images + 440k-token prompts (under investigation, engine-side). |
+| official `m3_format_check` (all four files) | **268 pass / 8 fail / 4 skip** (2026-09-25 09:12–09:46Z on the deployed layout; first run 232/44). The 8: `root` identity follow-through 50%/30% (<70%) ×2, no tool call on two adversarial prompts, a number emitted as a string, an extra `id` key in a list item, the 10 MB noise image described instead of flagged, and 02_07 hitting the harness's 600 s timeout (20 sequential long generations). All model/template behaviour of the preview checkpoint; none are API-shape failures. |
+| replay of 294 captured prod requests | **294/294 = 100%** (2026-09-25 09:46–10:09Z, conc 8, on the deployed 2×tp4 layout; 84.4% → 99.3% → 100% across the three runs). Every feature cohort 100%: root, stream, tools, tool messages, thinking adaptive/disabled, images (shape), prompts up to 1.9 M chars. |
 
 ## One behaviour decision to know about
 `DEFAULT_REASONING_EFFORT=medium` is applied to requests that send no `reasoning_effort` (and have thinking on). Without it M3.1 has no
