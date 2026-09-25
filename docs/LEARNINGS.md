@@ -61,6 +61,10 @@
   kills the async generator: the stream silently ends with no finish chunk and no `[DONE]`. Under a coalescing timer this only
   fires when the engine pauses (thinking before a tool call, long argument strings), so hand tests pass and the verifier's
   tool-stream cases fail with "last chunk missing finish_reason". Pump lines into an `asyncio.Queue` and time out on `queue.get()`.
+- **Multimodal engines scan the whole prompt for placeholder literals.** A vision fork counted a `<image>` that a user's agent
+  transcript happened to contain, then crashed because no image data matched it. Any text-only tag that looks like a media token is a
+  500 waiting to happen once a client attaches a real image. Neutralise the literals in the gateway when media is present, and put
+  "placeholder literal in text" in the format suite's image probes.
 - **When the engine's counter is broken, count with the model's tokenizer in the gateway** rather than reporting 0 or estimating:
   `tokenizers` + the checkpoint's `tokenizer.json` gives the same number the engine would. It costs one mount and ~1 ms per response.
 - **DP8 = eight separate prefix caches behind round-robin routing.** A never-seen prefix sent 10× missed on calls 1–8 (one per
