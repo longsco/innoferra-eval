@@ -143,6 +143,16 @@ All M3 probes + 8 effort probes (each value; unknown value must NOT 400; low ≤
 Official `m3_format_check` runs as-is but **does not test `reasoning_effort`**. **No 3.1 quality baselines exist** — the spec
 carries M3's §2/§3 SLO bars and leaves §4 empty on purpose.
 
+## 6b. Can we turn on MTP or MSA on this checkpoint? (checked 2026-09-25)
+| lever | answer | evidence |
+|---|---|---|
+| **MTP / NEXTN** | **No — no draft head in the checkpoint.** | `model.safetensors.index.json`: 89,632 tensors, layers 0–59 only, zero `mtp/nextn/draft` tensors; `config`: `num_mtp_modules: 0`, `num_nextn_predict_layers: 0`. The fork *has* `MiniMaxM3SparseForConditionalGenerationNextN` (`minimax_m3_nextn.py`), so the code path exists, but there is nothing to load. Consistent with the preview doc: M3.1 moves from EAGLE-like MTP to DSpark, so the MTP head was dropped. |
+| **DSpark** | **Not yet — code present, draft weights absent.** | Fork: `--speculative-algorithm DSPARK` with `--speculative-dspark-block-size`, `--speculative-dspark-sps-table-path` (offline-profiled cost table via `sglang.benchmark.dspark_sps_profiler`), `--speculative-dspark-confidence-sts-path`; `DSparkDraftModel`/`DSparkDraftMixin` classes; 47 files. Missing: the trained DSpark **draft model** for M3.1 (vendor: "will do our best to add support as soon as possible"). When it ships we need: draft weights + block size (gamma) + an SPS table profiled on B300. |
+| **MSA** | **Not installable here, and it is a speed lever, not a quality one.** | MSA = MiniMax's fused sparse-attention kernel package (`fmha_sm100`, python module `msa`) — the index-score and sparse-main kernels. The image has **no `msa` module**; the fork ships a **Triton bit-for-bit reproduction** (`kernels/ops/attention/minimax_sparse/q8kv4_msa.py`) used when `SGLANG_DISABLE_MSA=1`. `minimax_sparse_backend.py`: with MSA on, the training-compatible path builds `fmha_sm100` plans per call (host work) and **requires CUDA graphs disabled** — the Triton path is graph-safe. That is why the vendor says "do not install MSA" for the demo. So today: Triton kernels + CUDA graphs. Turning MSA on would need the `msa` package (not distributed to us), a KV4-capable build, and losing CUDA graphs — a net loss until MiniMax ships a graph-safe MSA. |
+
+**Net:** the only path to per-stream TPS above 60 under load is **DSpark from MiniMax**. Nothing in this checkpoint or image lets us
+add speculation ourselves; a self-trained draft (as the fleet did with DSpark/EAGLE3 on M3) is the fallback if the vendor drop slips.
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
