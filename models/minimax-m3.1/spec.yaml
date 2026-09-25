@@ -2,7 +2,7 @@
 # preview "20260922 Preview: MiniMax-M3.1" (PREVIEW-20260922.md, verbatim). Deltas vs M3 are marked ★.
 name: minimax-m3.1
 display: MiniMax-M3.1 (preview)
-model_ids: [minimax-m3.1, MiniMax-M3.1, MiniMax-M3.1-preview]
+model_ids: [minimax-m3.1, MiniMax-M3.1, MiniMax-M3.1-preview, minimax-m3.1-nvfp4]   # last = vendor demo's served name
 authority: "M3 manual 26.06.10 (carried) + MiniMax preview doc 2026-09-22 (★ deltas); final form subject to actual release"
 capabilities_required:
   thinking: true          # thinking:{type: adaptive|disabled} still valid; ★ plus top-level reasoning_effort
