@@ -80,6 +80,31 @@ relaxed); **load PASS — per-stream 67.9 tok/s @c1, 65.1 @c4, TTFT 0.89 / 1.83 
 ABOVE the 60 bar without DSpark, on 2k prompts; the 80k frame is the real question); bypass 8/8 on the M3 synthetic sample
 (root role, tools, stream all accepted natively).
 
+## 4d. Topology — what the vendor demo is, and the alternatives worth an A/B
+**Model shape (config.json):** hidden 6144 · 60 layers · 64 attention heads · **4 KV heads** (GQA 16:1) · head_dim 128 ·
+128 routed experts, top-4, 1 shared · ctx 1,048,576. KV/token with KV4 ≈ 60 layers × 4 heads × 128 × 2 × 0.5 B ≈ 31 KB, so
+the engine's `max_total_num_tokens=5,028,096` **per DP rank** ≈ 154 GB/GPU of KV — memory is not the constraint, compute is.
+
+**What the vendor launch actually is:** `--tp-size 8 --dp-size 8 --enable-dp-attention --ep-size 8` in sglang semantics =
+attention TP per replica = 8/8 = **1** → eight full attention replicas (one per GPU), MoE experts sharded 8-way (EP8, megamoe
+a2a). This is exactly the layout the M3 fleet calls **DEP8**, which it found **NOT viable for the interactive SLO on the gold 80k
+frame** ("8-way cache-frag → TTFT 3–5 s; max-batch/offline only") — and §4c reproduces the mechanism on M3.1 (8 per-rank caches,
+round-robin). It maximizes decode throughput at high concurrency; it is the wrong shape for prefix-heavy interactive traffic
+without a prefix-aware router in front.
+
+| layout (`launch.sh` env) | attention | caches | why / when | cost |
+|---|---|---|---|---|
+| **DP8** (vendor; `DP_SIZE=8`) | 8× TP1 replicas | 8 | vendor-validated; max decode throughput; pair with gateway `ROUTE_DP_SIZE=8` prefix pinning | 8-way cache fragmentation; only the vendor tested this |
+| **TP4 × DP2** (`DP_SIZE=2`) | 2× TP4 replicas | 2 | 4 KV heads shard exactly 1 per rank (no KV replication); 2-way frag only | untested on the fork's sparse-attention kernels |
+| **TP8** (`DP_SIZE=1 DP_ATTN=0`) | 1× TP8 replica | **1** | the fleet's certified interactive M3 layout ("mxfp8-TP8 owns long-ctx"); zero fragmentation, best shared-prefix TTFT | KV heads replicated 2× (4 heads / 8 ranks); per-layer all-reduce; lower peak decode throughput; untested on the fork |
+| TP2 × DP4 (prod M3) | 4× TP2 | 4 | what production runs — but behind Dynamo's KV-aware router, which is what makes it work | needs that router |
+| + DSpark (when shipped) | any | — | the per-stream TPS lever, orthogonal to topology | not in the demo |
+
+**Recommendation:** keep the vendor DP8 as the baseline (it is the only layout they validated), put the gateway's prefix-hash
+DP pinning in front (`ROUTE_DP_SIZE=8`, already implemented in the shim), and A/B `DP_SIZE=2` and `DP_SIZE=1 DP_ATTN=0` on the
+same 80k/600 sweep — each is one env var on `launch.sh`. Decide on the interactive frame (SR100 ∧ TTFT<3 s ∧ TPS>60), not on
+max-batch TPM. The first DP8 sweep is `bench_tpm.sh` (2026-09-25, results in §4e when done).
+
 ## 5. Node 0008 state (2026-09-25)
 Reimaged, empty, `ssh 0008` (port 22 fleet-only, jump via 10.10.100.118). 8×B300 275 GB, 256 cores, 3 TB RAM, 14 TB `/data01`.
 Weights `/data01/minimax31/MiniMax-M3.1-preview-private` — **download complete 2026-09-25** (62/62 files, 48 safetensors, 0 incomplete,

@@ -9,6 +9,12 @@ IMAGE=${IMAGE:-minimax-m31-sglang:demo-bef87f4}
 MODEL_PATH=${MODEL_PATH:-/data01/minimax31/MiniMax-M3.1-preview-private}
 NAME=${NAME:-m31-demo}; PORT=${PORT:-19191}; SERVED=${SERVED:-minimax-m3.1-nvfp4}
 MEMFRAC=${MEMFRAC:-0.85}; MAXREQ=${MAXREQ:-256}; CHUNK=${CHUNK:-131072}
+# Topology (vendor-validated default = attention DP8 / MoE EP8, i.e. tp8 dp8 dp-attention = the fleet's "DEP8").
+# sglang semantics: attention TP per replica = TP_SIZE / DP_SIZE. Variants to A/B on the 80k frame:
+#   DP_SIZE=8 (default)  → 8 attention replicas, 8 per-rank prefix caches (needs a prefix-aware router in front)
+#   DP_SIZE=2            → 2 replicas of attention-TP4 (natural shard for 4 KV heads, 2 caches)
+#   DP_SIZE=1 DP_ATTN=0  → single attention-TP8 replica, ONE cache (the fleet's certified interactive layout on M3)
+TP_SIZE=${TP_SIZE:-8}; EP_SIZE=${EP_SIZE:-8}; DP_SIZE=${DP_SIZE:-8}; DP_ATTN=${DP_ATTN:-1}; MOE_DENSE_TP=${MOE_DENSE_TP:-1}
 JIT=${JIT:-/data01/minimax31/jit-cache}; LOGS=${LOGS:-/data01/minimax31/logs}; EXTRA_ARGS=${EXTRA_ARGS:-}
 FOLLOW=${FOLLOW:-1}                      # 1 = stay attached and log startup milestones until /health (or WAIT s); 0 = return right after docker run
 WAIT=${WAIT:-3600}
@@ -18,7 +24,7 @@ TS=$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$JIT" "$LOGS"; LOG="$LOGS/launch-$TS.lo
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
 hdr(){ printf '\n== %s ==\n' "$*" | tee -a "$LOG"; }
 
-hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED"
+hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
 # --- preflight -------------------------------------------------------------------------------------------------
 hdr "preflight"
 [ -f "$MODEL_PATH/config.json" ] || { log "FATAL no config.json under $MODEL_PATH"; exit 1; }
@@ -49,8 +55,8 @@ ENV_VARS=(
 ARGV=(python3 -m sglang.launch_server
   --model-path /models --served-model-name "$SERVED"
   --trust-remote-code --host 0.0.0.0 --port "$PORT"
-  --tp-size 8 --ep-size 8 --dp-size 8 --moe-dense-tp-size 1
-  --enable-dp-attention --quantization mxfp8
+  --tp-size "$TP_SIZE" --ep-size "$EP_SIZE" --dp-size "$DP_SIZE" --moe-dense-tp-size "$MOE_DENSE_TP"
+  $([ "$DP_ATTN" = 1 ] && echo --enable-dp-attention) --quantization mxfp8
   --disable-shared-experts-fusion
   --moe-a2a-backend megamoe --moe-runner-backend deep_gemm
   --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul
@@ -74,8 +80,8 @@ ENV_FLAGS=(); for e in "${ENV_VARS[@]}"; do ENV_FLAGS+=(-e "$e"); done
 T0=$(date +%s)
 CID=$($DOCKER run "${DOCKER_OPTS[@]}" "${ENV_FLAGS[@]}" "$IMAGE" "${ARGV[@]}")
 log "container ${CID:0:12} started (t0)"
-printf '{"ts":"%s","name":"%s","container":"%s","image":"%s","image_id":"%s","engine_commit":"%s","model_path":"%s","weights_files":%s,"weights_mb":%s,"served":"%s","port":%s,"memfrac":%s,"maxreq":%s,"chunk":%s,"extra_args":"%s","log":"%s"}\n' \
-  "$TS" "$NAME" "${CID:0:12}" "$IMAGE" "${IMG_ID:7:12}" "${ENGINE:0:12}" "$MODEL_PATH" "$NFILES" "$MB" "$SERVED" "$PORT" "$MEMFRAC" "$MAXREQ" "$CHUNK" "$EXTRA_ARGS" "$LOG" >> "$LOGS/launches.jsonl"
+printf '{"ts":"%s","name":"%s","container":"%s","image":"%s","image_id":"%s","engine_commit":"%s","model_path":"%s","weights_files":%s,"weights_mb":%s,"served":"%s","topology":"tp%s-ep%s-dp%s-dpattn%s","port":%s,"memfrac":%s,"maxreq":%s,"chunk":%s,"extra_args":"%s","log":"%s"}\n' \
+  "$TS" "$NAME" "${CID:0:12}" "$IMAGE" "${IMG_ID:7:12}" "${ENGINE:0:12}" "$MODEL_PATH" "$NFILES" "$MB" "$SERVED" "$TP_SIZE" "$EP_SIZE" "$DP_SIZE" "$DP_ATTN" "$PORT" "$MEMFRAC" "$MAXREQ" "$CHUNK" "$EXTRA_ARGS" "$LOG" >> "$LOGS/launches.jsonl"
 [ "$FOLLOW" = 1 ] || { log "FOLLOW=0: not waiting. logs: $DOCKER logs -f $NAME"; exit 0; }
 
 # --- startup milestones, with timings ----------------------------------------------------------------------------
