@@ -441,6 +441,32 @@ root causes, both Dynamo-frontend side, both now fixed and reproducible with sma
 Gateway hardening from the same run (halyard-lab `shim.py`): an upstream stream that ends with no delta, no finish and no usage is
 now surfaced as an SSE `error` event (`upstream_empty`) instead of a clean 200+empty. Replay to be re-run with both workers.
 
+## 6j. Production-method transfer test + the team's M3.1 endpoint, same battery both sides (2026-09-26 09:50–11:00Z)
+
+**Team endpoint** (`targets/m31-team-prod.yaml`, b300-30 = 10.10.100.130:30800, 5 nodes behind Envoy, live traffic): innoferra M3 format
+25/25; official verifier 261/15 (8 stream packet-shape, 403-vs-401 from Envoy, 3 missed tool calls, oneOf schema, empty long-form
+with thinking on, 81-of-200 images); **verbatim replay 0/294 — every request 404 `Model not found`** (their frontend knows only
+`minimax-m3.1`; TokenHub must rewrite the model field, our gateway aliases it); replay with `--model-override minimax-m3.1`: 294/294
+in 260 s, TTFT p50 1.10 s / p90 7.5 s, per-stream TPS p50 287, cache-hit p50 14 %; 80k-frame sweep (whole cluster) 1.17 M TPM @c1 →
+16.1 M @c32 (per-stream 209 → 129, TTFT p50 1.0–3.2 s); natural prompts ~205 tok/s per stream flat c1→c32.
+
+**Ours, deployed 2×tp4 Dynamo stack + windowed DSpark**, same sweep via `:8001`: 0.67 M @c1, 3.28 M @c8, 7.03 M @c16, 12.3 M @c32,
+**18.7 M @c64** (per-stream 87 → 43, TTFT p50 0.8–1.4 s); vs 09-25 plain 2×tp4 +39 % @c32 / +48 % @c64. Official verifier on the
+Dynamo path **244/32** (the bare-engine + gateway path scored 268/8 on 09-25): beyond the 7 stream-shape cases, Dynamo 1.5's frontend
+400s images in `system` messages and tool names with special characters, 500s on corrupted/unpadded base64, 200/201 images, 31 MB
+images, 502 on >64 MB bodies, drops `max_long_side_pixel`, returns empty content for URL images and a 1M-token input, and puts content
+and reasoning_content in one chunk. Candidate B (bare engines + gateway, with the window) is being gated for comparison (§6k).
+
+**tp2 workers (the production per-node shape; tp2/ep2/dp2 on our fork, attention TP1):** loads once `--chunked-prefill-size` ≤ 16384 × dp
+(MegaMoE per-rank cap; `launch.sh` clamps, `up.sh WORKER_TP=2` builds 4 workers). One 2-GPU tp2 worker: cold 181 / warm 194 tok/s,
+six streams 110 per stream (a 4-GPU tp4 worker: 205 / 214 / 113); pair on the same 4 GPUs: 148 + 114 per stream for six streams.
+80k sweep per tp2 worker: 3.12 M @c8, 5.04 M @c16, 6.65 M @c32 (per-stream 43, TTFT p50 7.5 s) → 4×tp2 ≈ 12.5 M at node-c32 (= 2×tp4),
+≈ 20 M at node-c64 (+8 %), worse loaded TTFT. Not adopted by default.
+
+**Closed by the fork:** HiCache (`MiniMax NVFP4 does not yet support HiCache scale transfer`), prefill CUDA graphs `tc_piecewise`
+(`Capture prefill CUDA graph failed: Unsupported method call`), fa4 draft backend (scheduler aborts at init, exit -3, no traceback).
+mem-fraction 0.8: loads, same speed. Crash logs now kept by `launch.sh` (`<name>-crash-<ts>.log`).
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
