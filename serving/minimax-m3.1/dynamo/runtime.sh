@@ -8,7 +8,7 @@ case "${1:-up}" in
     $DOCKER rm -f dyn-etcd dyn-nats >/dev/null 2>&1
     $DOCKER run -d --restart unless-stopped --name dyn-etcd --network host quay.io/coreos/etcd:v3.5.17 \
       /usr/local/bin/etcd --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://127.0.0.1:2379 \
-      --listen-peer-urls http://0.0.0.0:2380 --data-dir /tmp/etcd >/dev/null
+      --listen-peer-urls http://0.0.0.0:2380 --initial-advertise-peer-urls http://127.0.0.1:2380 --initial-cluster default=http://127.0.0.1:2380 --data-dir /tmp/etcd >/dev/null
     $DOCKER run -d --restart unless-stopped --name dyn-nats --network host nats:2.10 -js -p 4222 -m 8222 >/dev/null
     sleep 2; curl -sf -m 5 http://127.0.0.1:2379/version && echo && curl -sf -m 5 http://127.0.0.1:8222/healthz && echo " (nats ok)";;
   down) $DOCKER rm -f dyn-etcd dyn-nats;;
