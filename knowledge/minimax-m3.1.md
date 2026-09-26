@@ -373,6 +373,50 @@ stack is not yet a net win**; it is for short-prompt chat. Levers to test next, 
 (bounds the per-step draft cost; check accept length on long prompts), gamma 4–5, compact verify with an SPS table (needs eager decode under
 dp-attention), and DP-rank affinity from the router (Dynamo 1.5 has no per-DP-rank routing for dp-attention workers).
 
+## 6h. The draft window — why DSpark looked like a long-prompt regression (2026-09-26 06:35–08:00Z)
+
+`dspark/config.json` declares `sliding_window: 4096` (target: none). Our port ignored it: the 5 dense draft layers attended the whole
+context, which is out of distribution for a draft trained windowed, so on real 60k+ prompts acceptance collapsed to ~1.5/7 and the draft's
+own attention cost ate the gain (§6g). Fix (`minimax_m3_dspark.py`): read the window from the draft config (or `--speculative-draft-window-size`
+/ env `SGLANG_DSPARK_M31_DRAFT_WINDOW`, 0 = full), set `RadixAttention.sliding_window_size` on every draft layer — the runner-level
+`get_attention_sliding_window_size()` hook alone is *ignored* by flashinfer, which decides per layer (`llama_eagle3.py` does the same) — and use
+the flashinfer draft backend (`--speculative-draft-attention-backend flashinfer`; trtllm_mha has no per-layer window). The fork's own
+`--speculative-draft-window-size` is only consumed by EAGLE3/DFLASH (a warning says so), hence the env knob.
+
+Three real captured prompts (61k/61k/80k tokens, two of them tool-calling), greedy, 200 output tokens, cold caches, direct engine tp4/dp4 on GPUs 4-7:
+
+| variant | single-stream decode tok/s (per prompt) | accept | 6 streams: per-stream decode | TTFT cold |
+|---|---|---|---|---|
+| plain (SPEC=none) | 64.6 / 56.0 / 45.9 (mean 55.5) | – | 42.4 | 4.1 s |
+| DSpark g7, full-context draft (old default) | 62.5 / 81.5 / 59.9 (68.0) | 1.45–1.83 | 42.8 | 4.4 s |
+| **DSpark g7, draft window 4096, flashinfer** | **122 / 295 / 186 (201)** | **4.2–5.0** | **105.6** | 4.5 s |
+| DSpark g4, window (first pass, warm) | 58 / 79 / 58 | 1.5–1.8 | – | – |
+
+(The g4 row and the first "window" pass ran before the per-layer fix and are effectively full-context; they are here as the negative
+control.) Correctness: at temperature 0 the window output differs from plain on 2 of 3 prompts — but so does full-context DSpark vs plain,
+plain vs plain across launches (81 vs 73 tokens on the same prompt), and window vs window; every diff is a synonym fork at a near-tie
+(`状态字段` vs `锁标志`, `javascript` vs `js`), i.e. engine non-determinism (NVFP4/deep_gemm, batch composition), not the draft. The verify
+path is untouched by the window; spec engines reject `logprobs` ("DFLASH speculative decoding does not support return_logprob yet"), so
+a per-token argmax audit needs a plain engine scoring the windowed outputs (not done). Vendor's own MT-Bench accept is 2.3–3.8; 4.2–5.0
+on tool-call/code text is consistent with that.
+
+Prefix cache on dp4: hits only when the DP round-robin lands on the rank holding the prefix (`cached_tokens` 61056 vs 128 alternating on
+repeats of the same prompt on a bare engine). Through the relaunched Dynamo stack the warm long prompts DID hit (61184/61568/79744) —
+the router prefers the worker with the blocks and the ranks had been populated by the concurrent pass.
+
+Dynamo stack relaunched with the window on both workers (07:41–07:47Z, `SPEC=dspark bash dynamo/up.sh`; both workers log
+"attention window = 4096 tokens on 5 draft layers" ×4 ranks). Through the gateway: warm 61k prompt TTFT 0.5 s / 190 tok/s; text prompt
+80k cold 5.0 s / 121 tok/s. Format gate 25/25 (07:57Z).
+
+Two Dynamo behaviours seen while validating: (1) **tool calls are emitted as one chunk at the end** (gateway and frontend alike: first
+tool delta = last delta, 833 argument chars in one piece) whereas the bare engine streams fragments — and a tool call cut by `max_tokens`
+is dropped ("Dropping incomplete SGLang tool calls with no valid arguments") → `content: null`. Production M3 also runs Dynamo, so clients
+already see this; it makes "decode tok/s" of tool-call responses read 0 in stream probes. (2) **dyn-w1's first request after boot (the 61k
+prompt) hung**: all 4 DP schedulers hit the 300 s watchdog with `batch_size()=0` (idle-stuck, looks like a DP-attention sync that never
+completed), the container restarted (RestartCount 1) and rejoined ~7 min later (flashinfer autotune + CUDA graph capture); the gateway
+returned 200 with an empty body after 392 s. dyn-w0 served the identical prompts fine, and the same prompts on bare tp4/dp4 engines never
+hung. Reproduction attempt with fresh-prefix long prompts: see the exp-w1 log / next section.
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)

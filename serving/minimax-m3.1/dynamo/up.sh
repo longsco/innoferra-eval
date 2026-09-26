@@ -23,4 +23,12 @@ done
 log "   registered after $(( $(date +%s)-t0 ))s: $(curl -s http://127.0.0.1:8001/v1/models | head -c 200)"
 log "== 4. gateway :8000 -> frontend :8001 =="; (cd /data01/minimax31 && UPSTREAMS=1 SGLANG_URL=http://127.0.0.1:8001 ROUTE_DP_SIZE=0 MAX_INFLIGHT=64 ROOT_VIA_KWARG=1 STRIP_PARAMS=prompt_cache_key bash serving/gateway.sh > logs/gateway_start.log 2>&1)
 sleep 4; K2=$(cat ~/.m31_apikey); curl -s -m 120 localhost:8000/v1/chat/completions -H "Authorization: Bearer $K2" -H "Content-Type: application/json" -d '{"model":"minimax-m3","messages":[{"role":"user","content":"17*23 = ? number only"}],"thinking":{"type":"disabled"},"max_tokens":8}' | cut -c1-300; echo
+# 5. warm-up: the first long prefill on a fresh worker once hung all 4 DP schedulers (watchdog restart after 300 s, knowledge §6h).
+#    Push long fresh-prefix prompts through the router (both workers get some) before real traffic. WARMUP=0 skips.
+WP=${WARMUP_PROMPTS:-/data01/minimax31/warmup/longprompts.json}
+if [ "${WARMUP:-1}" = 1 ] && [ -f "$WP" ]; then
+  log "== 5. warm-up: long fresh-prefix prompts x2 rounds (both workers) =="
+  for r in 1 2; do KEY=$K2 NONCE=1 PROMPTS_JSON=$WP timeout 600 python3 "$K/probe_long.py" http://127.0.0.1:8000/v1/chat/completions MiniMax-M3 "warmup r$r" 2 | tail -1; done
+  for w in dyn-w0 dyn-w1; do echo "   $w restarts=$($DOCKER inspect $w --format '{{.RestartCount}}')"; done
+fi
 log "== up: $($DOCKER ps --format '{{.Names}}' | grep -E 'dyn-|m31' | tr '\n' ' ') =="

@@ -3,10 +3,11 @@
 **STACK 2026-09-26 05:56Z: gateway `:8000` → NVIDIA Dynamo KV-router `:8001` → 2× SGLang workers (tp4/ep4/dp4, GPUs 0-3 / 4-7) each running
 MiniMax-M3.1 preview2 WITH DSpark (innoferra port, training-compatible arithmetic on).** All containers `--restart unless-stopped`:
 `dyn-etcd dyn-nats dyn-w0 dyn-w1 dyn-frontend m31-gateway`. One command to (re)create everything: `SPEC=dspark bash /data01/minimax31/serving/dynamo/up.sh`.
-Validation on this stack: format 25/25, replay 294/294; natural short prompts 2× faster decode. **Caveat for the real (long-prompt) workload:**
-cold TTFT p50 8.1 s and decode on 60k+ prompts slower than the plain 2×tp4 stack (knowledge §6g). If tomorrow's traffic must optimise
-TTFT on long prompts, run the plain stack instead (`SPEC=none` engines + `UPSTREAMS=2 ROUTE_DP_SIZE=4` gateway, commands below); tuning of
-the DSpark long-context cost is in progress.
+Validation on this stack: format 25/25 (re-run 07:57Z on the windowed draft), replay 294/294 (06:03Z run, full-context draft; re-run pending).
+**2026-09-26 08:00Z update — the long-prompt caveat is resolved:** the draft now runs with its trained 4096-token attention window
+(the earlier "DSpark slows 60k+ prompts" finding was our port running the draft full-context). On the three real 60-80k prompts,
+single-stream decode went 46-65 (plain) → 120-315 tok/s (accept 4.2-5.0 of 7), six concurrent streams 42 → 106 tok/s per stream, TTFT
+unchanged (knowledge §6h). Warm long prompts through the gateway hit the prefix cache (TTFT 0.5-1.4 s).
 
 ## What TokenHub points at
 | | |
@@ -90,6 +91,12 @@ tokens and answers. Set `DEFAULT_REASONING_EFFORT=` (empty) in `gateway.sh` to g
 MiniMax's engine could not run their own draft; we ported it (`serving/minimax-m3.1/patches/dspark_minimax/`, applied over the fork source
 and bind-mounted into the containers). Lossless (greedy text identical), accept length 2.1–2.6 on natural text, single-stream 66 → 92 tok/s,
 c8 per-stream 48 → 64 tok/s. Known boundary bug: `max_tokens` of 3, 4 or 8 can run past EOS (real traffic uses large budgets). Knowledge §6e.
+**Draft window (08:00Z):** the draft config says `sliding_window: 4096`; the draft is trained windowed. `launch.sh` now applies it per draft
+layer with the flashinfer draft backend by default (`DRAFT_WINDOW=N` overrides, `DRAFT_WINDOW=0` = full context, do not). Long-prompt
+numbers above. Two Dynamo behaviours to know: (1) Dynamo's tool parser emits a tool call as ONE chunk when it completes (the bare engine
+streams argument fragments), and drops a tool call truncated by `max_tokens` (content null) — same as the production M3 Dynamo stack, so not a
+bypass regression; (2) a worker whose first request after boot was a 61k-token prompt hit the 300 s scheduler watchdog once (all 4 DP ranks
+idle-stuck), restarted itself and rejoined in ~7 min; under investigation (knowledge §6h). Watch `sudo docker inspect dyn-w1 --format '{{.RestartCount}}'`.
 
 ## Known limits (engine-side, reported to MiniMax)
 No speculative decoding (DSpark not shipped) → per-stream ~35–65 tok/s · attention must be TP1 → 8 (or 2×4) separate prefix caches ·
