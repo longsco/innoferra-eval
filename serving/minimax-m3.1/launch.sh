@@ -49,8 +49,8 @@ NFILES=$(find "$MODEL_PATH" -type f -not -path '*/.cache/*' | wc -l); NST=$(ls "
 ARCH=$(python3 -c "import json;c=json.load(open('$MODEL_PATH/config.json'));print(c.get('architectures',['?'])[0],'|',c.get('model_type'),'| quant:',bool(c.get('quantization_config')))" 2>/dev/null || echo "?")
 log "weights   $MODEL_PATH  files=$NFILES safetensors=$NST size=${MB}MB  arch: $ARCH"
 IMG_ID=$($DOCKER image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || { log "FATAL image $IMAGE not present — run build_image.sh"; exit 1; })
-ENGINE=$($DOCKER run --rm --entrypoint cat "$IMAGE" /opt/ENGINE_COMMIT 2>/dev/null || echo "?")
-log "image     $IMAGE  id=${IMG_ID:7:12}  engine-commit=${ENGINE:0:12}  labels: $($DOCKER image inspect "$IMAGE" --format '{{index .Config.Labels "org.innoferra.base"}}')"
+ENGINE_COMMIT=$($DOCKER run --rm --entrypoint cat "$IMAGE" /opt/ENGINE_COMMIT 2>/dev/null || echo "?")
+log "image     $IMAGE  id=${IMG_ID:7:12}  engine-commit=${ENGINE_COMMIT:0:12}  labels: $($DOCKER image inspect "$IMAGE" --format '{{index .Config.Labels "org.innoferra.base"}}')"
 log "gpus      $(nvidia-smi --query-gpu=name --format=csv,noheader | head -1) x$(nvidia-smi -L | wc -l)  used-mem: $(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | tr '\n' ' ')MiB  driver $(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1)"
 BUSY=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader | wc -l); [ "$BUSY" = 0 ] || log "WARN $BUSY compute process(es) already on the GPUs"
 OLD=$($DOCKER ps -a --filter "name=^/$NAME$" --format '{{.ID}} {{.Status}}'); [ -z "$OLD" ] || log "replacing existing container $OLD"
@@ -114,7 +114,7 @@ T0=$(date +%s)
 CID=$($DOCKER run "${DOCKER_OPTS[@]}" "${ENV_FLAGS[@]}" "$IMAGE" "${ARGV[@]}")
 log "container ${CID:0:12} started (t0)"
 printf '{"ts":"%s","name":"%s","container":"%s","image":"%s","image_id":"%s","engine_commit":"%s","model_path":"%s","weights_files":%s,"weights_mb":%s,"served":"%s","topology":"tp%s-ep%s-dp%s-dpattn%s","gpus":"%s","spec":"%s","port":%s,"memfrac":%s,"maxreq":%s,"chunk":%s,"extra_args":"%s","log":"%s"}\n' \
-  "$TS" "$NAME" "${CID:0:12}" "$IMAGE" "${IMG_ID:7:12}" "${ENGINE:0:12}" "$MODEL_PATH" "$NFILES" "$MB" "$SERVED" "$TP_SIZE" "$EP_SIZE" "$DP_SIZE" "$DP_ATTN" "$GPUS" "$SPEC" "$PORT" "$MEMFRAC" "$MAXREQ" "$CHUNK" "$EXTRA_ARGS" "$LOG" >> "$LOGS/launches.jsonl"
+  "$TS" "$NAME" "${CID:0:12}" "$IMAGE" "${IMG_ID:7:12}" "${ENGINE_COMMIT:0:12}" "$MODEL_PATH" "$NFILES" "$MB" "$SERVED" "$TP_SIZE" "$EP_SIZE" "$DP_SIZE" "$DP_ATTN" "$GPUS" "$SPEC" "$PORT" "$MEMFRAC" "$MAXREQ" "$CHUNK" "$EXTRA_ARGS" "$LOG" >> "$LOGS/launches.jsonl"
 [ "$FOLLOW" = 1 ] || { log "FOLLOW=0: not waiting. logs: $DOCKER logs -f $NAME"; exit 0; }
 [ "$ENGINE" != dynamo ] || { log "ENGINE=dynamo: worker registers over NATS/etcd (no HTTP health); follow with: $DOCKER logs -f $NAME | grep -E 'Uvicorn|ready|registered|Error'"; exit 0; }
 
