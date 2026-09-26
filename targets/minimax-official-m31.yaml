@@ -3,7 +3,7 @@ name: minimax-official-m31
 # (international: https://api.minimax.io/v1, China: https://api.minimaxi.com/v1); key via MINIMAX_API_KEY. Same battery as m31-team-us01.
 spec: minimax-m3
 base_url: https://api.minimax.io/v1
-model: MiniMax-M3.1
+model: MiniMax-M3.1-Flash-Preview
 api_key_env: MINIMAX_API_KEY
 timeout_s: 1800
 capabilities:

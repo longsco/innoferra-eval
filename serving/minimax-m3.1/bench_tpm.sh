@@ -6,12 +6,13 @@
 set -uo pipefail
 GRID=${1:-"1 4 8 16 32 64"}; IMAGE=${IMAGE:-minimax-m31-sglang:demo-bef87f4}; PORT=${PORT:-19191}; SERVED=${SERVED:-minimax-m3.1-nvfp4}
 HOST=${HOST:-127.0.0.1}                     # remote endpoint: HOST=<ip> PORT=<port> OPENAI_API_KEY=<bearer> (bench_serving sends it as Authorization)
+SCHEME=${SCHEME:-$([ "$PORT" = 443 ] && echo https || echo http)}   # PORT=443 -> https (vendor APIs)
 MODEL_PATH=${MODEL_PATH:-/data01/minimax31/MiniMax-M3.1-preview-private}; OUT=${OUT:-/data01/minimax31/bench}; MULT=${MULT:-5}
 SYS_LEN=${SYS_LEN:-80000}; Q_LEN=${Q_LEN:-128}; OUT_LEN=${OUT_LEN:-600}; WARM_N=${WARM_N:-16}
 DOCKER="docker"; $DOCKER ps >/dev/null 2>&1 || DOCKER="sudo -n docker"
 TAG=${TAG:-p$PORT}; TS=${TS:-$(date -u +%Y%m%dT%H%M%SZ)}; mkdir -p "$OUT"; CSV="$OUT/tpm-$TS-$TAG.csv"; LOG="$OUT/tpm-$TS-$TAG.log"
 BSV(){ $DOCKER run --rm --network host -e OPENAI_API_KEY="${OPENAI_API_KEY:-}" -v "$MODEL_PATH":/models:ro "$IMAGE" python3 -m sglang.bench_serving \
-        --backend sglang-oai-chat --base-url "http://$HOST:$PORT" --model "$SERVED" --tokenizer /models \
+        --backend sglang-oai-chat --base-url "$SCHEME://$HOST:$PORT" --model "$SERVED" --tokenizer /models \
         --dataset-name generated-shared-prefix --gsp-num-groups 1 --gsp-system-prompt-len "$SYS_LEN" --gsp-question-len "$Q_LEN" --gsp-output-len "$OUT_LEN" \
         --request-rate inf --warmup-requests 0 --seed 1 "$@" 2>&1; }
 g(){ echo "$1" | awk -F':' -v k="$2" '$0 ~ k {gsub(/ /,"",$2); print $2; exit}'; }
