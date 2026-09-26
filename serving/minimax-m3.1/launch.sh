@@ -19,7 +19,9 @@ GPUS=${GPUS:-all}                         # "all" or a CUDA_VISIBLE_DEVICES list
 SPEC=${SPEC:-none}                        # none | dspark  (dspark: draft at $MODEL_PATH/dspark, block size from DSPARK_BLOCK, default = draft config's dspark_block_size)
 DSPARK_BLOCK=${DSPARK_BLOCK:-}
 MOE_A2A=${MOE_A2A:-megamoe}; MOE_RUNNER=${MOE_RUNNER:-deep_gemm}
-TRAINING_COMPAT=${TRAINING_COMPAT:-1}     # SGLANG_M3_TRAINING_COMPATIBLE; 0 ONLY for experiments (vendor: numerics no longer training-matched)   # vendor recipe; DSpark+dp-attention demands MOE_A2A=none (built-in TP MoE)
+TRAINING_COMPAT=${TRAINING_COMPAT:-1}     # SGLANG_M3_TRAINING_COMPATIBLE; 0 ONLY for experiments (vendor: numerics no longer training-matched)
+DEV_SRC=${DEV_SRC:-}                      # bind-mount a patched fork tree (…/0922-sglang/python) over the image's editable install (/opt/0922-sglang/python)
+DSPARK_VERIFY_MODE=${DSPARK_VERIFY_MODE:-static}   # dense draft + dp-attention: static (verify-all) is the supported mode with cuda graphs   # vendor recipe; DSpark+dp-attention demands MOE_A2A=none (built-in TP MoE)
 # FORK CONSTRAINT (measured 2026-09-25, container restart-looped): "M3 training-compatible arithmetic requires attention TP1
 # (TP1, or --enable-dp-attention with tp == dp) and PP1". So on this fork attention-TP must be 1: DP_SIZE == TP_SIZE with
 # dp-attention on. TP4xDP2 and TP8 are NOT possible. Refuse early instead of burning 10 minutes.
@@ -36,7 +38,7 @@ TS=$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$JIT" "$LOGS"; LOG="$LOGS/launch-$TS.lo
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
 hdr(){ printf '\n== %s ==\n' "$*" | tee -a "$LOG"; }
 
-hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  gpus=$GPUS  spec=$SPEC  moe=$MOE_A2A/$MOE_RUNNER  training-compat=$TRAINING_COMPAT  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
+hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  gpus=$GPUS  spec=$SPEC  moe=$MOE_A2A/$MOE_RUNNER  training-compat=$TRAINING_COMPAT  dev-src=${DEV_SRC:-none}  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
 # --- preflight -------------------------------------------------------------------------------------------------
 hdr "preflight"
 [ -f "$MODEL_PATH/config.json" ] || { log "FATAL no config.json under $MODEL_PATH"; exit 1; }
@@ -79,14 +81,18 @@ ARGV=(python3 -m sglang.launch_server
   --mem-fraction-static "$MEMFRAC" --max-running-requests "$MAXREQ" $EXTRA_ARGS)
 if [ "$SPEC" = dspark ]; then
   [ -f "$MODEL_PATH/dspark/config.json" ] || { echo "FATAL SPEC=dspark but no $MODEL_PATH/dspark/config.json" >&2; exit 1; }
-  ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark)
+  # innoferra port (patches/dspark_minimax): dense MiniMax draft under dp-attention needs dp-lm-head, the a2a rule waived
+  # (SGLANG_DSPARK_ALLOW_A2A=1: NVFP4 experts need MegaMoE; the dense draft never enters the MoE all-to-all) and static verify.
+  ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --enable-dp-lm-head)
   [ -z "$DSPARK_BLOCK" ] || ARGV+=(--speculative-dspark-block-size "$DSPARK_BLOCK")
+  ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
 fi
 DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
   --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864
   --log-driver json-file --log-opt max-size=100m --log-opt max-file=5
   -v "$MODEL_PATH:/models:ro" -v "$JIT:/root/.cache" -v "$LOGS:/logs")
 [ "$GPUS" = all ] || DOCKER_OPTS+=(-e "CUDA_VISIBLE_DEVICES=$GPUS")
+[ -z "$DEV_SRC" ] || DOCKER_OPTS+=(-v "$DEV_SRC:/opt/0922-sglang/python:ro")
 hdr "resolved env"; for e in "${ENV_VARS[@]}"; do log "  $e"; done
 hdr "resolved docker opts"; log "  ${DOCKER_OPTS[*]}"
 hdr "resolved argv"; log "  ${ARGV[*]}"
