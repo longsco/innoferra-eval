@@ -1,5 +1,10 @@
 import json, urllib.request, time, threading, sys, statistics, re
+# usage: python3 ab_natural.py [name=port ...]   default: plain=19191 dspark=19291
 PORTS={"plain":19191,"dspark":19291}
+if len(sys.argv) > 1:
+    PORTS={kv.split("=")[0]: int(kv.split("=")[1]) for kv in sys.argv[1:]}
+MODEL=__import__("os").environ.get("AB_MODEL", "minimax-m3.1-nvfp4")
+CONCS=[int(x) for x in __import__("os").environ.get("AB_CONCS", "1,8").split(",")]
 PROMPTS=[
  "Write a 300-word essay on the causes of the French Revolution.",
  "Explain how a hash map works and its average and worst-case complexities, with a short Python example.",
@@ -19,7 +24,7 @@ PROMPTS=[
  "Write a cover letter for a junior data analyst position.",
 ]
 def run(port, prompt, thinking):
-    b={"model":"minimax-m3.1-nvfp4","messages":[{"role":"user","content":prompt}],"chat_template_kwargs":{"thinking_mode":thinking},"max_tokens":400,"temperature":0,"stream":True,"stream_options":{"include_usage":True}}
+    b={"model":MODEL,"messages":[{"role":"user","content":prompt}],"chat_template_kwargs":{"thinking_mode":thinking},"max_tokens":400,"temperature":0,"stream":True,"stream_options":{"include_usage":True}}
     r=urllib.request.Request(f"http://127.0.0.1:{port}/v1/chat/completions",data=json.dumps(b).encode(),headers={"Content-Type":"application/json"})
     t0=time.time(); ttft=None; n=0; usage=None
     with urllib.request.urlopen(r,timeout=600) as resp:
@@ -60,5 +65,5 @@ def bench(name, port, conc, thinking):
     acc=f"{statistics.mean(samples):.2f} (n={len(samples)})" if samples else "-"
     print(f"  {name:7s} c={conc} think={thinking:8s} out_tokens={toks:5d} wall={wall:6.1f}s  per-stream tok/s p50={statistics.median(tps):5.1f} mean={statistics.mean(tps):5.1f}  ttft p50={statistics.median(ttfts):.2f}s  total tok/s={toks/wall:6.1f}  accept_len={acc}")
 for thinking in ("disabled","adaptive"):
-    for conc in (1,8):
+    for conc in CONCS:
         for name,port in PORTS.items(): bench(name,port,conc,thinking)

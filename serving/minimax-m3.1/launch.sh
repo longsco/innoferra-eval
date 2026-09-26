@@ -85,7 +85,7 @@ ARGV=("${ENTRY[@]}"
   --kv-cache-dtype fp8_e4m3 --chunked-prefill-size "$CHUNK"
   --cuda-graph-backend-prefill breakable
   --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints
-  --reasoning-parser minimax-m3 --tool-call-parser minimax-m3
+  $([ "$ENGINE" = dynamo ] || echo "--reasoning-parser minimax-m3 --tool-call-parser minimax-m3")   # dynamo: --dyn-* parsers instead
   --mem-fraction-static "$MEMFRAC" --max-running-requests "$MAXREQ" $EXTRA_ARGS)
 if [ "$SPEC" = dspark ]; then
   [ -f "$MODEL_PATH/dspark/config.json" ] || { echo "FATAL SPEC=dspark but no $MODEL_PATH/dspark/config.json" >&2; exit 1; }
