@@ -105,7 +105,7 @@ if [ "$SPEC" = dspark ]; then
   ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
 fi
 DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
-  --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864
+  --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864 --cap-add SYS_PTRACE   # SYS_PTRACE: the scheduler watchdog py-spy dumps the stuck stack instead of "Permission denied"
   --log-driver json-file --log-opt max-size=100m --log-opt max-file=5
   -v "$MODEL_PATH:/models:ro" -v "$JIT:/root/.cache" -v "$LOGS:/logs")
 [ "$GPUS" = all ] || DOCKER_OPTS+=(-e "CUDA_VISIBLE_DEVICES=$GPUS")

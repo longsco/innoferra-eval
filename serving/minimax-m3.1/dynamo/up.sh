@@ -28,15 +28,17 @@ until curl -sf -m 5 http://127.0.0.1:8001/v1/models 2>/dev/null | grep -q minima
   [ $(( $(date +%s)-t0 )) -gt 2400 ] && { log "TIMEOUT"; exit 1; }; sleep 20
 done
 log "   registered after $(( $(date +%s)-t0 ))s: $(curl -s http://127.0.0.1:8001/v1/models | head -c 200)"
-# /v1/models appears with the FIRST worker; wait until every worker has served a request (short prompts, fresh prefixes)
-log "   waiting for all $NW workers to serve"; t1=$(date +%s)
+# /v1/models appears with the FIRST worker. A worker whose FIRST-EVER request is a long prefill hangs all its DP schedulers until the
+# 300 s watchdog restarts it (seen twice on dyn-w1, 07:48Z and 11:47Z; never after it has served one short request). So: keep sending
+# short fresh-prefix prompts until EVERY worker has run a prefill batch ("Prefill batch" in its scheduler log), and only then continue.
+log "   waiting for every worker's first (short) prefill"; t1=$(date +%s)
 while :; do
-  missing=""; for w in $WORKERS; do [ "$($DOCKER logs $w 2>&1 | grep -c 'request completed')" = 0 ] && missing="$missing $w"; done
+  missing=""; for w in $WORKERS; do [ "$($DOCKER logs $w 2>&1 | grep -c 'Prefill batch')" = 0 ] && missing="$missing $w"; done
   [ -z "$missing" ] && break
-  [ $(( $(date +%s)-t1 )) -gt 1200 ] && { log "   WARN not serving after 20 min:$missing"; break; }
-  for j in $(seq 1 $((2*NW))); do curl -s -m 60 localhost:8001/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"minimax-m3.1-nvfp4\",\"messages\":[{\"role\":\"user\",\"content\":\"w $RANDOM$RANDOM ok\"}],\"max_tokens\":4,\"chat_template_kwargs\":{\"thinking_mode\":\"disabled\"}}" >/dev/null & done; wait; sleep 10
+  [ $(( $(date +%s)-t1 )) -gt 1200 ] && { log "   WARN no prefill yet after 20 min on:$missing (continuing)"; break; }
+  for j in $(seq 1 $((4*NW))); do curl -s -m 60 localhost:8001/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"minimax-m3.1-nvfp4\",\"messages\":[{\"role\":\"user\",\"content\":\"w $RANDOM$RANDOM ok\"}],\"max_tokens\":4,\"chat_template_kwargs\":{\"thinking_mode\":\"disabled\"}}" >/dev/null & done; wait; sleep 8
 done
-log "   all workers serving after $(( $(date +%s)-t1 ))s more"
+log "   every worker has prefilled after $(( $(date +%s)-t1 ))s more (missing:${missing:- none})"
 log "== 4. gateway :8000 -> frontend :8001 =="; (cd /data01/minimax31 && UPSTREAMS=1 SGLANG_URL=http://127.0.0.1:8001 ROUTE_DP_SIZE=0 MAX_INFLIGHT=64 ROOT_VIA_KWARG=1 STRIP_PARAMS=prompt_cache_key bash serving/gateway.sh > logs/gateway_start.log 2>&1)
 sleep 4; K2=$(cat ~/.m31_apikey); curl -s -m 120 localhost:8000/v1/chat/completions -H "Authorization: Bearer $K2" -H "Content-Type: application/json" -d '{"model":"minimax-m3","messages":[{"role":"user","content":"17*23 = ? number only"}],"thinking":{"type":"disabled"},"max_tokens":8}' | cut -c1-300; echo
 # 5. warm-up: the first long prefill on a fresh worker once hung all 4 DP schedulers (watchdog restart after 300 s, knowledge §6h).
@@ -46,6 +48,19 @@ if [ "${WARMUP:-1}" = 1 ] && [ -f "$WP" ]; then
   log "== 5. warm-up: short prompts first (a worker's first-ever forward must not be a 60k prefill), then long fresh-prefix prompts x2 rounds =="
   for i in 1 2 3 4 5 6; do curl -s -m 60 localhost:8000/v1/chat/completions -H "Authorization: Bearer $K2" -H "Content-Type: application/json" -d "{\"model\":\"MiniMax-M3\",\"messages\":[{\"role\":\"user\",\"content\":\"warmup $RANDOM: reply ok\"}],\"thinking\":{\"type\":\"disabled\"},\"max_tokens\":4}" >/dev/null; done
   for r in 1 2; do KEY=$K2 NONCE=1 PROMPTS_JSON=$WP timeout 600 python3 "$K/probe_long.py" http://127.0.0.1:8000/v1/chat/completions MiniMax-M3 "warmup r$r" 2 | tail -1; done
+  # A worker's first long prefill after a fresh boot has hung its schedulers twice (dyn-w1, 07:48Z and 11:47Z: two 16k chunks then
+  # nothing, watchdog restart after 300 s, fine ever after). If any worker restarted during the warm-up, wait for it to come back and
+  # run one more long round, so up.sh only returns with every worker proven on long prompts.
+  for pass in 1 2; do
+    bounced=""; for w in $WORKERS; do [ "$($DOCKER inspect $w --format '{{.RestartCount}}')" != 0 ] && bounced="$bounced $w"; done
+    [ -z "$bounced" ] && break
+    log "   worker(s) restarted during warm-up:$bounced -> waiting for them to serve, then one more long round"
+    for w in $bounced; do t2=$(date +%s); until [ "$($DOCKER logs --since 60s $w 2>&1 | grep -c 'Prefill batch')" != 0 ] || [ $(( $(date +%s)-t2 )) -gt 900 ]; do
+      for j in 1 2 3 4; do curl -s -m 60 localhost:8001/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"minimax-m3.1-nvfp4\",\"messages\":[{\"role\":\"user\",\"content\":\"w $RANDOM$RANDOM ok\"}],\"max_tokens\":4,\"chat_template_kwargs\":{\"thinking_mode\":\"disabled\"}}" >/dev/null; done; sleep 15; done; done
+    KEY=$K2 NONCE=1 PROMPTS_JSON=$WP timeout 900 python3 "$K/probe_long.py" http://127.0.0.1:8000/v1/chat/completions MiniMax-M3 "warmup after restart" 2 | tail -1
+    for w in $WORKERS; do $DOCKER update --restart unless-stopped $w >/dev/null 2>&1; done   # (restart count itself cannot be reset without recreate; report it)
+    for w in $WORKERS; do echo "   $w restarts=$($DOCKER inspect $w --format '{{.RestartCount}}')"; done; break
+  done
   for w in $WORKERS; do echo "   $w restarts=$($DOCKER inspect $w --format '{{.RestartCount}}')"; done
 fi
 log "== up: $($DOCKER ps --format '{{.Names}}' | grep -E 'dyn-|m31' | tr '\n' ' ') =="
