@@ -14,6 +14,7 @@ $DOCKER rm -f "$NAME" >/dev/null 2>&1
 exec $DOCKER run -d --restart unless-stopped --name "$NAME" --network host \
   --log-driver json-file --log-opt max-size=50m --log-opt max-file=3 \
   -e "ETCD_ENDPOINTS=$DYN_ETCD" -e "NATS_SERVER=$DYN_NATS" -e "DYN_NAMESPACE=$DYN_NAMESPACE" -v "$LOGS:/logs" -v "$MODEL_PATH:/models:ro" \
+  ${CHAT_TEMPLATE_FILE:+-v "$CHAT_TEMPLATE_FILE:/models/chat_template.jinja:ro"} \
   "$IMAGE" python3 -m dynamo.frontend --http-port "$PORT" --namespace "$DYN_NAMESPACE" \
     --router-mode kv --router-replica-sync --router-prefill-load-scale inf --router-temperature 0 \
     --dyn-chat-processor sglang --dyn-preprocess-workers 8 --migration-limit 3 ${FRONTEND_EXTRA:-}

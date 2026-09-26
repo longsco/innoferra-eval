@@ -102,6 +102,8 @@ DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
 [ "$GPUS" = all ] || DOCKER_OPTS+=(-e "CUDA_VISIBLE_DEVICES=$GPUS")
 [ -z "$DEV_SRC" ] || DOCKER_OPTS+=(-v "$DEV_SRC:/opt/0922-sglang/python:ro")
 for e in ${EXTRA_ENV:-}; do ENV_VARS+=("$e"); done     # EXTRA_ENV="A=1 B=2" appends engine env vars (debug knobs)
+# CHAT_TEMPLATE_FILE=<jinja>: bind-mounted OVER /models/chat_template.jinja (the Dynamo frontend reads the template from the same model dir)
+[ -z "${CHAT_TEMPLATE_FILE:-}" ] || DOCKER_OPTS+=(-v "$CHAT_TEMPLATE_FILE:/models/chat_template.jinja:ro")
 hdr "resolved env"; for e in "${ENV_VARS[@]}"; do log "  $e"; done
 hdr "resolved docker opts"; log "  ${DOCKER_OPTS[*]}"
 hdr "resolved argv"; log "  ${ARGV[*]}"
