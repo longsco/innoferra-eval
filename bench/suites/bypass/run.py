@@ -6,7 +6,7 @@ from ...target import Target
 from . import capture as cap, replay as rp, distribution as dist
 
 
-def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=None, image_substitute: bool = True) -> dict:
+def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=None, image_substitute: bool = True, model_override: str | None = None) -> dict:
     src = Path(capture) if capture else cap.newest()
     if not src or not src.exists():
         raise SystemExit("no capture/sample file; run `innoferra capture` (internal) or pass --capture samples/<model>-synthetic.jsonl")
@@ -15,7 +15,8 @@ def run(t: Target, *, capture: str | None, limit: int, concurrency: int, out=Non
     out = out or run_dir(t.name, "bypass")
     print(f"[bypass] target={t.name} base={t.base_url} capture={src.name} n={len(recs)} conc={concurrency} -> {out}")
     t0 = time.time()
-    rows = rp.replay(t, recs, concurrency=concurrency, image_substitute=image_substitute,
+    if model_override: print(f"[bypass] model field rewritten to {model_override!r} (NOT the verbatim bypass contract)")
+    rows = rp.replay(t, recs, concurrency=concurrency, image_substitute=image_substitute, model_override=model_override,
                      progress=lambda d, n: print(f"  {d}/{n}", flush=True) if d % 25 == 0 else None)
     el = time.time() - t0
     ok = sum(1 for r in rows if r["ok"]); n = len(rows)

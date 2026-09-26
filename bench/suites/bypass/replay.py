@@ -53,7 +53,7 @@ def features(b: dict[str, Any]) -> set[str]:
     return f or {"plain"}
 
 
-def replay(t: Target, recs: list[dict], *, concurrency: int = 1, progress=None, image_substitute: bool = True) -> list[dict]:
+def replay(t: Target, recs: list[dict], *, concurrency: int = 1, progress=None, image_substitute: bool = True, model_override: str | None = None) -> list[dict]:
     out: list[dict] = []; lock = threading.Lock(); idx = [0]
 
     def worker():
@@ -64,8 +64,10 @@ def replay(t: Target, recs: list[dict], *, concurrency: int = 1, progress=None, 
             rec = recs[i]; b = json.loads(json.dumps(rec["body"])); fs = features(b)
             subst = substitute_images(b) if image_substitute else 0
             if subst: fs.add("media:image_url(substituted)")
-            # the target's model name wins over the captured one ONLY if the target says so via capabilities;
-            # default: send the captured model verbatim (that is the bypass contract).
+            # default: send the captured model verbatim (that is the bypass contract). --model-override rewrites it, which
+            # simulates a router (TokenHub) renaming the model on the way in; use it only after recording the verbatim result.
+            if model_override:
+                b["model"] = model_override; fs.add("model:overridden")
             r: ChatResult = chat(t, b)
             m = r.message or {}
             row = {"i": i, "ok": r.ok, "status": r.status, "code": r.error_code, "features": sorted(fs),
