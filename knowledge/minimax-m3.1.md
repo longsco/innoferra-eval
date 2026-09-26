@@ -253,6 +253,27 @@ on preview2 the `tens` canary is non-deterministic at temperature 0 (second run 
 report to MiniMax with the DSpark engine question. **preview2 gate (16:58–18:03Z, via `:8001`):** format 25/25, official 268/8 (root-identity ×2, missed tool calls ×2, number-as-string, noise image, 02_07 and 05_01 harness timeouts), replay 294/294 — equal to preview1; `:8001` gateway removed afterwards. **Gateway bug caught:** `ROUTE_DP_SIZE` defaulted to 8 while the engines are dp4 → half of
 new prompts would 400 (`routed_dp_rank=6 out of range`); default is now 4 = engine DP.
 
+## 6d. Fleet probe: who else runs M3.1 (2026-09-25 ~18:40Z, over the fleet VPN)
+
+Scanned `10.10.100.100–160` on :8000/:8001 (26 frontends answered; 14 nodes up: .109–.120, .127, .129). **One node serves
+`minimax-m3.1`: `10.10.100.127:8000`** — NVIDIA Dynamo frontend (`owned_by: nvidia`, namespace `dynamo_m31_preview_87b499867739`),
+4 SGLang workers on :8081–:8084 (8 GPUs ⇒ **TP2 per worker**, the production M3 pattern), context 1,048,576, the innomatrix production
+SGLang build (custom `sglang:engine_admission_*` / `engine_slo_admission_*` families, HiCache counters). SSH as `long` denied; the api-v1
+gateway logs show no `minimax-m3.1` traffic, so its 57k requests (124 in flight, 5 queued at probe time, ~10 req/s) arrive by another path —
+most likely the TokenHub mirror already running against the production team's M3.1. Everything else on the fleet (.109–.120) is
+`dynamo_green_…` serving `minimax-m3`.
+
+Measured from its metrics: mean input 81k tokens (p50 bucket ≤130k), mean output ~600 (p50 ≤880), **TTFT p50 ≤0.47 s / p90 ≤1.0 s / p99
+≤22 s, ITL p50 ≤13 ms (≈75 tok/s per stream at ~30 concurrent per worker)**, request duration p50 ≤8 s, cache hit 85–97 % per worker.
+**Speculative decoding is on:** `spec_num_steps=1`, `spec_num_draft_tokens=4` (block-4, DFlash-style), ~2.9 M verify calls per worker;
+`spec_accept_length` reads exactly 3.0 and `spec_accept_rate` exactly 0.667 on all four workers — too round to be a live mean, treat as a
+configured/estimated value, not a measurement. Cuda-graph capture 137 s; admission control present but disabled.
+
+**What this means:** the production team already has an M3.1 + draft-head serving recipe on their engine (attention TP2, not the
+vendor's training-compatible TP1 path, so numerics differ from what MiniMax certifies), running ~2× our per-stream speed under load.
+Two open questions for the maintainer: which draft (their self-trained DFlash for M3 retargeted? MiniMax's DSpark?) and which
+checkpoint/quant. Their launch args are not readable from outside (Dynamo workers expose no `/get_server_args`).
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
