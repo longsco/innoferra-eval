@@ -3,7 +3,7 @@
 **STACK 2026-09-26 05:56Z: gateway `:8000` → NVIDIA Dynamo KV-router `:8001` → 2× SGLang workers (tp4/ep4/dp4, GPUs 0-3 / 4-7) each running
 MiniMax-M3.1 preview2 WITH DSpark (innoferra port, training-compatible arithmetic on).** All containers `--restart unless-stopped`:
 `dyn-etcd dyn-nats dyn-w0 dyn-w1 dyn-frontend m31-gateway`. One command to (re)create everything: `SPEC=dspark bash /data01/minimax31/serving/dynamo/up.sh`.
-Validation on this stack: format 25/25 (re-run 07:57Z on the windowed draft), replay 294/294 (06:03Z run, full-context draft; re-run pending).
+Validation on this stack: format 25/25 (07:57Z, windowed draft), replay 293/294 = 99.7 % (08:16Z, windowed draft; per-stream TPS p50 108 vs 43 before) — the miss plus 7 silent empty image responses traced to two Dynamo-frontend bugs, both patched (knowledge §6i); re-run pending.
 **2026-09-26 08:00Z update — the long-prompt caveat is resolved:** the draft now runs with its trained 4096-token attention window
 (the earlier "DSpark slows 60k+ prompts" finding was our port running the draft full-context). On the three real 60-80k prompts,
 single-stream decode went 46-65 (plain) → 120-315 tok/s (accept 4.2-5.0 of 7), six concurrent streams 42 → 106 tok/s per stream, TTFT

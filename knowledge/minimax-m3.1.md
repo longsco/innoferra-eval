@@ -417,6 +417,30 @@ completed), the container restarted (RestartCount 1) and rejoined ~7 min later (
 returned 200 with an empty body after 392 s. dyn-w0 served the identical prompts fine, and the same prompts on bare tp4/dp4 engines never
 hung. Reproduction attempt with fresh-prefix long prompts: see the exp-w1 log / next section.
 
+## 6i. Replay gate on the windowed-DSpark Dynamo stack + two Dynamo bugs it exposed (2026-09-26 08:16–08:45Z)
+
+`innoferra bypass -t m31-b300-bypass --concurrency 8` (294 captured prod requests, cold caches): **293/294 = 99.7 %**, 998 s.
+Distributions: TTFT p50 9.26 s / p90 33.7 s (prefill-bound, unchanged), **per-stream TPS p50 108** (was 43 with the full-context
+draft, §6g), output tokens p50 173 / p90 1108, thinking trigger 36.9 %, tool trigger 80.8 %, cache-hit p50 0.4 % (isolated turns).
+
+The one 500 and seven "200 with an empty stream" rows (`finish_reason: None`, HTTP 200 so the replay counted them ok) had two
+root causes, both Dynamo-frontend side, both now fixed and reproducible with small probes:
+
+1. **Tool-call parser raise → 500.** The fork's `function_call/minimax_m3.py` `_parse_parameter` raises on a stray closing tag
+   (`</trade_flow>` inside the free text of a parameter). The bare SGLang server would have failed the same way; Dynamo runs
+   this parser in the frontend for streaming AND non-streaming and turns the exception into a 500. `apply.py` edit #8 keeps the
+   text and logs a warning; `frontend.sh` now mounts `DEV_SRC` so the frontend runs the patched parser (it used the image copy).
+2. **Images in tool messages.** Dynamo 1.5.0 `dynamo/frontend/utils.py::extract_mm_urls` collects media only from
+   `role == "user"`, while the M3 chat template renders a placeholder for every image part in any role. Mixed user+tool images
+   → worker `Mismatch: More 'IMAGE' tokens found than corresponding data provided` → the frontend closes the stream with nothing
+   (gateway logged `200 … pt=0 ct=0 fin=-`); tool-only images (screenshots returned by tools, 10 of the 42 image rows) were
+   **silently never seen by the model** (prompt_tokens 418 vs 453 once fixed). Patched copy in `patches/dynamo_frontend/utils.py`,
+   mounted read-only by `frontend.sh`; `probe_mm_roles.py` checks user-only / tool-only / mixed. The team's M3.1 endpoint passes
+   all five cases (their vendored Dynamo has the fix); after the patch ours gives identical prompt_tokens (491/499).
+
+Gateway hardening from the same run (halyard-lab `shim.py`): an upstream stream that ends with no delta, no finish and no usage is
+now surfaced as an SSE `error` event (`upstream_empty`) instead of a clean 200+empty. Replay to be re-run with both workers.
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
