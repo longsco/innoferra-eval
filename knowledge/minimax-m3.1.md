@@ -335,6 +335,24 @@ boundary bug: with `max_tokens ∈ {3, 4, 8}` the DSpark path ran past EOS and t
 correctly. Not yet root-caused (verify-window trimming vs EOS scan); real traffic uses large budgets. Multimodal through Dynamo is not enabled
 yet (`--enable-multimodal` on the workers + the frontend's MM routing registry has no MiniMax entry).
 
+## 6g. Validation of the Dynamo + DSpark stack (2026-09-26 06:00Z–)
+
+Through the gateway (`:8000` → Dynamo `:8001` → 2 DSpark workers): innoferra M3 format probes **25/25** (after `prompt_cache_key` stripping —
+Dynamo's parser rejects it; the gateway now strips a static list and also retries once on any `Unsupported parameter(s)` 400).
+
+Natural-prompt throughput through the router (16 prompts, 400 max tokens, greedy; `ab_natural.py dynamo=8001`), node-level concurrency:
+
+| | c=1 | c=8 | c=16 |
+|---|---|---|---|
+| no-think per-stream tok/s p50 | **90.1** (plain single engine: 65) | **74.6** (plain c8 single engine: 47) | **64.0** |
+| no-think TTFT p50 | 0.13 s | 0.28 s | 0.63 s |
+| no-think total tok/s | 93 | 510 | 766 |
+| adaptive-think per-stream tok/s p50 | 79.0 | 66.1 | 59.3 |
+| adaptive-think total tok/s | 82 | 504 | 852 |
+
+Per-stream > 60 tok/s now holds at node concurrency 16 (no-think) / ~16 (adaptive), versus 4 on the pre-DSpark layout — the strict manual SLO
+point moved from ~1.75 M TPM to the c16 region. Replay of the 294 captured requests: see below.
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)

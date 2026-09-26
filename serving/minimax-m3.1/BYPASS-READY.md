@@ -62,6 +62,15 @@ DP8 head-of-line coupling seen on the production fleet.
 Strict manual SLO (TPS > 60): node concurrency 4 → **1.75 M TPM**. Practical TTFT-bound point (TTFT p50 < 2 s): concurrency 32 → **8.9 M TPM**
 at 41 tok/s per stream. Gateway admission `MAX_INFLIGHT=32` (429 above).
 
+## Capacity on the deployed Dynamo + DSpark stack (natural prompts, 2026-09-26 06:00Z)
+| node concurrency | per-stream tok/s (no-think / adaptive) | TTFT p50 | total tok/s (no-think / adaptive) |
+|---|---|---|---|
+| 1 | 90 / 79 | 0.13 s | 93 / 82 |
+| 8 | 75 / 66 | 0.28 s | 510 / 504 |
+| 16 | 64 / 59 | 0.63 s | 766 / 852 |
+The 80k-shared-prefix table below (tp8 vs 2×tp4, no DSpark) remains the reference for cache-warm long-prompt TPM; DSpark gains do not show on
+random-token prompts, so that sweep is not a DSpark benchmark.
+
 ## Simulation gates (through the gateway, this node)
 | gate | result |
 |---|---|
