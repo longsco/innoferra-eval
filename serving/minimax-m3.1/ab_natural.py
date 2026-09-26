@@ -25,7 +25,8 @@ PROMPTS=[
 ]
 def run(port, prompt, thinking):
     b={"model":MODEL,"messages":[{"role":"user","content":prompt}],"chat_template_kwargs":{"thinking_mode":thinking},"max_tokens":400,"temperature":0,"stream":True,"stream_options":{"include_usage":True}}
-    r=urllib.request.Request(f"http://127.0.0.1:{port}/v1/chat/completions",data=json.dumps(b).encode(),headers={"Content-Type":"application/json"})
+    _base=__import__("os").environ.get("AB_BASE") or f"http://127.0.0.1:{port}"; _key=__import__("os").environ.get("AB_KEY")
+    r=urllib.request.Request(f"{_base}/v1/chat/completions",data=json.dumps(b).encode(),headers={"Content-Type":"application/json",**({"Authorization":"Bearer "+_key} if _key else {})})
     t0=time.time(); ttft=None; n=0; usage=None
     with urllib.request.urlopen(r,timeout=600) as resp:
         for line in resp:
