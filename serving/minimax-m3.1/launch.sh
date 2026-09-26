@@ -91,9 +91,9 @@ if [ "$SPEC" = dspark ]; then
   [ -f "$MODEL_PATH/dspark/config.json" ] || { echo "FATAL SPEC=dspark but no $MODEL_PATH/dspark/config.json" >&2; exit 1; }
   # innoferra port (patches/dspark_minimax): dense MiniMax draft under dp-attention needs dp-lm-head, the a2a rule waived
   # (SGLANG_DSPARK_ALLOW_A2A=1: NVFP4 experts need MegaMoE; the dense draft never enters the MoE all-to-all) and static verify.
-  ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --enable-dp-lm-head)
+  ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark)   # no --enable-dp-lm-head: it crashes the fork's VL path on idle DP ranks
   [ -z "$DSPARK_BLOCK" ] || ARGV+=(--speculative-dspark-block-size "$DSPARK_BLOCK")
-  ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
+  ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
 fi
 DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
   --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864
@@ -101,6 +101,7 @@ DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
   -v "$MODEL_PATH:/models:ro" -v "$JIT:/root/.cache" -v "$LOGS:/logs")
 [ "$GPUS" = all ] || DOCKER_OPTS+=(-e "CUDA_VISIBLE_DEVICES=$GPUS")
 [ -z "$DEV_SRC" ] || DOCKER_OPTS+=(-v "$DEV_SRC:/opt/0922-sglang/python:ro")
+for e in ${EXTRA_ENV:-}; do ENV_VARS+=("$e"); done     # EXTRA_ENV="A=1 B=2" appends engine env vars (debug knobs)
 hdr "resolved env"; for e in "${ENV_VARS[@]}"; do log "  $e"; done
 hdr "resolved docker opts"; log "  ${DOCKER_OPTS[*]}"
 hdr "resolved argv"; log "  ${ARGV[*]}"

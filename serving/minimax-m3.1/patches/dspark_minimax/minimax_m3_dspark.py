@@ -18,6 +18,10 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from sglang.srt.distributed import (
+    get_tensor_model_parallel_world_size,
+    tensor_model_parallel_all_gather,
+)
 from sglang.srt.layers.layernorm import RMSNorm
 from sglang.srt.layers.logits_processor import LogitsProcessorOutput
 from sglang.srt.layers.quantization.base_config import QuantizationConfig
@@ -35,6 +39,7 @@ from sglang.srt.models.minimax_m3 import (
 from sglang.srt.speculative.dspark_components.dspark_config import (
     parse_dspark_draft_config,
 )
+from sglang.srt.runtime_context import get_parallel
 from sglang.srt.utils import add_prefix
 
 logger = logging.getLogger(__name__)
@@ -143,6 +148,18 @@ class DSparkMiniMaxDraftModel(nn.Module):
     def attach_shared_modules(self, *, embed_tokens: nn.Module, lm_head: nn.Module) -> None:
         self.embed_tokens = embed_tokens
         self.lm_head = lm_head
+        # Without --enable-dp-lm-head the target lm_head is vocab-sharded over the FULL TP group while, under
+        # dp-attention, every rank runs a different draft batch, so the usual all-gather of local logits cannot
+        # work. Assemble a full-vocab copy of the weight once (shape-consistent all-gather at init) and compute
+        # draft logits locally. Cost: vocab x hidden bf16 = ~2.4 GB per rank for M3.1.
+        self._full_lm_head_weight = None
+        if get_tensor_model_parallel_world_size() > 1 and not get_parallel().enable_dp_lm_head:
+            w = tensor_model_parallel_all_gather(lm_head.weight.data.contiguous(), dim=0)
+            self._full_lm_head_weight = w[: int(lm_head.org_vocab_size)].contiguous()
+            logger.info(
+                "DSpark MiniMax draft: assembled a full-vocab lm_head copy %s (%s) for local draft logits",
+                tuple(self._full_lm_head_weight.shape), self._full_lm_head_weight.dtype,
+            )
 
     def forward_embed(self, input_ids: torch.Tensor) -> torch.Tensor:
         if self.embed_tokens is None:
@@ -202,6 +219,11 @@ class DSparkMiniMaxDraftModel(nn.Module):
                 "DSparkMiniMaxDraftModel requires the target lm_head "
                 "(call attach_shared_modules first)."
             )
+        if self._full_lm_head_weight is not None:
+            weight = self._full_lm_head_weight
+            if hidden.dtype != weight.dtype:
+                hidden = hidden.to(weight.dtype)
+            return torch.matmul(hidden, weight.T), None
         weight = self.lm_head.weight
         if hidden.dtype != weight.dtype:
             hidden = hidden.to(weight.dtype)
@@ -212,12 +234,12 @@ class DSparkMiniMaxDraftModel(nn.Module):
     def _layer_ctx_kv(self, attn, ctx_hidden: torch.Tensor, positions: torch.Tensor):
         """K/V of one draft layer for already-committed context tokens, computed
         from the projected target hidden (the draft never re-reads the prompt)."""
-        qkv, _ = attn.qkv_proj(ctx_hidden)
-        _, k, v = qkv.split([attn.q_size, attn.kv_size, attn.kv_size], dim=-1)
-        # per-head qk-norm (gemma) on K, then (partial) RoPE with a dummy Q
-        k = attn.k_norm(k.reshape(-1, attn.head_dim)).view_as(k)
-        dummy_q = k.new_empty(k.shape)
-        _, k = attn.rotary_emb(positions, dummy_q, k)
+        # Use the attention module's own prepare path (fused qk-norm + partial RoPE kernel when enabled) so the
+        # injected context K matches bit-for-bit what the draft writes for its own block tokens.
+        _, _, inner_state = attn.forward_prepare(
+            positions=positions, hidden_states=ctx_hidden, forward_batch=None
+        )
+        _, k, v, _ = inner_state
         k = k.view(-1, attn.num_kv_heads, attn.head_dim)
         v = v.view(-1, attn.num_kv_heads, attn.head_dim)
         return k, v

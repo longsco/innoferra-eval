@@ -291,9 +291,31 @@ proposer, verify planner with static/compact ragged verify, target-hidden KV inj
 | attention guard | `layers/attention/minimax_sparse_backend.py` | `SGLANG_M3_TRAINING_ALLOW_SPEC=1` waives "training-compatible attention does not support speculative decoding": `TrainingAttention.forward` takes `cu_seqlens/prefix_lens/_max_seqlen_q` from `backend._build_extend_metadata`, which already builds the TARGET_VERIFY layout (d queries per request); MSA is off. |
 | launch | `launch.sh` | `SPEC=dspark` adds `--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --enable-dp-lm-head`, env `SGLANG_RAGGED_VERIFY_MODE=static` (the supported mode for a dense draft under dp-attention with cuda graphs), the two waivers; `DEV_SRC=<fork>/python` bind-mounts the patched tree over the image's editable install (no `.so` under it, kernels are JIT). |
 
-Bring-up log: (1) draft class found and all draft weights loaded — the only complaint was our own missing-parameter check tripping on
-RadixAttention's optional `k_scale/v_scale` (fixed); (2) then the training-attention guard (waived after reading the verify path);
-(3) TC=0 run (numerics off) and TC=1 run (numerics on) queued on GPUs 4-7 — results below.
+Bring-up log (2026-09-26 04:15–05:15Z): (1) draft class found, all 65 draft parameters loaded (our strict check first tripped on
+RadixAttention's optional `k_scale/v_scale`); (2) training-attention guard waived; (3) the standard KV4 path is MSA-only and forbids spec —
+but that guard only applies with training-compatible attention OFF, so TC=1 is the viable config (TC=0 is dead for DSpark); (4)
+`--enable-dp-lm-head` crashes the fork's VL path on idle DP ranks (`IndexError` in the logits processor, reproduced without any spec) →
+the draft keeps a full-vocab copy of `lm_head` (all-gathered once at init, 2.4 GB/rank) and the dp-lm-head rule is waived; (5) **engine
+healthy with DSpark**: draft on `trtllm_mha`, target verify + draft graphs captured, gate canaries identical to the plain engine;
+(6) first acceptance reading was ~1.1 — because `bench_tpm.sh` uses the generated-shared-prefix dataset (80k random tokens): no draft can
+predict random text. On a natural 110-token prompt the per-request `spec_accept_length` was **2.56** (histogram [9,5,5,2,2,2]), inside
+MiniMax's 2.3–3.8. Acceptance must be measured on natural prompts (`ab_natural.py`, below).
+
+**Natural-prompt A/B, 2026-09-26 05:14Z** (16 prompts, 400 max tokens, greedy, streamed; plain = `m31-a2` GPUs 0-3, dspark = `m31-b2` GPUs 4-7,
+same tp4/ep4/dp4, static verify, gamma 7):
+
+| | c=1 no-think | c=8 no-think | c=1 adaptive think | c=8 adaptive think |
+|---|---|---|---|---|
+| plain per-stream tok/s (p50) | 65.1 | 46.6 | 66.9 | 56.1 |
+| **DSpark per-stream tok/s (p50)** | **92.1 (+41%)** | **64.4 (+38%)** | **80.4 (+20%)** | **60.8 (+8%)** |
+| DSpark accept length (mean of gauge samples) | 2.55 | 2.34 | 2.14 | 2.08 |
+| total tok/s plain → DSpark | 66 → 91 | 348 → 422 | 67 → 82 | 448 → 454 |
+| TTFT p50 plain → DSpark | 0.33 → 0.34 s | 0.85 → 0.62 s | 0.33 → 0.35 s | 0.45 → 0.40 s |
+
+Reading: the draft is real (accept 2.1–2.6, MiniMax's MT-Bench range is 2.3–3.8) and lossless (greedy text identical to the plain engine on the
+canaries); the gain is below the accept length because static verify-all spends 8 target tokens per step and the 5-layer draft costs ~1
+target step. Reasoning text accepts less. Tuning levers not yet touched: `--speculative-dspark-block-size` (4–5 may beat 7), compact verify with
+an SPS table (`dspark_sps_profiler.py`), draft cuda-graph settings. The 80k-random-prefix TPM sweep is NOT a valid DSpark benchmark.
 
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.

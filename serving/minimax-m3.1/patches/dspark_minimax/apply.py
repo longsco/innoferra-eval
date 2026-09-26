@@ -22,16 +22,19 @@ changed = []
 def patch(rel, pairs, must=True):
     p = os.path.join(root, rel)
     s = open(p).read()
-    if MARK in s:
-        print(f"  = {rel}: already patched"); return
+    applied = 0
     for old, new in pairs:
+        if new in s:                      # this edit is already in place
+            continue
         n = s.count(old)
         if n != 1:
             raise SystemExit(f"anchor count {n} != 1 in {rel}:\n{old[:200]}")
-        s = s.replace(old, new)
+        s = s.replace(old, new); applied += 1
+    if applied == 0:
+        print(f"  = {rel}: already patched"); return
     if not check:
         open(p, "w").write(s); py_compile.compile(p, doraise=True)
-    changed.append(rel); print(f"  + {rel}")
+    changed.append(rel); print(f"  + {rel} ({applied} edit(s))")
 
 
 # 1. new draft model file
@@ -175,6 +178,36 @@ patch("arg_groups/speculative_hook.py", [
         "                )\n",
     ),
 ])
+
+# 7. diagnostics: SGLANG_DSPARK_M31_LAYER_SHIFT=<int> shifts which layer OUTPUTS are captured (0 = layer ids as given;
+#    -1 = the inputs of those layers). Only for A/B-ing the feature convention against accept length.
+for rel in ("models/minimax_m3.py", "models/minimax_m3_vl.py"):
+    patch(rel, [
+        (
+            "        for lid in sorted(int(x) for x in layer_ids):\n",
+            "        import os as _os\n"
+            "        _shift = int(_os.environ.get(\"SGLANG_DSPARK_M31_LAYER_SHIFT\", \"0\"))\n"
+            "        if _shift:\n"
+            "            logger.warning(\"DSPARK capture layer ids shifted by %d (diagnostic)\", _shift)\n"
+            "        for lid in sorted(int(x) + _shift for x in layer_ids):\n",
+        ),
+    ])
+
+# 6. dp-lm-head: the fork's MiniMax VL path crashes on idle DP ranks with --enable-dp-lm-head (IndexError in the logits
+#    processor, reproduced WITHOUT speculative decoding); the draft instead keeps a full-vocab lm_head copy, so waive the rule.
+patch("arg_groups/speculative_hook.py", [
+    (
+        "        if not server_args.enable_dp_lm_head:\n"
+        "            raise ValueError(\"DSpark with dp attention requires --enable-dp-lm-head.\")\n",
+        "        if not server_args.enable_dp_lm_head:\n"
+        f"            {MARK}\n"
+        "            import os as _os\n"
+        "            if _os.environ.get(\"SGLANG_DSPARK_NO_DP_LM_HEAD\", \"0\") == \"1\":\n"
+        "                logger.warning(\"DSpark with dp attention WITHOUT --enable-dp-lm-head allowed by SGLANG_DSPARK_NO_DP_LM_HEAD=1 (draft keeps a full-vocab lm_head copy).\")\n"
+        "            else:\n"
+        "                raise ValueError(\"DSpark with dp attention requires --enable-dp-lm-head.\")\n",
+    ),
+], )
 
 # 5. training-compatible attention: its extend path is varlen-generic (cu_seqlens/prefix_lens/_max_seqlen_q come
 #    from backend._build_extend_metadata, which already knows TARGET_VERIFY), so let an explicit env waive the guard.
