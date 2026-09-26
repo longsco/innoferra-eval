@@ -351,7 +351,27 @@ Natural-prompt throughput through the router (16 prompts, 400 max tokens, greedy
 | adaptive-think total tok/s | 82 | 504 | 852 |
 
 Per-stream > 60 tok/s now holds at node concurrency 16 (no-think) / ~16 (adaptive), versus 4 on the pre-DSpark layout — the strict manual SLO
-point moved from ~1.75 M TPM to the c16 region. Replay of the 294 captured requests: see below.
+point moved from ~1.75 M TPM to the c16 region.
+
+**Replay of the 294 captured prod requests through the stack (06:03–06:30Z, conc 8): 294/294 = 100 %**, every cohort 100 %. But the
+distributions tell the real story for *real* traffic (p50 prompt 54k tokens, p90 200k), by prompt-length bucket, cold caches:
+
+| prompt tokens | plain 2×tp4 cold (09-25): TTFT p50 / decode tok/s | plain warm (09-25) | **Dynamo+DSpark cold (09-26)** |
+|---|---|---|---|
+| 0–20k | 2.5 s / 34.5 | 2.6 s / 44.8 | 3.0 s / **83.5** |
+| 20–60k | 2.2 s / 32.4 | 3.0 s / 47.6 | 4.3 s / 49.2 |
+| 60–120k | 4.1 s / 37.3 | 4.8 s / 44.2 | 8.0 s / **33.7** |
+| 120–300k | 6.0 s / 25.7 | 12.7 s / 39.4 | 14.2 s / **21.6** |
+| 300k+ | 26 s / 39.0 | 28 s / 38.3 | 37 s / **24.5** |
+
+Reading: (1) DSpark doubles decode on short prompts but the 5-layer dense draft attends over the *whole* context every step, so on 60k+ prompts
+its own attention eats the gain (decode −10…−45 %); (2) TTFT grows ~1.6–2× on long prompts (draft-KV injection + FULL aux capture on
+prefill, and/or frontend-side tokenization); (3) `cached_tokens` p50 = 128 in every bucket: Dynamo picks the worker but each worker's DP4
+scheduler round-robins across its 4 prefix caches, so the gateway's per-rank pinning (which gave 134k-token hits on continuations) is lost.
+Overall for the captured workload: TTFT p50 8.1 s (vs 3.0 cold / 1.9 warm), decode p50 43 (vs 46 warm). **For the real bypass workload the
+stack is not yet a net win**; it is for short-prompt chat. Levers to test next, in order: a sliding window for the draft's attention
+(bounds the per-step draft cost; check accept length on long prompts), gamma 4–5, compact verify with an SPS table (needs eager decode under
+dp-attention), and DP-rank affinity from the router (Dynamo 1.5 has no per-DP-rank routing for dp-attention workers).
 
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.

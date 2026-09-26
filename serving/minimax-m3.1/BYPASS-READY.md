@@ -3,7 +3,10 @@
 **STACK 2026-09-26 05:56Z: gateway `:8000` → NVIDIA Dynamo KV-router `:8001` → 2× SGLang workers (tp4/ep4/dp4, GPUs 0-3 / 4-7) each running
 MiniMax-M3.1 preview2 WITH DSpark (innoferra port, training-compatible arithmetic on).** All containers `--restart unless-stopped`:
 `dyn-etcd dyn-nats dyn-w0 dyn-w1 dyn-frontend m31-gateway`. One command to (re)create everything: `SPEC=dspark bash /data01/minimax31/serving/dynamo/up.sh`.
-Validation on this stack (format probes, natural-prompt throughput, 294-request replay) is recorded in knowledge §6f/§6g as it completes.
+Validation on this stack: format 25/25, replay 294/294; natural short prompts 2× faster decode. **Caveat for the real (long-prompt) workload:**
+cold TTFT p50 8.1 s and decode on 60k+ prompts slower than the plain 2×tp4 stack (knowledge §6g). If tomorrow's traffic must optimise
+TTFT on long prompts, run the plain stack instead (`SPEC=none` engines + `UPSTREAMS=2 ROUTE_DP_SIZE=4` gateway, commands below); tuning of
+the DSpark long-context cost is in progress.
 
 ## What TokenHub points at
 | | |
