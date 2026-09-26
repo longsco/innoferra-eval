@@ -139,7 +139,12 @@ done &
 FOLLOWER=$!
 until curl -sf -m 5 "http://127.0.0.1:$PORT/health" >/dev/null; do
   RC=$($DOCKER inspect "$NAME" --format '{{.RestartCount}}' 2>/dev/null || echo 0)
-  if [ "${RC:-0}" -ge 2 ]; then log "FATAL container restart-looping (RestartCount=$RC); last error:"; $DOCKER logs --tail 200 "$NAME" 2>&1 | grep -E "Error|Exception" | tail -3 | cut -c1-220 | tee -a "$LOG"; $DOCKER rm -f "$NAME" >/dev/null 2>&1; exit 3; fi
+  if [ "${RC:-0}" -ge 2 ]; then
+    CRASH="$LOGS/$NAME-crash-$(date -u +%Y%m%dT%H%M%SZ).log"; $DOCKER logs --tail 400 "$NAME" > "$CRASH" 2>&1   # keep the evidence before removing the container
+    log "FATAL container restart-looping (RestartCount=$RC); full log: $CRASH; first exception:"
+    grep -nE "Traceback|Error|Exception|assert|raise " "$CRASH" | grep -vE "scheduler died|EOFError|kill_process_tree|sigquit|SystemExit|pyspy|Pyspy" | head -3 | cut -c1-220 | tee -a "$LOG"
+    if [ "${KEEP_ON_FAIL:-0}" = 1 ]; then log "KEEP_ON_FAIL=1: container left restart-looping for inspection"; else $DOCKER rm -f "$NAME" >/dev/null 2>&1; fi; exit 3
+  fi
   if ! $DOCKER ps --format '{{.Names}}' | grep -qx "$NAME"; then log "FATAL container exited after $(( $(date +%s) - T0 ))s — last lines:"; $DOCKER logs --tail 30 "$NAME" 2>&1 | tee -a "$LOG"; kill $FOLLOWER 2>/dev/null; exit 1; fi
   [ $(( $(date +%s) - T0 )) -gt "$WAIT" ] && { log "TIMEOUT ${WAIT}s waiting for /health"; kill $FOLLOWER 2>/dev/null; exit 1; }
   sleep 10
