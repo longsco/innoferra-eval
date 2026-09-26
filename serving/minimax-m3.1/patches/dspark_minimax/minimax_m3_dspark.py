@@ -170,7 +170,11 @@ class DSparkMiniMaxDraftModel(nn.Module):
         return self.embed_tokens(input_ids)
 
     def get_attention_sliding_window_size(self) -> Optional[int]:
-        return None
+        # Experiment knob: bound the draft's attention to the last N tokens (the draft was trained with full
+        # context; on 60k+ prompts its dense attention over the whole context eats the speculative gain).
+        import os as _os
+        w = int(_os.environ.get("SGLANG_DSPARK_M31_DRAFT_WINDOW", "0"))
+        return w if w > 0 else None
 
     def project_target_hidden(self, target_hidden: torch.Tensor) -> torch.Tensor:
         expected = int(self.fc.in_features)

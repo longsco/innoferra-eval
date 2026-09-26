@@ -24,9 +24,16 @@ def patch(rel, pairs, must=True):
     s = open(p).read()
     applied = 0
     for old, new in pairs:
-        if new in s:                      # this edit is already in place
+        if new in s:                      # this edit is already in place, verbatim
+            continue
+        # a distinctive line of the replacement (one that the anchor does not contain) marks it as applied,
+        # even if a later pair edited the inserted text or the anchor is an insert-before that still exists
+        sig = [l for l in new.splitlines() if l.strip() and l.strip() not in old][:1]
+        if sig and sig[0] in s:
             continue
         n = s.count(old)
+        if n == 0:
+            raise SystemExit(f"anchor missing and replacement signature absent in {rel}:\n{old[:200]}")
         if n != 1:
             raise SystemExit(f"anchor count {n} != 1 in {rel}:\n{old[:200]}")
         s = s.replace(old, new); applied += 1

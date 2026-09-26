@@ -93,6 +93,7 @@ if [ "$SPEC" = dspark ]; then
   # (SGLANG_DSPARK_ALLOW_A2A=1: NVFP4 experts need MegaMoE; the dense draft never enters the MoE all-to-all) and static verify.
   ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark)   # no --enable-dp-lm-head: it crashes the fork's VL path on idle DP ranks
   [ -z "$DSPARK_BLOCK" ] || ARGV+=(--speculative-dspark-block-size "$DSPARK_BLOCK")
+  [ -z "${DRAFT_ATTN:-}" ] || ARGV+=(--speculative-draft-attention-backend "$DRAFT_ATTN")   # e.g. flashinfer (honours the draft's sliding window; trtllm_mha does not)
   ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
 fi
 DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
