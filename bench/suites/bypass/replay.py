@@ -70,7 +70,8 @@ def replay(t: Target, recs: list[dict], *, concurrency: int = 1, progress=None, 
                 b["model"] = model_override; fs.add("model:overridden")
             r: ChatResult = chat(t, b)
             m = r.message or {}
-            row = {"i": i, "ok": r.ok, "status": r.status, "code": r.error_code, "features": sorted(fs),
+            # HTTP 200 with no finish_reason = an empty/aborted stream (a worker died mid-request, or an error event) -> NOT ok.
+            row = {"i": i, "ok": bool(r.ok and r.finish_reason is not None), "status": r.status, "code": r.error_code, "features": sorted(fs),
                    "elapsed_s": round(r.elapsed_s, 3), "ttft_s": round(r.ttft_s, 3) if r.ttft_s else None,
                    "prompt_tokens": r.prompt_tokens, "completion_tokens": r.completion_tokens, "cached_tokens": r.cached_tokens,
                    "reasoning_tokens": (((r.usage or {}).get("completion_tokens_details") or {}).get("reasoning_tokens")
