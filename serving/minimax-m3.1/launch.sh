@@ -20,6 +20,11 @@ SPEC=${SPEC:-none}                        # none | dspark  (dspark: draft at $MO
 DSPARK_BLOCK=${DSPARK_BLOCK:-}
 DRAFT_WINDOW=${DRAFT_WINDOW:-}                # dspark only: override the draft attention window (empty = draft config, 0 = full context)
 MOE_A2A=${MOE_A2A:-megamoe}; MOE_RUNNER=${MOE_RUNNER:-deep_gemm}
+# sglang splits --chunked-prefill-size across DP ranks; MegaMoE caps a rank at 16384 tokens per forward
+# (SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK). Clamp so tp2/dp2 (32768) and tp4/dp4 (65536) never exceed it.
+if [ "$MOE_A2A" = megamoe ] && [ "$CHUNK" -gt $(( 16384 * DP_SIZE )) ]; then
+  echo "note: CHUNK $CHUNK > 16384 x dp$DP_SIZE (MegaMoE per-rank cap) -> $(( 16384 * DP_SIZE ))" >&2; CHUNK=$(( 16384 * DP_SIZE ))
+fi
 TRAINING_COMPAT=${TRAINING_COMPAT:-1}     # SGLANG_M3_TRAINING_COMPATIBLE; 0 ONLY for experiments (vendor: numerics no longer training-matched)
 DEV_SRC=${DEV_SRC:-}                      # bind-mount a patched fork tree (…/0922-sglang/python) over the image's editable install (/opt/0922-sglang/python)
 DSPARK_VERIFY_MODE=${DSPARK_VERIFY_MODE:-static}   # dense draft + dp-attention: static (verify-all) is the supported mode with cuda graphs
