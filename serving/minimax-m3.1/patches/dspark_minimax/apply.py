@@ -239,4 +239,9 @@ patch("layers/attention/minimax_sparse_backend.py", [
     ),
 ])
 
+# 8. function_call/minimax_m3.py: the tool-call parameter parser raised on a stray closing tag in the model output
+#    (</trade_flow> inside free text of a parameter); the Dynamo frontend (which runs this parser for streaming AND
+#    non-streaming) turned that into a 500 for the whole response (replay 2026-09-26 08:18Z). Keep the text instead.
+patch("function_call/minimax_m3.py", [('                if len(stack) == 1:\n                    raise ValueError(f"unexpected closing tag: {tag}")\n                if stack[-1]["tag"] != tag:\n                    raise ValueError(\n                        f"mismatched closing tag: expected {stack[-1][\'tag\']}, got {tag}"\n                    )\n', '                if len(stack) == 1 or stack[-1]["tag"] != tag:\n                    # innoferra: the model sometimes emits a stray closing tag (e.g. </trade_flow> inside the free text of a\n                    # parameter). The vendor parser raised here and Dynamo turned that into a 500 for the whole response\n                    # (replay 2026-09-26 08:18Z); keep the text literally instead - a slightly-off argument beats a failed request.\n                    import logging as _logging\n                    _logging.getLogger(__name__).warning("minimax_m3 parser: stray closing tag </%s> kept as text", tag)\n                    if isinstance(stack[-1]["value"], str):\n                        stack[-1]["value"] += chunk\n                    continue\n')])
+
 print(("would change" if check else "changed") + ":", changed or "nothing")
