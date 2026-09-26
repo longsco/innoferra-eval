@@ -11,7 +11,7 @@ log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 log "== 1. runtime =="; bash "$K/dynamo/runtime.sh" up
 log "== 2. workers (ENGINE=dynamo, SPEC=$SPEC) =="
 $DOCKER rm -f m31-a2 m31-b2 dyn-w0 dyn-w1 >/dev/null 2>&1; sleep 4
-COMMON="TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 ENGINE=dynamo IMAGE=$IMAGE SPEC=$SPEC DEV_SRC=$DEV_SRC FOLLOW=0 CHAT_TEMPLATE_FILE=$CHAT_TEMPLATE_FILE"
+COMMON="TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 ENGINE=dynamo IMAGE=$IMAGE SPEC=$SPEC DEV_SRC=$DEV_SRC FOLLOW=0 CHAT_TEMPLATE_FILE=$CHAT_TEMPLATE_FILE DRAFT_WINDOW=${DRAFT_WINDOW:-} DRAFT_ATTN=${DRAFT_ATTN:-}"
 env MODEL_PATH=$M NAME=dyn-w0 PORT=19191 GPUS=0,1,2,3 $COMMON EXTRA_ARGS='--kv-events-config {"publisher":"zmq","endpoint":"tcp://*:5557","topic":"kv-events"}' bash "$K/launch.sh" | tail -2
 env MODEL_PATH=$M NAME=dyn-w1 PORT=19291 GPUS=4,5,6,7 $COMMON EXTRA_ARGS='--kv-events-config {"publisher":"zmq","endpoint":"tcp://*:5577","topic":"kv-events"}' bash "$K/launch.sh" | tail -2
 log "== 3. frontend :8001 =="; PORT=8001 bash "$K/dynamo/frontend.sh" >/dev/null

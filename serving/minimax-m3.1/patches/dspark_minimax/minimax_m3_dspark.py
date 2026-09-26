@@ -47,8 +47,10 @@ logger = logging.getLogger(__name__)
 _CKPT_PREFIX = "language_model.model.dspark."
 
 
-def _resolve_draft_window() -> Optional[int]:
-    """--speculative-draft-window-size wins; else SGLANG_DSPARK_M31_DRAFT_WINDOW (experiment knob); else full context."""
+def _resolve_draft_window(text_config) -> Optional[int]:
+    """Draft attention window. Precedence: --speculative-draft-window-size; env SGLANG_DSPARK_M31_DRAFT_WINDOW
+    (>0 overrides, 0 forces full context); else the draft config's own `sliding_window` (preview2 ships 4096:
+    the draft was trained windowed, full-context attention on 60k+ prompts collapses acceptance to ~1.5/7)."""
     w = None
     try:
         from sglang.srt.runtime_context import get_spec
@@ -59,8 +61,10 @@ def _resolve_draft_window() -> Optional[int]:
     if w is None:
         import os as _os
 
-        env = int(_os.environ.get("SGLANG_DSPARK_M31_DRAFT_WINDOW", "0"))
-        w = env if env > 0 else None
+        env = _os.environ.get("SGLANG_DSPARK_M31_DRAFT_WINDOW")
+        if env is not None:
+            return int(env) if int(env) > 0 else None
+        w = getattr(text_config, "sliding_window", None)
     return int(w) if w else None
 
 
@@ -128,14 +132,16 @@ class DSparkMiniMaxDraftModel(nn.Module):
         # Draft attention window (same contract as llama_eagle3): --speculative-draft-window-size, or the env
         # knob SGLANG_DSPARK_M31_DRAFT_WINDOW. The runner reads get_attention_sliding_window_size() for the
         # backend wrapper, but flashinfer decides per layer from RadixAttention.sliding_window_size, so set both.
-        self._draft_window_size: Optional[int] = _resolve_draft_window()
+        self._draft_window_size: Optional[int] = _resolve_draft_window(text_config)
         if self._draft_window_size is not None:
             for layer in self.layers:
                 layer.self_attn.attn.sliding_window_size = self._draft_window_size
             logger.info(
-                "DSpark MiniMax draft: attention window = %d tokens on %d draft layers",
+                "DSpark MiniMax draft: attention window = %d tokens on %d draft layers (needs the flashinfer draft backend)",
                 self._draft_window_size, len(self.layers),
             )
+        else:
+            logger.warning("DSpark MiniMax draft: FULL-CONTEXT attention (no window); expect low acceptance on long prompts")
         self.fc = nn.Linear(
             self.num_context_features * hidden_size, hidden_size, bias=False
         )

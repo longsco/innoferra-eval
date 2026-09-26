@@ -18,6 +18,7 @@ TP_SIZE=${TP_SIZE:-8}; EP_SIZE=${EP_SIZE:-8}; DP_SIZE=${DP_SIZE:-8}; DP_ATTN=${D
 GPUS=${GPUS:-all}                         # "all" or a CUDA_VISIBLE_DEVICES list, e.g. GPUS=0,1,2,3 for one of two tp4/dp4 engines
 SPEC=${SPEC:-none}                        # none | dspark  (dspark: draft at $MODEL_PATH/dspark, block size from DSPARK_BLOCK, default = draft config's dspark_block_size)
 DSPARK_BLOCK=${DSPARK_BLOCK:-}
+DRAFT_WINDOW=${DRAFT_WINDOW:-}                # dspark only: override the draft attention window (empty = draft config, 0 = full context)
 MOE_A2A=${MOE_A2A:-megamoe}; MOE_RUNNER=${MOE_RUNNER:-deep_gemm}
 TRAINING_COMPAT=${TRAINING_COMPAT:-1}     # SGLANG_M3_TRAINING_COMPATIBLE; 0 ONLY for experiments (vendor: numerics no longer training-matched)
 DEV_SRC=${DEV_SRC:-}                      # bind-mount a patched fork tree (…/0922-sglang/python) over the image's editable install (/opt/0922-sglang/python)
@@ -93,7 +94,9 @@ if [ "$SPEC" = dspark ]; then
   # (SGLANG_DSPARK_ALLOW_A2A=1: NVFP4 experts need MegaMoE; the dense draft never enters the MoE all-to-all) and static verify.
   ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark)   # no --enable-dp-lm-head: it crashes the fork's VL path on idle DP ranks
   [ -z "$DSPARK_BLOCK" ] || ARGV+=(--speculative-dspark-block-size "$DSPARK_BLOCK")
-  [ -z "${DRAFT_ATTN:-}" ] || ARGV+=(--speculative-draft-attention-backend "$DRAFT_ATTN")   # e.g. flashinfer (honours the draft's sliding window; trtllm_mha does not)
+  ARGV+=(--speculative-draft-attention-backend "${DRAFT_ATTN:-flashinfer}")   # flashinfer honours the draft's per-layer window (trtllm_mha does not);
+  # the draft window defaults to the draft config's sliding_window (4096 in preview2). DRAFT_WINDOW=N overrides, DRAFT_WINDOW=0 forces full context.
+  [ -z "${DRAFT_WINDOW:-}" ] || ENV_VARS+=("SGLANG_DSPARK_M31_DRAFT_WINDOW=$DRAFT_WINDOW")
   ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
 fi
 DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
