@@ -21,6 +21,6 @@ until curl -sf -m 5 http://127.0.0.1:8001/v1/models 2>/dev/null | grep -q minima
   [ $(( $(date +%s)-t0 )) -gt 2400 ] && { log "TIMEOUT"; exit 1; }; sleep 20
 done
 log "   registered after $(( $(date +%s)-t0 ))s: $(curl -s http://127.0.0.1:8001/v1/models | head -c 200)"
-log "== 4. gateway :8000 -> frontend :8001 =="; (cd /data01/minimax31 && UPSTREAMS=1 SGLANG_URL=http://127.0.0.1:8001 ROUTE_DP_SIZE=0 MAX_INFLIGHT=64 ROOT_VIA_KWARG=1 bash serving/gateway.sh > logs/gateway_start.log 2>&1)
+log "== 4. gateway :8000 -> frontend :8001 =="; (cd /data01/minimax31 && UPSTREAMS=1 SGLANG_URL=http://127.0.0.1:8001 ROUTE_DP_SIZE=0 MAX_INFLIGHT=64 ROOT_VIA_KWARG=1 STRIP_PARAMS=prompt_cache_key bash serving/gateway.sh > logs/gateway_start.log 2>&1)
 sleep 4; K2=$(cat ~/.m31_apikey); curl -s -m 120 localhost:8000/v1/chat/completions -H "Authorization: Bearer $K2" -H "Content-Type: application/json" -d '{"model":"minimax-m3","messages":[{"role":"user","content":"17*23 = ? number only"}],"thinking":{"type":"disabled"},"max_tokens":8}' | cut -c1-300; echo
 log "== up: $($DOCKER ps --format '{{.Names}}' | grep -E 'dyn-|m31' | tr '\n' ' ') =="

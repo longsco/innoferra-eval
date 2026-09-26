@@ -317,6 +317,24 @@ canaries); the gain is below the accept length because static verify-all spends 
 target step. Reasoning text accepts less. Tuning levers not yet touched: `--speculative-dspark-block-size` (4–5 may beat 7), compact verify with
 an SPS table (`dspark_sps_profiler.py`), draft cuda-graph settings. The 80k-random-prefix TPM sweep is NOT a valid DSpark benchmark.
 
+## 6f. Dynamo on the node (2026-09-26 05:20–05:56Z, `serving/minimax-m3.1/dynamo/`)
+
+Layout: etcd 3.5.17 + NATS 2.10 (host network) → 2× `python3 -m dynamo.sglang` workers (ai-dynamo **1.5.0** pip-installed on the fork image =
+`minimax-m31-sglang:demo-dynamo`; each tp4/ep4/dp4 + the DSpark port; KV events on ZMQ 5557/5577) → `dynamo.frontend` KV router on `:8001`
+(`--router-mode kv --router-replica-sync --router-prefill-load-scale inf --router-temperature 0 --dyn-chat-processor sglang`) → innoferra gateway
+`:8000` (`UPSTREAMS=1 SGLANG_URL=:8001 ROUTE_DP_SIZE=0 ROOT_VIA_KWARG=1`). One command: `SPEC=dspark bash dynamo/up.sh`.
+
+Things that bit, in order: (1) etcd single-node needs `--initial-advertise-peer-urls`/`--initial-cluster`; (2) `launch.sh` had a variable clash —
+the engine-commit lookup overwrote `ENGINE`, so the "dynamo" workers ran the plain HTTP server; (3) `dynamo.sglang` refuses sglang's
+`--tool-call-parser/--reasoning-parser` next to its own `--dyn-*` parsers; (4) the frontend materialises the model card from the path the
+worker advertises (`/models`) — mount the model dir into the frontend too; (5) Dynamo validates the OpenAI `model` name (sglang did not) →
+gateway `UPSTREAM_MODEL` resolves aliases upstream; (6) Dynamo's OpenAI parser **rejects role `root`** (99% of real M3 traffic) → the gateway
+moves a leading root message into `chat_template_kwargs.root_message` and the workers/frontend use `chat_template_root.jinja`, a variant
+that treats that kwarg exactly like a leading root message (renders byte-identical, verified with jinja inside the image); (7) a `max_tokens`
+boundary bug: with `max_tokens ∈ {3, 4, 8}` the DSpark path ran past EOS and the frontend printed `[e~[` as text (finish `length`); 7, 9–32 stop
+correctly. Not yet root-caused (verify-window trimming vs EOS scan); real traffic uses large budgets. Multimodal through Dynamo is not enabled
+yet (`--enable-multimodal` on the workers + the frontend's MM routing registry has no MiniMax entry).
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)

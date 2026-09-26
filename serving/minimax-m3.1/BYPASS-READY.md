@@ -1,8 +1,9 @@
 # MiniMax-M3.1 on node 0008 — ready sheet for the TokenHub bypass (prod MiniMax-M3 traffic)
 
-**READY 2026-09-25 17:10Z on preview2** — engines `m31-a2`/`m31-b2` (2×tp4/dp4, weights `MiniMax-M3.1-preview2-dspark-private`, no DSpark)
-+ `m31-gateway` (`UPSTREAMS=2 ROUTE_DP_SIZE=4`) on 0008, all `--restart unless-stopped`. preview1 is stopped (user decision: latest model only).
-Gates on preview2 (2026-09-25 16:58–18:03Z): innoferra M3 format **25/25**, official verifier **268 pass / 8 fail** (same model-behaviour set as preview1; two harness timeouts), replay **294/294**. Same as preview1 — the 10:10Z table below stands.
+**STACK 2026-09-26 05:56Z: gateway `:8000` → NVIDIA Dynamo KV-router `:8001` → 2× SGLang workers (tp4/ep4/dp4, GPUs 0-3 / 4-7) each running
+MiniMax-M3.1 preview2 WITH DSpark (innoferra port, training-compatible arithmetic on).** All containers `--restart unless-stopped`:
+`dyn-etcd dyn-nats dyn-w0 dyn-w1 dyn-frontend m31-gateway`. One command to (re)create everything: `SPEC=dspark bash /data01/minimax31/serving/dynamo/up.sh`.
+Validation on this stack (format probes, natural-prompt throughput, 294-request replay) is recorded in knowledge §6f/§6g as it completes.
 
 ## What TokenHub points at
 | | |
@@ -23,16 +24,19 @@ every request logged with tokens/TTFT/reasoning/tool-calls/finish (`/data01/mini
 ## Operate
 ```
 # on 0008
-sudo docker ps | grep m31                      # m31-a2 + m31-b2 (engines) + m31-gateway (+ m31-gateway-p2 :8001, gating only)
+sudo docker ps | grep -E "dyn-|m31"            # dyn-etcd dyn-nats dyn-w0 dyn-w1 dyn-frontend m31-gateway
 bash /data01/minimax31/serving/gate.sh         # engine correctness canaries
 bash /data01/minimax31/serving/gateway.sh      # (re)start gateway with the M3.1 profile
 tail -f /data01/minimax31/logs/m31_access.log  # live requests: status, ms, pt/ct, rt (reasoning tokens), tc, fin, ttft, cached
-# engines (2 x tp4/dp4 on preview2, the deployed layout):
+# the deployed stack (Dynamo + DSpark), from scratch or after a reboot:
+SPEC=dspark bash /data01/minimax31/serving/dynamo/up.sh          # etcd+nats, 2 workers, KV-router :8001, gateway :8000 (~6 min)
+bash /data01/minimax31/serving/dynamo/runtime.sh status           # etcd/nats health
+sudo docker logs -f dyn-w0 | grep -E "Error|accept"               # worker logs (DSpark accept metrics on :19191/metrics)
+# fallback WITHOUT Dynamo (two plain sglang HTTP engines + gateway hash-routing), DSpark optional via SPEC=dspark:
 M=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private
-MODEL_PATH=$M NAME=m31-a2 PORT=19191 GPUS=0,1,2,3 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 bash /data01/minimax31/serving/launch.sh
-MODEL_PATH=$M NAME=m31-b2 PORT=19291 GPUS=4,5,6,7 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 bash /data01/minimax31/serving/launch.sh
+MODEL_PATH=$M NAME=m31-a2 PORT=19191 GPUS=0,1,2,3 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 SPEC=dspark DEV_SRC=/data01/minimax31/src/0922-sglang/python bash /data01/minimax31/serving/launch.sh
+MODEL_PATH=$M NAME=m31-b2 PORT=19291 GPUS=4,5,6,7 TP_SIZE=4 EP_SIZE=4 DP_SIZE=4 CHUNK=65536 MAXREQ=128 SPEC=dspark DEV_SRC=/data01/minimax31/src/0922-sglang/python bash /data01/minimax31/serving/launch.sh
 UPSTREAMS=2 ROUTE_DP_SIZE=4 MAX_INFLIGHT=32 bash /data01/minimax31/serving/gateway.sh
-# when MiniMax ships the DSpark-capable engine: add SPEC=dspark (draft at $M/dspark) to both launches, rebuild the image first
 # single tp8/dp8 engine (vendor demo layout, slower at scale): NAME=m31-demo bash launch.sh ; bash gateway.sh
 ```
 Both containers are `--restart unless-stopped`; the node's JIT cache is mounted so a relaunch is minutes, not the first-run 10 min.
@@ -70,10 +74,10 @@ at 41 tok/s per stream. Gateway admission `MAX_INFLIGHT=32` (429 above).
 thinking budget and answered a "be thorough" prompt with 4096 tokens of reasoning and **empty content**; with `medium` it thinks ~1k
 tokens and answers. Set `DEFAULT_REASONING_EFFORT=` (empty) in `gateway.sh` to get the raw vendor behaviour.
 
-## preview2 / DSpark (2026-09-25 evening)
-MiniMax dropped `MiniMax-M3.1-preview2-dspark-private` (target + 2.3 GB DSpark draft). The target runs at the same speed as preview1 and is
-being gated on GPUs 4-7 behind `:8001`. **DSpark cannot start on the 09-22 engine** (dp-attention DSpark needs the built-in TP MoE; the
-NVFP4 experts need MegaMoE; no MiniMax draft class) — waiting on MiniMax for the matching engine commit. Details: knowledge §6c.
+## DSpark (ported by us, 2026-09-26)
+MiniMax's engine could not run their own draft; we ported it (`serving/minimax-m3.1/patches/dspark_minimax/`, applied over the fork source
+and bind-mounted into the containers). Lossless (greedy text identical), accept length 2.1–2.6 on natural text, single-stream 66 → 92 tok/s,
+c8 per-stream 48 → 64 tok/s. Known boundary bug: `max_tokens` of 3, 4 or 8 can run past EOS (real traffic uses large budgets). Knowledge §6e.
 
 ## Known limits (engine-side, reported to MiniMax)
 No speculative decoding (DSpark not shipped) → per-stream ~35–65 tok/s · attention must be TP1 → 8 (or 2×4) separate prefix caches ·
