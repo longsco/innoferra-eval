@@ -85,7 +85,7 @@ if [ "$SPEC" = dspark ]; then
   # (SGLANG_DSPARK_ALLOW_A2A=1: NVFP4 experts need MegaMoE; the dense draft never enters the MoE all-to-all) and static verify.
   ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --enable-dp-lm-head)
   [ -z "$DSPARK_BLOCK" ] || ARGV+=(--speculative-dspark-block-size "$DSPARK_BLOCK")
-  ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
+  ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
 fi
 DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
   --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864

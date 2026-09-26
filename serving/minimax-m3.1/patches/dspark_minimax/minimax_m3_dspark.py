@@ -301,7 +301,10 @@ class DSparkMiniMaxDraftModel(nn.Module):
                 loaded.add(name)
         missing = [
             n for n in params_dict
-            if n not in loaded and not n.startswith("confidence_head.")
+            if n not in loaded
+            and not n.startswith("confidence_head.")
+            # RadixAttention's optional per-layer KV scales are not in the checkpoint (default 1.0)
+            and not n.endswith((".attn.k_scale", ".attn.v_scale", ".attn.q_scale", ".attn.idx_q_scale"))
         ]
         if skipped:
             logger.info("DSpark MiniMax draft: skipped %d checkpoint tensors (e.g. %s)",

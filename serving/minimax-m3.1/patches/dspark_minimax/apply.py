@@ -176,4 +176,27 @@ patch("arg_groups/speculative_hook.py", [
     ),
 ])
 
+# 5. training-compatible attention: its extend path is varlen-generic (cu_seqlens/prefix_lens/_max_seqlen_q come
+#    from backend._build_extend_metadata, which already knows TARGET_VERIFY), so let an explicit env waive the guard.
+patch("layers/attention/minimax_sparse_backend.py", [
+    (
+        "            if runner.server_args.speculative_algorithm is not None:\n"
+        "                raise ValueError(\n"
+        "                    \"M3 training-compatible attention does not support speculative decoding\"\n"
+        "                )\n",
+        "            if runner.server_args.speculative_algorithm is not None:\n"
+        f"                {MARK} verify == a varlen extend of speculative_num_draft_tokens per request\n"
+        "                import os as _os\n"
+        "                if _os.environ.get(\"SGLANG_M3_TRAINING_ALLOW_SPEC\", \"0\") == \"1\":\n"
+        "                    logger.warning(\n"
+        "                        \"M3 training-compatible attention with speculative decoding allowed by \"\n"
+        "                        \"SGLANG_M3_TRAINING_ALLOW_SPEC=1 (TARGET_VERIFY served by the extend path).\"\n"
+        "                    )\n"
+        "                else:\n"
+        "                    raise ValueError(\n"
+        "                        \"M3 training-compatible attention does not support speculative decoding\"\n"
+        "                    )\n",
+    ),
+])
+
 print(("would change" if check else "changed") + ":", changed or "nothing")
