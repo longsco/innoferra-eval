@@ -467,6 +467,21 @@ six streams 110 per stream (a 4-GPU tp4 worker: 205 / 214 / 113); pair on the sa
 (`Capture prefill CUDA graph failed: Unsupported method call`), fa4 draft backend (scheduler aborts at init, exit -3, no traceback).
 mem-fraction 0.8: loads, same speed. Crash logs now kept by `launch.sh` (`<name>-crash-<ts>.log`).
 
+## 6k. Candidate B (bare engines + pinning gateway, windowed draft) vs the Dynamo path — decision (2026-09-26 11:00–11:45Z)
+
+Bare 2×tp4 engines behind `gateway.sh UPSTREAMS=2 ROUTE_DP_SIZE=4` with the windowed DSpark draft: real long prompts cold 162–305
+tok/s, six cached streams 190 tok/s each at TTFT 2.1 s, warm TTFT 0.6–0.9 s (deterministic prefix→rank pinning). 80k-frame sweep
+through the gateway: 0.88 M @c1 (135 tok/s), 4.45 M @c8, 6.19 M @c16, then **flat ~7.0 M from c32** with TTFT p50 11 → 36 s: the
+sweep's single hot prefix is pinned to ONE rank, so all concurrency lands on one GPU's attention; Dynamo's KV router spreads it
+(18.7 M @c64). Official verifier on the bare path **267/9** (the 8 model-behaviour cases + one packet-length case; 200/201-image
+requests 500) — but both engines **crashed during the verifier's stress cases** (a request timed out at 11:29:56, the server process
+restarted at 11:30:16; 1M-token / 200-image inputs) and were still reloading when the replay started: 19/294 (265 × 502
+`upstream_unavailable`). **Decision: the Dynamo path stays deployed** — 2.7× the hot-prefix throughput, KV-aware routing, and its
+stricter frontend answers the stress requests itself instead of taking a worker down; its 24 extra verifier misses are
+multimodal/validation edge cases outside the captured production traffic (replay 293–294/294), two of which the gateway now
+absorbs (base64 validation + padding → 400 `invalid_media_data`; mixed reasoning/content chunks split for 02_07). Final stack relaunched
+11:41Z with every patch (draft window, frontend media-roles + parser mounts, gateway guards, warm-up) and re-gated (§6l).
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
