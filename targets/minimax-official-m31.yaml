@@ -1,0 +1,22 @@
+name: minimax-official-m31
+# MiniMax's OWN hosted M3.1 API, the reference to compare the team's stack against. FILL IN base_url/model from the quota mail
+# (international: https://api.minimax.io/v1, China: https://api.minimaxi.com/v1); key via MINIMAX_API_KEY. Same battery as m31-team-us01.
+spec: minimax-m3
+base_url: https://api.minimax.io/v1
+model: MiniMax-M3.1
+api_key_env: MINIMAX_API_KEY
+timeout_s: 1800
+capabilities:
+  images: true
+  video: false
+  thinking: true
+  tools: true
+load:
+  input_tokens: 80000
+  output_tokens: 600
+  shared_prefix_tokens: 80000
+  question_tokens: 128
+  concurrency_grid: [1, 4, 8]
+  target_concurrency: 8
+notes: >
+  Reference endpoint (vendor). Load levels kept low: a paid quota, not our hardware.

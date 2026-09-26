@@ -1,0 +1,26 @@
+name: m31-team-us01
+# The serving team's MiniMax-M3.1 TEST endpoint (public hostname, same stack as 10.10.100.130:30800).
+# Evaluated 2026-09-26 with the SAME battery as our node-0008 bypass stack: M3 format probes + official verifier, §2 TPM sweep
+# (bench_tpm.sh via node 0008 through a reverse tunnel), 294-request prod replay, natural-prompt A/B. It is a PRODUCTION endpoint:
+# Envoy rate-limits 50 req/s; keep load levels moderate and off-peak.
+spec: minimax-m3                        # bypass shape: must accept MiniMax-M3 traffic unchanged (use minimax-m3.1 for the native spec)
+base_url: http://minimax-m31-us01.innomatrix.cloud/v1   # public test endpoint of the team M3.1 stack (AWS NLB -> Envoy -> Dynamo)
+model: minimax-m3.1
+api_key_env: M31_TEAM_API_KEY           # export M31_TEAM_API_KEY=$(cat ~/.m31_team_apikey)
+timeout_s: 1800
+capabilities:
+  images: true
+  video: false
+  thinking: true
+  tools: true
+load:
+  input_tokens: 80000
+  output_tokens: 600
+  shared_prefix_tokens: 80000
+  question_tokens: 128
+  concurrency_grid: [1, 4, 8, 16, 32]
+  target_concurrency: 16
+notes: >
+  Thinking ON by default; accepts M3-style thinking field, root role, reasoning_effort, images, prompt_cache_key and the
+  Anthropic Messages API without any gateway shim. Tool calls arrive as one chunk (Dynamo). Measured 2026-09-26: cold TTFT
+  1.0-1.4 s and 300-360 tok/s single-stream on real 60-80k prompts.
