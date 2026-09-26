@@ -47,6 +47,23 @@ logger = logging.getLogger(__name__)
 _CKPT_PREFIX = "language_model.model.dspark."
 
 
+def _resolve_draft_window() -> Optional[int]:
+    """--speculative-draft-window-size wins; else SGLANG_DSPARK_M31_DRAFT_WINDOW (experiment knob); else full context."""
+    w = None
+    try:
+        from sglang.srt.runtime_context import get_spec
+
+        w = get_spec().speculative_draft_window_size
+    except Exception:  # spec context not initialised (e.g. offline import)
+        w = None
+    if w is None:
+        import os as _os
+
+        env = int(_os.environ.get("SGLANG_DSPARK_M31_DRAFT_WINDOW", "0"))
+        w = env if env > 0 else None
+    return int(w) if w else None
+
+
 class DSparkMiniMaxDraftModel(nn.Module):
     """MiniMax-M3.1 DSpark draft: `layers.{i}.decoder_layer` are plain dense M3 layers."""
 
@@ -108,6 +125,17 @@ class DSparkMiniMaxDraftModel(nn.Module):
                 for i in range(num_layers)
             ]
         )
+        # Draft attention window (same contract as llama_eagle3): --speculative-draft-window-size, or the env
+        # knob SGLANG_DSPARK_M31_DRAFT_WINDOW. The runner reads get_attention_sliding_window_size() for the
+        # backend wrapper, but flashinfer decides per layer from RadixAttention.sliding_window_size, so set both.
+        self._draft_window_size: Optional[int] = _resolve_draft_window()
+        if self._draft_window_size is not None:
+            for layer in self.layers:
+                layer.self_attn.attn.sliding_window_size = self._draft_window_size
+            logger.info(
+                "DSpark MiniMax draft: attention window = %d tokens on %d draft layers",
+                self._draft_window_size, len(self.layers),
+            )
         self.fc = nn.Linear(
             self.num_context_features * hidden_size, hidden_size, bias=False
         )
@@ -170,11 +198,7 @@ class DSparkMiniMaxDraftModel(nn.Module):
         return self.embed_tokens(input_ids)
 
     def get_attention_sliding_window_size(self) -> Optional[int]:
-        # Experiment knob: bound the draft's attention to the last N tokens (the draft was trained with full
-        # context; on 60k+ prompts its dense attention over the whole context eats the speculative gain).
-        import os as _os
-        w = int(_os.environ.get("SGLANG_DSPARK_M31_DRAFT_WINDOW", "0"))
-        return w if w > 0 else None
+        return self._draft_window_size
 
     def project_target_hidden(self, target_hidden: torch.Tensor) -> torch.Tensor:
         expected = int(self.fc.in_features)
