@@ -21,7 +21,9 @@ DSPARK_BLOCK=${DSPARK_BLOCK:-}
 MOE_A2A=${MOE_A2A:-megamoe}; MOE_RUNNER=${MOE_RUNNER:-deep_gemm}
 TRAINING_COMPAT=${TRAINING_COMPAT:-1}     # SGLANG_M3_TRAINING_COMPATIBLE; 0 ONLY for experiments (vendor: numerics no longer training-matched)
 DEV_SRC=${DEV_SRC:-}                      # bind-mount a patched fork tree (…/0922-sglang/python) over the image's editable install (/opt/0922-sglang/python)
-DSPARK_VERIFY_MODE=${DSPARK_VERIFY_MODE:-static}   # dense draft + dp-attention: static (verify-all) is the supported mode with cuda graphs   # vendor recipe; DSpark+dp-attention demands MOE_A2A=none (built-in TP MoE)
+DSPARK_VERIFY_MODE=${DSPARK_VERIFY_MODE:-static}   # dense draft + dp-attention: static (verify-all) is the supported mode with cuda graphs
+ENGINE=${ENGINE:-sglang}                  # sglang = python -m sglang.launch_server (HTTP on $PORT) | dynamo = python -m dynamo.sglang worker (NATS/etcd, no HTTP)
+DYN_ETCD=${DYN_ETCD:-http://127.0.0.1:2379}; DYN_NATS=${DYN_NATS:-nats://127.0.0.1:4222}; DYN_NAMESPACE=${DYN_NAMESPACE:-m31}   # vendor recipe; DSpark+dp-attention demands MOE_A2A=none (built-in TP MoE)
 # FORK CONSTRAINT (measured 2026-09-25, container restart-looped): "M3 training-compatible arithmetic requires attention TP1
 # (TP1, or --enable-dp-attention with tp == dp) and PP1". So on this fork attention-TP must be 1: DP_SIZE == TP_SIZE with
 # dp-attention on. TP4xDP2 and TP8 are NOT possible. Refuse early instead of burning 10 minutes.
@@ -38,7 +40,7 @@ TS=$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$JIT" "$LOGS"; LOG="$LOGS/launch-$TS.lo
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
 hdr(){ printf '\n== %s ==\n' "$*" | tee -a "$LOG"; }
 
-hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  gpus=$GPUS  spec=$SPEC  moe=$MOE_A2A/$MOE_RUNNER  training-compat=$TRAINING_COMPAT  dev-src=${DEV_SRC:-none}  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
+hdr "launch $TS  name=$NAME  port=$PORT  served=$SERVED  gpus=$GPUS  engine=$ENGINE  spec=$SPEC  moe=$MOE_A2A/$MOE_RUNNER  training-compat=$TRAINING_COMPAT  dev-src=${DEV_SRC:-none}  topology: tp$TP_SIZE ep$EP_SIZE dp$DP_SIZE dp-attn=$DP_ATTN (attn-TP per replica = $((TP_SIZE/DP_SIZE)))"
 # --- preflight -------------------------------------------------------------------------------------------------
 hdr "preflight"
 [ -f "$MODEL_PATH/config.json" ] || { log "FATAL no config.json under $MODEL_PATH"; exit 1; }
@@ -66,7 +68,13 @@ ENV_VARS=(
   SGLANG_DP_USE_GATHERV=1
   SGLANG_DISABLE_MSA=1
 )
-ARGV=(python3 -m sglang.launch_server
+if [ "$ENGINE" = dynamo ]; then
+  ENTRY=(python3 -m dynamo.sglang --dyn-tool-call-parser minimax_m3 --dyn-reasoning-parser minimax_m3 --skip-tokenizer-init)
+  ENV_VARS+=("ETCD_ENDPOINTS=$DYN_ETCD" "NATS_SERVER=$DYN_NATS" "DYN_NAMESPACE=$DYN_NAMESPACE")
+else
+  ENTRY=(python3 -m sglang.launch_server)
+fi
+ARGV=("${ENTRY[@]}"
   --model-path /models --served-model-name "$SERVED"
   --trust-remote-code --host 0.0.0.0 --port "$PORT"
   --tp-size "$TP_SIZE" --ep-size "$EP_SIZE" --dp-size "$DP_SIZE" --moe-dense-tp-size "$MOE_DENSE_TP"
@@ -107,6 +115,7 @@ log "container ${CID:0:12} started (t0)"
 printf '{"ts":"%s","name":"%s","container":"%s","image":"%s","image_id":"%s","engine_commit":"%s","model_path":"%s","weights_files":%s,"weights_mb":%s,"served":"%s","topology":"tp%s-ep%s-dp%s-dpattn%s","gpus":"%s","spec":"%s","port":%s,"memfrac":%s,"maxreq":%s,"chunk":%s,"extra_args":"%s","log":"%s"}\n' \
   "$TS" "$NAME" "${CID:0:12}" "$IMAGE" "${IMG_ID:7:12}" "${ENGINE:0:12}" "$MODEL_PATH" "$NFILES" "$MB" "$SERVED" "$TP_SIZE" "$EP_SIZE" "$DP_SIZE" "$DP_ATTN" "$GPUS" "$SPEC" "$PORT" "$MEMFRAC" "$MAXREQ" "$CHUNK" "$EXTRA_ARGS" "$LOG" >> "$LOGS/launches.jsonl"
 [ "$FOLLOW" = 1 ] || { log "FOLLOW=0: not waiting. logs: $DOCKER logs -f $NAME"; exit 0; }
+[ "$ENGINE" != dynamo ] || { log "ENGINE=dynamo: worker registers over NATS/etcd (no HTTP health); follow with: $DOCKER logs -f $NAME | grep -E 'Uvicorn|ready|registered|Error'"; exit 0; }
 
 # --- startup milestones, with timings ----------------------------------------------------------------------------
 hdr "startup milestones (engine log, filtered)"

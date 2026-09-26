@@ -274,6 +274,27 @@ vendor's training-compatible TP1 path, so numerics differ from what MiniMax cert
 Two open questions for the maintainer: which draft (their self-trained DFlash for M3 retargeted? MiniMax's DSpark?) and which
 checkpoint/quant. Their launch args are not readable from outside (Dynamo workers expose no `/get_server_args`).
 
+## 6e. The innoferra DSpark port (2026-09-26, `serving/minimax-m3.1/patches/dspark_minimax/`)
+
+MiniMax's answer to the engine question: the SGLang demo "did not include DSpark; we're still working on it… our production runs on
+our in-house engine"; "no secret modification, just Vanilla Markov Head and no confidence head"; MT-Bench accept length 2.3–3.8
+(incl. the target token). So we ported it. What the fork already had: the whole DSpark worker (`speculative/dspark_components/`:
+proposer, verify planner with static/compact ragged verify, target-hidden KV injection, Markov block sampler), a dense-draft template
+(`models/dspark.py` on Qwen3 layers) and a MoE-draft template (`models/deepseek_v4_dspark.py`). What it lacked, and what the patch adds:
+
+| piece | file | what |
+|---|---|---|
+| draft model | `models/minimax_m3_dspark.py` (new) | `DSparkMiniMaxDraftModel`: 5× `MiniMaxM3DecoderLayer` (dense: `moe_layer_freq=[0]*5`, no sparse attention → gemma norms, per-head qk-norm, partial RoPE 64/128, swigluoai FFN 12288, mxfp8 block-[1,32] weights), `fc` 30720→6144 + `hidden_norm` on the concatenated target hidden of layers [3,17,31,45,59], `final_norm`, `VanillaMarkov` (rank 256), confidence head **disabled** per vendor (weights present, skipped). Implements the worker contract: `attach_shared_modules`, `forward_embed`, `forward`, `compute_base_logits` (target `lm_head`), `write_target_hidden_kv` (per-layer K/V from the projected target hidden: `qkv_proj` → per-head k-norm → RoPE → `pool.set_kv_buffer[_prefix_valid]`), `prune_to_ctx_kv_injection`, `load_weights` (strips `language_model.model.dspark.` and `.decoder_layer`, fused q/k/v and gate/up shards, `weight_scale_inv` via the quant loaders). |
+| target capture | `models/minimax_m3.py` | `set_dspark_layers_to_capture`: flags layer `id+1` so `prepare_attn` captures layer `id`'s output (the fork's Eagle3 hook; `_is_layer_to_capture` was never set anywhere — Eagle3 capture on M3 was unwired), and captures the **last** layer's output after the loop (`hidden + residual`, the final norm's input); TBO bypassed while capturing. |
+| served arch | `models/minimax_m3_vl.py` | the same setter on `MiniMaxM3SparseForConditionalGeneration` (the arch that is actually served) and the aux hidden states handed to the logits processor. |
+| arg rule | `arg_groups/speculative_hook.py` | `SGLANG_DSPARK_ALLOW_A2A=1` waives "DSpark + dp-attention needs `moe_a2a_backend=none`": the NVFP4 experts only exist on MegaMoE and a dense draft never enters the MoE all-to-all. |
+| attention guard | `layers/attention/minimax_sparse_backend.py` | `SGLANG_M3_TRAINING_ALLOW_SPEC=1` waives "training-compatible attention does not support speculative decoding": `TrainingAttention.forward` takes `cu_seqlens/prefix_lens/_max_seqlen_q` from `backend._build_extend_metadata`, which already builds the TARGET_VERIFY layout (d queries per request); MSA is off. |
+| launch | `launch.sh` | `SPEC=dspark` adds `--speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --enable-dp-lm-head`, env `SGLANG_RAGGED_VERIFY_MODE=static` (the supported mode for a dense draft under dp-attention with cuda graphs), the two waivers; `DEV_SRC=<fork>/python` bind-mounts the patched tree over the image's editable install (no `.so` under it, kernels are JIT). |
+
+Bring-up log: (1) draft class found and all draft weights loaded — the only complaint was our own missing-parameter check tripping on
+RadixAttention's optional `k_scale/v_scale` (fixed); (2) then the training-attention guard (waived after reading the verify path);
+(3) TC=0 run (numerics off) and TC=1 run (numerics on) queued on GPUs 4-7 — results below.
+
 ## 7. Open questions (answer by measurement, not assumption)
 1. ~~Does the fork report `reasoning_tokens` in `usage` (nested)?~~ **Answered: top-level and always 0** (see §4c) — report to MiniMax.
 2. Per-stream TPS without DSpark at 80k/600 — how far below 60? (sets the urgency of the DSpark drop)
