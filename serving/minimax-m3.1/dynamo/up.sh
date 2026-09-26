@@ -15,7 +15,7 @@ WORKER_TP=${WORKER_TP:-4}; case "$WORKER_TP" in 2|4|8) ;; *) log "FATAL WORKER_T
 NW=$(( 8 / WORKER_TP )); WORKERS=$(for i in $(seq 0 $((NW-1))); do printf 'dyn-w%s ' $i; done)
 $DOCKER rm -f m31-a2 m31-b2 m31-c2 dyn-w0 dyn-w1 dyn-w2 dyn-w3 dyn-w4 dyn-w5 dyn-w6 dyn-w7 >/dev/null 2>&1; sleep 4
 # CHUNK = 16384 x dp (MegaMoE per-rank cap; launch.sh also clamps). MAXREQ per worker scales with its GPU count.
-COMMON="TP_SIZE=$WORKER_TP EP_SIZE=$WORKER_TP DP_SIZE=$WORKER_TP CHUNK=$((16384*WORKER_TP)) MAXREQ=$((32*WORKER_TP)) ENGINE=dynamo IMAGE=$IMAGE SPEC=$SPEC DEV_SRC=$DEV_SRC FOLLOW=0 CHAT_TEMPLATE_FILE=$CHAT_TEMPLATE_FILE DRAFT_WINDOW=${DRAFT_WINDOW:-} DRAFT_ATTN=${DRAFT_ATTN:-} MEMFRAC=${MEMFRAC:-0.85}"
+COMMON="TP_SIZE=$WORKER_TP EP_SIZE=$WORKER_TP DP_SIZE=$WORKER_TP CHUNK=$((16384*WORKER_TP)) MAXREQ=$((32*WORKER_TP)) ENGINE=dynamo IMAGE=$IMAGE SPEC=$SPEC DEV_SRC=$DEV_SRC FOLLOW=0 CHAT_TEMPLATE_FILE=$CHAT_TEMPLATE_FILE DRAFT_WINDOW=${DRAFT_WINDOW:-} DRAFT_ATTN=${DRAFT_ATTN:-} MEMFRAC=${MEMFRAC:-0.8}"   # 0.8 not 0.85: the vision encoder runs in the engine parent process on the worker's first GPU; at 0.85 a 200-image request OOMed it (12:29Z) and took the worker down. Production runs 0.8 + an MM headroom gate for the same reason.
 log "   $NW workers x tp$WORKER_TP: $WORKERS"
 for i in $(seq 0 $((NW-1))); do
   g0=$(( i*WORKER_TP )); gpus=$(seq -s, $g0 $(( g0+WORKER_TP-1 )) | sed "s/,$//"); port=$(( 19191 + 100*i )); kvp=$(( 5557 + 20*i ))
