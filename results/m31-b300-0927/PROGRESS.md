@@ -39,14 +39,15 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 22:10 | P7 full grid (plain + HiCache + patch + 8 tokenizer workers): c256 **20.59 M** (TTFT p50 5.2 s), c512 23.35 M (TTFT 28.6 s, p99 204 s = saturated). Gate all PASS. New single-node best, no spec decode. Route B replay 1x/2x/4x running | tpm-*-p-plain-hicache-tok8.csv | next: chain6 = old-fork DSpark with CUDA graphs + 8 workers |
 | 20:50 | Upstream survey: vendor branch = v0.5.17 + 10 commits (148 files); upstream v0.5.18-20 = 2,235 commits, 96 of the vendor files overlap. Cherry-pick candidates: #34338 DP sync collapse, #32313 TP LM head a2a, #37505 DP prefix off-by-one (correctness), #38936 DP burst hang, #30393 HiCache DSpark draft caches, #35640, #32434, #36630/1, #31470 | git, release notes | |
 
-## Standing numbers (best per family, single node)
-| family | best | where |
-|---|---|---|
-| target | 56 M TPM/node | team's verified 7 M/GPU |
-| previous best (old fork, Dynamo 2x tp4, windowed DSpark) | 18.7 M @c64, TTFT 1.4 s | 09-26 |
-| 0927 demo, plain decode + HiCache (graphs) | 7.24 M @c128 | stress-hicache-nodspark |
-| 0927 demo, DSpark + HiCache, vendor verbatim (eager), patched | 6.53 M @c256 | p-vendor32 |
-| 0927 demo, TC0 | not viable (MSA missing) | – |
-| 0927 demo, DSpark graphs override | shelved (verify kernel not graph-safe: host sync, then per-call GB scratch) | – |
-| 0927 demo, plain + HiCache + 8 tokenizer workers | c64 12.34 M · c128 16.88 M · c256 **20.59 M** · c512 23.35 M (saturated) | p-plain-hicache-tok8 |
-| 0927 demo, eager DSpark + HiCache + 8 tokenizer workers | queued (P8) | p-vendor32-tok8 |
+## Standing numbers — reported PER GPU (node total / 8); target 7 M TPM per GPU (= 56 M per node)
+| family | per-GPU TPM | % of 7 M | where |
+|---|---|---|---|
+| target | 7.00 M | 100% | team's verified peak |
+| 0927 demo, plain + HiCache + kernel patch + 8 tokenizer workers | c64 1.54 M · c128 2.11 M · c256 **2.57 M** · c512 2.92 M (saturated, TTFT 29 s) | 37-42% | p-plain-hicache-tok8 |
+| previous best (old fork, Dynamo 2x tp4, windowed DSpark) | 2.34 M @c64 | 33% | 09-26 |
+| 0927 demo, DSpark + HiCache, vendor verbatim (eager), patched | 0.55 M @c64 · 0.82 M @c256 | 12% | p-vendor32 |
+| 0927 demo, plain + HiCache, 1 tokenizer worker | 0.88 M @c64 · 0.91 M @c128 | 13% | stress-hicache-nodspark |
+| 0927 demo, TC0 / DSpark graphs override | not viable on this image / shelved | – | – |
+| old fork DSpark (graphs) + 8 tokenizer workers | running (P10) | | old-dspark-tok8 |
+
+Convention from 22:15Z: all TPM figures in this log and in reports are per GPU unless marked "node".
