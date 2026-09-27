@@ -1,0 +1,4 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-p-plain-hicache,1,8,1.000,0.476,0.003,62.5,0.82,0.87,15.99
+80k-warm-0927-p-plain-hicache,64,320,0.000,0.000,0.000,0.0,0.00,0.00,0.00
+80k-warm-0927-p-plain-hicache,128,640,0.000,0.000,0.000,0.0,0.00,0.00,0.00

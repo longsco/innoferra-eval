@@ -1,0 +1,5 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-dspark-nohicache,1,8,1.000,0.103,0.001,13.2,1.40,1.86,75.50
+80k-warm-0927-dspark-nohicache,32,160,1.000,2.562,0.019,11.2,2.04,21.66,89.48
+80k-warm-0927-dspark-nohicache,64,256,1.000,4.385,0.032,10.9,3.92,42.25,92.01
+80k-warm-0927-dspark-nohicache,128,256,1.000,5.787,0.042,13.9,53.96,98.65,72.15

@@ -1,0 +1,2 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-tp8dp8-dspark-hicache,1,8,1.000,0.103,0.001,13.1,1.28,1.39,76.45

@@ -1,0 +1,6 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-stress-hicache-nodspark,1,8,1.000,0.474,0.003,62.7,0.86,1.07,15.94
+80k-warm-0927-stress-hicache-nodspark,64,320,1.000,7.023,0.051,38.1,27.49,62.42,26.27
+80k-warm-0927-stress-hicache-nodspark,128,640,1.000,7.237,0.053,38.1,70.99,145.82,26.25
+80k-warm-0927-stress-hicache-nodspark,256,1024,0.000,0.000,0.000,0.0,0.00,0.00,0.00
+80k-warm-0927-stress-hicache-nodspark,512,1024,0.000,0.000,0.000,0.0,0.00,0.00,0.00
