@@ -8,7 +8,7 @@ prod_cached_tokens, prod_completion_tokens, prod_status, request_id."""
 import argparse, gzip, json, sys, hashlib, datetime as dt, statistics as st
 ap = argparse.ArgumentParser(); ap.add_argument("log"); ap.add_argument("--start", required=True); ap.add_argument("--minutes", type=float, default=10)
 ap.add_argument("--nodes", type=int, default=24); ap.add_argument("--bucket", type=int, default=0); ap.add_argument("--out", required=True)
-ap.add_argument("--key", choices=["ip","cache_key"], default="cache_key", help="bucket key: client ip, or prompt_cache_key (fallback: hash of the first message)"); a = ap.parse_args()
+ap.add_argument("--key", choices=["ip","cache_key","session"], default="session", help="bucket key: client ip, or prompt_cache_key (fallback: hash of the first message)"); a = ap.parse_args()
 t0 = dt.datetime.fromisoformat(a.start).replace(tzinfo=dt.timezone.utc); t1 = t0 + dt.timedelta(minutes=a.minutes)
 def ip_of(d):
     xff = (d.get("client") or {}).get("x_forwarded_for") or ""; ip = xff.split(",")[0].strip() or (d.get("client") or {}).get("remote_addr") or ""
@@ -46,6 +46,7 @@ for line in lines(a.log):
         except Exception: continue
         if not isinstance(body, dict) or "messages" not in body: continue
         if a.key == "ip": key = ip_of(d)
+        elif a.key == "session" and req.get("session_id"): key = "sid:" + str(req.get("session_id")); has_ck[0] += 1
         else:
             key = body.get("prompt_cache_key")
             if not key:
@@ -56,7 +57,7 @@ for line in lines(a.log):
         n_kept += 1
         kept.append({"t": (ts - t0).total_seconds(), "request_id": d.get("request_id"), "body": body, "stream": bool(body.get("stream")),
                      "prod_ttft": fnum(up.get("header_time")), "prod_total": fnum(up.get("response_time")), "prod_status": status,
-                     "prod_prompt_tokens": pt, "prod_cached_tokens": ct, "prod_completion_tokens": cc, "client_ip": ip_of(d)})
+                     "prod_prompt_tokens": pt, "prod_cached_tokens": ct, "prod_completion_tokens": cc, "client_ip": ip_of(d), "session_id": req.get("session_id") or None})
 kept.sort(key=lambda r: r["t"])
 with open(a.out, "w") as o:
     for r in kept: o.write(json.dumps(r, ensure_ascii=False) + "\n")
@@ -68,4 +69,4 @@ print(f"cached_ratio p50={q(win_stats['cached'],.5):.3f} mean={st.mean(win_stats
 print(f"completion_tokens p50={q(win_stats['completion'],.5)} p90={q(win_stats['completion'],.9)} mean={st.mean(win_stats['completion']):.0f}" if win_stats["completion"] else "")
 print(f"prod TTFT(header_time) p50={q(win_stats['ttft'],.5)} p90={q(win_stats['ttft'],.9)} p99={q(win_stats['ttft'],.99)}; total p50={q(win_stats['total'],.5)} p90={q(win_stats['total'],.9)}")
 print(f"stream={win_stats['stream']}/{n_win} status={win_stats['status']}")
-bc = sorted(bucket_counts.get(i, 0) for i in range(a.nodes)); print(f"bucket key={a.key}: requests with prompt_cache_key={has_ck[0]}; per-bucket requests min={bc[0]} p50={bc[len(bc)//2]} max={bc[-1]}; distinct keys in bucket {a.bucket}={len(bucket_keys.get(a.bucket, ()))}")
+bc = sorted(bucket_counts.get(i, 0) for i in range(a.nodes)); print(f"bucket key={a.key}: requests keyed by session/prompt_cache_key={has_ck[0]}; per-bucket requests min={bc[0]} p50={bc[len(bc)//2]} max={bc[-1]}; distinct keys in bucket {a.bucket}={len(bucket_keys.get(a.bucket, ()))}")

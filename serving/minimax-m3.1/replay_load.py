@@ -29,7 +29,9 @@ async def one(client, r, t_start):
             async with client.stream("POST", a.base_url.rstrip("/") + "/v1/chat/completions", json=body,
                                      headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}) as resp:
                 status = resp.status_code
-                if not stream:
+                if status != 200:
+                    err = (await resp.aread())[:300].decode(errors="ignore")
+                elif not stream:
                     txt = await resp.aread(); ttft = time.perf_counter() - t0
                     try: usage = json.loads(txt).get("usage")
                     except Exception: err = txt[:200].decode(errors="ignore")
@@ -68,6 +70,10 @@ async def main():
     st_codes = {}
     for r in results: st_codes[str(r["status"]) + ("" if not r["error"] else " err")] = st_codes.get(str(r["status"]) + ("" if not r["error"] else " err"), 0) + 1
     print("   status:", st_codes)
+    ec = {}
+    for r in results:
+        if r["status"] != 200 and r["error"]: k = str(r["status"]) + " " + r["error"][:90].replace("\n", " "); ec[k] = ec.get(k, 0) + 1
+    for k, v in sorted(ec.items(), key=lambda kv: -kv[1])[:6]: print(f"   err x{v}: {k}")
     print(f"   TTFT(stream) ours p50={fmt(q([r['ttft'] for r in s_ok],.5))} p90={fmt(q([r['ttft'] for r in s_ok],.9))} p99={fmt(q([r['ttft'] for r in s_ok],.99))} | "
           f"prod p50={fmt(q([r['prod_ttft'] for r in s_ok],.5))} p90={fmt(q([r['prod_ttft'] for r in s_ok],.9))} p99={fmt(q([r['prod_ttft'] for r in s_ok],.99))}")
     print(f"   total     ours p50={fmt(q([r['total'] for r in ok],.5))} p90={fmt(q([r['total'] for r in ok],.9))} p99={fmt(q([r['total'] for r in ok],.99))} | "
