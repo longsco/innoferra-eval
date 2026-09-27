@@ -32,6 +32,9 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 20:38 | Launch name-conflict: forced removal of the old engine outlived the 2-min wait; launcher now retries `docker rm -f` for up to 10 min | launch0927-203638Z.log | |
 | 20:55 | Pivot: keep TC1 numerics, lift only the eager gate: env `SGLANG_M3_DSPARK_GRAPHS=1` honoured at the 3 gate sites (`patches/0927-dspark-graphs-override.patch`, launcher `GRAPHS=1`) | patch | correctness to be proven by gate.sh + kernel tests + quality run |
 | 20:56 | chain4 started: P5 = TC1 + kernel patch + graphs override + DSpark + HiCache (gate, probes, grid c1/8/16/64/128/256) -> P6 = P5 + 8 tokenizer workers (grid to c512, gate, Route B 1x/2x/4x) -> HiCache probe -> validation (candidate = P6 config; vendor verbatim + Route B) | stress2-0927.log | |
+| 21:04 | Graphs override attempt 1 (P5): capture fails, `int(w_id[-1].item())` host sync in `q8kv4_sparse_attention` block-major schedule (verify path) | docker logs | this is the vendor's reason for eager |
+| 21:13 | Attempt 2: `SGLANG_Q8KV4_SORT_MIN_LANES` forces the sync-free lane path; capture proceeds into target-verify, then OOM: `_predequant_pages` 3.75 GiB + `o_partial` 240 MiB per call are captured per batch tier | docker logs | graph-safe verify needs a persistent bounded workspace in the vendor kernel: shelved, reported to vendor |
+| 21:25 | chain5: P7 = plain + HiCache + patch + 8 tokenizer workers; P8 = vendor DSpark (eager) + HiCache + patch + 8 tokenizer workers; each: gate, probes, grid c1..c512, Route B 1x/2x/4x; then HiCache probe + validation (candidate = P8) | stress2-0927.log | measures the frontend fix on the two configs that boot |
 | 20:50 | Upstream survey: vendor branch = v0.5.17 + 10 commits (148 files); upstream v0.5.18-20 = 2,235 commits, 96 of the vendor files overlap. Cherry-pick candidates: #34338 DP sync collapse, #32313 TP LM head a2a, #37505 DP prefix off-by-one (correctness), #38936 DP burst hang, #30393 HiCache DSpark draft caches, #35640, #32434, #36630/1, #31470 | git, release notes | |
 
 ## Standing numbers (best per family, single node)
@@ -42,4 +45,5 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 0927 demo, plain decode + HiCache (graphs) | 7.24 M @c128 | stress-hicache-nodspark |
 | 0927 demo, DSpark + HiCache, vendor verbatim (eager), patched | 6.53 M @c256 | p-vendor32 |
 | 0927 demo, TC0 | not viable (MSA missing) | – |
-| 0927 demo, TC1 + DSpark graphs override + HiCache | running (P5), then +tok8 (P6) | p-tc1-graphs, p-tc1-graphs-tok8 |
+| 0927 demo, DSpark graphs override | shelved (verify kernel not graph-safe: host sync, then per-call GB scratch) | – |
+| 0927 demo, plain + HiCache + tok8 / eager DSpark + HiCache + tok8 | running (P7/P8) | p-plain-hicache-tok8, p-vendor32-tok8 |

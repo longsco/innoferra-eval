@@ -31,7 +31,7 @@ TP=${TP:-8}; EP=${EP:-8}; DP=${DP:-8}; DPATTN=${DPATTN:-1}; GPUS=${GPUS:-all}; D
 PATCH=${PATCH:-0}; PSRC=/data01/minimax31/src/0922-sglang-demo-024129f/python/sglang; PDST=/opt/0922-sglang/python/sglang; PATCHV=()
 # GRAPHS=1 lifts the vendor's eager gate for DSpark decode/verify/draft graphs under TRAINING_COMPAT=1 (env SGLANG_M3_DSPARK_GRAPHS=1 + 2 patched files)
 GRAPHS=${GRAPHS:-0}; GRAPHV=()
-[ "$GRAPHS" = 1 ] && GRAPHV=(-e SGLANG_M3_DSPARK_GRAPHS=1 -v $PSRC/srt/speculative/dspark_components/dspark_worker_v2.py:$PDST/srt/speculative/dspark_components/dspark_worker_v2.py:ro -v $PSRC/srt/model_executor/model_runner_components/cuda_graph_setup.py:$PDST/srt/model_executor/model_runner_components/cuda_graph_setup.py:ro)
+[ "$GRAPHS" = 1 ] && GRAPHV=(-e SGLANG_M3_DSPARK_GRAPHS=1 -e SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 -v $PSRC/kernels/ops/attention/minimax_sparse/q8kv4_msa.py:$PDST/kernels/ops/attention/minimax_sparse/q8kv4_msa.py:ro -v $PSRC/srt/speculative/dspark_components/dspark_worker_v2.py:$PDST/srt/speculative/dspark_components/dspark_worker_v2.py:ro -v $PSRC/srt/model_executor/model_runner_components/cuda_graph_setup.py:$PDST/srt/model_executor/model_runner_components/cuda_graph_setup.py:ro)
 [ "$PATCH" = 1 ] && PATCHV=(-v $PSRC/srt/layers/minimax_m3_training/router.py:$PDST/srt/layers/minimax_m3_training/router.py:ro -v $PSRC/kernels/ops/attention/minimax_kv_store.py:$PDST/kernels/ops/attention/minimax_kv_store.py:ro)
 ENV=(-e SGLANG_M3_TRAINING_COMPATIBLE=$TRAINING_COMPAT -e SGLANG_MINIMAX_M3_TRAINING_ROUTER=1 -e SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE=16 -e SGLANG_MINIMAX_SPARSE_KV4=1
      -e SGLANG_RAGGED_VERIFY_MODE=static -e SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK=16384 -e SGLANG_DP_USE_GATHERV=1
