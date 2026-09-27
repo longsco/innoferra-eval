@@ -1,0 +1,116 @@
+diff --git a/python/sglang/kernels/ops/attention/minimax_kv_store.py b/python/sglang/kernels/ops/attention/minimax_kv_store.py
+index e7fb6f514..9408905b2 100644
+--- a/python/sglang/kernels/ops/attention/minimax_kv_store.py
++++ b/python/sglang/kernels/ops/attention/minimax_kv_store.py
+@@ -10,7 +10,7 @@ def _store_fp4(
+     Loc,
+     Cache,
+     Scales,
+-    N: tl.constexpr,
++    N,
+     H: tl.constexpr,
+     D: tl.constexpr,
+     S0: tl.constexpr,
+@@ -84,7 +84,7 @@ def _torch_fp8_bits(x):
+     return tl.where((tl.abs(f) > 464.0) | (f != f), sign | 127, bits).to(tl.uint8)
+ 
+ 
+-@triton.jit
++@triton.jit(do_not_specialize=["N"])
+ def _store_fp8_kv_index(
+     K,
+     V,
+@@ -93,7 +93,7 @@ def _store_fp8_kv_index(
+     KC,
+     VC,
+     IC,
+-    N: tl.constexpr,
++    N,
+     H: tl.constexpr,
+     IH: tl.constexpr,
+     D: tl.constexpr,
+@@ -152,7 +152,7 @@ def store_fp8_kv_index(k, v, index_k, loc, k_cache, v_cache, index_cache):
+         )
+ 
+ 
+-@triton.jit
++@triton.jit(do_not_specialize=["N"])
+ def _store_nvfp4_kv_index(
+     K,
+     V,
+@@ -164,7 +164,7 @@ def _store_nvfp4_kv_index(
+     KS,
+     VS,
+     IS,
+-    N: tl.constexpr,
++    N,
+     H: tl.constexpr,
+     IH: tl.constexpr,
+     D: tl.constexpr,
+diff --git a/python/sglang/srt/layers/minimax_m3_training/router.py b/python/sglang/srt/layers/minimax_m3_training/router.py
+index 69b98476c..290bceeff 100644
+--- a/python/sglang/srt/layers/minimax_m3_training/router.py
++++ b/python/sglang/srt/layers/minimax_m3_training/router.py
+@@ -6,13 +6,13 @@ import triton.language as tl
+ from triton.language.extra.cuda import libdevice
+ 
+ 
+-@triton.jit
++@triton.jit(do_not_specialize=["N"])
+ def _route(
+     Logits,
+     Bias,
+     Weights,
+     Ids,
+-    N: tl.constexpr,
++    N,
+     B: tl.constexpr,
+     EXACT: tl.constexpr,
+ ):
+diff --git a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
+index 2b6ef4e6b..243c8d5fa 100644
+--- a/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
++++ b/python/sglang/srt/model_executor/model_runner_components/cuda_graph_setup.py
+@@ -1,4 +1,5 @@
+ from __future__ import annotations
++import os
+ 
+ import logging
+ import time
+@@ -211,6 +212,7 @@ def capture_prefill_graph(
+         model_runner.is_draft_worker
+         and model_runner.spec_algorithm.is_dspark()
+         and envs.SGLANG_M3_TRAINING_COMPATIBLE.get()
++        and os.environ.get("SGLANG_M3_DSPARK_GRAPHS", "0") != "1"
+     ):
+         logger.info("M3 training-compatible DSpark runs draft prefill eagerly.")
+         return result(None)
+@@ -420,6 +422,7 @@ def capture_decode_graph(*, model_runner: ModelRunner) -> GraphCapture:
+     if (
+         model_runner.spec_algorithm.is_dspark()
+         and envs.SGLANG_M3_TRAINING_COMPATIBLE.get()
++        and os.environ.get("SGLANG_M3_DSPARK_GRAPHS", "0") != "1"
+     ):
+         logger.info("M3 training-compatible DSpark runs %s eagerly.", memory_phase)
+         return no_capture
+diff --git a/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py b/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py
+index 490764cd8..4e9d8223b 100644
+--- a/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py
++++ b/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py
+@@ -1,3 +1,4 @@
++import os
+ import logging
+ from contextlib import nullcontext
+ from dataclasses import replace
+@@ -95,7 +96,10 @@ class DSparkWorkerV2(BaseSpecWorker):
+         self._is_pd_prefill = server_args.disaggregation_mode == "prefill"
+         self._decode_graph_allowed = (
+             not server_args.disable_cuda_graph
+-            and not envs.SGLANG_M3_TRAINING_COMPATIBLE.get()
++            and not (
++                envs.SGLANG_M3_TRAINING_COMPATIBLE.get()
++                and os.environ.get("SGLANG_M3_DSPARK_GRAPHS", "0") != "1"
++            )
+             and not self._is_pd_prefill
+         )
+         if (

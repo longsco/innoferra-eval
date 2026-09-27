@@ -28,6 +28,11 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 20:19-20:36 | Chain tangle: the unpatched-order kill missed `stress2_0927.sh`, so the plain variant replaced the TC0 engine at 20:21 (p-plain-hicache c1 0.48 M, 62.5 tok/s is the only row). Everything stopped; clean `chain3.sh` started 20:36 (P3 TC0 DSpark HiCache incl. c8/c16 -> P4 tok8 -> Route B on P4) | stress2-0927.log | |
 | 20:30 | Topology knobs added to launcher (TP/EP/DP/DPATTN/GPUS); `launch_tp2x4.sh` = team-style 4x TP2/EP2 engines + gateway hash routing (needs TC0; MegaMoE has no EP-size rule; 177 GB weights/GPU) | scripts | not yet run |
 | 20:37 | Ledger hooks live (launch + variant records) | ledger.jsonl | |
+| 20:38 | TC0 dead end: `TRAINING_COMPAT=0` crashes at attention init, `MiniMax sparse KV4 requires blk128 MSA, FP8 queries and max-score indexer`; `msa_available()` is False in the demo image (MSA kernels not shipped), so the non-training KV4 path cannot run. All TC0 plans (P3/P4, validate stage) dropped | docker logs, minimax_sparse_backend.py:140-200 | |
+| 20:38 | Launch name-conflict: forced removal of the old engine outlived the 2-min wait; launcher now retries `docker rm -f` for up to 10 min | launch0927-203638Z.log | |
+| 20:55 | Pivot: keep TC1 numerics, lift only the eager gate: env `SGLANG_M3_DSPARK_GRAPHS=1` honoured at the 3 gate sites (`patches/0927-dspark-graphs-override.patch`, launcher `GRAPHS=1`) | patch | correctness to be proven by gate.sh + kernel tests + quality run |
+| 20:56 | chain4 started: P5 = TC1 + kernel patch + graphs override + DSpark + HiCache (gate, probes, grid c1/8/16/64/128/256) -> P6 = P5 + 8 tokenizer workers (grid to c512, gate, Route B 1x/2x/4x) -> HiCache probe -> validation (candidate = P6 config; vendor verbatim + Route B) | stress2-0927.log | |
+| 20:50 | Upstream survey: vendor branch = v0.5.17 + 10 commits (148 files); upstream v0.5.18-20 = 2,235 commits, 96 of the vendor files overlap. Cherry-pick candidates: #34338 DP sync collapse, #32313 TP LM head a2a, #37505 DP prefix off-by-one (correctness), #38936 DP burst hang, #30393 HiCache DSpark draft caches, #35640, #32434, #36630/1, #31470 | git, release notes | |
 
 ## Standing numbers (best per family, single node)
 | family | best | where |
@@ -36,4 +41,5 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | previous best (old fork, Dynamo 2x tp4, windowed DSpark) | 18.7 M @c64, TTFT 1.4 s | 09-26 |
 | 0927 demo, plain decode + HiCache (graphs) | 7.24 M @c128 | stress-hicache-nodspark |
 | 0927 demo, DSpark + HiCache, vendor verbatim (eager), patched | 6.53 M @c256 | p-vendor32 |
-| 0927 demo, TC0 DSpark + HiCache (graphs) | running | p-tc0-dspark-hicache |
+| 0927 demo, TC0 | not viable (MSA missing) | – |
+| 0927 demo, TC1 + DSpark graphs override + HiCache | running (P5), then +tok8 (P6) | p-tc1-graphs, p-tc1-graphs-tok8 |
