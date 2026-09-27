@@ -36,6 +36,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 21:13 | Attempt 2: `SGLANG_Q8KV4_SORT_MIN_LANES` forces the sync-free lane path; capture proceeds into target-verify, then OOM: `_predequant_pages` 3.75 GiB + `o_partial` 240 MiB per call are captured per batch tier | docker logs | graph-safe verify needs a persistent bounded workspace in the vendor kernel: shelved, reported to vendor |
 | 21:25 | chain5: P7 = plain + HiCache + patch + 8 tokenizer workers; P8 = vendor DSpark (eager) + HiCache + patch + 8 tokenizer workers; each: gate, probes, grid c1..c512, Route B 1x/2x/4x; then HiCache probe + validation (candidate = P8) | stress2-0927.log | measures the frontend fix on the two configs that boot |
 | 21:40 | **P7 result: plain + HiCache + patch + `--tokenizer-worker-num 8`**: c1 0.47 M (62.5 tok/s), c8 3.19 M (55.6 tok/s, TTFT 1.5 s), c16 5.48 M (50.1 tok/s), **c64 12.34 M (TTFT p50 2.9 s)** vs 7.02 M / 27 s with one tokenizer worker. Frontend cap confirmed. Gate: first-request "tens" canary truncated once, all PASS on rerun | tpm-*-p-plain-hicache-tok8.csv | c128+ pending |
+| 22:10 | P7 full grid (plain + HiCache + patch + 8 tokenizer workers): c256 **20.59 M** (TTFT p50 5.2 s), c512 23.35 M (TTFT 28.6 s, p99 204 s = saturated). Gate all PASS. New single-node best, no spec decode. Route B replay 1x/2x/4x running | tpm-*-p-plain-hicache-tok8.csv | next: chain6 = old-fork DSpark with CUDA graphs + 8 workers |
 | 20:50 | Upstream survey: vendor branch = v0.5.17 + 10 commits (148 files); upstream v0.5.18-20 = 2,235 commits, 96 of the vendor files overlap. Cherry-pick candidates: #34338 DP sync collapse, #32313 TP LM head a2a, #37505 DP prefix off-by-one (correctness), #38936 DP burst hang, #30393 HiCache DSpark draft caches, #35640, #32434, #36630/1, #31470 | git, release notes | |
 
 ## Standing numbers (best per family, single node)
@@ -47,5 +48,5 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 0927 demo, DSpark + HiCache, vendor verbatim (eager), patched | 6.53 M @c256 | p-vendor32 |
 | 0927 demo, TC0 | not viable (MSA missing) | – |
 | 0927 demo, DSpark graphs override | shelved (verify kernel not graph-safe: host sync, then per-call GB scratch) | – |
-| 0927 demo, plain + HiCache + 8 tokenizer workers | **12.34 M @c64**, TTFT 2.9 s (c128+ running) | p-plain-hicache-tok8 |
+| 0927 demo, plain + HiCache + 8 tokenizer workers | c64 12.34 M · c128 16.88 M · c256 **20.59 M** · c512 23.35 M (saturated) | p-plain-hicache-tok8 |
 | 0927 demo, eager DSpark + HiCache + 8 tokenizer workers | queued (P8) | p-vendor32-tok8 |

@@ -5,7 +5,7 @@ set -uo pipefail
 K=/data01/minimax31/serving; TAG=${TAG:-variant}; GRID=${GRID:-"1 32 64 128"}; export DSPARK=${DSPARK:-1} HICACHE=${HICACHE:-1}
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 log "===== variant $TAG (DSPARK=$DSPARK HICACHE=$HICACHE EXTRA_ARGS=${EXTRA_ARGS:-}) ====="
-bash $K/launch_0927.sh 2>&1 | grep -E "HEALTHY|TIMEOUT|FATAL|max_total_num_tokens|Engine startup timings" | cut -c1-260 || exit 1
+bash $K/${LAUNCHER:-launch_0927.sh} 2>&1 | grep -iE "HEALTHY|TIMEOUT|FATAL|max_total_num_tokens|Engine startup timings" | cut -c1-260 || exit 1
 curl -sf -m 5 http://127.0.0.1:19191/health >/dev/null || { log "not healthy; abort"; exit 1; }
 U=http://127.0.0.1:19191/v1/chat/completions; M=minimax-m3.1-nvfp4; WP=/data01/minimax31/warmup/longprompts.json
 log "-- probe cold c1"; NONCE=1 PROMPTS_JSON=$WP timeout 900 python3 $K/probe_long.py $U $M "$TAG cold" 1 2>&1 | tail -3 | cut -c1-140
