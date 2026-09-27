@@ -20,7 +20,7 @@ echo "frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s
 echo "== bench $TS tag=$TAG port=$PORT  frame: gsp ${SYS_LEN}/${Q_LEN}/${OUT_LEN} · warm ${WARM_N}@c8 · grid: $GRID ==" | tee "$LOG"
 echo "-- warm (all DP ranks) --" | tee -a "$LOG"; BSV --gsp-prompts-per-group "$WARM_N" --max-concurrency 8 | grep -E "Successful|Total token throughput" | tee -a "$LOG"
 for C in $GRID; do
-  npc=$((C*MULT)); [ "$npc" -lt 8 ] && npc=8; [ "$npc" -gt 256 ] && npc=256
+  npc=$((C*MULT)); [ "$npc" -lt 8 ] && npc=8; [ "$npc" -gt ${NPC_CAP:-256} ] && npc=${NPC_CAP:-256}
   echo "-- c=$C  n=$npc --" | tee -a "$LOG"; t0=$(date +%s)
   L=$(BSV --gsp-prompts-per-group "$npc" --max-concurrency "$C"); echo "$L" >> "$LOG"
   succ=$(g "$L" "Successful requests"); tot=$(g "$L" "Total token throughput"); outt=$(g "$L" "Output token throughput")

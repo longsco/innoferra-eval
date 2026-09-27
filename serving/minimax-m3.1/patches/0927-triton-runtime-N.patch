@@ -1,0 +1,69 @@
+diff --git a/python/sglang/kernels/ops/attention/minimax_kv_store.py b/python/sglang/kernels/ops/attention/minimax_kv_store.py
+index e7fb6f514..9408905b2 100644
+--- a/python/sglang/kernels/ops/attention/minimax_kv_store.py
++++ b/python/sglang/kernels/ops/attention/minimax_kv_store.py
+@@ -10,7 +10,7 @@ def _store_fp4(
+     Loc,
+     Cache,
+     Scales,
+-    N: tl.constexpr,
++    N,
+     H: tl.constexpr,
+     D: tl.constexpr,
+     S0: tl.constexpr,
+@@ -84,7 +84,7 @@ def _torch_fp8_bits(x):
+     return tl.where((tl.abs(f) > 464.0) | (f != f), sign | 127, bits).to(tl.uint8)
+ 
+ 
+-@triton.jit
++@triton.jit(do_not_specialize=["N"])
+ def _store_fp8_kv_index(
+     K,
+     V,
+@@ -93,7 +93,7 @@ def _store_fp8_kv_index(
+     KC,
+     VC,
+     IC,
+-    N: tl.constexpr,
++    N,
+     H: tl.constexpr,
+     IH: tl.constexpr,
+     D: tl.constexpr,
+@@ -152,7 +152,7 @@ def store_fp8_kv_index(k, v, index_k, loc, k_cache, v_cache, index_cache):
+         )
+ 
+ 
+-@triton.jit
++@triton.jit(do_not_specialize=["N"])
+ def _store_nvfp4_kv_index(
+     K,
+     V,
+@@ -164,7 +164,7 @@ def _store_nvfp4_kv_index(
+     KS,
+     VS,
+     IS,
+-    N: tl.constexpr,
++    N,
+     H: tl.constexpr,
+     IH: tl.constexpr,
+     D: tl.constexpr,
+diff --git a/python/sglang/srt/layers/minimax_m3_training/router.py b/python/sglang/srt/layers/minimax_m3_training/router.py
+index 69b98476c..290bceeff 100644
+--- a/python/sglang/srt/layers/minimax_m3_training/router.py
++++ b/python/sglang/srt/layers/minimax_m3_training/router.py
+@@ -6,13 +6,13 @@ import triton.language as tl
+ from triton.language.extra.cuda import libdevice
+ 
+ 
+-@triton.jit
++@triton.jit(do_not_specialize=["N"])
+ def _route(
+     Logits,
+     Bias,
+     Weights,
+     Ids,
+-    N: tl.constexpr,
++    N,
+     B: tl.constexpr,
+     EXACT: tl.constexpr,
+ ):
