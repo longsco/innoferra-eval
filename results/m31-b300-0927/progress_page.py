@@ -78,6 +78,11 @@ def winning():
     rt = data.get("realtraffic_best", "")
     return (f'<div class="panel win"><h2>Current winning setup: {fr["per_gpu"]:.2f} M per GPU ({fr["pct"]}% of target) — {fr["config"]}, {fr["at"]}</h2>\n<dl>\n{rows}</dl>'
             + (f'<p class="note">Real traffic: {rt}</p>' if rt else '') + '</div>')
+def metrics_panel():
+    m = data.get("metrics")
+    if not m: return ""
+    rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in m)
+    return f'<div class="panel"><h2>Which number to trust</h2><dl>\n{rows}</dl></div>'
 def comparison():
     c = data.get("comparison")
     if not c: return ""
@@ -166,7 +171,7 @@ JS = """
 
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
-overview = kpis() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
+overview = kpis() + metrics_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
 results = staircase() + charts() + routeb()
 setup = comparison() + winning() + launch_specs() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'

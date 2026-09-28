@@ -12,13 +12,14 @@
 
 ## Real traffic (staircase, node's share of the 09-27 peak hour)
 
-| load level (× one node's share) | offered req/s | tp8/dp8: TTFT p50 / p99, s | 4×tp2 router: TTFT p50 / p99, s | node TPM (M) | verdict |
+| load (× a node's share) | offered req/s | tp8/dp8: TTFT p50 / p99, s | 4×tp2 + Dynamo router | <b>4×tp2 + affinity gateway</b> | node TPM (M) |
 |---|---|---|---|---|---|
-| 1× | 0.6–1.2 | 0.8–1.3 / 3–8 | 1.5–3.0 / 9–28 | 1.6–5.7 | both hold; tp2 pays more cold prefill (cache hit 60% vs 91%) |
-| 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | 5.3–8.7 | tp8 holds, tp2 p99 breaking |
-| 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | 8–14 | both backlog: the knee |
-| 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 14–33 (momentary) | both saturated |
-| per-stream decode p50 (whole run) | – | 25 tok/s | **71 tok/s** | – | tp2 decodes 2.8× faster per stream; M3.1 production 212 |
+| 1× | 0.6–1.2 | 0.8–1.3 / 3–8 | 1.5–3.0 / 9–28 | <b>0.7–0.9 / 3–9</b> | 1.6–5.7 |
+| 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | <b>0.8–1.6 / 6–24</b> | 5.3–8.7 |
+| 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | <b>1.1–2.0 / 13–54</b> (one 29 s bin) | 8–14 |
+| 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 2.3 → 28 / 29–91 | 14–33 |
+| cache hit / per-stream decode | – | 91% / 25 tok/s | 60% / 71 tok/s | <b>88.5% / 75 tok/s</b> | – |
+| kept up with offered load | – | no (1,574 s) | no (1,571 s) | <b>yes (1,240 s, 0 errors)</b> | 9.75 M node avg (tp8 7.7) |
 
 ## Production reference (read at 23:07 PDT, Sep 27 (last 10 minutes, Kibana ES|QL on the M3.1 hub index))
 

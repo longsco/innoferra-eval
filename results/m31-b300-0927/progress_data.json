@@ -20,10 +20,10 @@
    "sub": "4×tp2 under KV router, c128, TTFT 3.0 s (tp8: 3.20 M)"
   },
   {
-   "label": "Real traffic, sustained",
-   "value": "≈ 1 M",
-   "cls": "",
-   "sub": "winning setup at 2× node share, p99 TTFT < 20 s (staircase, warm caches)"
+   "label": "Real traffic at prod-parity latency",
+   "value": "~2 req/s",
+   "cls": "ok",
+   "sub": "per node, 4×tp2 + affinity gateway (production today: ~2 req/s per node)"
   },
   {
    "label": "Winning setup at c64",
@@ -219,6 +219,11 @@
  },
  "timeline": [
   [
+   "23:22",
+   "Bare 4×tp2 DSpark behind our affinity gateway, real-traffic staircase: 88.5% cache hit, TTFT p50 0.7–0.9 s at 1×, 0.8–1.6 s at 2×, 1.1–2.0 s at 4×; 75 tok/s per stream; kept up with the offered load (1,240 s vs 1,571 s), 0 errors",
+   "new real-traffic best; same layout as the static frontier → single dev-best"
+  ],
+  [
    "23:20",
    "Corrected the per-stream decode reference: the 210 tok/s came from the replayed api-v1 logs, which are M3-fleet traffic; M3.1 production measured directly (Kibana ES|QL, streaming, 30 min): 212 tok/s p50 (141 p10, 313 p90), TTFT 1.52 s, output 274 tokens p50",
    "reference now M3.1"
@@ -348,30 +353,22 @@
  "subtitle": "Node 0008, Sep 27, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "Where we are, in one breath: the vendor's demo as shipped did 0.72 M TPM per GPU. Two fixes (a Triton recompile patch and 8 tokenizer workers) and one swap (the older engine build that keeps DSpark on CUDA graphs) took the node to 3.20 M per GPU on the manual's static frame; the production-shaped 4×tp2 layout under a KV router nudged that to 3.34 M (48% of the north star) and decodes 2.8× faster per stream on real traffic. On real traffic both layouts still knee at about 2.5 req/s (≈ 1 M per GPU sustained) because cold prefill dominates: the single engine keeps 91% cache hits, the 4-worker layout only 60%. Routing affinity is the next lever.",
  "running": {
-  "title": "Running now (chain11b, started 22:23 PDT)",
-  "script": "serving/minimax-m3.1/chain11b.sh",
-  "commit": "404d2d0",
-  "config": "bare 4 × (tp2/ep2/dp2) DSpark engines behind our gateway (prefix hash pinned to engine + DP rank). First attempt: 2 of 4 engines hung right after startup in the DP all-gather (dp_attn.py:184) before any request; restarted, and every engine is now warmed directly (short then long prompts) before the gateway goes in front",
+  "title": "Running now (chain12, started 23:18 PDT)",
+  "script": "serving/minimax-m3.1/chain12.sh",
+  "commit": "2652ef2",
+  "config": "envelope lift on tp8/dp8 DSpark: MAXREQ 256 (32/rank), sync-free verify path via env, mem-fraction 0.72 (fallback 0.66)",
   "steps": [
    [
-    "restart hung engines + wait 4/4 healthy",
-    "done"
+    "launch + CUDA-graph capture of verify tiers up to 32/rank",
+    "running"
    ],
    [
-    "direct warm-up per engine",
-    "done"
+    "probes, static grid c128/192/256",
+    "next"
    ],
    [
-    "canaries via gateway",
-    "done: 391 / primes correct, deterministic"
-   ],
-   [
-    "static grid via gateway",
-    "done: c8 0.50 · c16 0.78 · c64 0.88 · c128 0.90 M/GPU, flattened: one shared prefix → one (engine, rank) pair gets every request (hot-prefix pinning); not a valid number for this routing"
-   ],
-   [
-    "warm-up + staircase on real traffic",
-    "running since 22:49 PDT: the test that matters (cache hit vs Dynamo's 60%)"
+    "gate",
+    "next"
    ]
   ]
  },
@@ -490,14 +487,14 @@
  "chart_note": "Concurrency in parentheses is where the configuration peaked or was measured. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128.",
  "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.",
  "staircase": {
-  "title": "Longitudinal capacity on real traffic (node's share of the 09-27 peak hour, caches warmed): tp8/dp8 vs 4×tp2 under the KV router",
+  "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): three layouts",
   "columns": [
-   "load level (× one node's share)",
+   "load (× a node's share)",
    "offered req/s",
    "tp8/dp8: TTFT p50 / p99, s",
-   "4×tp2 router: TTFT p50 / p99, s",
-   "node TPM (M)",
-   "verdict"
+   "4×tp2 + Dynamo router",
+   "<b>4×tp2 + affinity gateway</b>",
+   "node TPM (M)"
   ],
   "rows": [
    [
@@ -505,43 +502,51 @@
     "0.6–1.2",
     "0.8–1.3 / 3–8",
     "1.5–3.0 / 9–28",
-    "1.6–5.7",
-    "both hold; tp2 pays more cold prefill (cache hit 60% vs 91%)"
+    "<b>0.7–0.9 / 3–9</b>",
+    "1.6–5.7"
    ],
    [
     "2×",
     "1.5–2.1",
     "1.3–3.4 / 11–18",
     "2.5–9.6 / 28–141",
-    "5.3–8.7",
-    "tp8 holds, tp2 p99 breaking"
+    "<b>0.8–1.6 / 6–24</b>",
+    "5.3–8.7"
    ],
    [
     "4×",
     "2.7–3.5",
     "13 → 95 / 61–157",
     "10 → 49 / 108–179",
-    "8–14",
-    "both backlog: the knee"
+    "<b>1.1–2.0 / 13–54</b> (one 29 s bin)",
+    "8–14"
    ],
    [
     "6×",
     "4.0–6.2",
     "120 → 350",
     "86 → 332",
-    "14–33 (momentary)",
-    "both saturated"
+    "2.3 → 28 / 29–91",
+    "14–33"
    ],
    [
-    "per-stream decode p50 (whole run)",
+    "cache hit / per-stream decode",
     "–",
-    "25 tok/s",
-    "**71 tok/s**",
+    "91% / 25 tok/s",
+    "60% / 71 tok/s",
+    "<b>88.5% / 75 tok/s</b>",
+    "–"
+   ],
+   [
+    "kept up with offered load",
     "–",
-    "tp2 decodes 2.8× faster per stream; M3.1 production 212"
+    "no (1,574 s)",
+    "no (1,571 s)",
+    "<b>yes (1,240 s, 0 errors)</b>",
+    "9.75 M node avg (tp8 7.7)"
    ]
   ],
-  "note": "Same trace both runs (2,939 requests, 100% success on tp2, 1 timeout on tp8). The 4×tp2 layout decodes far faster per stream and wins the static frame (c64 2.52 M/GPU at TTFT 1.25 s, c128 3.34 M) but its cache-hit rate on real traffic was 59.7% vs 90.9% on the single engine: sessions were spread over four separate caches, so it paid more cold prefill and its TTFT was worse at 1×–2×. Routing affinity (prompt_cache_key passthrough / KV-event routing) is the next fix; with production-level cache hits (98.9%) the tp2 layout should pull ahead on both axes."
+  "note": "Same 2,939-request trace for all three. The affinity gateway pins each session's prefix to one engine and one DP rank, so caches stay warm (88.5%) and the 4×tp2 layout's faster decode (2-rank lockstep instead of 8) shows: it holds p50 ≤ 2 s up to the 4× level, where the tp8 engine had already backed up by minutes."
  },
  "setups": {
   "Old fork + DSpark graphs + 8 workers (winning setup)": {
@@ -629,7 +634,7 @@
    ]
   }
  },
- "realtraffic_best": "at production's per-node operating point (~2 req/s real traffic) our single node holds p50 TTFT 1.3–3.4 s / p99 11–18 s on the tp8/dp8 engine (production: 1.6 s / 21.6 s at 97.6% cache hit), ≈ 0.7–1.1 M/GPU on the M3 trace mix; 4×tp2 layouts decode 3× faster per stream, routing-affinity run in progress",
+ "realtraffic_best": "4×tp2 + affinity gateway holds production-parity latency at ~2 req/s per node (production's own per-node load) and stays usable to ~3 req/s; 88.5% cache hit, 75 tok/s per stream (M3.1 production: 212)",
  "prod": {
   "nodes": 18,
   "gpus": 144,
@@ -651,30 +656,36 @@
   }
  },
  "comparison": {
-  "title": "Side by side: team production vs our dev-best",
+  "title": "Side by side: team production vs our dev-best (one layout, two routers)",
   "columns": [
    "",
    "Team production (18 nodes)",
-   "Dev-best: static frontier (4×tp2 Dynamo)",
-   "Dev-best: real traffic (tp8/dp8 engine)"
+   "Dev-best: 4×(tp2/ep2/dp2) DSpark on the 09-22 engine",
+   "Runner-up: tp8/dp8 DSpark"
   ],
   "rows": [
    [
-    "Per-GPU TPM",
-    "1.41 M observed (not saturated)",
-    "<b>3.34 M</b> at c128, 80k-prefix frame",
-    "3.20 M at c128; ≈ 1 M sustained on real traffic"
+    "North-star metric: static frame, per GPU",
+    "not measured (7 M claimed)",
+    "<b>3.34 M</b> at c128 (load-balancing Dynamo router)",
+    "3.20 M at c128"
    ],
    [
-    "TTFT p50 (real traffic)",
-    "1.56 s at ~2 req/s/node, 97.6% hit",
-    "1.5–3.0 s at 1× (60% hit)",
-    "0.8–1.3 s at 1×, 1.3–3.4 s at 2× (91% hit)"
+    "Production metric: real traffic at prod-parity latency (TTFT p50 ≤ 1.6 s, p99 ≤ 22 s)",
+    "~2 req/s per node today (not saturated), 1.41 M/GPU",
+    "<b>~2 req/s per node</b> holds; usable to ~3 req/s at p50 ~1.5 s (affinity gateway, 88.5% hit)",
+    "~1.5 req/s (p50 up to 3.4 s at 2×)"
    ],
    [
-    "Per-stream decode (real traffic)",
-    "212 tok/s p50 (p10 141 / p90 313), M3.1 hub, 65.8k streaming requests, 23:20 PDT",
-    "71 tok/s",
+    "TTFT p50 on real traffic, 1× / 2× / 4× of a node's share",
+    "1.52 s at its own ~2 req/s",
+    "0.7–0.9 / 0.8–1.6 / 1.1–2.0 s",
+    "0.8–1.3 / 1.3–3.4 / 13–95 s"
+   ],
+   [
+    "Per-stream decode on real traffic (p50)",
+    "212 tok/s (M3.1 hub, 23:20 PDT)",
+    "75 tok/s",
     "25 tok/s"
    ],
    [
@@ -716,20 +727,14 @@
    [
     "Cache",
     "HiCache ratio 3, write-through, page 128",
-    "none (fork can't host-cache NVFP4 scales)",
+    "none",
     "none"
    ],
    [
-    "Frontend",
-    "Rust chat processor, 2 frontends/node",
-    "Dynamo frontend, 8 preprocess workers",
-    "8 tokenizer workers in SGLang"
-   ],
-   [
     "Routing",
-    "KV router + incore-strict-affinity (≥2 blocks, >50%) + session-pin Redis",
-    "Dynamo KV router, strict affinity (load scale inf)",
-    "single engine, DP-rank pinning in our gateway"
+    "KV router + strict affinity (≥2 blocks and >50% overlap, else load) + session-pin Redis",
+    "static test: Dynamo KV router (load-balanced); real traffic: our gateway, prefix hash → engine + DP rank",
+    "single engine, DP-rank pinning"
    ],
    [
     "mem-fraction",
@@ -849,16 +854,16 @@
    ]
   },
   {
-   "title": "Ours: bare 4×(tp2/ep2/dp2) DSpark behind our gateway (engine + DP-rank affinity) — staircase in progress",
+   "title": "Ours (real-traffic best): bare 4×(tp2/ep2/dp2) DSpark behind our gateway (engine + DP-rank affinity)",
    "tag": "ours-gw",
    "digest": [
     [
      "Why",
-     "restores cache affinity the Dynamo run lost: 79–96% hits vs 60%"
+     "keeps sessions on one engine and DP rank: 88.5% cache hit vs 60% through the Dynamo router"
     ],
     [
      "Measured",
-     "real traffic 1×–2×: mean TTFT 1.3–5.4 s (final table pending)"
+     "real traffic: TTFT p50 0.7–0.9 s at 1×, 0.8–1.6 s at 2×, 1.1–2.0 s at 4×; 75 tok/s per stream; kept up with the offered load; static frame not valid with this routing (one shared prefix pins to one rank)"
     ]
    ],
    "commands": [
@@ -868,5 +873,19 @@
     ]
    ]
   }
+ ],
+ "metrics": [
+  [
+   "Primary (production)",
+   "Real-traffic capacity at production-parity latency: the highest staircase level whose per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s, replaying a node's share of the real peak hour after a cache warm-up. Reported in req/s per node and TPM per GPU. This answers whether the node can take production traffic, and how much."
+  ],
+  [
+   "Secondary (north star)",
+   "Static frame: 80k cached prefix / 128 new / 600 output, the M3 manual's TPM test and the kind of figure behind the 7 M/GPU claim. Random-token text, so spec decode gains do not show; one shared prefix, so affinity routing must not be used."
+  ],
+  [
+   "Why they rank layouts differently",
+   "The static test rewards raw concurrency with a load-balanced router; real traffic rewards cache affinity and low prefill stall. The same 4×tp2 layout wins both once the router matches the test; production's strict-affinity policy (affinity only on high overlap, else load) serves both at once."
+  ]
  ]
 }

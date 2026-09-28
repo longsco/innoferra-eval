@@ -70,5 +70,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 23:20 PDT | Reference correction: "production 210 tok/s per stream" came from the replayed api-v1 logs = **M3 fleet** traffic (model minimax-m3). **M3.1 production measured directly** (Kibana ES|QL, 30 min, 65.8k streaming requests): per-stream decode p10 141 / **p50 212** / p90 313 tok/s, TTFT p50 1.52 s, output p50 274 tokens | Kibana | all pages relabelled |
 
+| 23:22 PDT | **Real-traffic best: bare 4x tp2/ep2/dp2 DSpark behind our affinity gateway (chain11b)**: staircase 2939/2939 ok, cache hit 88.5%, TTFT p50 0.7-0.9 s (1x), 0.8-1.6 s (2x), 1.1-2.0 s (4x, one 29 s bin), 2.3-28 s (6x); per-stream 75 tok/s; finished in 1,240 s (kept up) vs 1,571 s for the Dynamo-routed and tp8 runs; 9.75 M node TPM avg. Same layout as the static frontier (3.34 M/GPU with a load-balancing router) -> single dev-best layout; metrics defined: primary = real-traffic capacity at prod-parity latency (p50 <= 1.6 s, p99 <= 22 s) ~2 req/s/node; secondary = static frame | replay.log, stairs-bare-tp2x4-dspark-gw.jsonl | router must match the test; build strict-affinity (affinity on high overlap, else load) to serve both |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
