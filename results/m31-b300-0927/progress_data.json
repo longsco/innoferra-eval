@@ -994,5 +994,172 @@
    ]
   ],
   "note": "Yes, they differ a lot: the same node shows 3.2–3.7 M/GPU on the static frame and 1–1.5 M/GPU sustained on real traffic. The gap is not error: static requests are 100% cached and identical, while real requests carry 5–60k uncached tokens each (9–12% of 50–650k prompts), and that prefill is most of the GPU time. The static frame also hides spec decode and routing effects, and the replay can rank layouts in the opposite order (tp8 vs 4×tp2 are equal on static, but only 4×tp2 + affinity holds 4× load on real traffic). The closed-loop replay isolates the prompt-mix effect (same load control as static, real prompts), so the three together separate 'prompt mix' from 'arrival pattern'."
+ },
+ "matrix": {
+  "title": "Every configuration, synthetic vs real (one row each)",
+  "groups": [
+   [
+    "",
+    1
+   ],
+   [
+    "Synthetic: static 80k-prefix frame",
+    4
+   ],
+   [
+    "Probe: real 60–80k prompts",
+    1
+   ],
+   [
+    "Real traffic: open-loop replay",
+    5
+   ]
+  ],
+  "columns": [
+   "configuration",
+   "max running",
+   "best per-GPU TPM @ concurrency",
+   "TTFT p50 there",
+   "cache hit",
+   "per-stream tok/s (6 streams)",
+   "trace",
+   "cache hit",
+   "TTFT p50 1× / 2× / 4×",
+   "per-stream tok/s",
+   "holds prod-parity latency up to"
+  ],
+  "rows": [
+   [
+    "Vendor demo as shipped (eager DSpark, 1 worker)",
+    "256",
+    "0.72 M @c128",
+    "54 s",
+    "~100%",
+    "19",
+    "–",
+    "–",
+    "not run",
+    "–",
+    "–"
+   ],
+   [
+    "Plain + HiCache, 1 worker",
+    "1,024",
+    "0.91 M @c128",
+    "71 s",
+    "~100%",
+    "37",
+    "–",
+    "–",
+    "not run",
+    "–",
+    "–"
+   ],
+   [
+    "Vendor verbatim + kernel patch (eager)",
+    "1,024",
+    "0.82 M @c256",
+    "114 s",
+    "~100%",
+    "19",
+    "–",
+    "–",
+    "not run",
+    "–",
+    "–"
+   ],
+   [
+    "Plain + HiCache + patch + 8 tokenizer workers",
+    "1,024",
+    "2.92 M @c512 (2.11 @c128)",
+    "29 s (3.9 s @c128)",
+    "~100%",
+    "37",
+    "09-18, cold",
+    "73.5% → 99.4%",
+    "2.55 / 1.34 / –",
+    "14 / 23",
+    "≈ 1× (TTFT p50 > 1.6 s at 1×)"
+   ],
+   [
+    "tp8/dp8 DSpark graphs + 8 workers",
+    "128",
+    "3.20 M @c128",
+    "2.8 s",
+    "~100%",
+    "135",
+    "09-27 peak, warm",
+    "90.9%",
+    "0.8–1.3 / 1.3–3.4 / 13–95",
+    "25",
+    "≈ 1.5 req/s/node"
+   ],
+   [
+    "4×tp2 DSpark under Dynamo KV router",
+    "32 × 4",
+    "3.34 M @c128",
+    "3.0 s",
+    "~100%",
+    "–",
+    "09-27 peak, warm",
+    "59.7%",
+    "1.5–3.0 / 2.5–9.6 / 10–49",
+    "71",
+    "< 1 req/s/node (p50 > 1.6 s)"
+   ],
+   [
+    "4×tp2 DSpark behind our gateway (old hash: 4 of 8 ranks)",
+    "32 × 4",
+    "not valid (one prefix → one rank)",
+    "–",
+    "–",
+    "–",
+    "09-27 peak, warm",
+    "88.5%",
+    "0.7–0.9 / 0.8–1.6 / 1.1–2.0",
+    "75",
+    "≈ 2 req/s/node (usable to ~3)"
+   ],
+   [
+    "tp8/dp8 DSpark graphs, envelope lift (256 running)",
+    "256",
+    "<b>3.67 M @c256</b> (3.02 @c128)",
+    "2.6 s (1.8 s @c128)",
+    "~100%",
+    "130",
+    "–",
+    "–",
+    "not run yet",
+    "–",
+    "–"
+   ],
+   [
+    "4×tp2 lift + fixed slot gateway (all 8 ranks, spill)",
+    "64 × 4",
+    "running (chain13)",
+    "",
+    "",
+    "",
+    "09-27 peak, warm",
+    "",
+    "running",
+    "",
+    ""
+   ],
+   [
+    "Team production (18 nodes, for reference)",
+    "256 × 4",
+    "not measured",
+    "–",
+    "–",
+    "–",
+    "live traffic",
+    "97.6%",
+    "1.52 at ~2 req/s/node",
+    "212",
+    "≈ 2 req/s/node today (not saturated)"
+   ]
+  ],
+  "note": "Synthetic cache hit is ~100% by construction (one shared prefix), so the real-traffic columns are where routing and prefill differences show. 'Holds prod-parity latency' = highest load with per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s. Per-stream on the probe is decode speed with 6 concurrent real long prompts; per-stream on real traffic is the p50 over the whole replay."
  }
 }

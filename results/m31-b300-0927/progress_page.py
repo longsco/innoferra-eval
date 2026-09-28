@@ -55,6 +55,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em}
 .pill.run{border-color:var(--ok);color:var(--ok)}
 ol.steps{margin:6px 0 0;padding-left:20px}ol.steps li{margin:3px 0}
 a{color:var(--ok)}
+table.mx{font-size:.8rem}table.mx td,table.mx th{white-space:nowrap}table.mx td.k{white-space:normal;min-width:220px}th.grp{text-align:center;border-bottom:2px solid var(--line);color:var(--ink)}td.sep{border-left:1px solid var(--line)}
 pre.cmd{background:var(--tab);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;line-height:1.45;white-space:pre;margin:6px 0 10px}
 details{margin-top:8px}summary{cursor:pointer;font-weight:500;font-size:.9rem}
 .panel.prod{border-color:var(--star)}
@@ -89,6 +90,13 @@ def tests_panel():
     head = "".join(f"<th>{h}</th>" for h in t["columns"])
     body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f"<td>{x}</td>" for x in r[1:]) + "</tr>" for r in t["rows"])
     return f'<div class="panel"><h2>{t["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div><p class="note">{t["note"]}</p></div>'
+def matrix_panel():
+    m = data.get("matrix")
+    if not m: return ""
+    grp = "".join(f'<th colspan="{n}" class="grp">{t}</th>' for t, n in m["groups"])
+    head = "".join(f"<th>{h}</th>" for h in m["columns"])
+    body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f'<td class="{"sep" if i in (0, 4, 5) else ""}">{x}</td>' for i, x in enumerate(r[1:])) + "</tr>" for r in m["rows"])
+    return f'<div class="panel"><h2>{m["title"]}</h2><div class="wrap"><table class="mx">\n<tr>{grp}</tr><tr>{head}</tr>\n{body}\n</table></div><p class="note">{m["note"]}</p></div>'
 def comparison():
     c = data.get("comparison")
     if not c: return ""
@@ -180,7 +188,7 @@ JS = """
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
 overview = kpis() + metrics_panel() + tests_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
-results = staircase() + charts() + routeb()
+results = charts() + matrix_panel() + staircase() + routeb()
 setup = comparison() + winning() + launch_specs() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
         f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'
