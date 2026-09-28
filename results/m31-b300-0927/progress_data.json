@@ -129,6 +129,13 @@
    "c": "c128, TTFT 4.1 s (p99 15 s); c64 3.55 M at 2.1 s; c256 5.70 M at 13.3 s",
    "k": "ok",
    "acc": "accept 5.79 probe · 4.07 real traffic"
+  },
+  {
+   "n": "Frontier base + prefill-hold rule off (bmfs: --min-free-slots-delay 1)",
+   "v": 4.86,
+   "c": "c128, TTFT 4.8 s; c64 3.39 M; c256 5.66 M",
+   "k": "ok",
+   "acc": "accept 5.79 probe · 4.12 real traffic"
   }
  ],
  "pareto": {
@@ -300,6 +307,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "06:18",
+   "chain16 bmfs (prefill-hold rule off, --min-free-slots-delay 1) on the balanced frontier base: static c128 4.86 M/GPU (−3%, within noise), c256 5.66; real traffic TTFT p50 0.85 / 1.13 / 1.42 / 2.9 s, decode 151 / 107 / 77 / 57 tok/s (4× +17%), p99 at 4× 22 s (32) but 52 s at 6× (32); DSpark accept 4.12; <b>closed loop c128 15.3 M node vs 12.9</b> (+18%)",
+   "keep in mind for the final combination: helps under high real-traffic concurrency"
+  ],
   [
    "05:25",
    "Production re-read with a settled window (04:10–04:30 PDT): 424 M TPM (2.95 M/GPU), 105 req/s (5.8 per node), hit 95.7%, TTFT p50 0.31 s / p99 8.3 s, decode 106 tok/s, output p50 438. Correction: the 04:12 read and its 'step drop' were late-ingestion artefacts; buckets back-fill for 30+ min",
@@ -573,8 +585,8 @@
     "done 05:21: <b>5.01 M/GPU at c128</b> (+25%), 5.70 at c256"
    ],
    [
-    "chain16 on the new base with balancing on: bmfs (--min-free-slots-delay 1), b128 (64/rank), bprod (production scheduling), bhic (HiCache), bblk4 (block 4)",
-    "bmfs running since 05:21 PDT; about 70 min per variant, ends ~11:15 PDT"
+    "chain16 on the new base with balancing on: bmfs, b128 (64/rank), bprod (production scheduling), bhic (HiCache), bblk4 (block 4)",
+    "bmfs done 06:18 (static −3%, closed loop +18%); b128 running since 06:18 PDT; ends ~11:00 PDT"
    ]
   ]
  },
@@ -1516,6 +1528,20 @@
     "real-traffic path unchanged (sessions are pinned)",
     "–",
     "see c13p1bd"
+   ],
+   [
+    "Frontier base + prefill-hold rule off (bmfs: --min-free-slots-delay 1)",
+    "64 × 4",
+    "4.86 M @c128 (3.39 @c64, 5.66 @c256)",
+    "4.8 s",
+    "~100%",
+    "149–197 (c1)",
+    "5.79 / 4.12",
+    "09-27 peak, warm",
+    "87–90%",
+    "0.85 / 1.13 / 1.42 (6×: 2.9)",
+    "151 / 107 / 77",
+    "closed loop c128 <b>15.3 M node</b> (base 12.9); 4× p99 22 s (32), 6× p99 52 s (32)"
    ],
    [
     "Team production (18 nodes, for reference)",
