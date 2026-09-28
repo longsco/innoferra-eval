@@ -124,5 +124,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 14:45 PDT (09-28) | tok4 static: c64 29.20 M (3.65/GPU, 1.68 s), c128 44.97 (5.62, 1.72 s), c256 61.13 (7.64, 2.55 s, p99 16.8), c384 65.25 (8.16, 9.70 s); engine TTFT/queue: c128 1.85/0.00, c256 3.04/0.28, c384 8.16/2.95. **Dropped-request root cause** (catch_tb.sh, engine 0, 21:39Z): serving_chat `_process_tool_call_stream` -> minimax_m3 `parse_streaming_increment` -> `_consume_complex_param` -> `_parse_parameter` -> `_assign_child(parent=str)` -> TypeError. Fix `patch_m3_toolparser.py` (f633d8c): child under text kept literally; test reproduces on original, passes on patch; applied to both trees | logs/tb-214014-tp2-0.log | fixed |
 
+| 15:15 PDT (09-28) | Reporting change (user comment: static north star looks like overfitting): ranked chart shows static vs real traffic per config (closed loop c128 per GPU bar, strict prod-parity marker, production 2.83 M/GPU baseline); KPI 'Static frame best (synthetic best case)' + 'Real traffic, 128 in flight' 1.70 M/GPU. Real traffic per GPU (closed c128 / strict): frontier-balanced 1.78 / 0.92, tok8 1.70 / 0.41, bmfs 1.91 / 0.41, bblk4 1.67 / 0.92, bprod 1.46 / 0.92. chain20 armed (fine staircase 1x..4x, 0.5x steps, 180 s) | progress_page.py | framing |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

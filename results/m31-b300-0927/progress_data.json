@@ -391,6 +391,11 @@
  },
  "timeline": [
   [
+   "15:15",
+   "Viewer concern addressed: passing 7 M/GPU on the static frame looks like overfitting to a synthetic best case. The ranked chart now shows, per configuration, the static bar next to real traffic (128 real prompts in flight) with a ▲ at the strict prod-parity TPM and production's observed load (2.83 M/GPU) as the baseline line; KPIs lead with real traffic. Reading: on real traffic the frontier is 1.70 M/GPU (closed loop) and 0.41–0.92 M/GPU at the strict limit, below production's current load. chain20 armed: finer staircase (0.5× steps) for a precise strict-limit number",
+   "honest framing: the north star is met only on the synthetic frame"
+  ],
+  [
    "14:45",
    "Dropped-request cause found and fixed: the MiniMax-M3 streaming tool-call parser raised TypeError when the model nested a tag under a parameter whose value was already text; the stream died and the gateway returned 502. Model-output dependent, not related to tokenizer workers. Patch keeps the child as literal text (unit test reproduces the error on the original, passes on the patch); applied to both trees, live from chain19. tok4 static: 7.64 M/GPU at c256 (TTFT 2.6 s), 5.62 at c128 (1.7 s), 8.16 at c384 — 4 workers get 98% of the 8-worker gain",
    "robustness fix; 4 workers nearly enough"
@@ -715,22 +720,22 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "Where we are: <b>the static frame now exceeds the 7 M north star: 7.82 M TPM per GPU at c256 (TTFT 2.1 s)</b>, from 0.72 M for the vendor demo as shipped. The path: kernel and frontend fixes, DSpark on CUDA graphs, production's 4×tp2 worker shape, a lifted verify-graph envelope, the P1 prefill fix, the vendor's bidirectional draft attention, a gateway that pins sessions and balances the rest, and finally 8 tokenizer workers per engine (tokenizing 80k-token prompts in Python was the last ceiling). On real traffic the 2-worker version keeps TTFT p50 ≤ 1.5 s up to ~3.3 req/s per node; the 8-worker real-traffic test is running. Production serves 2.95 M per GPU of observed load and is not saturated.",
  "running": {
-  "title": "Running now (chain18, since 12:56 PDT)",
-  "script": "serving/minimax-m3.1/chain18.sh",
-  "commit": "6dd7a86",
-  "config": "Frontier base with more tokenizer workers per engine.",
+  "title": "Running now (chain18 → chain19 → chain20)",
+  "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
+  "commit": "6dd7a86, 7c0dcee, d14e9ab",
+  "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "tok8: 8 tokenizer workers per engine",
-    "done 14:02: static 7.82 M/GPU at c256; real traffic on par (TTFT p50 1.37 s at 4×), 1 dropped request under investigation"
+    "tok4 (4 tokenizer workers)",
+    "static 7.64 M/GPU at c256; real-traffic tests running"
    ],
    [
-    "tok4: 4 tokenizer workers per engine",
-    "static done 14:35: 7.64 M/GPU at c256 (8 workers: 7.82); real-traffic tests running"
+    "chain19: t8r64 (8 workers + 64 per rank, grid to c512), tok16",
+    "next, with the tool-call parser fix live"
    ],
    [
-    "next: 8 workers + 64 per rank (c384 is capped by 32 per rank: queue 5.4 s)",
-    "to arm after chain18"
+    "chain20: fine staircase 1×–4× in 0.5× steps on the frontier with 2 and 4 workers",
+    "armed; gives the strict prod-parity TPM per GPU at 0.5× resolution"
    ]
   ]
  },
