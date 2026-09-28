@@ -1,1 +1,4 @@
 frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-c13p1bd-bal,64,320,1.000,28.362,0.206,82.2,2.08,9.97,12.17
+80k-warm-0927-c13p1bd-bal,128,640,1.000,40.092,0.291,65.0,4.12,15.30,15.39
+80k-warm-0927-c13p1bd-bal,256,1024,1.000,45.610,0.331,65.5,13.28,33.14,15.27

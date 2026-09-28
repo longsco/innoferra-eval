@@ -2,6 +2,7 @@
 
 | config | per-GPU TPM | at | % of target |
 |---|---|---|---|
+| 4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway | 5.01 M | c128, TTFT 4.1 s (p99 15 s); c64 3.55 M at 2.1 s; c256 5.70 M at 13.3 s | 72% |
 | 4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd) | 4.01 M | c128, TTFT 3.5 s; c64 3.02 M at 1.7 s; c256 4.18 M at 20.9 s | 57% |
 | 4×tp2 DSpark envelope lift (64/worker) + slot gateway | 3.97 M | c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s | 57% |
 | 4×tp2 lift + P1 kernel fix + session pinning (c13p1) | 3.80 M | c128, TTFT 4.0 s; c64 2.86 M at 1.7 s; c256 4.12 M at 19.8 s | 54% |
@@ -27,19 +28,19 @@
 | uncached prompt tokens per request at 1× (prefill work) | – | 6.4k | 26.7k | 7.8k | 11.0k | 7.5k | <b>7.2k</b> | – |
 | kept up with offered load | – | no (1,574 s) | no (1,571 s) | yes (1,240 s, 0 errors) | no (1,398 s, 53 errors) | yes (1,239 s, 0 errors) | <b>yes (1,253 s, 0 errors)</b> | 9.75 M node avg (tp8 7.7) |
 
-## Production reference (read at 04:12 PDT, Sep 28 (window 03:52–04:02 PDT; Kibana ES|QL; read-only; the index lags ~8 min, so windows end ≥ 10 min before the read))
+## Production reference (read at 05:25 PDT, Sep 28 (settled window 04:10–04:30 PDT; Kibana ES|QL; read-only). The index back-fills late: buckets keep growing for 30+ min, so reads use windows at least an hour old)
 
-- hub TPM (tokens per minute, incl. cached): 192 M (03:40–03:50 PDT, before a step drop at 03:52: 375 M)
-- requests: 29,966 in 10 min = 50 req/s (before the step: 100 req/s)
-- cache hit (cached ÷ prompt tokens): 94.9%
-- TTFT, streaming requests p50 / p90 / p99: 0.31 s / 2.6 s / 9.6 s
-- per-stream decode, streaming p10 / p50 / p90: 64 / 100 / 162 tok/s (27.2k requests); 101 before the step, 174 at 02:09
-- output tokens per streaming request, p50: 504 (02:09: 269): the traffic mix shifted to longer outputs
-- 5xx: 19 of 29,966
+- hub TPM (tokens per minute, incl. cached): 424 M
+- requests: 125,387 in 20 min = 105 req/s
+- cache hit (cached ÷ prompt tokens): 95.7%
+- TTFT, streaming requests p50 / p90 / p99: 0.31 s / 2.4 s / 8.3 s
+- per-stream decode, streaming p10 / p50 / p90: 66 / 106 / 168 tok/s (113k requests); 174 at 02:00 PDT when outputs were shorter
+- output tokens per streaming request, p50: 438 (02:00 PDT: 269)
+- 5xx: 80 of 125,387
 - nodes / GPUs behind the hub (team, Sep 27; not re-verified: the index shows only two load-balancer addresses): 18 / 144
-- per node: 10.6 M TPM, 2.8 req/s (before the step: 20.9 M, 5.5 req/s)
-- per GPU (observed load, not capacity): 1.33 M TPM now; 2.61 M at 03:40–03:50; 2.79 M at 01:59–02:09
+- per node: 23.6 M TPM, 5.8 req/s
+- per GPU (observed load, not capacity): 2.95 M TPM (02:00 PDT: 2.79 M)
 
-Frontier: **4.01 M/GPU** (57% of target) - 4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd) at c128, TTFT 3.5 s; c64 3.02 M at 1.7 s; c256 4.18 M at 20.9 s.
+Frontier: **5.01 M/GPU** (72% of target) - 4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway at c128, TTFT 4.1 s (p99 15 s); c64 3.55 M at 2.1 s; c256 5.70 M at 13.3 s.
 
 Winning setup recipe: Setup tab of the progress page (derived from the same frontier).
