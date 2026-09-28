@@ -28,7 +28,7 @@
 - TTFT (upstream header time) p50 / p99: 1.56 s / 21.6 s
 - nodes / GPUs behind the hub (team, Sep 27): 18 / 144
 - per node: 11.3 M TPM, 1.97 req/s
-- per GPU: 1.41 M TPM
+- per GPU (observed load; production is not saturated, so this is not its capacity): 1.41 M TPM
 
 Frontier: **3.34 M/GPU** (48% of target) - 4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape) at c128, TTFT 3.0 s; c64 2.52 M at 1.25 s.
 

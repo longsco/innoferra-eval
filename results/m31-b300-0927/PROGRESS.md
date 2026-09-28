@@ -66,5 +66,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 23:08 PDT | Bare 4x tp2 + gateway affinity staircase (chain11b), interim: cache hit 79-96% (Dynamo router 60%), mean TTFT 1.3-5.4 s through 1x-2x | access log | final table when chain11b ends |
 | 23:12 PDT | chain12 armed (after chain11b): envelope lift. Old fork's q8kv4 verify gets the env-gated sync-free switch (commit 2652ef2, patch 0927-old-fork-q8kv4-syncfree.patch), tp8/dp8 DSpark graphs with MAXREQ 256 (32/rank), mem-fraction 0.72 then 0.66, static grid c128/192/256 + gate | chain12.sh | frontier attempt |
 
+| 23:15 PDT | **Production M3.1 method read (read-only, b300-18/22)**: in-house SGLang `0.0.0+deploy` + Dynamo 1.5.0 (custom-policy build). Worker: tp2, **dp-size 1** (attention TP2, no DP lockstep), TC0 + `SGLANG_DISABLE_MSA=1` with custom KV4 kernels (attn V2, prefill V3, fused verify, index V2), DSpark **block 4** + fa4 draft + bounded SWA draft, **max running 256**, chunk 16384, tc_piecewise prefill graphs, HiCache ratio 3 write-through. Frontend: Rust chat processor, KV router with `incore-strict-affinity` (min 2 blocks, >50% overlap), session-pin Redis, migration. Production is not request-saturated (user), so 1.41 M/GPU is load not capacity | knowledge/prod-m31-serving-method-2026-09-27.md (8abc804) | biggest lever = their kernels; ask to run their image on 0008 |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

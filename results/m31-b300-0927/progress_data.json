@@ -200,13 +200,18 @@
     "11.3 M TPM, 1.97 req/s"
    ],
    [
-    "per GPU",
+    "per GPU (observed load; production is not saturated, so this is not its capacity)",
     "1.41 M TPM"
    ]
   ],
-  "note": "Same TPM definition as ours. Production now runs M3.1 on 18 nodes (corrected from the 5 recorded on Sep 26). Its per-node load (~2 req/s at 97.6% cache hit, p50 TTFT 1.6 s) is the real-traffic operating point to match; the 7 M/GPU north star is a capacity figure well above today's observed 1.4 M/GPU."
+  "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so 1.41 M/GPU is its load, not its capacity. Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "23:15",
+   "Read production's M3.1 launch method on b300-18/22 (read-only): in-house SGLang + Dynamo builds; TP2 attention with no DP attention, TC0 + MSA off with custom KV4 V2/V3 and fused-verify kernels, DSpark block 4 + fa4, 256 running/worker, HiCache ratio 3, chunk 16384, strict-affinity router + session-pin Redis",
+   "documented in knowledge/prod-m31-serving-method-2026-09-27.md (commit 8abc804)"
+  ],
   [
    "23:12",
    "Reflection: the verify-graph envelope (≤16/rank → 128 per node) caps every winning config. Ported the env-gated sync-free verify switch to the old fork (default unchanged) and armed chain12: MAXREQ 256, mem-fraction 0.72/0.66 so the graph pool fits",
@@ -355,6 +360,20 @@
   ]
  },
  "queued": [
+  {
+   "name": "Run the production engine image on node 0008 (their build, their argv/env) and measure it on the same static frame + staircase",
+   "why": "production's method depends on in-house kernels our forks lack (TP2 attention without DP lockstep, fused graph-safe verify, KV4 V2/V3 prefill); running their image is the only way to measure that shape here",
+   "script": "needs the image: registry pull or export from a prod node",
+   "commit": "–",
+   "status": "waiting for your OK (credentials / prod-node I/O)"
+  },
+  {
+   "name": "Adopt the portable production knobs on our winner: DSpark block 4, chunked prefill 16384, strict-affinity routing floors (≥2 blocks and >50% overlap) in our gateway",
+   "why": "cheap, no new kernels",
+   "script": "to write (chain13)",
+   "commit": "–",
+   "status": "after chain12"
+  },
   {
    "name": "Envelope lift: tp8/dp8 DSpark graphs with MAXREQ 256 (32/rank), sync-free verify path, mem-fraction 0.72 → 0.66 fallback",
    "why": "every winning config is capped at 128 concurrent by the verify-graph envelope; the host sync is avoidable via env, and the earlier capture OOM came from mem-fraction 0.85 leaving the graph pool no room (graphs are captured largest-first from one global pool)",
