@@ -140,6 +140,15 @@ class DSparkMiniMaxDraftModel(nn.Module):
                 "DSpark MiniMax draft: attention window = %d tokens on %d draft layers (needs the flashinfer draft backend)",
                 self._draft_window_size, len(self.layers),
             )
+        # Bidirectional attention inside the draft block (innoferra 09-28): the vendor's DSpark draft sets
+        # attn_type = ENCODER_ONLY (every block token sees the whole block); ours kept the decoder default (causal).
+        # Env-gated for an A/B: SGLANG_DSPARK_M31_BIDIR_DRAFT=1. Verification stays exact either way.
+        import os as _os2
+        if _os2.environ.get("SGLANG_DSPARK_M31_BIDIR_DRAFT", "0") == "1":
+            from sglang.srt.layers.radix_attention import AttentionType
+            for layer in self.layers:
+                layer.self_attn.attn.attn_type = AttentionType.ENCODER_ONLY
+            logger.info("DSpark MiniMax draft: bidirectional (ENCODER_ONLY) attention on %d draft layers", len(self.layers))
         else:
             logger.warning("DSpark MiniMax draft: FULL-CONTEXT attention (no window); expect low acceptance on long prompts")
         self.fc = nn.Linear(
