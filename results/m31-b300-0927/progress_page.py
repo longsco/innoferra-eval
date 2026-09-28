@@ -55,6 +55,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em}
 .pill.run{border-color:var(--ok);color:var(--ok)}
 ol.steps{margin:6px 0 0;padding-left:20px}ol.steps li{margin:3px 0}
 a{color:var(--ok)}
+.mx td.tpm{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:1rem;font-weight:600;color:var(--ok);background:var(--win)}.mx th.tpmh{color:var(--ok)}
 ol.ql{margin:0;padding-left:20px}li.q{margin:0 0 12px}.qh{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:2px}
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.vs>div{min-width:0}.vs h3{font-size:.9rem;margin:0 0 4px}@media (max-width:820px){.vs{grid-template-columns:1fr}}
 table.mx{font-size:.8rem}table.mx td,table.mx th{white-space:nowrap}table.mx td.k{white-space:normal;min-width:220px}th.grp{text-align:center;border-bottom:2px solid var(--line);color:var(--ink)}td.sep{border-left:1px solid var(--line)}
@@ -102,8 +103,9 @@ def matrix_panel():
     m = data.get("matrix")
     if not m: return ""
     grp = "".join(f'<th colspan="{n}" class="grp">{t}</th>' for t, n in m["groups"])
-    head = "".join(f"<th>{h}</th>" for h in m["columns"])
-    body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f'<td class="{"sep" if i in (0, 4, 5) else ""}">{x}</td>' for i, x in enumerate(r[1:])) + "</tr>" for r in m["rows"])
+    head = "".join(f'<th class="{"tpmh" if (i - 1) in set(m.get("tpm_cols", [])) else ""}">{h}</th>' for i, h in enumerate(m["columns"]))
+    sep, tpm = set(m.get("sep", [0, 4, 5])), set(m.get("tpm_cols", []))
+    body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f'<td class="{" ".join(c for c, on in (("sep", i in sep), ("tpm", i in tpm)) if on)}">{x}</td>' for i, x in enumerate(r[1:])) + "</tr>" for r in m["rows"])
     return f'<div class="panel"><h2>{m["title"]}</h2><div class="wrap"><table class="mx">\n<tr>{grp}</tr><tr>{head}</tr>\n{body}\n</table></div><p class="note">{m["note"]}</p></div>'
 def versus_panel():
     """Production vs the CURRENT winning setup (derived from the frontier): digest + launch terms, then both launch commands side by side."""
