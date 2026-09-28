@@ -130,7 +130,7 @@ def timeline():
     rows = "\n".join(f"<tr><td class=\"n\">{t}</td><td>{c}</td><td>{r}</td></tr>" for t, c, r in data["timeline"])
     return f'<div class="panel"><h2>Timeline of changes (latest first, Pacific time)</h2><div class="wrap"><table><tr><th>PDT</th><th>change</th><th>result (per GPU)</th></tr>\n{rows}\n</table></div></div>'
 def charts():
-    return ('<div class="panel"><h2>Per-GPU TPM by configuration, in the order tested</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 380"></svg></div>'
+    return ('<div class="panel"><h2>Per-GPU TPM by configuration, in the order tested</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
             '<div class="legend"><span style="--sw:var(--bad)">eager DSpark (vendor gate)</span><span style="--sw:var(--okfill)">CUDA-graph decode</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
             f'<p class="note">{data.get("chart_note","")}</p></div>'
             '<div class="panel"><h2>Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 300"></svg></div>'
@@ -143,10 +143,12 @@ JS = """
   const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),star=css('--star'),ok=css('--okfill'),bad=css('--bad'),pend=css('--pend'),prev=css('--prev');
   const KC={bad:bad,ok:ok,prev:prev}; const TARGET=%(target)s;
   const rows=%(rows)s;
-  const s1=document.getElementById('c1'); const W=960,L=340,R=40,rowH=46,top=30; const x=v=>L+(W-L-R)*v/TARGET;
+  const s1=document.getElementById('c1'); const W=960,L=360,R=40,rowH=50,top=30; const x=v=>L+(W-L-R)*v/TARGET;
+  const H1=top+rows.length*rowH+34; s1.setAttribute('viewBox',`0 0 ${W} ${H1}`);
+  const wrap=(s,n)=>{const w=s.split(' ');const out=[''];for(const t of w){const cur=out[out.length-1];if((cur+' '+t).trim().length>n&&cur){out.push(t)}else{out[out.length-1]=(cur+' '+t).trim()}}return out.slice(0,3)};
   let g='';
   for(let t=0;t<=7;t++){g+=`<line x1="${x(t)}" y1="${top-8}" x2="${x(t)}" y2="${top+rows.length*rowH}" stroke="${grid}"/><text x="${x(t)}" y="${top+rows.length*rowH+16}" font-size="11" fill="${muted}" text-anchor="middle">${t} M</text>`;}
-  rows.forEach((r,i)=>{const k=KC[r.k]||r.k; const y=top+i*rowH;g+=`<text x="${L-10}" y="${y+21}" font-size="12" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${r.n}</text><rect x="${L}" y="${y+6}" width="${x(r.v)-L}" height="26" fill="${k}" rx="2"/><text x="${x(r.v)+8}" y="${y+24}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M <tspan fill="${muted}" font-size="11">(${r.c})</tspan></text>`;});
+  rows.forEach((r,i)=>{const k=KC[r.k]||r.k; const y=top+i*rowH; const ln=wrap(r.n,46); const y0=y+19-(ln.length-1)*7;g+=`<text x="${L-10}" y="${y0}" font-size="11.5" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${ln.map((t,j)=>`<tspan x="${L-10}" dy="${j?14:0}">${t}</tspan>`).join('')}</text><rect x="${L}" y="${y+6}" width="${x(r.v)-L}" height="26" fill="${k}" rx="2"/><text x="${x(r.v)+8}" y="${y+18}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M</text><text x="${x(r.v)+8}" y="${y+32}" font-size="10.5" fill="${muted}">${wrap(r.c,40)[0]}${wrap(r.c,40).length>1?'…':''}</text>`;});
   g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star ${TARGET.toFixed(2)} M / GPU</text>`;
   s1.innerHTML=g;
   const lev=%(lev)s; const base=%(base)s, measuredTop=%(top)s, remaining=TARGET-measuredTop, pendN=lev.filter(d=>!d.m).length, pendEach=remaining/Math.max(1,pendN);
