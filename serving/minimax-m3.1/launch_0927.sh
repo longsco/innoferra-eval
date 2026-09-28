@@ -36,6 +36,7 @@ GRAPHS=${GRAPHS:-0}; GRAPHV=()
 ENV=(-e SGLANG_M3_TRAINING_COMPATIBLE=$TRAINING_COMPAT -e SGLANG_MINIMAX_M3_TRAINING_ROUTER=1 -e SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE=16 -e SGLANG_MINIMAX_SPARSE_KV4=1
      -e SGLANG_RAGGED_VERIFY_MODE=static -e SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK=16384 -e SGLANG_DP_USE_GATHERV=1
      -e SGLANG_FORWARD_UNKNOWN_TOOLS=true -e SGLANG_ENABLE_METRICS_DEVICE_TIMER=true)
+for e in ${EXTRA_ENV:-}; do ENV+=(-e "$e"); done   # EXTRA_ENV="A=1 B=2" extra engine env (e.g. NCCL_NVLS_ENABLE=0 after the 09-27 NVLS wedge)
 # vendor §3.2 argv, verbatim (+ served-model-name so the fleet gates find the id)
 ARGS=(python3 -m sglang.launch_server --model-path /models --served-model-name "$SERVED" --trust-remote-code --host 0.0.0.0 --port "$PORT"
       --tp-size "$TP" --ep-size "$EP" --dp-size "$DP" --moe-dense-tp-size 1 "${DPATTN_ARGS[@]}" --quantization mxfp8
