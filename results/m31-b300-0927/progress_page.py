@@ -1,36 +1,136 @@
 #!/usr/bin/env python3
-"""Render progress-page.html from progress_data.json + progress_template.html (both in this directory).
+"""Render the tabbed progress page from progress_data.json (same directory).
 Usage: python3 progress_page.py [--out PATH]   (then publish the HTML as the artifact)."""
-import json, html, sys, os
+import json, sys, os
 D = os.path.dirname(os.path.abspath(__file__))
 data = json.load(open(os.path.join(D, "progress_data.json")))
-tpl = open(os.path.join(D, "progress_template.html")).read()
+TARGET = data.get("target", 7.0)
+
+CSS = """
+:root{--bg:#F3F5F7;--panel:#FFFFFF;--ink:#1B2430;--muted:#5B6B7A;--line:#D5DBE1;--grid:#E6EAEE;--star:#D97A00;--ok:#0F766E;--okfill:#14B8A6;--bad:#B42318;--pend:#94A3B8;--prev:#3B5BDB;--win:#ECFDF5;--winline:#0F766E;--tab:#E9EEF3;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0F1419;--panel:#171D24;--ink:#E7ECF1;--muted:#9AA8B5;--line:#2B3540;--grid:#232C36;--star:#F2A33A;--ok:#2DD4BF;--okfill:#14B8A6;--bad:#F87171;--pend:#64748B;--prev:#7B93FF;--win:#0E2A24;--winline:#2DD4BF;--tab:#1F2731;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1419;--panel:#171D24;--ink:#E7ECF1;--muted:#9AA8B5;--line:#2B3540;--grid:#232C36;--star:#F2A33A;--ok:#2DD4BF;--okfill:#14B8A6;--bad:#F87171;--pend:#64748B;--prev:#7B93FF;--win:#0E2A24;--winline:#2DD4BF;--tab:#1F2731;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;padding-block:24px;padding-inline:clamp(16px,4vw,40px);max-width:1080px;margin:0 auto;line-height:1.45}
+h1{font-size:1.45rem;font-weight:600;margin:0 0 4px;text-wrap:balance}
+h2{font-size:1.05rem;font-weight:600;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 16px;font-size:.92rem}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);margin:0 0 18px;padding-bottom:8px}
+.tabs button{background:var(--tab);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 14px;font:inherit;font-weight:500;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs button:focus-visible{outline:2px solid var(--star);outline-offset:2px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.kpi .l{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:1.5rem;font-weight:500;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:.78rem;color:var(--muted)}
+.kpi .v.star{color:var(--star)}.kpi .v.ok{color:var(--ok)}.kpi .v.bad{color:var(--bad)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-bottom:18px}
+.panel.win{background:var(--win);border-color:var(--winline)}
+.summary{font-size:1rem;max-width:70ch}
+svg{width:100%;height:auto;display:block;font-family:"IBM Plex Mono",ui-monospace,monospace}
+.note{color:var(--muted);font-size:.85rem;margin:8px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;background:var(--sw)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}td,th{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:left;vertical-align:top}th{color:var(--muted);font-weight:500;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+td.n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+td.w{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+td.k{white-space:nowrap;font-weight:500}
+.wrap{overflow-x:auto}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:0;font-size:.9rem}dt{font-weight:500;white-space:nowrap}dd{margin:0}
+@media (max-width:520px){dl{grid-template-columns:1fr}dt{white-space:normal}}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em}
+.pill{display:inline-block;font-size:.72rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:middle;white-space:nowrap}
+.pill.run{border-color:var(--ok);color:var(--ok)}
+ol.steps{margin:6px 0 0;padding-left:20px}ol.steps li{margin:3px 0}
+a{color:var(--ok)}
+"""
+
 def kpis():
-    out = ['<div class="kpis">']
-    for k in data["kpis"]:
-        out.append(f'  <div class="kpi"><div class="l">{k["label"]}</div><div class="v {k.get("cls","")}">{k["value"]}</div><div class="s">{k.get("sub","")}</div></div>')
-    out.append('</div>'); return "\n".join(out)
+    return '<div class="kpis">' + "".join(f'<div class="kpi"><div class="l">{k["label"]}</div><div class="v {k.get("cls","")}">{k["value"]}</div><div class="s">{k.get("sub","")}</div></div>' for k in data["kpis"]) + '</div>'
+def running():
+    r = data["running"]; steps = "".join(f"<li>{a} <span class=\"pill\">{b}</span></li>" for a, b in r["steps"])
+    return (f'<div class="panel"><h2>{r["title"]} <span class="pill run">live</span></h2><p style="margin:0 0 6px">{r["config"]}</p>'
+            f'<ol class="steps">{steps}</ol><p class="note">script <code>{r["script"]}</code> · commit <code>{r["commit"]}</code></p></div>')
+def queued():
+    rows = "\n".join(f'<tr><td class="k">{q["name"]}</td><td>{q["why"]}</td><td><code>{q["script"]}</code></td><td class="w">{q["commit"]}</td><td>{q["status"]}</td></tr>' for q in data["queued"])
+    return f'<div class="panel"><h2>Queued experiments, in order</h2><div class="wrap"><table><tr><th>experiment</th><th>why</th><th>script</th><th>commit</th><th>status</th></tr>\n{rows}\n</table></div></div>'
 def winning():
     w = data["winning"]; rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in w["rows"])
     return f'<div class="panel win"><h2>{w["title"]}</h2>\n<dl>\n{rows}</dl></div>'
+def glossary():
+    rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in data["glossary"])
+    return f'<div class="panel"><h2>What the setups and tests mean</h2><dl>\n{rows}</dl></div>'
+def tools():
+    rows = "\n".join(f'<tr><td>{a}</td><td><code>{b}</code></td><td class="w">{c}</td></tr>' for a, b, c in data["tools"])
+    return f'<div class="panel"><h2>Tooling and patches (repo longsco/innoferra-eval, serving/minimax-m3.1/)</h2><div class="wrap"><table><tr><th>what</th><th>path</th><th>commit</th></tr>\n{rows}\n</table></div></div>'
 def routeb():
     r = data["routeb"]; head = "".join(f"<th>{c}</th>" for c in r["columns"])
     body = "\n".join("<tr>" + f'<td class="k">{row[0]}</td>' + "".join(f'<td class="n">{c}</td>' for c in row[1:]) + "</tr>" for row in r["rows"])
-    return f'<div class="panel"><h2>3. Real production traffic replay (Route B)</h2><div class="wrap"><table>\n<tr>{head}</tr>\n{body}\n</table></div>\n<p class="note">{r["note"]}</p></div>'
+    return f'<div class="panel"><h2>Real production traffic replay (Route B)</h2><div class="wrap"><table>\n<tr>{head}</tr>\n{body}\n</table></div>\n<p class="note">{r["note"]}</p></div>'
 def prodref():
     p = data["prodref"]; body = "\n".join(f"<tr><td>{a}</td><td class=\"{'n' if len(b) <= 36 else 'w'}\">{b}</td></tr>" for a, b in p["rows"])
     url = "http://10.1.101.33:5601/app/dashboards#/view/6357c8fc-60ab-438b-9f0c-6dd266baa6e0?_g=(filters:!(),refreshInterval:(pause:!f,value:20000),time:(from:now-6h,to:now))"
-    return (f'<div class="panel"><h2>4. Production reference</h2>\n<p style="margin:0 0 6px">Kibana dashboard <b>"Innoferra Token Hub M31 - Full Log"</b> (fleet VPN required): '
+    return (f'<div class="panel"><h2>Production reference</h2>\n<p style="margin:0 0 6px">Kibana dashboard <b>"Innoferra Token Hub M31 - Full Log"</b> (fleet VPN required): '
             f'<a href="{url}">10.1.101.33:5601 → dashboard 6357c8fc</a>. Panels: tpm and req_count per minute, latency p50/p90/p99 per minute, 4xx/5xx per minute, recent failed requests with full bodies, sample of successful requests with token usage.</p>\n'
-            f'<div class="wrap"><table>\n<tr><th>read at {p["read_at"]}</th><th>value</th></tr>\n{body}\n</table></div>\n'
-            f'<p class="note">{p.get("note","")}</p></div>')
+            f'<div class="wrap"><table>\n<tr><th>read at {p["read_at"]}</th><th>value</th></tr>\n{body}\n</table></div>\n<p class="note">{p.get("note","")}</p></div>')
 def timeline():
-    return "\n".join(f"<tr><td>{t}</td><td>{c}</td><td>{r}</td></tr>" for t, c, r in data["timeline"])
-out = (tpl.replace("{{KPIS}}", kpis()).replace("{{WINNING}}", winning()).replace("{{ROUTEB}}", routeb()).replace("{{PRODREF}}", prodref())
-          .replace("{{TIMELINE}}", timeline()).replace("{{SUBTITLE}}", data.get("subtitle","")).replace("{{ROWS_JSON}}", json.dumps(data["configs"], ensure_ascii=False))
-          .replace("{{LEV_JSON}}", json.dumps(data["pareto"]["levers"], ensure_ascii=False))
-          .replace("{{PARETO_BASE}}", str(data["pareto"]["base"])).replace("{{PARETO_TOP}}", str(data["pareto"]["top"])))
-# colour keys in the JS rows: template expects k to be a colour var name (bad/ok/prev) resolved in JS
-out = out.replace("const rows=", "const KC={bad:bad,ok:ok,prev:prev}; const rows=").replace("rows.forEach((r,i)=>{const y=top+i*rowH;", "rows.forEach((r,i)=>{r.k=KC[r.k]||r.k; const y=top+i*rowH;")
+    rows = "\n".join(f"<tr><td class=\"n\">{t}</td><td>{c}</td><td>{r}</td></tr>" for t, c, r in data["timeline"])
+    return f'<div class="panel"><h2>Timeline of changes (latest first, Pacific time)</h2><div class="wrap"><table><tr><th>PDT</th><th>change</th><th>result (per GPU)</th></tr>\n{rows}\n</table></div></div>'
+def charts():
+    return ('<div class="panel"><h2>Per-GPU TPM by configuration, in the order tested</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 380"></svg></div>'
+            '<div class="legend"><span style="--sw:var(--bad)">eager DSpark (vendor gate)</span><span style="--sw:var(--okfill)">CUDA-graph decode</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
+            f'<p class="note">{data.get("chart_note","")}</p></div>'
+            '<div class="panel"><h2>Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 300"></svg></div>'
+            '<div class="legend"><span style="--sw:var(--okfill)">measured gain (M/GPU)</span><span style="--sw:var(--pend)">pending, not yet measured</span></div>'
+            f'<p class="note">{data.get("pareto_note","")}</p></div>')
+
+JS = """
+(function(){
+  const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),star=css('--star'),ok=css('--okfill'),bad=css('--bad'),pend=css('--pend'),prev=css('--prev');
+  const KC={bad:bad,ok:ok,prev:prev}; const TARGET=%(target)s;
+  const rows=%(rows)s;
+  const s1=document.getElementById('c1'); const W=960,L=340,R=40,rowH=46,top=30; const x=v=>L+(W-L-R)*v/TARGET;
+  let g='';
+  for(let t=0;t<=7;t++){g+=`<line x1="${x(t)}" y1="${top-8}" x2="${x(t)}" y2="${top+rows.length*rowH}" stroke="${grid}"/><text x="${x(t)}" y="${top+rows.length*rowH+16}" font-size="11" fill="${muted}" text-anchor="middle">${t} M</text>`;}
+  rows.forEach((r,i)=>{const k=KC[r.k]||r.k; const y=top+i*rowH;g+=`<text x="${L-10}" y="${y+21}" font-size="12" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${r.n}</text><rect x="${L}" y="${y+6}" width="${x(r.v)-L}" height="26" fill="${k}" rx="2"/><text x="${x(r.v)+8}" y="${y+24}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M <tspan fill="${muted}" font-size="11">(${r.c})</tspan></text>`;});
+  g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star ${TARGET.toFixed(2)} M / GPU</text>`;
+  s1.innerHTML=g;
+  const lev=%(lev)s; const base=%(base)s, measuredTop=%(top)s, remaining=TARGET-measuredTop, pendN=lev.filter(d=>!d.m).length, pendEach=remaining/Math.max(1,pendN);
+  const s2=document.getElementById('c2'); const W2=960,H2=300,l2=60,r2=60,t2=30,b2=70; const bw=(W2-l2-r2)/(lev.length+0.6); const ymax=7; const yv=v=>t2+(H2-t2-b2)*(1-v/ymax);
+  let h='';
+  for(let t=0;t<=7;t++){h+=`<line x1="${l2}" y1="${yv(t)}" x2="${W2-r2}" y2="${yv(t)}" stroke="${grid}"/><text x="${l2-8}" y="${yv(t)+4}" font-size="11" fill="${muted}" text-anchor="end">${t} M</text>`;}
+  let cum=base; const pts=[]; const x0=l2+bw*0.3;
+  h+=`<rect x="${l2}" y="${yv(base)}" width="${bw*0.6}" height="${yv(0)-yv(base)}" fill="${grid}" stroke="${muted}" stroke-dasharray="3 3"/><text x="${x0}" y="${yv(base)-6}" font-size="11" fill="${muted}" text-anchor="middle">start ${base.toFixed(2)}</text>`;
+  lev.forEach((d,i)=>{const cx=l2+bw*(i+1)+bw*0.3; const val=d.m?d.v:pendEach; cum+=val; const y0=yv(cum-val),y1=yv(cum); pts.push([cx,yv(cum),d.m]);
+    h+=`<rect x="${cx-bw*0.3}" y="${Math.min(y0,y1)}" width="${bw*0.6}" height="${Math.max(2,Math.abs(y0-y1))}" fill="${d.m?ok:pend}" ${d.m?'':'fill-opacity="0.35" stroke="'+pend+'" stroke-dasharray="4 3"'} rx="2"/>`;
+    h+=`<text x="${cx}" y="${Math.min(y0,y1)-6}" font-size="11" fill="${ink}" text-anchor="middle">${d.m?(d.v>0?'+'+d.v.toFixed(2)+' M':'0'):'?'}</text>`;
+    const words=d.n.split(' '); const half=Math.ceil(words.length/2); const line1=words.slice(0,half).join(' '), line2=words.slice(half).join(' ');
+    h+=`<text x="${cx}" y="${H2-b2+18}" font-size="10.5" fill="${ink}" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif">${line1}</text><text x="${cx}" y="${H2-b2+32}" font-size="10.5" fill="${ink}" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif">${line2}</text>`;
+  });
+  h+=`<line x1="${l2}" y1="${yv(TARGET)}" x2="${W2-r2}" y2="${yv(TARGET)}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${W2-r2}" y="${yv(TARGET)-6}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">${TARGET.toFixed(2)} M</text>`;
+  const mp=pts.filter(p=>p[2]), pp=pts.filter(p=>!p[2]);
+  h+=`<polyline points="${[[x0,yv(base)],...mp].map(p=>p[0]+','+p[1]).join(' ')}" fill="none" stroke="${ink}" stroke-width="1.5"/>`;
+  if(mp.length&&pp.length) h+=`<polyline points="${[mp[mp.length-1],...pp].map(p=>p[0]+','+p[1]).join(' ')}" fill="none" stroke="${ink}" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+  let c=base; lev.filter(d=>d.m).forEach((d,i)=>{c+=d.v; const p=mp[i]; h+=`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${ink}"/><text x="${p[0]+8}" y="${p[1]-8}" font-size="11" fill="${ink}">${(c/TARGET*100).toFixed(0)}%%</text>`;});
+  s2.innerHTML=h;
+  const tabs=[...document.querySelectorAll('.tabs button')], panels=[...document.querySelectorAll('.tabpanel')];
+  function show(id){tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id?'true':'false'));panels.forEach(p=>p.hidden=(p.id!==id));try{localStorage.setItem('m31tab',id)}catch(e){}}
+  tabs.forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab);try{history.replaceState(null,'','#'+b.dataset.tab)}catch(e){}}));
+  let init='overview'; try{const hh=location.hash.replace('#',''); if(hh&&panels.some(p=>p.id===hh)) init=hh; else {const s=localStorage.getItem('m31tab'); if(s&&panels.some(p=>p.id===s)) init=s;}}catch(e){}
+  show(init);
+})();
+"""
+
+tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
+tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
+overview = kpis() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
+results = charts() + routeb()
+setup = winning() + glossary() + tools()
+page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
+        f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'
+        f'<section class="tabpanel" id="overview">{overview}</section>\n<section class="tabpanel" id="results" hidden>{results}</section>\n'
+        f'<section class="tabpanel" id="setup" hidden>{setup}</section>\n<section class="tabpanel" id="production" hidden>{prodref()}</section>\n'
+        f'<section class="tabpanel" id="timeline" hidden>{timeline()}</section>\n<script>{JS % dict(target=TARGET, rows=json.dumps(data["configs"], ensure_ascii=False), lev=json.dumps(data["pareto"]["levers"], ensure_ascii=False), base=data["pareto"]["base"], top=data["pareto"]["top"])}</script>\n')
 dst = sys.argv[sys.argv.index("--out")+1] if "--out" in sys.argv else os.path.join(D, "progress-page.html")
-open(dst, "w").write(out); print("wrote", dst, len(out), "bytes")
+open(dst, "w").write(page); print("wrote", dst, len(page), "bytes")
