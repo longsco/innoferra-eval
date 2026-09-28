@@ -118,5 +118,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 12:25 PDT (09-28) | chain17 frep (frontier repeat) static: c64 27.66 M (3.46/GPU, 2.18 s), c128 40.82 (5.10, 3.69 s, p99 15.3), c256 45.19 (5.65, 13.6 s): repeat of 5.01/3.55/5.70 -> noise ~2%. TTFT breakdown (ttft_breakdown.sh, engine metrics means): c64 TTFT 2.08 s, queue 0.01, prefill_forward 0.28, chunked_prefill 0.91 (n=40); c128 TTFT 3.12, queue 0.00, prefill 0.14; c256 TTFT 9.68, queue 0.00, prefill 0.14 -> time is spent before the scheduler. py-spy (in-container, --nonblocking, 12 s): tokenizer worker 72.8% self in HF `_encode_plus`; DP controller 80.8% in recv_pyobj + zmq.Again (busy-poll). chain18 armed (TOKW 8, 4) | stress2-0927.log | ceiling = tokenizer stage |
 
+| 13:28 PDT (09-28) | **NORTH STAR PASSED (static frame): chain18 tok8 = frontier + `--tokenizer-worker-num 8` per engine**: c64 29.59 M (3.70/GPU, TTFT 1.18 s, p99 3.95), c128 45.40 (5.67, 1.30 s, p99 7.94), **c256 62.58 (7.82/GPU, TTFT 2.11 s, p99 19.88)**, c384 67.69 (8.46, 10.33 s). Engine TTFT/queue/prefill: c64 1.36/0.01/0.28, c128 1.42/0.00/0.15, c256 2.43/0.38/0.18, c384 7.90/5.40/0.20 (32-per-rank cap binds at c384). Frontier repeat real traffic: strict 2x, staircase accept 4.21, closed loop c128 14.27 M node | tpm-*-0927-tok8.csv | 5.10 -> 7.82 M/GPU |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

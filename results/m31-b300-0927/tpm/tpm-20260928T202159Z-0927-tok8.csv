@@ -1,0 +1,2 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-tok8,384,1024,1.000,67.694,0.492,45.2,10.33,23.49,22.10
