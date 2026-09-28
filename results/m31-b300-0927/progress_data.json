@@ -225,6 +225,11 @@
  },
  "timeline": [
   [
+   "00:46",
+   "Root cause of the recurring 4×tp2 boot hangs: all four engines bound 127.0.0.1:28028 (NVSHMEM bootstrap, fixed port) under host networking, so bootstrap connections could land in another engine. Engines now run in their own network namespace (NETNS=1, HTTP port published only); chain13 restarted",
+   "no shared ports left on the host"
+  ],
+  [
    "00:05",
    "Added a closed-loop mode to the replay tool (real prompts, fixed concurrency) as the bridge between the static frame and the open-loop staircase; chain14 runs it (c64, c128) for every production-knob variant",
    "test-method table on the Overview tab"
@@ -380,8 +385,8 @@
   "config": "4 × tp2/ep2/dp2 DSpark with the envelope lift (64 per worker = 32/rank, sync-free verify, mem-fraction 0.72) behind the fixed slot gateway (all 8 ranks, spill on). One router for both tests.",
   "steps": [
    [
-    "4 engines up + warm-up + graph check",
-    "running"
+    "4 engines up in separate network namespaces + warm-up + graph check",
+    "running since 00:46 PDT (first attempt hung 2/4 engines at boot: shared port 28028)"
    ],
    [
     "canaries via gateway",
