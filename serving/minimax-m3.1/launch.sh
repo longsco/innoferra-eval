@@ -41,6 +41,9 @@ JIT=${JIT:-/data01/minimax31/jit-cache}; LOGS=${LOGS:-/data01/minimax31/logs}; E
 FOLLOW=${FOLLOW:-1}                      # 1 = stay attached and log startup milestones until /health (or WAIT s); 0 = return right after docker run
 WAIT=${WAIT:-3600}
 DOCKER="docker"; $DOCKER ps >/dev/null 2>&1 || DOCKER="sudo -n docker"
+# NETNS=1: own network namespace per engine (publish only the HTTP port). Several engines on one host with --network host share
+# loopback, and NVSHMEM bootstrap listens on a fixed 127.0.0.1 port (seen: 28028 bound by all engines) -> cross-engine hangs at boot.
+NETNS=${NETNS:-0}; if [ "$NETNS" = 1 ]; then NETOPT="-p 127.0.0.1:${PORT}:${PORT}"; else NETOPT="--network host"; fi
 
 TS=$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$JIT" "$LOGS"; LOG="$LOGS/launch-$TS.log"
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG"; }
@@ -105,7 +108,7 @@ if [ "$SPEC" = dspark ]; then
   ENV_VARS+=(SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 "SGLANG_RAGGED_VERIFY_MODE=$DSPARK_VERIFY_MODE")
 fi
 DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
-  --gpus all --network host --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864 --cap-add SYS_PTRACE   # SYS_PTRACE: the scheduler watchdog py-spy dumps the stuck stack instead of "Permission denied"
+  --gpus all $NETOPT --shm-size 64g --ipc host --ulimit memlock=-1 --ulimit stack=67108864 --cap-add SYS_PTRACE   # SYS_PTRACE: the scheduler watchdog py-spy dumps the stuck stack instead of "Permission denied"
   --log-driver json-file --log-opt max-size=100m --log-opt max-file=5
   -v "$MODEL_PATH:/models:ro" -v "$JIT:/root/.cache" -v "$LOGS:/logs")
 [ "$GPUS" = all ] || DOCKER_OPTS+=(-e "CUDA_VISIBLE_DEVICES=$GPUS")

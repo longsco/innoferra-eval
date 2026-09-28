@@ -2,6 +2,7 @@
 # 4 engines x (tp2/ep2/dp2, attention TP1) on the 09-22 engine + DSpark port (graphs), each with its own HTTP frontend, behind our gateway
 # with prefix-hash routing pinned to (engine, DP rank). MAXREQ 32/engine (16/rank = graph envelope), CHUNK 32768 (MegaMoE cap 16384 x dp).
 set -uo pipefail; K=/data01/minimax31/serving; cd $K
+export NETNS=${NETNS:-1}
 export IMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private DEV_SRC=${DEV_SRC:-/data01/minimax31/src/0922-sglang/python}
 export TP_SIZE=2 EP_SIZE=2 DP_SIZE=2 DP_ATTN=1 SPEC=dspark DRAFT_WINDOW=4096 TRAINING_COMPAT=1 CHUNK=${CHUNK:-32768} MAXREQ=${MAXREQ:-32} MEMFRAC=${MEMFRAC:-0.80} FOLLOW=0
 export EXTRA_ARGS="--tokenizer-worker-num ${TOKW:-2} ${XARGS:-}" DSPARK_BLOCK=${DSPARK_BLOCK:-}
