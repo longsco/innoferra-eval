@@ -130,5 +130,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 16:19 PDT (09-28) | t8r64 real traffic: 2939/2939, hit 88.1%, TTFT p50/p99 0.82/6.7, 1.16/13.8, 1.34/23.7, 4.77/45.6; decode 152/108/70/38; accept 4.13; strict 1x; closed loop c128 13.87 M node (1.73/GPU). Parser fix verified: catch_tb caught 3 TypeErrors during tok4 (21:40, 21:56, 21:57Z, pre-fix engines), none after the fixed engines launched (22:09Z) | traffic/stairs-t8r64.jsonl | not adopted |
 
+| 16:35 PDT (09-28) | Tail anatomy (`tail_anatomy.py`, tok4 staircase): 4x n=593, TTFT p50 1.48 / p90 12.4 / p99 33.9; slowest 10% uncached p50 3.2k (p90 167k) vs fastest 50% 1.0k; 33/60 slow requests had < 4k uncached (stalled by others); uncached tokens sent in the prior 20 s: slow 590k vs fast 408k (2x: 449k vs 149k); largest uncached prefills 491k (TTFT 46.6 s), 450k, 335k, 334k, 271k. PrefillAdder.add_chunked_req admits the chunked request with min(rem_chunk_tokens, rem_total_tokens) -> whole step budget. `patch_fair_chunk.py` (SGLANG_CHUNKED_REQ_SHARE, default 1.0) applied to both trees (compile ok); chain21 armed (fair4, fair4c16) | e7e2d96 | lever built |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
