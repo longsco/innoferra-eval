@@ -126,5 +126,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 15:15 PDT (09-28) | Reporting change (user comment: static north star looks like overfitting): ranked chart shows static vs real traffic per config (closed loop c128 per GPU bar, strict prod-parity marker, production 2.83 M/GPU baseline); KPI 'Static frame best (synthetic best case)' + 'Real traffic, 128 in flight' 1.70 M/GPU. Real traffic per GPU (closed c128 / strict): frontier-balanced 1.78 / 0.92, tok8 1.70 / 0.41, bmfs 1.91 / 0.41, bblk4 1.67 / 0.92, bprod 1.46 / 0.92. chain20 armed (fine staircase 1x..4x, 0.5x steps, 180 s) | progress_page.py | framing |
 
+| 15:45 PDT (09-28) | tok4 real traffic: 2939/2939, hit 88.5%, TTFT p50/p99 0.75/5.6, 1.14/14.5, 1.48/33.9, 3.09/35.2; decode 155/106/68/46; accept 4.19; strict prod-parity 2x (7.36 M node = 0.92/GPU); closed loop c128 13.40 M node (1.68/GPU). chain19 t8r64 (TOKW 8, MAXREQ 128, MEMFRAC 0.66, 1 GiB workspace) static: c128 44.84 M (5.60/GPU, 1.31 s), c256 59.81 (7.48, 1.70 s), c384 62.98 (7.87, 3.64 s, p99 49), c512 65.62 (8.20, 11.39 s); TPOT 17.7/25.5/26.6/30.1 ms; engine queue 0 at every level -> decode-bound | tpm-*-0927-t8r64*.csv | no static gain |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

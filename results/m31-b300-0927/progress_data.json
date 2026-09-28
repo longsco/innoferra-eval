@@ -216,6 +216,16 @@
    "c": "c256, TTFT 2.6 s; c128 5.62 M at 1.7 s; c384 8.16 M at 9.7 s",
    "k": "ok",
    "frontier": false,
+   "acc": "accept 5.79 probe · 4.19 real traffic",
+   "rt_closed": 1.68,
+   "rt_strict": 0.92
+  },
+  {
+   "n": "Frontier + 8 tokenizer workers + 64 per rank (t8r64)",
+   "v": 7.48,
+   "c": "c256, TTFT 1.7 s; c384 7.87 M at 3.6 s; c512 8.20 M at 11.4 s",
+   "k": "ok",
+   "frontier": false,
    "acc": "accept 5.79 probe",
    "rt_closed": "running",
    "rt_strict": "running"
@@ -390,6 +400,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "15:45",
+   "tok4 real traffic: TTFT p50 0.75 / 1.14 / 1.48 / 3.1 s, strict prod-parity at 2× (0.92 M/GPU, same as the 2-worker frontier), closed loop c128 1.68 M/GPU, accept 4.19, 0 errors — the best balance so far (static 7.64). t8r64 static (8 workers + 64 per rank): 5.60 / 7.48 / 7.87 / 8.20 M/GPU at c128 / c256 / c384 / c512 (TTFT 1.3 / 1.7 / 3.6 / 11.4 s): no gain over 8 workers alone; decode per token rises to 26–30 ms, so the static frame is now decode-bound at ~8.2–8.5 M/GPU",
+   "static ceiling is decode now; real traffic unchanged by frontend levers"
+  ],
   [
    "15:15",
    "Viewer concern addressed: passing 7 M/GPU on the static frame looks like overfitting to a synthetic best case. The ranked chart now shows, per configuration, the static bar next to real traffic (128 real prompts in flight) with a ▲ at the strict prod-parity TPM and production's observed load (2.83 M/GPU) as the baseline line; KPIs lead with real traffic. Reading: on real traffic the frontier is 1.70 M/GPU (closed loop) and 0.41–0.92 M/GPU at the strict limit, below production's current load. chain20 armed: finer staircase (0.5× steps) for a precise strict-limit number",
@@ -727,15 +742,19 @@
   "steps": [
    [
     "tok4 (4 tokenizer workers)",
-    "static 7.64 M/GPU at c256; real-traffic tests running"
+    "done 15:08: static 7.64 M/GPU; real traffic strict 0.92, closed loop 1.68 M/GPU, 0 errors"
    ],
    [
-    "chain19: t8r64 (8 workers + 64 per rank, grid to c512), tok16",
-    "next, with the tool-call parser fix live"
+    "chain19 t8r64 (8 workers + 64 per rank)",
+    "static done 15:45: 7.48 at c256, 8.20 at c512 (TTFT 11 s) — decode-bound now; real traffic running"
    ],
    [
-    "chain20: fine staircase 1×–4× in 0.5× steps on the frontier with 2 and 4 workers",
-    "armed; gives the strict prod-parity TPM per GPU at 0.5× resolution"
+    "chain19 tok16 (16 workers)",
+    "next"
+   ],
+   [
+    "chain20: fine staircase 1×–4× (0.5× steps) with 2 and 4 workers",
+    "armed"
    ]
   ]
  },
@@ -1821,10 +1840,26 @@
    [
     "Frontier + 4 tokenizer workers per engine (tok4)",
     "7.64 (c256)",
-    "running",
+    "<b>0.92 · 1.68 closed</b>",
     "64 × 4",
     "7.64 M @c256 (3.65 @c64, 5.62 @c128, 8.16 @c384)",
     "2.6 s @c256 (1.7 s @c128)",
+    "~100%",
+    "–",
+    "5.79 / 4.19",
+    "09-27 peak, warm",
+    "87–89%",
+    "<b>0.75 / 1.14 / 1.48</b> (6×: 3.1)",
+    "155 / 106 / 68",
+    "strict 2× (same as frontier), 0 errors: best balance of static and real traffic"
+   ],
+   [
+    "Frontier + 8 tokenizer workers + 64 per rank (t8r64)",
+    "7.48 (c256)",
+    "running",
+    "128 × 4",
+    "7.48 M @c256 (5.60 @c128, 7.87 @c384, 8.20 @c512)",
+    "1.7 s @c256 (3.6 s @c384)",
     "~100%",
     "–",
     "5.79 / running",
@@ -1832,7 +1867,7 @@
     "running",
     "running",
     "running",
-    "running"
+    "no static gain: decode per token 26–30 ms with 64 per rank"
    ],
    [
     "Team production (18 nodes, for reference)",
@@ -2245,6 +2280,13 @@
    "p50_4x": 1.37,
    "p99_4x": 35,
    "decode_1x": 148,
+   "hit": "87%"
+  },
+  {
+   "n": "+ 4 tokenizer workers",
+   "p50_4x": 1.48,
+   "p99_4x": 34,
+   "decode_1x": 155,
    "hit": "87%"
   }
  ],
