@@ -2,6 +2,7 @@
 
 | config | per-GPU TPM | at | % of target |
 |---|---|---|---|
+| 4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd) | 4.01 M | c128, TTFT 3.5 s; c64 3.02 M at 1.7 s; c256 4.18 M at 20.9 s | 57% |
 | 4×tp2 DSpark envelope lift (64/worker) + slot gateway | 3.97 M | c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s | 57% |
 | 4×tp2 lift + P1 kernel fix + session pinning (c13p1) | 3.80 M | c128, TTFT 4.0 s; c64 2.86 M at 1.7 s; c256 4.12 M at 19.8 s | 54% |
 | 4×tp2 lift + production scheduling knobs (v1: chunk 16384, overlap plan, streaming) | 3.72 M | c128, TTFT 3.3 s; c256 4.08 M at 21.7 s | 53% |
@@ -39,6 +40,6 @@
 - per node: 10.6 M TPM, 2.8 req/s (before the step: 20.9 M, 5.5 req/s)
 - per GPU (observed load, not capacity): 1.33 M TPM now; 2.61 M at 03:40–03:50; 2.79 M at 01:59–02:09
 
-Frontier: **3.97 M/GPU** (57% of target) - 4×tp2 DSpark envelope lift (64/worker) + slot gateway at c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s.
+Frontier: **4.01 M/GPU** (57% of target) - 4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd) at c128, TTFT 3.5 s; c64 3.02 M at 1.7 s; c256 4.18 M at 20.9 s.
 
 Winning setup recipe: Setup tab of the progress page (derived from the same frontier).
