@@ -26,18 +26,18 @@
 | uncached prompt tokens per request at 1× (prefill work) | – | 6.4k | 26.7k | 7.8k | 11.0k | <b>7.5k</b> | – |
 | kept up with offered load | – | no (1,574 s) | no (1,571 s) | yes (1,240 s, 0 errors) | no (1,398 s, 53 errors) | <b>yes (1,239 s, 0 errors)</b> | 9.75 M node avg (tp8 7.7) |
 
-## Production reference (read at 02:15 PDT, Sep 28 (window 01:59–02:09 PDT; Kibana ES|QL on the M3.1 hub index; read-only))
+## Production reference (read at 04:12 PDT, Sep 28 (window 03:52–04:02 PDT; Kibana ES|QL; read-only; the index lags ~8 min, so windows end ≥ 10 min before the read))
 
-- hub TPM (tokens per minute, incl. cached): 402 M (08:00–09:00 UTC hour average: 333 M)
-- requests: 41,542 in 10 min = 69 req/s
-- cache hit (cached ÷ prompt tokens): 97.1%
-- TTFT, streaming requests (upstream header time) p50 / p90 / p99: 0.34 s / 3.9 s / 10.1 s
-- per-stream decode, streaming (completion ÷ (total − TTFB)) p10 / p50 / p90: 109 / 174 / 244 tok/s (34.4k requests)
-- 5xx: 24 of 41,542 (0.06%)
+- hub TPM (tokens per minute, incl. cached): 192 M (03:40–03:50 PDT, before a step drop at 03:52: 375 M)
+- requests: 29,966 in 10 min = 50 req/s (before the step: 100 req/s)
+- cache hit (cached ÷ prompt tokens): 94.9%
+- TTFT, streaming requests p50 / p90 / p99: 0.31 s / 2.6 s / 9.6 s
+- per-stream decode, streaming p10 / p50 / p90: 64 / 100 / 162 tok/s (27.2k requests); 101 before the step, 174 at 02:09
+- output tokens per streaming request, p50: 504 (02:09: 269): the traffic mix shifted to longer outputs
+- 5xx: 19 of 29,966
 - nodes / GPUs behind the hub (team, Sep 27; not re-verified: the index shows only two load-balancer addresses): 18 / 144
-- per node: 22.3 M TPM, 3.85 req/s
-- per GPU (observed load, not capacity): 2.79 M TPM
-- trend: load doubled since 23:07 PDT (1.41 → 2.79 M/GPU); per-stream decode fell 212 → 174 tok/s as load rose
+- per node: 10.6 M TPM, 2.8 req/s (before the step: 20.9 M, 5.5 req/s)
+- per GPU (observed load, not capacity): 1.33 M TPM now; 2.61 M at 03:40–03:50; 2.79 M at 01:59–02:09
 
 Frontier: **3.97 M/GPU** (57% of target) - 4×tp2 DSpark envelope lift (64/worker) + slot gateway at c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s.
 
