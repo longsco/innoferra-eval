@@ -166,7 +166,7 @@
    "v": 7.82,
    "c": "c256, TTFT 2.1 s (p99 20 s); c128 5.67 M at 1.3 s; c384 8.46 M at 10.3 s",
    "k": "ok",
-   "acc": "accept 5.79 probe"
+   "acc": "accept 5.79 probe · 4.15 real traffic"
   }
  ],
  "pareto": {
@@ -338,6 +338,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "14:02",
+   "tok8 real traffic (same procedure): TTFT p50 0.77 / 1.06 / 1.37 / 3.7 s at 1× / 2× / 4× / 6× (frontier 0.75 / 1.05 / 1.49 / 3.1), p99 at 4× 35 s, decode 148 / 111 / 71 tok/s, DSpark accept 4.15, closed loop c128 13.6 M node. One request (178k-token prompt) dropped mid-stream (gateway 502 RemoteProtocolError; engine logged TypeError 'str' object does not support item assignment) — none in the 2-worker runs; a traceback catcher now saves engine logs before containers are replaced",
+   "8 workers: big static gain, real traffic unchanged; one rare error to trace"
+  ],
   [
    "13:31",
    "Production re-read (settled 12:00–12:20 PDT, read-only): 407 M TPM (2.83 M/GPU), 114 req/s (6.3 per node), hit 95.9%, TTFT p50 0.30 s / p99 6.9 s, decode 100 tok/s, output p50 346. chain19 armed after chain18: 8 tokenizer workers + 64 per rank (grid to c512), then 16 tokenizer workers",
@@ -660,11 +665,11 @@
   "steps": [
    [
     "tok8: 8 tokenizer workers per engine",
-    "static done 13:28: <b>7.82 M/GPU at c256</b> (north star passed); real-traffic tests running"
+    "done 14:02: static 7.82 M/GPU at c256; real traffic on par (TTFT p50 1.37 s at 4×), 1 dropped request under investigation"
    ],
    [
     "tok4: 4 tokenizer workers per engine",
-    "next; chain ends ~15:15 PDT"
+    "running since 14:02 PDT (traceback catcher armed); chain18 ends ~15:10"
    ],
    [
     "next: 8 workers + 64 per rank (c384 is capped by 32 per rank: queue 5.4 s)",
@@ -1738,18 +1743,18 @@
    [
     "Frontier + 8 tokenizer workers per engine (tok8)",
     "<b>7.82</b> (c256)",
-    "running",
+    "0.41 (2×: one 23 s p99 minute + 1 dropped request) · 1.70 closed",
     "64 × 4",
     "<b>7.82 M @c256</b> (3.70 @c64, 5.67 @c128, 8.46 @c384)",
     "2.1 s @c256 (1.3 s @c128)",
     "~100%",
     "–",
-    "5.79 / running",
+    "5.79 / 4.15",
     "09-27 peak, warm",
-    "running",
-    "running",
-    "running",
-    "running"
+    "87–89%",
+    "<b>0.77 / 1.06 / 1.37</b> (6×: 3.7)",
+    "148 / 111 / 71",
+    "p50 at 4× 1.37 s (best so far); 1 of 2,939 requests dropped (engine TypeError, being traced)"
    ],
    [
     "Team production (18 nodes, for reference)",
@@ -1994,10 +1999,10 @@
   },
   "Frontier + 8 tokenizer workers per engine (tok8)": {
    "static": "<b>7.82 M</b> at c256 (TTFT 2.1 s, p99 20 s); 5.67 at c128 (1.3 s); 8.46 at c384 (10.3 s)",
-   "real": "real-traffic tests running (the 2-worker version: strict prod-parity at ≈ 2 req/s per node)",
-   "ttft": "1.3 s at c128, 2.1 s at c256 (static); real traffic running",
-   "decode": "12.2 ms/token at c128 static; real traffic 150 tok/s per stream at 1×, 105 at 2×, 66 at 4×",
-   "hit": "87–90% (session pinning)",
+   "real": "TTFT p50 0.77 / 1.06 / 1.37 / 3.7 s at 1× / 2× / 4× / 6×; strict rule at 1× (2× missed by one 23 s p99 minute and one dropped request); closed loop c128 13.6 M node",
+   "ttft": "1.3 s at c128, 2.1 s at c256 (static); real traffic 0.77 s p50 at 1×, 1.37 at 4×",
+   "decode": "148 tok/s per stream at 1× real traffic, 71 at 4×",
+   "hit": "87–89%",
    "build": "MiniMax 0922-sglang@bef87f4 + our DSpark port + Triton runtime-N patch",
    "shape": "4 × (tp2, ep2, dp2), attention TP1 (DP attention)",
    "maxrun": "64 per worker (32 per rank; 256 per node)",
@@ -2155,6 +2160,13 @@
    "p50_4x": 1.76,
    "p99_4x": 49,
    "decode_1x": 147,
+   "hit": "87%"
+  },
+  {
+   "n": "+ 8 tokenizer workers (static frontier)",
+   "p50_4x": 1.37,
+   "p99_4x": 35,
+   "decode_1x": 148,
    "hit": "87%"
   }
  ],
