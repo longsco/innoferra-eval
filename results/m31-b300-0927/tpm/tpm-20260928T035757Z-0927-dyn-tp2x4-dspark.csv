@@ -1,0 +1,5 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-dyn-tp2x4-dspark,8,40,1.000,4.052,0.029,71.1,0.94,1.65,14.06
+80k-warm-0927-dyn-tp2x4-dspark,16,80,1.000,7.548,0.055,66.4,0.95,1.68,15.05
+80k-warm-0927-dyn-tp2x4-dspark,64,320,1.000,20.146,0.146,45.1,1.25,4.88,22.15
+80k-warm-0927-dyn-tp2x4-dspark,128,640,1.000,26.701,0.194,38.7,2.98,19.47,25.83
