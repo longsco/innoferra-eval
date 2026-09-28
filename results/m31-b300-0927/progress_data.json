@@ -136,6 +136,14 @@
    "c": "c128, TTFT 4.8 s; c64 3.39 M; c256 5.66 M",
    "k": "ok",
    "acc": "accept 5.79 probe · 4.12 real traffic"
+  },
+  {
+   "n": "Frontier base + production scheduling knobs (bprod: chunk 16384, overlap plan, streaming, queue cap)",
+   "v": 5.02,
+   "c": "c128, TTFT 3.6 s; c64 3.40 M; c256 5.62 M — static tie, worse on real traffic",
+   "k": "ok",
+   "frontier": false,
+   "acc": "accept 5.79 probe · 4.14 real traffic"
   }
  ],
  "pareto": {
@@ -307,6 +315,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "08:26",
+   "chain16 bprod (production scheduling knobs on the balanced frontier base): static c128 5.02 M/GPU (tie with 5.01; TTFT 3.6 s vs 4.1), c256 5.62; real traffic TTFT p50 0.83 / 1.06 / 1.76 / 3.9 s, p99 at 4× 49 s (base 32), decode 147 / 111 / 70 tok/s; accept 4.14; closed loop c128 11.6 M node (base 12.9). Not adopted; the page now excludes such within-noise static ties from the 'current winner'",
+   "no change to the winning setup"
+  ],
   [
    "07:26",
    "chain16 b128 (128 per worker = 64 per rank, mem 0.66) failed to boot: 0 of 4 engines healthy after two 20-minute attempts. The engine logs were removed when the next variant launched, so the cause is not known (likely verify-graph capture at 64 per rank running out of memory at mem 0.66; not confirmed). Chain templates now keep engine logs on a failed boot",
@@ -591,7 +604,7 @@
    ],
    [
     "chain16 on the new base with balancing on: bmfs, b128 (64/rank), bprod (production scheduling), bhic (HiCache), bblk4 (block 4)",
-    "bmfs done (static −3%, closed loop +18%); b128 FAILED to boot (06:18–07:26, 0/4 healthy twice); bprod running since 07:26 PDT; ends ~11:00 PDT"
+    "bmfs mixed; b128 failed to boot; bprod static tie (5.02) but worse on real traffic; bhic running since 08:26 PDT; ends ~10:40 PDT"
    ]
   ]
  },
@@ -1555,6 +1568,20 @@
     "0.85 / 1.13 / 1.42 (6×: 2.9)",
     "151 / 107 / 77",
     "closed loop c128 <b>15.3 M node</b> (base 12.9); 4× p99 22 s (32), 6× p99 52 s (32)"
+   ],
+   [
+    "Frontier base + production scheduling knobs (bprod: chunk 16384, overlap plan, streaming, queue cap)",
+    "64 × 4",
+    "5.02 M @c128 (tie; 3.40 @c64, 5.62 @c256)",
+    "3.6 s (p99 17 s)",
+    "~100%",
+    "172–188 (c1)",
+    "5.79 / 4.14",
+    "09-27 peak, warm",
+    "86–90%",
+    "0.83 / 1.06 / 1.76 (6×: 3.9)",
+    "147 / 111 / 70",
+    "worse at 4× (p99 49 s vs 32); closed loop c128 11.6 M (base 12.9)"
    ],
    [
     "Team production (18 nodes, for reference)",

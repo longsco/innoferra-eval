@@ -8,7 +8,7 @@ TARGET = data.get("target", 7.0)
 
 def derive_frontier(d):
     """Single source of truth: the best measured config (not 'prev') drives the KPI, the Pareto top and the standings file."""
-    meas = [c for c in d["configs"] if c.get("k") != "prev"]
+    meas = [c for c in d["configs"] if c.get("k") != "prev" and c.get("frontier", True)]   # frontier:false = static tie within noise that loses elsewhere
     best = max(meas, key=lambda c: c["v"])
     d["pareto"]["top"] = best["v"]
     for k in d["kpis"]:

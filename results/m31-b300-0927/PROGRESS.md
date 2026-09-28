@@ -106,5 +106,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 07:26 PDT (09-28) | chain16 b128 (MAXREQ 128/worker = 64/rank, MEMFRAC 0.66) FAILED to boot: TIMEOUT 0/4 healthy, restart pass 1 and 2 both 0/4 (13:19-14:26Z). Engine logs lost (next launcher removed the containers); chain's error extraction used ERE `[^\n]` which excludes 'n' ('Error: Error i'). Templates fixed to keep logs. bprod started 14:26Z | logs/launch-20260928T131901Z.log | cause unknown |
 
+| 08:26 PDT (09-28) | chain16 bprod (chunk 16384 + overlap plan stream + incremental streaming + queue cap 256, on the balanced bidirectional base): static c64 27.22 M (3.40/GPU), c128 40.20 (5.02, TTFT 3.56 s, p99 17.3), c256 44.95 (5.62); staircase TTFT p50/p99 0.83/17.8, 1.06/14.8, 1.76/49.1, 3.87/32.9; decode 147/111/70/53; accept 4.14; closed loop c128 11.64 M node. Static tie, real traffic worse at 4x: not adopted (config flagged frontier:false so the page keeps the balanced c13p1bd setup as winner) | tpm-*-0927-bprod.csv | no change |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
