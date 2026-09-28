@@ -30,9 +30,10 @@ def case(prefixes, qlens):
     return args
 def run(args, eager_min):
     m._EAGER_SORT_MIN_LANES = eager_min
-    torch.cuda.synchronize(); t = time.perf_counter()
-    for _ in range(3): out = m.q8kv4_sparse_attention(*args)
-    torch.cuda.synchronize(); return out, (time.perf_counter() - t) / 3
+    out = m.q8kv4_sparse_attention(*args); torch.cuda.synchronize()          # warm-up (JIT compile / autotune)
+    t = time.perf_counter()
+    for _ in range(5): out = m.q8kv4_sparse_attention(*args)
+    torch.cuda.synchronize(); return out, (time.perf_counter() - t) / 5
 ok = True
 for name, pre, ql in [("warm 1x(80k+256)", [81920], [256]), ("warm 16x(80k+256)", [81920] * 16, [256] * 16),
                       ("cold chunk 16k", [0], [16384]), ("cold chunk 16k at 64k", [65536], [16384]), ("mixed 4x(40k+4k)", [40960] * 4, [4096] * 4)]:

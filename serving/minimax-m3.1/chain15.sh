@@ -3,7 +3,7 @@
 # graph capture) is applied to both source trees before this runs, and the gateway pins sessions (prompt_cache_key).
 # Every variant also measures DSpark acceptance: per request via /generate meta_info (c1) and engine-wide from /metrics deltas.
 # Variants, one change at a time (each: boot + warm-up + probe + canary + static grid c64/c128/c256 via gateway +
-# real-traffic warm-up + closed-loop c64/c128 x 240 s + staircase 2x/4x/6x x 180 s):
+# real-traffic warm-up + long staircase 1x/2x/4x/6x x 300 s (chain13 procedure) + closed-loop c128 x 240 s AFTER it):
 #  c13p1  chain13 engine config (chunk 32768, 64/worker, mem 0.72, sync-free verify graphs) + P1   <- frontier candidate
 #  c13p1bd  c13p1 + bidirectional attention inside the draft block (vendor's ENCODER_ONLY), window 4095 (vendor: sliding_window-1)
 #  v1p1   chain14 v1 knobs (chunk 16384, overlap plan stream, incremental streaming, queue cap 256) + P1   <- clean P1 A/B vs v1
@@ -32,16 +32,18 @@ variant(){
   log "accept probe (native /generate, 3 real 60-80k prompts x 2, c1): $(python3 -c "import json,statistics as s; r=[json.loads(l) for l in open('/data01/minimax31/analysis/accept-$TAG.jsonl')]; a=[x['acc'] for x in r]; print(f'mean {s.mean(a):.2f} min {min(a):.2f} max {max(a):.2f} n {len(a)}')" 2>&1 | tail -1)"
   NPC_CAP=1024 PORT=8000 SERVED=minimax-m3.1 OPENAI_API_KEY=$KEY IMAGE=minimax-m31-sglang:demo-024129f MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private TAG=0927-$TAG bash $K/bench_tpm.sh "64 128 256" 2>&1 | grep -E "^80k" | cut -c1-160
   log "route counters after grid: $(curl -s -m 3 http://127.0.0.1:8000/health)"
+  # real traffic, same procedure as chain11b/chain13 (warm-up on 14:30-15:00, then the long staircase on a trace segment
+  # nothing has replayed yet); closed loop AFTER the staircase so it cannot pre-warm the staircase with identical prompts
   RUN --trace /tr/trace_node_1430_30m.jsonl --base-url http://127.0.0.1:8000 --key-file /key --speed 8 --max-inflight 4096 --timeout 600 --out /tr/warmup-$TAG.jsonl | grep "^== replay" | cut -c1-120
   bash $K/accept_metrics.sh snap /tmp/am-$TAG
-  for C in 64 128; do RUN --trace /tr/trace_node_1500_60m.jsonl --base-url http://127.0.0.1:8000 --key-file /key --closed-loop $C --duration 240 --timeout 900 --out /tr/closed-$TAG-c$C.jsonl | tee -a $T/replay.log | grep -E "^== replay|TTFT\(stream\)|per-stream|tokens:"; done
-  log "accept on closed-loop real prompts (metrics delta, per engine): $(bash $K/accept_metrics.sh diff /tmp/am-$TAG)"
-  RUN --trace /tr/trace_node_1500_60m.jsonl --base-url http://127.0.0.1:8000 --key-file /key --stairs 2:180,4:180,6:180 --bin 60 --max-inflight 4096 --timeout 900 --out /tr/stairs-$TAG.jsonl | tee -a $T/replay.log | grep -E "^== replay|TTFT\(stream\)|per-stream|tokens:|^ +[0-9]+s \|"
-  python3 $K/stage_cmp.py $TAG 2>/dev/null | grep -v warm-up
-  log "route counters after replay: $(curl -s -m 3 http://127.0.0.1:8000/health)"
+  RUN --trace /tr/trace_node_1500_60m.jsonl --base-url http://127.0.0.1:8000 --key-file /key --stairs 1:300,2:300,4:300,6:300 --bin 60 --max-inflight 4096 --timeout 900 --out /tr/stairs-$TAG.jsonl | tee -a $T/replay.log | grep -E "^== replay|TTFT\(stream\)|per-stream|tokens:|^ +[0-9]+s \|"
+  log "accept on the staircase (real traffic, metrics delta, per engine): $(bash $K/accept_metrics.sh diff /tmp/am-$TAG)"
+  python3 $K/stage_cmp.py $TAG 2>/dev/null
+  log "route counters after staircase: $(curl -s -m 3 http://127.0.0.1:8000/health)"
+  RUN --trace /tr/trace_node_1500_60m.jsonl --base-url http://127.0.0.1:8000 --key-file /key --closed-loop 128 --duration 240 --timeout 900 --out /tr/closed-$TAG-c128.jsonl | tee -a $T/replay.log | grep -E "^== replay|TTFT\(stream\)|per-stream|tokens:"
   log "===== variant $TAG done"
 }
-{ log "===== chain15: P1 (eager sorted Q8KV4 schedule) + session pinning on 4 x tp2 lift"
+{ log "===== chain15 (restart: staircase before closed loop): P1 (eager sorted Q8KV4 schedule) + session pinning on 4 x tp2 lift"
   rm -f $K/HOLD
   export EXTRA_ENV_BASE="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000" DEV_SRC=/data01/minimax31/src/0922-sglang/python PS="--incremental-streaming-output --max-queued-requests 256"
   MAXREQ=64 MEMFRAC=0.72 CHUNK=32768 EXTRA_ENV="$EXTRA_ENV_BASE" XARGS= DSPARK_BLOCK= variant c13p1
