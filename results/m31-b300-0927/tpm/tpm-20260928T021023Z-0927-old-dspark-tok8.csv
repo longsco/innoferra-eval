@@ -1,0 +1,6 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-old-dspark-tok8,1,8,1.000,0.593,0.004,81.6,0.90,1.08,12.26
+80k-warm-0927-old-dspark-tok8,8,40,1.000,3.855,0.028,68.5,1.02,2.79,14.59
+80k-warm-0927-old-dspark-tok8,16,80,1.000,6.901,0.050,62.4,1.23,2.92,16.02
+80k-warm-0927-old-dspark-tok8,64,320,1.000,17.605,0.128,41.5,1.60,13.56,24.12
+80k-warm-0927-old-dspark-tok8,128,640,1.000,25.583,0.186,31.1,2.79,22.30,32.13

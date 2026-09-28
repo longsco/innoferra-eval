@@ -1,0 +1,76 @@
+{
+  "target": 7.0,
+  "kpis": [
+    {"label": "North star", "value": "7.00 M", "cls": "star", "sub": "per GPU"},
+    {"label": "Production today (M3.1 hub)", "value": "≈ 5.8 M", "cls": "", "sub": "213–262 M TPM ÷ 40 GPUs, live dashboard"},
+    {"label": "Our best (static frame)", "value": "3.20 M", "cls": "ok", "sub": "winning setup, c128, TTFT 2.8 s"},
+    {"label": "Winning setup at c64", "value": "2.20 M", "cls": "ok", "sub": "TTFT 1.6 s (plain: 1.54 M, 2.9 s)"},
+    {"label": "Vendor demo as shipped", "value": "0.72 M", "cls": "bad", "sub": "eager DSpark, 1 tokenizer worker"}
+  ],
+  "winning": {
+    "title": "Current winning serving setup (as of 02:25 UTC)",
+    "rows": [
+      ["Engine", "MiniMax's 09-22 engine build (SGLang v0.5.17 fork, commit bef87f4) with our DSpark port: draft model on dense layers, 4096-token draft window, flashinfer draft attention, <b>CUDA graphs for draft and verify</b>"],
+      ["Layout", "one engine, tp8 / ep8 / dp8 with DP attention, NVFP4 experts + MXFP8 dense, FP8 KV, training-matched numerics, chunked prefill 65536"],
+      ["Spec decode", "DSpark block 7; max running requests 128 (16 per rank) because graph capture only holds while verify batches stay ≤16 per rank (vendor kernel limit)"],
+      ["Frontend", "<code>--tokenizer-worker-num 8</code> (the single-worker frontend capped every config at ~0.9 M/GPU), gateway with rate limits off"],
+      ["Kernel patch", "token count as a runtime argument in the router and KV-store Triton kernels (stops recompiles that stalled all ranks; bitwise-equal)"],
+      ["Measured", "c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s) · <b>c128 3.20 M per GPU (25.6 M node, TTFT p50 2.8 s, 31 tok/s per stream)</b>; per stream 135 tok/s at 6 streams on real 60–80k prompts (plain 37, eager 19); gate: all canaries pass, deterministic"],
+      ["Not in it yet", "HiCache (the 09-27 build's host cache does not run on this engine), the 4×tp2 layout under the KV router (queued), 16 workers"]
+    ]
+  },
+  "configs": [
+    {"n": "Vendor demo as shipped (eager DSpark, 1 worker)", "v": 0.72, "c": "c128", "k": "bad"},
+    {"n": "Plain + HiCache, 1 worker", "v": 0.91, "c": "c128", "k": "ok"},
+    {"n": "Vendor verbatim + kernel patch (eager)", "v": 0.82, "c": "c256", "k": "bad"},
+    {"n": "Plain + HiCache + patch + 8 tokenizer workers", "v": 2.92, "c": "c512, saturated", "k": "ok"},
+    {"n": "Old fork + DSpark graphs + 8 workers (winning setup)", "v": 3.20, "c": "c128, TTFT 2.8 s; c64 2.20 M at 1.6 s", "k": "ok"},
+    {"n": "Previous best 09-26: old fork, Dynamo 2×tp4, DSpark graphs", "v": 2.34, "c": "c64", "k": "prev"}
+  ],
+  "pareto": {
+    "base": 0.91, "top": 3.20,
+    "levers": [
+      {"n": "Frontend: 8 tokenizer workers", "v": 1.20, "m": true},
+      {"n": "DSpark with CUDA graphs", "v": 1.09, "m": true},
+      {"n": "Kernel patch (runtime-N)", "v": 0.0, "m": true, "note": "stalls removed"},
+      {"n": "HiCache (static frame)", "v": 0.0, "m": true, "note": "not exercised"},
+      {"n": "Topology 4×tp2 + KV router", "v": null, "m": false},
+      {"n": "16 workers / Dynamo preprocess", "v": null, "m": false},
+      {"n": "Vendor kernel: graph-safe verify (tiers >16)", "v": null, "m": false}
+    ]
+  },
+  "routeb": {
+    "columns": ["metric", "production (M3 fleet)", "plain engine, 1×", "plain engine, 2×", "DSpark graphs engine"],
+    "rows": [
+      ["per-stream decode, tok/s (p50)", "246", "14", "23", "135 (probe, 6 streams)"],
+      ["TTFT p50, s", "0.34", "2.55", "1.34", "staircase running"],
+      ["request total p50, s", "1.40", "27.6", "10.2", "–"],
+      ["cache hit", "98.9%", "73.5% (cold start)", "99.4%", "–"]
+    ],
+    "note": "Trace: one node's share (1/24, sessions kept together) of 2026-09-18 11:05–11:15 UTC, 727 requests. Plain engine = plain decode + HiCache + 8 workers. The DSpark engine's real-traffic numbers come from the staircase on the 2026-09-27 peak hour (15:00–16:00 UTC)."
+  },
+  "prodref": {
+    "read_at": "02:20 UTC (last 12 minutes)",
+    "rows": [
+      ["tpm per minute, whole M3.1 hub", "213 M – 262 M"],
+      ["requests per minute", "1,857 – 2,212"],
+      ["latency p50 / p90 / p99, s", "0.6–2.1 / 4.5–10.2 / 11–17"],
+      ["errors per minute (4xx / 5xx)", "0–2 / 0–2"],
+      ["per GPU, assuming the 5-node (40 GPU) stack recorded on 09-26", "≈ 5.3 – 6.6 M"]
+    ]
+  },
+  "timeline": [
+    ["02:25", "Queued: production-shaped 4×(tp2/ep2/dp2) DSpark under the Dynamo KV router, then its own staircase", "pending"],
+    ["02:24", "Winning setup at c128 (max running 128)", "<b>3.20 M</b> (25.6 M node), TTFT 2.8 s, 31 tok/s per stream"],
+    ["02:20", "Longitudinal capacity on the winning setup: node's real-traffic share, caches warmed, 1×→8× staircase, 5 min each", "running"],
+    ["02:15", "Static grid on the winning setup", "c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s)"],
+    ["02:10", "Old-fork DSpark with CUDA graphs + 8 workers up (max running 128: graph capture only holds while verify tiers stay ≤16 per rank)", "per stream 135 tok/s at 6 streams (plain 37, eager 19); 96/96 decode batches on graph"],
+    ["01:41", "NVIDIA module reload resets the leaked multicast state left by the incident; default NCCL passes again", "no reboot needed"],
+    ["23:10", "Node incident (mass kill), NVLS leak; recovered", "no hardware errors"],
+    ["21:40", "8 tokenizer workers on plain + HiCache", "0.91 → 2.92 M (c512), 2.57 M at c256"],
+    ["21:20", "DSpark graphs override on the 09-27 build", "blocked: verify kernel host sync, then per-call multi-GB scratch under capture"],
+    ["20:09", "Found the frontend cap: one process tokenizes each 80k prompt twice, ~2 req/s", "explains the 0.9 M ceiling of every config"],
+    ["18:58", "Kernel patch: token count as runtime arg in 2 Triton kernels (recompile storm), bitwise-equal", "stalls gone; TPM unchanged (frontend-bound)"],
+    ["17:23", "Vendor 09-27 demo §3.2 verbatim (tp8/ep8/dp8, DSpark, HiCache)", "0.01 M @c1, 13 tok/s, DSpark eager by design"]
+  ]
+}
