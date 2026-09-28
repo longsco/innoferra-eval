@@ -42,6 +42,7 @@ td.n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tab
 <div class="panel"><h2>3. Real production traffic replay (Route B, one node share of 11:05–11:15 UTC)</h2><div class="wrap"><table>
 <tr><th>metric</th><th>production (M3 fleet)</th><th>ours at 1×</th><th>ours at 2×</th></tr>
 <tr><td>per-stream decode, tok/s (p50)</td><td class="n">246</td><td class="n">14</td><td class="n">23</td></tr>
+<tr><td>per-stream decode, DSpark graphs engine (probe, 6 streams)</td><td class="n">246</td><td class="n" colspan="2">135 (single stream 94 to 260)</td></tr>
 <tr><td>TTFT p50, s</td><td class="n">0.34</td><td class="n">2.55</td><td class="n">1.34</td></tr>
 <tr><td>request total p50, s</td><td class="n">1.40</td><td class="n">27.6</td><td class="n">10.2</td></tr>
 <tr><td>cache hit</td><td class="n">98.9%</td><td class="n">73.5% (cold)</td><td class="n">99.4%</td></tr>
@@ -56,7 +57,9 @@ td.n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tab
 <tr><td>21:40</td><td>8 tokenizer workers on plain + HiCache</td><td>0.91 → 2.92 M (c512), 2.57 M at c256</td></tr>
 <tr><td>21:20</td><td>DSpark graphs override on the 0927 build</td><td>blocked: verify kernel host sync, then per-call multi-GB scratch under capture</td></tr>
 <tr><td>23:10</td><td>Node incident (mass kill), NVLS leak, recovered with NCCL_NVLS_ENABLE=0 and custom all-reduce off</td><td>no hardware errors</td></tr>
-<tr><td>01:11</td><td>Old-fork DSpark with CUDA graphs + 8 workers, then production ramp 0.25×→3× of peak hour</td><td>running</td></tr>
+<tr><td>01:41</td><td>NVIDIA module reload resets the leaked multicast state; default NCCL passes again</td><td>no reboot needed</td></tr>
+<tr><td>02:10</td><td>Old-fork DSpark with CUDA graphs + 8 workers (MAXREQ 128: graph capture only holds while verify tiers stay ≤16 per rank)</td><td>per-stream 135 tok/s at 6 streams (plain 37, eager 19); 96/96 decode batches on graph</td></tr>
+<tr><td>02:15</td><td>Longitudinal capacity: node's real-traffic share, caches warmed, 1×→8× staircase, 5 min each</td><td>running</td></tr>
 </table></div></div>
 
 <script>
@@ -83,7 +86,7 @@ td.n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tab
     {n:'Frontend: 8 tokenizer workers',v:2.01,m:true},
     {n:'Kernel patch (runtime-N)',v:0.0,m:true,note:'stalls removed'},
     {n:'HiCache (static frame)',v:0.0,m:true,note:'not exercised'},
-    {n:'DSpark with CUDA graphs',v:null,m:false},
+    {n:'DSpark with CUDA graphs (per-stream ×3.6 measured; TPM pending)',v:null,m:false},
     {n:'Topology TP2×4 + KV router',v:null,m:false},
     {n:'16 workers / Dynamo preprocess',v:null,m:false},
   ];

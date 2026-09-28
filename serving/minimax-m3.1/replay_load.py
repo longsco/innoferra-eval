@@ -12,6 +12,7 @@ ap.add_argument("--limit", type=int, default=0); ap.add_argument("--max-inflight
 ap.add_argument("--out", required=True); ap.add_argument("--model", default=None, help="override body.model (default: as-is)")
 ap.add_argument("--ramp", default=None, help="S0:S1:DURATION_S — speed factor rises linearly from S0 to S1 over DURATION_S wall seconds (trace order kept, inter-arrivals compressed); stops at DURATION_S or end of trace")
 ap.add_argument("--bin", type=int, default=60, help="reporting bin in wall seconds")
+ap.add_argument("--stairs", default=None, help="S1:D1,S2:D2,... — hold speed factor S1 for D1 wall seconds, then S2 for D2, ... (piecewise-constant load levels)")
 ap.add_argument("--no-fix-images", action="store_true", help="keep image URLs as logged (default: replace redacted '/base64/' placeholders and expired signed http URLs with a 1x1 PNG data URI)")
 a = ap.parse_args()
 PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
@@ -34,6 +35,24 @@ def iter_trace():
             n += 1; yield json.loads(l)
 # schedule: wall time per request. plain: t/speed. ramp: dw = dt / speed(w), speed(w) = s0 + (s1-s0)*w/D
 def schedule():
+    if a.stairs:
+        steps = [(float(x.split(":")[0]), float(x.split(":")[1])) for x in a.stairs.split(",")]
+        bounds = []; acc = 0.0
+        for sp, d in steps: acc += d; bounds.append((acc, sp))
+        def spd_at(w):
+            for b, sp in bounds:
+                if w < b: return sp
+            return None
+        w = 0.0; prev_t = None
+        for r in iter_trace():
+            if prev_t is not None:
+                dt = max(0.0, r["t"] - prev_t); sp = spd_at(w)
+                if sp is None: return
+                w += dt / max(sp, 1e-6)
+            prev_t = r["t"]; sp = spd_at(w)
+            if sp is None: return
+            r["_w"] = w; r["_speed"] = sp; yield w, r
+        return
     if not a.ramp:
         for r in iter_trace(): yield r["t"] / a.speed, r
         return
@@ -108,7 +127,7 @@ async def main():
     def fmt(x): return "-" if x is None else f"{x:.2f}"
     s_ok = [r for r in ok if r["stream"] and r["ttft"] is not None]
     print(f"== replay {os.path.basename(a.trace)} speed={a.speed}x n={len(results)} ok={len(ok)} errors={len(results)-len(ok)} wall={wall:.0f}s "
-          f"rate={len(results)/wall:.2f} req/s{' ramp ' + a.ramp if a.ramp else ''}")
+          f"rate={len(results)/wall:.2f} req/s{' ramp ' + a.ramp if a.ramp else ''}{' stairs ' + a.stairs if a.stairs else ''}")
     st_codes = {}
     for r in results: st_codes[str(r["status"]) + ("" if not r["error"] else " err")] = st_codes.get(str(r["status"]) + ("" if not r["error"] else " err"), 0) + 1
     print("   status:", st_codes)
@@ -123,7 +142,7 @@ async def main():
     tps = [r["completion_tokens"] / (r["total"] - r["ttft"]) for r in s_ok if r["completion_tokens"] and r["total"] > r["ttft"] and r["completion_tokens"] > 20]
     ptps = [r["prod_completion_tokens"] / (r["prod_total"] - r["prod_ttft"]) for r in s_ok if r["prod_completion_tokens"] and r["prod_total"] and r["prod_ttft"] and r["prod_total"] > r["prod_ttft"] and r["prod_completion_tokens"] > 20]
     print(f"   per-stream tok/s ours p50={fmt(q(tps,.5))} | prod p50={fmt(q(ptps,.5))}")
-    if a.ramp or a.bin:
+    if a.ramp or a.stairs or a.bin:
         bins = {}
         for r in results:
             b = int(r.get("t_send", 0) // a.bin); d = bins.setdefault(b, {"n": 0, "ok": 0, "err": 0, "pt": 0, "ct": 0, "cc": 0, "ttft": [], "spd": [], "tot": []})
