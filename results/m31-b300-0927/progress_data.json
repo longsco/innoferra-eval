@@ -208,6 +208,11 @@
  },
  "timeline": [
   [
+   "23:12",
+   "Reflection: the verify-graph envelope (≤16/rank → 128 per node) caps every winning config. Ported the env-gated sync-free verify switch to the old fork (default unchanged) and armed chain12: MAXREQ 256, mem-fraction 0.72/0.66 so the graph pool fits",
+   "armed"
+  ],
+  [
    "23:07",
    "Production corrected to 18 nodes (144 GPUs); pulled live: 203 M TPM hub-wide, 35.5 req/s, 97.6% cache hit, TTFT p50 1.56 s / p99 21.6 s",
    "production = 1.41 M/GPU, ~2 req/s per node; our tp8 engine at ~2 req/s real traffic: p50 1.3–3.4 s, p99 11–18 s (comparable operating point)"
@@ -351,36 +356,36 @@
  },
  "queued": [
   {
-   "name": "routing affinity, alternative: Dynamo router with DP-rank-aware affinity or prompt_cache_key passthrough",
-   "why": "if the gateway's prefix hash restores >90% hits, the same must be achieved in the Dynamo path for production",
-   "script": "–",
-   "commit": "–",
-   "status": "depends on chain11"
+   "name": "Envelope lift: tp8/dp8 DSpark graphs with MAXREQ 256 (32/rank), sync-free verify path, mem-fraction 0.72 → 0.66 fallback",
+   "why": "every winning config is capped at 128 concurrent by the verify-graph envelope; the host sync is avoidable via env, and the earlier capture OOM came from mem-fraction 0.85 leaving the graph pool no room (graphs are captured largest-first from one global pool)",
+   "script": "serving/minimax-m3.1/chain12.sh",
+   "commit": "2652ef2",
+   "status": "armed, starts after chain11b"
   },
   {
-   "name": "16 tokenizer workers",
-   "why": "team runs 16 preprocess workers; 8 lifted us from 0.9 to 2.9 M/GPU on plain",
-   "script": "one env change on the winner",
+   "name": "Envelope lift on the 4×tp2 layout (MAXREQ 64/worker) with the gateway affinity",
+   "why": "if chain12 captures, the same lift doubles the tp2 layout's concurrency",
+   "script": "to write",
    "commit": "–",
-   "status": "after chain9"
+   "status": "after chain12"
   },
   {
-   "name": "chunked prefill 8192 (team value) vs 65536",
-   "why": "less decode stall under DP lockstep",
-   "script": "CHUNK knob",
+   "name": "16 tokenizer workers / chunked prefill sweep on the winner",
+   "why": "frontend and prefill cadence under real traffic",
+   "script": "env knobs",
    "commit": "–",
-   "status": "after chain9"
+   "status": "after the lifts"
   },
   {
-   "name": "HiCache on the 09-27 build, plain decode, real traffic",
-   "why": "host cache only matters under multi-session cache pressure (Route B), never on the static frame",
-   "script": "chain5-style run + staircase",
+   "name": "HiCache on real traffic (09-27 build, plain decode)",
+   "why": "host cache only matters under multi-session cache pressure",
+   "script": "chain5-style + staircase",
    "commit": "–",
-   "status": "after chain9"
+   "status": "later"
   },
   {
-   "name": "vendor: graph-safe verify kernel (tiers >16/rank), NextN/MTP for M3.1",
-   "why": "lifts the max-running-128 envelope of the winning setup; upstream cherry-picks #34338, #32313, #37505, #38936",
+   "name": "vendor: graph-safe verify kernel (tiers >16/rank) upstream, NextN/MTP for M3.1, cherry-picks #34338 #32313 #37505 #38936",
+   "why": "durable fix instead of our env switch",
    "script": "MiniMax",
    "commit": "–",
    "status": "asked"
