@@ -100,7 +100,14 @@
    "v": 3.97,
    "c": "c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s",
    "k": "ok",
-   "acc": "accept not recorded"
+   "acc": "accept ~3.2 (real traffic, v1 engines)"
+  },
+  {
+   "n": "4×tp2 lift + production scheduling knobs (v1: chunk 16384, overlap plan, streaming)",
+   "v": 3.72,
+   "c": "c128, TTFT 3.3 s; c256 4.08 M at 21.7 s",
+   "k": "ok",
+   "acc": "accept ~3.2 (real traffic, metrics)"
   }
  ],
  "pareto": {
@@ -262,6 +269,31 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "03:13",
+   "chain15 restarted with the staircase right after the warm-up (chain13 procedure) and the closed loop after it. chain14 v1's short staircase had run after closed-loop replays of the same trace, so identical prompts were already cached (97% hit at 2×/4×): not comparable",
+   "measurement fix; v1 staircase marked as inflated"
+  ],
+  [
+   "03:06",
+   "<b>P1 verified and applied</b>: our 09-27 verify-graph switch had also put every eager prefill on the slow one-lane-per-work-item schedule (cold 80k prompt 4.9–5.2 s → 9.9 s on tp8). P1 keeps that schedule only during graph capture. GPU test: outputs bitwise-equal on 5 shapes, capture + replay equal eager; the sorted schedule is 4.4–4.5× faster per attention call on 16k-token chunks",
+   "cold prefill should roughly halve; applied to both source trees"
+  ],
+  [
+   "03:04",
+   "chain14 v1 (production scheduling knobs + session pinning): static 3.72 M/GPU at c128 (TTFT 3.3 s), 4.08 at c256; decode 15.3 ms/token vs 13.3 in chain13. Closed loop on real prompts: c64 7.3 M node (hit 87%), c128 11.4 M node (hit 95%). DSpark accept on real traffic ≈ 3.2 (engine metrics). chain14 stopped at a hold point before v2",
+   "static −6% vs chain13; replaced by chain15"
+  ],
+  [
+   "02:55",
+   "DSpark acceptance review (code only): the ours-vs-vendor gap was measured from sparse, phase-mixed decode-log averages, so it is not established; single-stream decode has not regressed since 09-26. One real difference: the vendor's draft attends bidirectionally inside the block, ours causally. Env-gated fix installed; per-request acceptance probe via /generate meta_info added",
+   "A/B queued in chain15 (c13p1bd)"
+  ],
+  [
+   "02:50",
+   "Prefill review (code + engine metrics): a warm 128-token extend on an 80k cached prefix costs only 0.12–0.20 s; static-frame TTFT is queueing plus cold chunks. None of production's KV4 kernel flags exist in any tree we have. Top patches: P1 (restore sorted schedule for eager extends), P2 (scratch sized to the request), P3 (full graphs for short extends)",
+   "P1 built and tested next"
+  ],
   [
    "02:20",
    "Production re-read (Kibana, read-only): 402 M TPM on the M3.1 hub = 2.79 M per GPU (18 nodes), 3.9 req/s per node, 97.1% cache hit, TTFT p50 0.34 s / p99 10.1 s, decode 174 tok/s per stream; load doubled since 23:07",
@@ -445,32 +477,40 @@
  ],
  "timeline_note": "Pacific time (PDT), latest first. Entries from 00:00 on are Sep 28, 2026; earlier ones Sep 27.",
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
- "summary": "Where we are: the vendor demo as shipped did 0.72 M TPM per GPU. A Triton recompile patch, 8 tokenizer workers, DSpark on CUDA graphs, production's 4×tp2 worker shape, a lifted verify-graph envelope (32 per rank) and a gateway that uses all 8 DP ranks now give <b>3.97 M per GPU</b> on the static frame (57% of the 7 M north star, TTFT 3.3 s). On real traffic the best layout is still 4×tp2 behind the plain affinity gateway (≈ 2 req/s per node at production-parity latency); the new frontier setup lost cache hits there because spill broke session affinity, so chain14 now tests production's knobs with production-style session pinning. Production itself is at 2.79 M per GPU of observed load (3.9 req/s per node, TTFT p50 0.34 s) and is not saturated.",
+ "summary": "Where we are: the vendor demo as shipped did 0.72 M TPM per GPU. A Triton recompile patch, 8 tokenizer workers, DSpark on CUDA graphs, production's 4×tp2 worker shape, a lifted verify-graph envelope (32 per rank) and a gateway that uses all 8 DP ranks now give <b>3.97 M per GPU</b> on the static frame (57% of the 7 M north star, TTFT 3.3 s). On real traffic the best layout is still 4×tp2 behind the plain affinity gateway (≈ 2 req/s per node at production-parity latency); the new frontier setup lost cache hits there because spill broke session affinity, so the gateway now pins sessions like production does. A kernel fix (P1) restores fast cold prefill, and chain15 re-runs the frontier setup with both, plus a DSpark draft fix. Production itself is at 2.79 M per GPU of observed load (3.9 req/s per node, TTFT p50 0.34 s) and is not saturated.",
  "running": {
-  "title": "Running now (chain14, started 02:03 PDT)",
-  "script": "serving/minimax-m3.1/chain14.sh + patch_shim_session.py",
-  "commit": "596f99a, dc9bb85, 4faf003",
-  "config": "4 × tp2/ep2/dp2 DSpark with the envelope lift (64 per worker, mem 0.72) behind the slot gateway, now with session pinning (prompt_cache_key → fixed engine + DP rank; the static frame has no key and keeps hash + spill). Production-knob variants, one at a time.",
+  "title": "Running now (chain15, started 03:13 PDT)",
+  "script": "serving/minimax-m3.1/chain15.sh",
+  "commit": "6f16e52, 2e186e9, 4a93fd7",
+  "config": "4 × tp2/ep2/dp2 DSpark with the envelope lift, P1 (eager extends on the fast sorted schedule, verified bitwise-equal), session-pinning gateway. Per variant: static grid c64/c128/c256, DSpark acceptance (per request and engine-wide), warm-up + long staircase 1×/2×/4×/6× (same procedure as chain13), closed loop c128.",
   "steps": [
    [
-    "v1: chunk 16384 + overlap plan stream + incremental streaming + queue cap 256",
-    "running since 02:03 PDT (engines up 02:10; paused 3 min at 02:11 to switch the gateway to session pinning before its first gateway test)"
+    "c13p1: chain13's frontier engine config + P1",
+    "running since 03:13 PDT"
    ],
    [
-    "v2: v1 + DSpark block 4 (production's block)",
+    "c13p1bd: + bidirectional draft attention (vendor's), window 4095",
     "next"
    ],
    [
-    "v3: v2 + HiCache ratio 3 write-through (MiniMax NVFP4 host-cache commit)",
+    "v1p1: chain14 v1 scheduling knobs + P1",
     "next"
    ],
    [
-    "v4: best + 64 per rank (128 per worker, mem 0.66)",
+    "v2p1: + DSpark block 4",
     "next"
    ],
    [
-    "each variant: static grid c128/c256, closed-loop replay c64/c128, warm-up, staircase 2×/4×/6×",
-    "about 55 min per variant; chain ends around 05:45 PDT"
+    "v3p1: + HiCache ratio 3",
+    "next"
+   ],
+   [
+    "v4p1: + 128 per worker (mem 0.66)",
+    "next"
+   ],
+   [
+    "about 70 min per variant",
+    "chain ends around 10:15 PDT"
    ]
   ]
  },
@@ -484,12 +524,36 @@
    "status": "after chain14"
   },
   {
-   "title": "Close the DSpark acceptance gap (ours 2.1–3.4 vs vendor 4.1–5.1 on the same prompts)",
-   "detail": "Compare our graph-enabled port against the vendor's eager DSpark on identical prompts: draft window (4096 vs full), verify mode (static), draft attention backend (flashinfer vs vendor), sampling path under graphs.",
-   "why": "Decode speed scales with accepted tokens per step; lifting 2.5 → 4.5 is worth up to ~1.8× per stream if verify cost stays flat.",
-   "script": "to write",
+   "title": "Static-frame balance: in-flight balancing for requests without a session key",
+   "detail": "Gateway option ROUTE_BALANCE_SLACK=1: a keyless request leaves its hash slot for the least-busy slot when the hash slot has more than 1 extra request in flight. Grid c128/c256/c384 on the best chain14 engine config, with and without.",
+   "why": "chain13's c128 run has TTFT p99 ~40 s with p50 3.3 s and a 692/567/562/559 engine spread: a hot rank hits its 32-running cap and queues. Balanced, each rank holds ~16 at c128.",
+   "script": "serving/minimax-m3.1/patch_shim_balance.py",
+   "commit": "0d56e0e",
+   "status": "after chain14 (would confound its static grids if deployed now)"
+  },
+  {
+   "title": "Prefill trims (P2): size scratch buffers to the request, reuse page metadata across layers",
+   "detail": "Pass only the active pages to the extend path (8,193 → ~641 pages at 80k), in-kernel dequant for ≤ 4 query tiles, cache page-table-derived indices once per forward. Bitwise-equal by construction; about 20 fewer launches per layer.",
+   "why": "Scratch is sized for the 1M context (K/V predequant ~1 GB per layer call at 1 request, ~20 GB at 16); robustness under bursts plus an estimated 10–20% on warm extends.",
+   "script": "to write (analysis 09-28)",
    "commit": "",
-   "status": "next after chain14 (or sooner if a node is free)"
+   "status": "after chain15"
+  },
+  {
+   "title": "Scheduler: MinFreeSlotsDelayer off at high concurrency (--min-free-slots-delay 1)",
+   "detail": "DSpark counts as DFlash-family, which auto-enables a delayer that holds new prefills until 4 of 32 slots per rank are free.",
+   "why": "Bites at c256 (all 32 slots per rank busy); cheap flag test.",
+   "script": "launch flag",
+   "commit": "",
+   "status": "after chain15"
+  },
+  {
+   "title": "Close the DSpark acceptance gap (ours 2.1–3.4 vs vendor 4.1–5.1 on the same prompts)",
+   "detail": "Code review (09-28): the old comparison mixed sparse per-rank log averages from different phases, so the gap is not established. One real difference: the vendor's draft attends bidirectionally inside the 7-token block (ENCODER_ONLY), ours causally. Env-gated fix installed (SGLANG_DSPARK_M31_BIDIR_DRAFT=1) and tested in chain15 (c13p1bd); acceptance now measured per request (/generate meta_info) and from /metrics.",
+   "why": "Decode speed scales with accepted tokens per step; lifting 2.5 → 4.5 is worth up to ~1.8× per stream if verify cost stays flat.",
+   "script": "patches/dspark_minimax/minimax_m3_dspark.py, accept_metrics.sh, analysis/accept_probe.py",
+   "commit": "2e186e9",
+   "status": "A/B running in chain15"
   },
   {
    "title": "Kernel gap vs production (learn from their settings, no image)",
@@ -1294,6 +1358,20 @@
     "≈ 1 req/s/node (p50 1.35 s at 1×, 2.4 s at 2×)"
    ],
    [
+    "4×tp2 lift + production scheduling knobs (v1: chunk 16384, overlap plan, streaming)",
+    "64 × 4",
+    "3.72 M @c128 (4.08 @c256)",
+    "3.3 s (21.7 s @c256)",
+    "~100%",
+    "141–165 (c1)",
+    "~3.2 (metrics, real)",
+    "09-27 peak, warm*",
+    "97.6 / 97.2 / 89.8%*",
+    "0.72 / 1.14 / 18 (2× / 4× / 6×)*",
+    "104 / 80 / 27 (2× / 4× / 6×)",
+    "not comparable* (session pinning; see note)"
+   ],
+   [
     "Team production (18 nodes, for reference)",
     "256 × 4",
     "not measured",
@@ -1308,7 +1386,7 @@
     "≈ 3.9 req/s/node today (not saturated)"
    ]
   ],
-  "note": "Synthetic cache hit is ~100% by construction (one shared prefix), so the real-traffic columns are where routing and prefill differences show. 'Holds prod-parity latency' = highest load with per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s. Per-stream on the probe is decode speed with 6 concurrent real long prompts; per-stream on real traffic is the p50 over the whole replay. DSpark accept is the average number of tokens accepted per verify step. Our graph-enabled port accepts 2.1–3.4 on the same probe prompts where the vendor's own (eager) DSpark accepts 4.1–5.1: a separate lever now in the queue. Per-stream decode is now given per load level (it falls as the node fills); earlier whole-run medians were dominated by the overloaded levels. The 4×tp2 lift + slot gateway row is the new static frontier but lost cache hits on real traffic: spill moved hot sessions off the rank holding their KV."
+  "note": "Synthetic cache hit is ~100% by construction (one shared prefix), so the real-traffic columns are where routing and prefill differences show. 'Holds prod-parity latency' = highest load with per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s. Per-stream on the probe is decode speed with 6 concurrent real long prompts; per-stream on real traffic is the p50 over the whole replay. DSpark accept is the average number of tokens accepted per verify step. Our graph-enabled port accepts 2.1–3.4 on the same probe prompts where the vendor's own (eager) DSpark accepts 4.1–5.1: a separate lever now in the queue. Per-stream decode is now given per load level (it falls as the node fills); earlier whole-run medians were dominated by the overloaded levels. The 4×tp2 lift + slot gateway row is the new static frontier but lost cache hits on real traffic: spill moved hot sessions off the rank holding their KV. * v1 (chain14) ran its short staircase right after closed-loop replays of the same trace, so identical prompts were already cached; its hit rates and TTFT are inflated and not comparable to the other rows. chain15 repeats the chain13 procedure."
  },
  "profile_rows": [
   [
@@ -1524,8 +1602,8 @@
     "Prefill",
     "SGLANG_MINIMAX_KV4_PREFILL_ATTN_V3, KV4_PREFILL_INDEX_V3, --cuda-graph-backend-prefill tc_piecewise, --attention-backend trtllm_mha, chunk 16384",
     "faster prefill of the 5–60k uncached tokens per real request (sets the real-traffic knee)",
-    "Triton training prefill path, breakable prefill graphs, chunk 32–65k",
-    "chunk 16384 in chain14; kernels to write"
+    "Triton training prefill path; P1 (09-28) restores the sorted schedule for eager extends (our graph switch had doubled cold prefill)",
+    "P1 done (4.4× per attention call on 16k chunks); fused prefill kernels still to write"
    ],
    [
     "4",
@@ -1540,8 +1618,8 @@
     "Draft",
     "DSpark block 4, --speculative-draft-attention-backend fa4, SGLANG_DSPARK_BOUNDED_SWA_DRAFT=1",
     "cheap bounded-window draft at a smaller verify tier",
-    "block 7, flashinfer draft, our own window 4096",
-    "block 4 in chain14; fa4 draft to port"
+    "block 7, flashinfer draft, window 4096, causal inside the block (vendor: bidirectional)",
+    "bidirectional draft A/B in chain15 (c13p1bd); block 4 in chain15 v2p1"
    ],
    [
     "6",

@@ -1,1 +1,3 @@
 frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-v1-prodsched,128,640,1.000,29.746,0.216,65.3,3.33,33.20,15.32
+80k-warm-0927-v1-prodsched,256,1024,1.000,32.663,0.237,59.7,21.67,64.18,16.75
