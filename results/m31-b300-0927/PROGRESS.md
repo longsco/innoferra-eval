@@ -116,5 +116,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 11:55 PDT (09-28) | chain17 b128ws (MAXREQ 128/worker, MEMFRAC 0.66, SGLANG_FLASHINFER_WORKSPACE_SIZE=1 GiB): boots (450 s), verify graphs 33-35 s; static c64 27.94 M (3.49/GPU, 2.19 s), c128 39.35 (4.92, 4.32 s), c256 44.40 (5.55, 12.5 s), c384 45.29 (5.66, 29.8 s, per-stream 126 tok/s): saturation ~45 M node as with 32/rank. Staircase TTFT p50/p99 0.83/6.1, 1.15/12.9, 1.45/58.8, 3.71/50.3; decode 157/100/77/48; accept 4.11; strict prod-parity only 1x; closed loop c128 12.47 M node. Not adopted. ttft_breakdown parser failed on 'e2e' (digits), fixed e6ced0d | tpm-*-0927-b128ws.csv | no change |
 
+| 12:25 PDT (09-28) | chain17 frep (frontier repeat) static: c64 27.66 M (3.46/GPU, 2.18 s), c128 40.82 (5.10, 3.69 s, p99 15.3), c256 45.19 (5.65, 13.6 s): repeat of 5.01/3.55/5.70 -> noise ~2%. TTFT breakdown (ttft_breakdown.sh, engine metrics means): c64 TTFT 2.08 s, queue 0.01, prefill_forward 0.28, chunked_prefill 0.91 (n=40); c128 TTFT 3.12, queue 0.00, prefill 0.14; c256 TTFT 9.68, queue 0.00, prefill 0.14 -> time is spent before the scheduler. py-spy (in-container, --nonblocking, 12 s): tokenizer worker 72.8% self in HF `_encode_plus`; DP controller 80.8% in recv_pyobj + zmq.Again (busy-poll). chain18 armed (TOKW 8, 4) | stress2-0927.log | ceiling = tokenizer stage |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

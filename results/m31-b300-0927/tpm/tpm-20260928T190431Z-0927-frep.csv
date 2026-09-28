@@ -1,0 +1,2 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-frep,64,320,1.000,27.657,0.201,80.5,2.18,10.00,12.42

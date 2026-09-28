@@ -125,8 +125,8 @@
   },
   {
    "n": "4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway",
-   "v": 5.01,
-   "c": "c128, TTFT 4.1 s (p99 15 s); c64 3.55 M at 2.1 s; c256 5.70 M at 13.3 s",
+   "v": 5.1,
+   "c": "c128, TTFT 3.7 s (repeat; first run 5.01 at 4.1 s); c64 3.46 M; c256 5.65 M — run-to-run noise ~2%",
    "k": "ok",
    "acc": "accept 5.79 probe · 4.07 real traffic"
   },
@@ -331,6 +331,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "12:25",
+   "<b>Static-frame ceiling located.</b> The frontier repeat (5.10 M/GPU at c128; first run 5.01, so noise ~2%) logged a TTFT breakdown from engine metrics: c128 engine TTFT 3.1 s with scheduler queue 0.00 s and prefill 0.14 s; c256 9.7 s with queue 0 and prefill 0.14. Almost all TTFT happens before the scheduler. py-spy: a tokenizer worker spends 73% of active samples in HF _encode_plus on 80k-token prompts (2 workers per engine); the DP controller's 100% CPU is a busy-poll, not the limit. Production uses a Rust chat processor in its Dynamo frontend. chain18 armed: 8 and 4 tokenizer workers per engine",
+   "next lever: tokenization throughput"
+  ],
   [
    "11:55",
    "chain17 b128ws (64 per rank, mem 0.66, 1 GiB flashinfer workspace): boots now; static c64 3.49, c128 4.92, c256 5.55, c384 5.66 M/GPU (TTFT 29.8 s) — the static frame saturates at ~45 M TPM per node whether ranks hold 32 or 64, so the ceiling is not slot count. Real traffic TTFT p50 0.83 / 1.15 / 1.45 / 3.7 s, p99 at 4× 59 s (frontier 32), closed loop c128 12.5 M node (12.9). Not adopted. The first TTFT-breakdown attempt failed (parser bug, fixed); frep will log it per level",
@@ -631,18 +636,22 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "Where we are: the vendor demo as shipped did 0.72 M TPM per GPU. Kernel and frontend fixes, DSpark on CUDA graphs, production's 4×tp2 worker shape, a lifted verify-graph envelope, a prefill kernel fix (P1), the vendor's bidirectional draft attention and a gateway that pins sessions and balances the rest on in-flight load now give <b>5.01 M per GPU</b> on the static frame (72% of the 7 M north star, TTFT 4.1 s) and 5.70 M at c256. On real traffic the same engines keep TTFT p50 ≤ 1.5 s up to ~3.3 req/s per node. Production is serving 2.95 M per GPU of observed load (5.8 req/s per node, TTFT p50 0.31 s) and is not saturated.",
  "running": {
-  "title": "Running now (chain17, since 10:46 PDT)",
-  "script": "serving/minimax-m3.1/chain17.sh",
-  "commit": "4f5635f, e6ced0d",
-  "config": "Frontier base (balanced gateway, P1, bidirectional draft). Per static level: TTFT breakdown from engine metrics (queue, prefill, stages).",
+  "title": "Running now (chain17 → chain18)",
+  "script": "serving/minimax-m3.1/chain17.sh, chain18.sh",
+  "commit": "e6ced0d, 6dd7a86",
+  "config": "Frontier base (balanced gateway, P1, bidirectional draft).",
   "steps": [
    [
-    "b128ws: 64 per rank with a 1 GiB flashinfer workspace",
-    "done 11:55: boots; no gain (static saturates at ~45 M node, 5.66 M/GPU at c384; real traffic slightly worse)"
+    "frep: frontier repeat",
+    "static done 12:21: 5.10 M/GPU at c128 (first run 5.01; noise ~2%); real-traffic tests running"
    ],
    [
-    "frep: frontier repeat with TTFT breakdown per level",
-    "running since 11:55 PDT; ends ~13:05"
+    "TTFT breakdown (engine metrics)",
+    "c128: TTFT 3.1 s, scheduler queue 0.00 s, prefill 0.14 s; c256: 9.7 s, queue 0, prefill 0.14 → the ceiling sits before the scheduler (tokenizer stage)"
+   ],
+   [
+    "chain18: tokenizer workers per engine 8, then 4 (now 2), grid to c384",
+    "armed after chain17 (~13:05 PDT); ends ~15:30"
    ]
   ]
  },
@@ -1611,12 +1620,12 @@
    ],
    [
     "4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway",
-    "<b>5.01</b>",
+    "<b>5.10</b> (5.01 first run)",
     "0.92 · 1.61 closed (sessions pinned: same as c13p1bd)",
     "64 × 4",
     "<b>5.01 M @c128</b> (3.55 @c64, 5.70 @c256)",
-    "4.1 s (p99 15 s)",
-    "~100%",
+    "<b>5.10 M @c128</b> repeat (5.01 first); c64 3.46–3.55, c256 5.65–5.70",
+    "3.7 s (repeat), 4.1 s (first)",
     "134–211 (c1)",
     "5.79 / 4.07",
     "same engines as c13p1bd",
@@ -1951,6 +1960,14 @@
    "Bucket"
   ],
   "rows": [
+   [
+    "0",
+    "Frontend / tokenization",
+    "Dynamo frontend with a Rust chat processor (2 per node)",
+    "fast chat-template + tokenization of 80k-token prompts off the Python path",
+    "SGLang HTTP server, 2 Python tokenizer workers per engine (HF _encode_plus = 73% of a busy worker)",
+    "chain18 tests 4 and 8 workers per engine; a Rust/fast tokenizer path if that is not enough"
+   ],
    [
     "1",
     "Verify path",
