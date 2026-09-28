@@ -18,7 +18,7 @@
 | 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | 5.3–8.7 | tp8 holds, tp2 p99 breaking |
 | 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | 8–14 | both backlog: the knee |
 | 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 14–33 (momentary) | both saturated |
-| per-stream decode p50 (whole run) | – | 25 tok/s | **71 tok/s** | – | tp2 decodes 2.8× faster per stream; production 210 |
+| per-stream decode p50 (whole run) | – | 25 tok/s | **71 tok/s** | – | tp2 decodes 2.8× faster per stream; M3.1 production 212 |
 
 ## Production reference (read at 23:07 PDT, Sep 27 (last 10 minutes, Kibana ES|QL on the M3.1 hub index))
 
@@ -26,6 +26,7 @@
 - requests: 21,279 in 10 min = 35.5 req/s
 - cache hit (cached ÷ prompt tokens): 97.6%
 - TTFT (upstream header time) p50 / p99: 1.56 s / 21.6 s
+- per-stream decode, streaming requests (completion ÷ (total − TTFB)) p10 / p50 / p90: 141 / 212 / 313 tok/s (65.8k requests, 30 min)
 - nodes / GPUs behind the hub (team, Sep 27): 18 / 144
 - per node: 11.3 M TPM, 1.97 req/s
 - per GPU (observed load; production is not saturated, so this is not its capacity): 1.41 M TPM

@@ -68,5 +68,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 23:15 PDT | **Production M3.1 method read (read-only, b300-18/22)**: in-house SGLang `0.0.0+deploy` + Dynamo 1.5.0 (custom-policy build). Worker: tp2, **dp-size 1** (attention TP2, no DP lockstep), TC0 + `SGLANG_DISABLE_MSA=1` with custom KV4 kernels (attn V2, prefill V3, fused verify, index V2), DSpark **block 4** + fa4 draft + bounded SWA draft, **max running 256**, chunk 16384, tc_piecewise prefill graphs, HiCache ratio 3 write-through. Frontend: Rust chat processor, KV router with `incore-strict-affinity` (min 2 blocks, >50% overlap), session-pin Redis, migration. Production is not request-saturated (user), so 1.41 M/GPU is load not capacity | knowledge/prod-m31-serving-method-2026-09-27.md (8abc804) | biggest lever = their kernels; ask to run their image on 0008 |
 
+| 23:20 PDT | Reference correction: "production 210 tok/s per stream" came from the replayed api-v1 logs = **M3 fleet** traffic (model minimax-m3). **M3.1 production measured directly** (Kibana ES|QL, 30 min, 65.8k streaming requests): per-stream decode p10 141 / **p50 212** / p90 313 tok/s, TTFT p50 1.52 s, output p50 274 tokens | Kibana | all pages relabelled |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

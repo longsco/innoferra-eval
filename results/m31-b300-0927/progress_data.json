@@ -128,7 +128,7 @@
  "routeb": {
   "columns": [
    "metric",
-   "production (M3 fleet)",
+   "M3 fleet (original server of these logged requests)",
    "plain engine, 1×",
    "plain engine, 2×",
    "DSpark graphs engine, 1× (cold)"
@@ -140,6 +140,13 @@
     "550/727 (gateway 429s)",
     "579/727",
     "719/727"
+   ],
+   [
+    "M3.1 production reference (Kibana, 23:20 PDT)",
+    "per-stream 212 tok/s p50, TTFT 1.52 s p50",
+    "–",
+    "–",
+    "–"
    ],
    [
     "per-stream decode, tok/s (p50)",
@@ -192,6 +199,10 @@
     "1.56 s / 21.6 s"
    ],
    [
+    "per-stream decode, streaming requests (completion ÷ (total − TTFB)) p10 / p50 / p90",
+    "141 / 212 / 313 tok/s (65.8k requests, 30 min)"
+   ],
+   [
     "nodes / GPUs behind the hub (team, Sep 27)",
     "18 / 144"
    ],
@@ -207,6 +218,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so 1.41 M/GPU is its load, not its capacity. Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "23:20",
+   "Corrected the per-stream decode reference: the 210 tok/s came from the replayed api-v1 logs, which are M3-fleet traffic; M3.1 production measured directly (Kibana ES|QL, streaming, 30 min): 212 tok/s p50 (141 p10, 313 p90), TTFT 1.52 s, output 274 tokens p50",
+   "reference now M3.1"
+  ],
   [
    "23:15",
    "Read production's M3.1 launch method on b300-18/22 (read-only): in-house SGLang + Dynamo builds; TP2 attention with no DP attention, TC0 + MSA off with custom KV4 V2/V3 and fused-verify kernels, DSpark block 4 + fa4, 256 running/worker, HiCache ratio 3, chunk 16384, strict-affinity router + session-pin Redis",
@@ -522,7 +538,7 @@
     "25 tok/s",
     "**71 tok/s**",
     "–",
-    "tp2 decodes 2.8× faster per stream; production 210"
+    "tp2 decodes 2.8× faster per stream; M3.1 production 212"
    ]
   ],
   "note": "Same trace both runs (2,939 requests, 100% success on tp2, 1 timeout on tp8). The 4×tp2 layout decodes far faster per stream and wins the static frame (c64 2.52 M/GPU at TTFT 1.25 s, c128 3.34 M) but its cache-hit rate on real traffic was 59.7% vs 90.9% on the single engine: sessions were spread over four separate caches, so it paid more cold prefill and its TTFT was worse at 1×–2×. Routing affinity (prompt_cache_key passthrough / KV-event routing) is the next fix; with production-level cache hits (98.9%) the tp2 layout should pull ahead on both axes."
@@ -623,7 +639,16 @@
   "cached_10m": 1964526720,
   "prompt_10m": 2012566187,
   "ttft_p50": 1.56,
-  "ttft_p99": 21.58
+  "ttft_p99": 21.58,
+  "decode_tps": {
+   "p10": 141,
+   "p50": 212,
+   "p90": 313,
+   "n": 65793,
+   "ttft_p50": 1.52,
+   "out_p50": 274,
+   "read_at": "23:20 PDT, last 30 min"
+  }
  },
  "comparison": {
   "title": "Side by side: team production vs our dev-best",
@@ -648,7 +673,7 @@
    ],
    [
     "Per-stream decode (real traffic)",
-    "~210 tok/s (M3 fleet reference)",
+    "212 tok/s p50 (p10 141 / p90 313), M3.1 hub, 65.8k streaming requests, 23:20 PDT",
     "71 tok/s",
     "25 tok/s"
    ],
