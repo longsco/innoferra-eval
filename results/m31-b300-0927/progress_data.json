@@ -316,6 +316,11 @@
  },
  "timeline": [
   [
+   "08:35",
+   "Results tab: new real-traffic ranking chart (same trace, warm-up and staircase for every bar; TTFT p50 at 4× a node's share, log scale, prod-parity line at 1.6 s), and the static chart now states its caveats (bars at different concurrencies and routings; top two bars are the only same-engine pair)",
+   "answers the viewer question about apples-to-apples comparison"
+  ],
+  [
    "08:26",
    "chain16 bprod (production scheduling knobs on the balanced frontier base): static c128 5.02 M/GPU (tie with 5.01; TTFT 3.6 s vs 4.1), c256 5.62; real traffic TTFT p50 0.83 / 1.06 / 1.76 / 3.9 s, p99 at 4× 49 s (base 32), decode 147 / 111 / 70 tok/s; accept 4.14; closed loop c128 11.6 M node (base 12.9). Not adopted; the page now excludes such within-noise static ties from the 'current winner'",
    "no change to the winning setup"
@@ -735,7 +740,7 @@
    "Route B held at 1×, 2×, 4×, 6×, 8× of a node's share for 5 minutes each after warming the caches with the preceding 30 minutes; the level where TTFT or errors break is the node's real-traffic capacity."
   ]
  ],
- "chart_note": "Red bars = MiniMax's 09-27 engine build, which turns off CUDA graphs for DSpark when training-matched numerics are on (its demo launch sets them), so DSpark decodes slowly (13–42 tok/s per stream). Teal bars = setups that keep CUDA graphs (MiniMax's 09-22 build + our DSpark port, or plain decode). Ranked by TPM; the order tested is in the Timeline tab. Bars are measured at different concurrencies (label under each value), so a high-concurrency bar is not directly comparable with one measured at c128. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128. Accept length = average tokens accepted per DSpark verify step (block 7), measured on the probe with 3 real 60–80k prompts; it is not measured on the static frame itself, whose random text gives the draft almost nothing to predict.",
+ "chart_note": "Static frame only: one shared 80k cached prefix, 128 new tokens, 600 output tokens, fixed concurrency. Bars are taken at the concurrency printed with each value and with each setup's own routing, so the ranking is not strictly apples to apples; the top two bars are the one same-engine pair (tie within noise). Real-traffic behaviour is ranked in the next chart. Accept length = average tokens accepted per DSpark verify step (block 7), measured on the probe with 3 real 60–80k prompts; it is not measured on the static frame itself, whose random text gives the draft almost nothing to predict.",
  "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.",
  "staircase": {
   "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): six layouts",
@@ -1891,5 +1896,64 @@
    ]
   ],
   "note": "Buckets: 'in chain14' = the setting exists in our tree and is being tested now; 'write' = kernel work on our side; 'ask' = request from MiniMax. Items 1 and 2 are the largest: together they explain the concurrency cap (32/rank vs 256/worker) and most of the per-stream gap (75 vs 212 tok/s on real traffic)."
- }
+ },
+ "realtraffic_rank": [
+  {
+   "n": "tp8/dp8 DSpark + 8 workers",
+   "p50_4x": 50.6,
+   "p99_4x": 152,
+   "decode_1x": 114,
+   "hit": "90%"
+  },
+  {
+   "n": "4×tp2 under Dynamo KV router",
+   "p50_4x": 34.3,
+   "p99_4x": 169,
+   "decode_1x": 129,
+   "hit": "64%"
+  },
+  {
+   "n": "4×tp2 + plain affinity gateway",
+   "p50_4x": 1.67,
+   "p99_4x": 50,
+   "decode_1x": 132,
+   "hit": "87%"
+  },
+  {
+   "n": "4×tp2 lift + slot gateway (spill)",
+   "p50_4x": 9.22,
+   "p99_4x": 125,
+   "decode_1x": 123,
+   "hit": "82%"
+  },
+  {
+   "n": "lift + P1 + session pinning",
+   "p50_4x": 1.47,
+   "p99_4x": 35,
+   "decode_1x": 135,
+   "hit": "87%"
+  },
+  {
+   "n": "+ bidirectional draft (frontier)",
+   "p50_4x": 1.49,
+   "p99_4x": 32,
+   "decode_1x": 150,
+   "hit": "88%"
+  },
+  {
+   "n": "frontier + prefill-hold off (bmfs)",
+   "p50_4x": 1.42,
+   "p99_4x": 22,
+   "decode_1x": 151,
+   "hit": "88%"
+  },
+  {
+   "n": "frontier + prod scheduling (bprod)",
+   "p50_4x": 1.76,
+   "p99_4x": 49,
+   "decode_1x": 147,
+   "hit": "87%"
+  }
+ ],
+ "realtraffic_rank_note": "Apples to apples: every bar replays the same 2,939 real requests (node share of the 09-27 peak hour) after the same cache warm-up, at 4× their original rate (≈ 3 req/s per node), and reports the stage's TTFT p50 over all 933 requests at that level (log scale). Excluded: chain14 v1 (its staircase ran after closed-loop replays of the same prompts, so caches were pre-filled). The static chart above ranks something different (one shared 80k prefix, fixed concurrency), and its bars sit at different concurrencies and routings; use the two together, and the table below for all numbers."
 }

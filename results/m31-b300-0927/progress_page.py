@@ -167,6 +167,28 @@ def prodref():
 def timeline():
     rows = "\n".join(f"<tr><td class=\"n\">{t}</td><td>{c}</td><td>{r}</td></tr>" for t, c, r in data["timeline"])
     return f'<div class="panel"><h2>Timeline of changes (latest first, Pacific time)</h2><div class="wrap"><table><tr><th>PDT</th><th>change</th><th>result (per GPU)</th></tr>\n{rows}\n</table></div></div>'
+def realtraffic_rank_panel():
+    """Real-traffic ranking: same 2,939-request trace, same warm-up + long staircase; TTFT p50 at 4x a node's share (log scale)."""
+    import math
+    rows = data.get("realtraffic_rank") or []
+    if not rows: return ""
+    rows = sorted(rows, key=lambda r: r["p50_4x"])
+    W, L, R, top, rh = 960, 330, 150, 36, 30
+    H = top + rh * len(rows) + 34
+    x = lambda v: L + (W - L - R) * (math.log10(max(v, 1.0)) / 2.0)          # 1 s .. 100 s
+    svg = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Real-traffic TTFT at 4x load by configuration">']
+    for t in (1, 2, 5, 10, 20, 50, 100):
+        svg.append(f'<line x1="{x(t):.0f}" y1="{top-6}" x2="{x(t):.0f}" y2="{H-28}" stroke="var(--grid)"/><text x="{x(t):.0f}" y="{H-12}" font-size="11" fill="var(--muted)" text-anchor="middle">{t} s</text>')
+    svg.append(f'<line x1="{x(1.6):.0f}" y1="{top-14}" x2="{x(1.6):.0f}" y2="{H-28}" stroke="var(--star)" stroke-width="2" stroke-dasharray="5 4"/><text x="{x(1.6)+4:.0f}" y="{top-18}" font-size="11" fill="var(--star)">prod-parity p50 1.6 s</text>')
+    for i, r in enumerate(rows):
+        y = top + i * rh; good = r["p50_4x"] <= 1.6
+        fill = "var(--okfill)" if good else "var(--pend)"
+        svg.append(f'<text x="{L-10}" y="{y+18}" font-size="12" fill="var(--ink)" text-anchor="end">{r["n"]}</text>')
+        svg.append(f'<rect x="{L}" y="{y+6}" width="{max(3, x(r["p50_4x"])-L):.0f}" height="16" rx="2" fill="{fill}"/>')
+        svg.append(f'<text x="{x(r["p50_4x"])+6:.0f}" y="{y+18}" font-size="12" fill="var(--ink)" font-weight="500">{r["p50_4x"]:.2f} s <tspan fill="var(--muted)" font-weight="400" font-size="10.5">· p99 {r["p99_4x"]:.0f} s · {r["decode_1x"]} tok/s at 1× · hit {r["hit"]}</tspan></text>')
+    svg.append("</svg>")
+    return (f'<div class="panel"><h2>Real traffic, ranked: TTFT p50 at 4× a node\'s share (lower is better)</h2><div class="wrap">{"".join(svg)}</div>'
+            f'<p class="note">{data.get("realtraffic_rank_note","")}</p></div>')
 def charts():
     return ('<div class="panel"><h2>Per-GPU TPM by configuration, ranked (static frame)</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
             '<div class="legend"><span style="--sw:var(--bad)">DSpark without CUDA graphs (vendor 09-27 build)</span><span style="--sw:var(--okfill)">decode on CUDA graphs</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
@@ -218,7 +240,7 @@ JS = """
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
 overview = kpis() + metrics_panel() + tests_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
-results = charts() + matrix_panel() + staircase() + routeb()
+results = charts() + realtraffic_rank_panel() + matrix_panel() + staircase() + routeb()
 setup = versus_panel() + kernel_gap_panel() + comparison() + winning() + launch_specs() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
         f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'
