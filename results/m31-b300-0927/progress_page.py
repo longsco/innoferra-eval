@@ -83,6 +83,12 @@ def metrics_panel():
     if not m: return ""
     rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in m)
     return f'<div class="panel"><h2>Which number to trust</h2><dl>\n{rows}</dl></div>'
+def tests_panel():
+    t = data.get("tests")
+    if not t: return ""
+    head = "".join(f"<th>{h}</th>" for h in t["columns"])
+    body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f"<td>{x}</td>" for x in r[1:]) + "</tr>" for r in t["rows"])
+    return f'<div class="panel"><h2>{t["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div><p class="note">{t["note"]}</p></div>'
 def comparison():
     c = data.get("comparison")
     if not c: return ""
@@ -171,7 +177,7 @@ JS = """
 
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
-overview = kpis() + metrics_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
+overview = kpis() + metrics_panel() + tests_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
 results = staircase() + charts() + routeb()
 setup = comparison() + winning() + launch_specs() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'

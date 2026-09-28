@@ -225,6 +225,11 @@
  },
  "timeline": [
   [
+   "00:05",
+   "Added a closed-loop mode to the replay tool (real prompts, fixed concurrency) as the bridge between the static frame and the open-loop staircase; chain14 runs it (c64, c128) for every production-knob variant",
+   "test-method table on the Overview tab"
+  ],
+  [
    "23:53",
    "Gateway bug found: backend = h % 4 and DP rank = h % 2 came from the same hash digits, so each tp2 engine only ever used one of its two ranks (4 of 8 attention ranks idle in the real-traffic best). Fixed (independent digits) + production-style spill (floor 16 and 2× mean slot load over 30 s); unit-tested: sessions stay sticky, a hot shared prefix spreads over all 8 slots. chain13 = 4×tp2 envelope lift behind it",
    "running"
@@ -917,5 +922,77 @@
    "Why they rank layouts differently",
    "The static test rewards raw concurrency with a load-balanced router; real traffic rewards cache affinity and low prefill stall. The same 4×tp2 layout wins both once the router matches the test; production's strict-affinity policy (affinity only on high overlap, else load) serves both at once."
   ]
- ]
+ ],
+ "tests": {
+  "title": "How the tests work, how fair they are, and how to read them",
+  "columns": [
+   "",
+   "Static frame (simulation)",
+   "Closed-loop replay (bridge)",
+   "Open-loop replay / staircase (production-like)"
+  ],
+  "rows": [
+   [
+    "What is sent",
+    "bench_serving: one 80k shared prefix + 128 random tokens, exactly 600 output tokens",
+    "real logged requests (prompts, sessions, tools, images), natural output lengths",
+    "same real requests"
+   ],
+   [
+    "How load is applied",
+    "closed loop: always exactly c requests in flight",
+    "closed loop: always exactly c in flight",
+    "open loop: requests arrive at their real timestamps × a speed factor; a queue builds if the node falls behind"
+   ],
+   [
+    "Cache",
+    "~100% hit by construction (only 128 new tokens per request)",
+    "real session reuse (~88–91% after warm-up)",
+    "real session reuse (~88–91%; production 97.6% because its caches never go cold)"
+   ],
+   [
+    "Spec decode (DSpark)",
+    "accepts ~1 token: random text, no gain shows",
+    "real acceptance (~3–3.5)",
+    "real acceptance"
+   ],
+   [
+    "What TPM means",
+    "capacity at saturation at concurrency c",
+    "capacity at saturation with real prompts",
+    "offered load (TPM only rises with the speed factor until the knee)"
+   ],
+   [
+    "Latency meaning",
+    "bounded by c, never explodes",
+    "bounded by c",
+    "TTFT explodes past the knee: that is the signal"
+   ],
+   [
+    "Fair for",
+    "north-star comparability (7 M claim), regressions, raw concurrency",
+    "comparing layouts on real prompts at equal concurrency",
+    "production readiness: max load at production-parity latency"
+   ],
+   [
+    "Unfair to",
+    "spec decode, cache routing, prefill cost (≈0 uncached tokens)",
+    "arrival burstiness",
+    "nodes that start cold (our warm-up is 30 min, production is always warm); M3-era prompts replayed on M3.1; images replaced by a 1×1 PNG"
+   ],
+   [
+    "Our numbers today",
+    "tp8 lift 3.67 M/GPU at c256",
+    "running per chain14 variant (c64, c128)",
+    "4×tp2 + affinity ≈ 1.2 M/GPU average, ~2 req/s/node at prod-parity latency"
+   ],
+   [
+    "Read it as",
+    "TPM at the concurrency where TTFT p50 is still ≈ 2–3 s",
+    "TPM and per-stream tok/s at c; compare to the static number at the same c",
+    "the highest load level whose per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s, in req/s per node and TPM per GPU"
+   ]
+  ],
+  "note": "Yes, they differ a lot: the same node shows 3.2–3.7 M/GPU on the static frame and 1–1.5 M/GPU sustained on real traffic. The gap is not error: static requests are 100% cached and identical, while real requests carry 5–60k uncached tokens each (9–12% of 50–650k prompts), and that prefill is most of the GPU time. The static frame also hides spec decode and routing effects, and the replay can rank layouts in the opposite order (tp8 vs 4×tp2 are equal on static, but only 4×tp2 + affinity holds 4× load on real traffic). The closed-loop replay isolates the prompt-mix effect (same load control as static, real prompts), so the three together separate 'prompt mix' from 'arrival pattern'."
+ }
 }
