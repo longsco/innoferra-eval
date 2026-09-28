@@ -77,5 +77,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 00:46 PDT (09-28) | **Boot-hang root cause**: with `--network host` all 4 tp2 engines bound 127.0.0.1:28028 (fixed NVSHMEM bootstrap port, libtorch_nvshmem loaded by every scheduler), so bootstrap connections could cross engines -> 2/4 engines hung in the DP all-gather at boot (chain11 and chain13). Fix: `NETNS=1` in launch.sh (own network namespace, publish only the HTTP port), default on in launch_tp2x4_old.sh; chain13 restarted | launch.sh | multi-engine boots should now be deterministic |
 
+| 00:48 PDT (09-28) | **DSpark acceptance gap found** (probe, same 3 real 60-80k prompts, block 7): vendor eager DSpark 4.1-5.1 accepted per step vs our graph-enabled port 2.3-3.4 (tp8) and 2.1-2.9 (tp8 lift); real traffic 3.5 p50. Queued as its own lever (draft window 4096 vs full, verify mode, draft attention backend, sampling under graphs). Production image item dropped per user (cannot copy their image); replaced by a kernel-gap table (verify path, attention without DP lockstep, KV4 prefill V3, fusions, draft, scheduling, routing) on the Setup tab | stress2-0927.log, ab-0927-1751Z.log | new lever: acceptance x decode |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
