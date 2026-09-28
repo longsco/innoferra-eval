@@ -1,0 +1,4 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-old-dspark-tok8-mr256-mf072,128,640,1.000,24.169,0.176,28.0,1.76,19.90,35.72
+80k-warm-0927-old-dspark-tok8-mr256-mf072,192,960,1.000,26.841,0.195,24.7,1.79,82.00,40.56
+80k-warm-0927-old-dspark-tok8-mr256-mf072,256,1024,1.000,29.341,0.213,21.1,2.55,79.73,47.42

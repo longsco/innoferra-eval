@@ -2,6 +2,7 @@
 
 | config | per-GPU TPM | at | % of target |
 |---|---|---|---|
+| tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72) | 3.67 M | c256, TTFT 2.6 s; c128 3.02, c192 3.36 | 52% |
 | 4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape) | 3.34 M | c128, TTFT 3.0 s; c64 2.52 M at 1.25 s | 48% |
 | Old fork + DSpark graphs + 8 workers (winning setup) | 3.20 M | c128, TTFT 2.8 s; c64 2.20 M at 1.6 s | 46% |
 | Plain + HiCache + patch + 8 tokenizer workers | 2.92 M | c512, saturated | 42% |
@@ -32,6 +33,6 @@
 - per node: 11.3 M TPM, 1.97 req/s
 - per GPU (observed load; production is not saturated, so this is not its capacity): 1.41 M TPM
 
-Frontier: **3.34 M/GPU** (48% of target) - 4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape) at c128, TTFT 3.0 s; c64 2.52 M at 1.25 s.
+Frontier: **3.67 M/GPU** (52% of target) - tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72) at c256, TTFT 2.6 s; c128 3.02, c192 3.36.
 
 Winning setup recipe: Setup tab of the progress page (derived from the same frontier).

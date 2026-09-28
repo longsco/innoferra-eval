@@ -80,6 +80,12 @@
    "v": 2.34,
    "c": "c64",
    "k": "prev"
+  },
+  {
+   "n": "tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72)",
+   "v": 3.67,
+   "c": "c256, TTFT 2.6 s; c128 3.02, c192 3.36",
+   "k": "ok"
   }
  ],
  "pareto": {
@@ -219,6 +225,16 @@
  },
  "timeline": [
   [
+   "23:53",
+   "Gateway bug found: backend = h % 4 and DP rank = h % 2 came from the same hash digits, so each tp2 engine only ever used one of its two ranks (4 of 8 attention ranks idle in the real-traffic best). Fixed (independent digits) + production-style spill (floor 16 and 2× mean slot load over 30 s); unit-tested: sessions stay sticky, a hot shared prefix spreads over all 8 slots. chain13 = 4×tp2 envelope lift behind it",
+   "running"
+  ],
+  [
+   "23:49",
+   "Envelope lift on tp8/dp8 DSpark (chain12): max running 256 captured with the sync-free verify switch and mem-fraction 0.72; gate 7/7",
+   "<b>new static frontier 3.67 M/GPU</b> at c256 (52% of target), TTFT 2.6 s"
+  ],
+  [
    "23:22",
    "Bare 4×tp2 DSpark behind our affinity gateway, real-traffic staircase: 88.5% cache hit, TTFT p50 0.7–0.9 s at 1×, 0.8–1.6 s at 2×, 1.1–2.0 s at 4×; 75 tok/s per stream; kept up with the offered load (1,240 s vs 1,571 s), 0 errors",
    "new real-traffic best; same layout as the static frontier → single dev-best"
@@ -353,21 +369,25 @@
  "subtitle": "Node 0008, Sep 27, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "Where we are, in one breath: the vendor's demo as shipped did 0.72 M TPM per GPU. Two fixes (a Triton recompile patch and 8 tokenizer workers) and one swap (the older engine build that keeps DSpark on CUDA graphs) took the node to 3.20 M per GPU on the manual's static frame; the production-shaped 4×tp2 layout under a KV router nudged that to 3.34 M (48% of the north star) and decodes 2.8× faster per stream on real traffic. On real traffic both layouts still knee at about 2.5 req/s (≈ 1 M per GPU sustained) because cold prefill dominates: the single engine keeps 91% cache hits, the 4-worker layout only 60%. Routing affinity is the next lever.",
  "running": {
-  "title": "Running now (chain12, started 23:18 PDT)",
-  "script": "serving/minimax-m3.1/chain12.sh",
-  "commit": "2652ef2",
-  "config": "envelope lift on tp8/dp8 DSpark: MAXREQ 256 (32/rank), sync-free verify path via env, mem-fraction 0.72 (fallback 0.66)",
+  "title": "Running now (chain13, started 23:53 PDT)",
+  "script": "serving/minimax-m3.1/chain13.sh + patch_shim_slots.py",
+  "commit": "b0fc20b",
+  "config": "4 × tp2/ep2/dp2 DSpark with the envelope lift (64 per worker = 32/rank, sync-free verify, mem-fraction 0.72) behind the fixed slot gateway (all 8 ranks, spill on). One router for both tests.",
   "steps": [
    [
-    "launch + CUDA-graph capture of verify tiers up to 32/rank",
+    "4 engines up + warm-up + graph check",
     "running"
    ],
    [
-    "probes, static grid c128/192/256",
+    "canaries via gateway",
     "next"
    ],
    [
-    "gate",
+    "static grid c64/128/256/384 via gateway (spill should load-balance the shared prefix)",
+    "next"
+   ],
+   [
+    "warm-up + real-traffic staircase",
     "next"
    ]
   ]
@@ -384,20 +404,6 @@
    "name": "Adopt the portable production knobs on our winner: DSpark block 4, chunked prefill 16384, strict-affinity routing floors (≥2 blocks and >50% overlap) in our gateway",
    "why": "cheap, no new kernels",
    "script": "to write (chain13)",
-   "commit": "–",
-   "status": "after chain12"
-  },
-  {
-   "name": "Envelope lift: tp8/dp8 DSpark graphs with MAXREQ 256 (32/rank), sync-free verify path, mem-fraction 0.72 → 0.66 fallback",
-   "why": "every winning config is capped at 128 concurrent by the verify-graph envelope; the host sync is avoidable via env, and the earlier capture OOM came from mem-fraction 0.85 leaving the graph pool no room (graphs are captured largest-first from one global pool)",
-   "script": "serving/minimax-m3.1/chain12.sh",
-   "commit": "2652ef2",
-   "status": "armed, starts after chain11b"
-  },
-  {
-   "name": "Envelope lift on the 4×tp2 layout (MAXREQ 64/worker) with the gateway affinity",
-   "why": "if chain12 captures, the same lift doubles the tp2 layout's concurrency",
-   "script": "to write",
    "commit": "–",
    "status": "after chain12"
   },
@@ -630,6 +636,30 @@
     [
      "Measured",
      "real traffic: cache hit 79–94%, TTFT p50 1–3 s at 1× (staircase running); static frame invalid for this routing (single shared prefix pins to one rank → 0.9 M/GPU)"
+    ]
+   ]
+  },
+  "tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72)": {
+   "rows": [
+    [
+     "Engine",
+     "MiniMax 0922-sglang@bef87f4 + our DSpark port + Triton runtime-N patch + env-gated sync-free verify (commit 2652ef2)"
+    ],
+    [
+     "Layout",
+     "tp8/ep8/dp8 with DP attention, <b>max running 256 (32/rank)</b>, chunk 65536, <b>mem-fraction 0.72</b> (leaves the CUDA-graph pool room for verify tiers up to 32/rank), 8 tokenizer workers"
+    ],
+    [
+     "Key env",
+     "<code>SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000</code> keeps every verify batch on the sync-free lane path so it can be captured"
+    ],
+    [
+     "Measured",
+     "static c128 3.02 · c192 3.36 · <b>c256 3.67 M/GPU</b> (29.3 M node, TTFT p50 2.6 s); all decode batches on graph; gate 7/7"
+    ],
+    [
+     "Real traffic",
+     "not yet run on this config (the 4×tp2 version of the lift runs next)"
     ]
    ]
   }
