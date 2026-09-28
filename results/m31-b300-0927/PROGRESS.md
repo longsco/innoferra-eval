@@ -128,5 +128,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 15:45 PDT (09-28) | tok4 real traffic: 2939/2939, hit 88.5%, TTFT p50/p99 0.75/5.6, 1.14/14.5, 1.48/33.9, 3.09/35.2; decode 155/106/68/46; accept 4.19; strict prod-parity 2x (7.36 M node = 0.92/GPU); closed loop c128 13.40 M node (1.68/GPU). chain19 t8r64 (TOKW 8, MAXREQ 128, MEMFRAC 0.66, 1 GiB workspace) static: c128 44.84 M (5.60/GPU, 1.31 s), c256 59.81 (7.48, 1.70 s), c384 62.98 (7.87, 3.64 s, p99 49), c512 65.62 (8.20, 11.39 s); TPOT 17.7/25.5/26.6/30.1 ms; engine queue 0 at every level -> decode-bound | tpm-*-0927-t8r64*.csv | no static gain |
 
+| 16:19 PDT (09-28) | t8r64 real traffic: 2939/2939, hit 88.1%, TTFT p50/p99 0.82/6.7, 1.16/13.8, 1.34/23.7, 4.77/45.6; decode 152/108/70/38; accept 4.13; strict 1x; closed loop c128 13.87 M node (1.73/GPU). Parser fix verified: catch_tb caught 3 TypeErrors during tok4 (21:40, 21:56, 21:57Z, pre-fix engines), none after the fixed engines launched (22:09Z) | traffic/stairs-t8r64.jsonl | not adopted |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
