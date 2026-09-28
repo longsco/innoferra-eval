@@ -11,5 +11,5 @@ for i in 0 1 2 3; do NAME=m31-tp2-$i PORT=$((19191+100*i)) GPUS="$((2*i)),$((2*i
 t0=$(date +%s); while :; do up=0; for i in 0 1 2 3; do curl -sf -m 3 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done; [ $up = 4 ] && break; [ $(( $(date +%s)-t0 )) -gt 1500 ] && { echo "TIMEOUT: $up/4 healthy"; exit 1; }; sleep 15; done
 echo "all 4 engines healthy after $(( $(date +%s)-t0 ))s"
 sudo -n docker rm -f m31-gateway >/dev/null 2>&1
-UPSTREAMS=1 SGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 ROUTE_PREFIX_CHARS=2048 MAX_INFLIGHT=4096 TPM_LIMIT=1000000000 RPM_LIMIT=1000000 STRIP_PARAMS=prompt_cache_key bash gateway.sh >/dev/null 2>&1; sleep 4
+ROUTE_SESSION_KEY=${ROUTE_SESSION_KEY-prompt_cache_key} UPSTREAMS=1 SGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 ROUTE_PREFIX_CHARS=2048 MAX_INFLIGHT=4096 TPM_LIMIT=1000000000 RPM_LIMIT=1000000 STRIP_PARAMS=prompt_cache_key bash gateway.sh >/dev/null 2>&1; sleep 4
 curl -s -m 5 -H "Authorization: Bearer $(cat ~/.m31_apikey)" http://127.0.0.1:8000/v1/models | head -c 100; echo
