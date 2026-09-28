@@ -120,6 +120,12 @@ def versus_panel():
     cmds = (f'<div class="vs"><div><h3>Production engine launch</h3><pre class="cmd">{_h.escape(lc.get("production", ""))}</pre></div>'
             f'<div><h3>Current winner launch</h3><pre class="cmd">{_h.escape(lc.get(name, "(not recorded)"))}</pre></div></div>')
     return f'<div class="panel win"><h2>Production vs current winner ({fr["per_gpu"]:.2f} M per GPU, {fr["pct"]}% of target)</h2>{table}{cmds}</div>'
+def kernel_gap_panel():
+    k = data.get("kernel_gap")
+    if not k: return ""
+    head = "".join(f"<th>{h}</th>" for h in k["columns"])
+    body = "\n".join("<tr>" + "".join(f'<td class="{"k" if i == 1 else ""}">{x}</td>' for i, x in enumerate(r)) + "</tr>" for r in k["rows"])
+    return f'<div class="panel"><h2>{k["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div><p class="note">{k["note"]}</p></div>'
 def comparison():
     c = data.get("comparison")
     if not c: return ""
@@ -180,7 +186,7 @@ JS = """
   const wrap=(s,n)=>{const w=s.split(' ');const out=[''];for(const t of w){const cur=out[out.length-1];if((cur+' '+t).trim().length>n&&cur){out.push(t)}else{out[out.length-1]=(cur+' '+t).trim()}}return out.slice(0,3)};
   let g='';
   for(let t=0;t<=7;t++){g+=`<line x1="${x(t)}" y1="${top-8}" x2="${x(t)}" y2="${top+rows.length*rowH}" stroke="${grid}"/><text x="${x(t)}" y="${top+rows.length*rowH+16}" font-size="11" fill="${muted}" text-anchor="middle">${t} M</text>`;}
-  rows.forEach((r,i)=>{const k=KC[r.k]||r.k; const y=top+i*rowH; const ln=wrap(r.n,46); const y0=y+19-(ln.length-1)*7;g+=`<text x="${L-10}" y="${y0}" font-size="11.5" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${ln.map((t,j)=>`<tspan x="${L-10}" dy="${j?14:0}">${t}</tspan>`).join('')}</text><rect x="${L}" y="${y+6}" width="${x(r.v)-L}" height="26" fill="${k}" rx="2"/><text x="${x(r.v)+8}" y="${y+18}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M</text><text x="${x(r.v)+8}" y="${y+32}" font-size="10.5" fill="${muted}">${wrap(r.c,40)[0]}${wrap(r.c,40).length>1?'…':''}</text>`;});
+  rows.forEach((r,i)=>{const k=KC[r.k]||r.k; const y=top+i*rowH; const ln=wrap(r.n,46); const y0=y+19-(ln.length-1)*7;g+=`<text x="${L-10}" y="${y0}" font-size="11.5" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${ln.map((t,j)=>`<tspan x="${L-10}" dy="${j?14:0}">${t}</tspan>`).join('')}</text><rect x="${L}" y="${y+6}" width="${x(r.v)-L}" height="26" fill="${k}" rx="2"/><text x="${x(r.v)+8}" y="${y+18}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M <tspan fill="${muted}" font-size="10.5" font-weight="400">· ${r.acc||""}</tspan></text><text x="${x(r.v)+8}" y="${y+32}" font-size="10.5" fill="${muted}">${wrap(r.c,40)[0]}${wrap(r.c,40).length>1?'…':''}</text>`;});
   g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star ${TARGET.toFixed(2)} M / GPU</text>`;
   s1.innerHTML=g;
   const lev=%(lev)s; const base=%(base)s, measuredTop=%(top)s, remaining=TARGET-measuredTop, pendN=lev.filter(d=>!d.m).length, pendEach=remaining/Math.max(1,pendN);
@@ -213,7 +219,7 @@ tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
 overview = kpis() + metrics_panel() + tests_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
 results = charts() + matrix_panel() + staircase() + routeb()
-setup = versus_panel() + comparison() + winning() + launch_specs() + glossary() + tools()
+setup = versus_panel() + kernel_gap_panel() + comparison() + winning() + launch_specs() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
         f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'
         f'<section class="tabpanel" id="overview">{overview}</section>\n<section class="tabpanel" id="results" hidden>{results}</section>\n'
