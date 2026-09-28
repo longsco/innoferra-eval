@@ -399,38 +399,44 @@
  },
  "queued": [
   {
-   "name": "Run the production engine image on node 0008 (their build, their argv/env) and measure it on the same static frame + staircase",
-   "why": "production's method depends on in-house kernels our forks lack (TP2 attention without DP lockstep, fused graph-safe verify, KV4 V2/V3 prefill); running their image is the only way to measure that shape here",
-   "script": "needs the image: registry pull or export from a prod node",
-   "commit": "–",
-   "status": "waiting for your OK (credentials / prod-node I/O)"
+   "title": "Production engine image on node 0008",
+   "needs_ok": true,
+   "detail": "Run production's own image (their build, argv and env) on our node and measure it on the static frame, closed-loop replay and staircase.",
+   "why": "Production's advantage is in-house kernels our forks lack (TP2 attention with no DP lockstep, fused graph-safe verify, KV4 V2/V3); this is the only way to measure that shape here.",
+   "script": "needs the image: a ghcr.io pull token, or an export from a production node (8.9 GB of I/O on a serving node)",
+   "commit": "",
+   "status": "waiting for your OK"
   },
   {
-   "name": "Adopt the portable production knobs on our winner: DSpark block 4, chunked prefill 16384, strict-affinity routing floors (≥2 blocks and >50% overlap) in our gateway",
-   "why": "cheap, no new kernels",
-   "script": "to write (chain13)",
-   "commit": "–",
-   "status": "after chain12"
+   "title": "Production-knob combinations (chain14)",
+   "detail": "On 4×tp2 + lift + slot gateway: v1 chunk 16384 + overlap plan stream + incremental streaming; v2 + DSpark block 4; v3 + HiCache ratio 3 (MiniMax NVFP4 host-cache commit on our tree); v4 + 64 per rank.",
+   "why": "Every knob production uses that also exists in our build; each variant gets static grid, closed-loop replay and a short staircase.",
+   "script": "serving/minimax-m3.1/chain14.sh",
+   "commit": "596f99a, dc9bb85",
+   "status": "armed, starts when chain13 finishes"
   },
   {
-   "name": "16 tokenizer workers / chunked prefill sweep on the winner",
-   "why": "frontend and prefill cadence under real traffic",
-   "script": "env knobs",
-   "commit": "–",
-   "status": "after the lifts"
+   "title": "One router for both tests in the Dynamo path",
+   "detail": "Port the slot-gateway rule (affinity first, spill on load) or production's strict-affinity policy to the Dynamo frontend.",
+   "why": "The Dynamo router lost half the cache hits; production's plugin is not in our Dynamo build.",
+   "script": "to write",
+   "commit": "",
+   "status": "after chain14"
   },
   {
-   "name": "HiCache on real traffic (09-27 build, plain decode)",
-   "why": "host cache only matters under multi-session cache pressure",
-   "script": "chain5-style + staircase",
-   "commit": "–",
-   "status": "later"
+   "title": "Tokenizer workers 8 → 16",
+   "detail": "Same winner, more frontend workers.",
+   "why": "The team runs 16 preprocess workers; 8 lifted us from 0.9 to 2.9 M/GPU on plain decode.",
+   "script": "env knob",
+   "commit": "",
+   "status": "after chain14"
   },
   {
-   "name": "vendor: graph-safe verify kernel (tiers >16/rank) upstream, NextN/MTP for M3.1, cherry-picks #34338 #32313 #37505 #38936",
-   "why": "durable fix instead of our env switch",
-   "script": "MiniMax",
-   "commit": "–",
+   "title": "Asks to MiniMax",
+   "detail": "Graph-safe verify kernel upstream (tiers above 32 per rank), NextN/MTP for M3.1, upstream cherry-picks #34338 #32313 #37505 #38936.",
+   "why": "Durable fixes instead of our env switch and patches.",
+   "script": "vendor",
+   "commit": "",
    "status": "asked"
   }
  ],
@@ -495,7 +501,7 @@
    "Route B held at 1×, 2×, 4×, 6×, 8× of a node's share for 5 minutes each after warming the caches with the preceding 30 minutes; the level where TTFT or errors break is the node's real-traffic capacity."
   ]
  ],
- "chart_note": "Red bars = MiniMax's 09-27 engine build, which turns off CUDA graphs for DSpark when training-matched numerics are on (its demo launch sets them), so DSpark decodes slowly (13–42 tok/s per stream). Teal bars = setups that keep CUDA graphs (MiniMax's 09-22 build + our DSpark port, or plain decode). Concurrency in parentheses is where the configuration peaked or was measured. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128.",
+ "chart_note": "Red bars = MiniMax's 09-27 engine build, which turns off CUDA graphs for DSpark when training-matched numerics are on (its demo launch sets them), so DSpark decodes slowly (13–42 tok/s per stream). Teal bars = setups that keep CUDA graphs (MiniMax's 09-22 build + our DSpark port, or plain decode). Ranked by TPM; the order tested is in the Timeline tab. Bars are measured at different concurrencies (label under each value), so a high-concurrency bar is not directly comparable with one measured at c128. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128.",
  "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.",
  "staircase": {
   "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): three layouts",

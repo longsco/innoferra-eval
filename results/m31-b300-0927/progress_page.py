@@ -55,6 +55,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em}
 .pill.run{border-color:var(--ok);color:var(--ok)}
 ol.steps{margin:6px 0 0;padding-left:20px}ol.steps li{margin:3px 0}
 a{color:var(--ok)}
+ol.ql{margin:0;padding-left:20px}li.q{margin:0 0 12px}.qh{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:2px}
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.vs>div{min-width:0}.vs h3{font-size:.9rem;margin:0 0 4px}@media (max-width:820px){.vs{grid-template-columns:1fr}}
 table.mx{font-size:.8rem}table.mx td,table.mx th{white-space:nowrap}table.mx td.k{white-space:normal;min-width:220px}th.grp{text-align:center;border-bottom:2px solid var(--line);color:var(--ink)}td.sep{border-left:1px solid var(--line)}
 pre.cmd{background:var(--tab);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;line-height:1.45;white-space:pre;margin:6px 0 10px}
@@ -71,8 +72,14 @@ def running():
     return (f'<div class="panel"><h2>{r["title"]} <span class="pill run">live</span></h2><p style="margin:0 0 6px">{r["config"]}</p>'
             f'<ol class="steps">{steps}</ol><p class="note">script <code>{r["script"]}</code> · commit <code>{r["commit"]}</code></p></div>')
 def queued():
-    rows = "\n".join(f'<tr><td class="k">{q["name"]}</td><td>{q["why"]}</td><td><code>{q["script"]}</code></td><td class="w">{q["commit"]}</td><td>{q["status"]}</td></tr>' for q in data["queued"])
-    return f'<div class="panel"><h2>Queued experiments, in order</h2><div class="wrap"><table><tr><th>experiment</th><th>why</th><th>script</th><th>commit</th><th>status</th></tr>\n{rows}\n</table></div></div>'
+    items = []
+    for i, q in enumerate(data["queued"], 1):
+        meta = " · ".join(x for x in [f'<code>{q["script"]}</code>' if q.get("script") else "", f'commit <code>{q["commit"]}</code>' if q.get("commit") else ""] if x)
+        flag = '<span class="pill run" style="border-color:var(--star);color:var(--star)">needs your OK</span>' if q.get("needs_ok") else ""
+        items.append(f'<li class="q"><div class="qh"><b>{q["title"]}</b>{flag}<span class="pill">{q["status"]}</span></div>'
+                     f'<div>{q["detail"]}</div><div class="note" style="margin:2px 0 0">Why: {q["why"]}</div>'
+                     + (f'<div class="note" style="margin:2px 0 0">{meta}</div>' if meta else "") + '</li>')
+    return f'<div class="panel"><h2>Queued experiments, in order</h2><ol class="ql">{"".join(items)}</ol></div>'
 def winning():
     """The winning box always shows the frontier config's recipe (derived), plus the real-traffic status line."""
     fr = data["frontier"]; setup = data["setups"].get(fr["config"]) or {"rows": [["recipe", "(add to progress_data.json → setups)"]]}
@@ -155,7 +162,7 @@ def timeline():
     rows = "\n".join(f"<tr><td class=\"n\">{t}</td><td>{c}</td><td>{r}</td></tr>" for t, c, r in data["timeline"])
     return f'<div class="panel"><h2>Timeline of changes (latest first, Pacific time)</h2><div class="wrap"><table><tr><th>PDT</th><th>change</th><th>result (per GPU)</th></tr>\n{rows}\n</table></div></div>'
 def charts():
-    return ('<div class="panel"><h2>Per-GPU TPM by configuration, in the order tested</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
+    return ('<div class="panel"><h2>Per-GPU TPM by configuration, ranked (static frame)</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
             '<div class="legend"><span style="--sw:var(--bad)">DSpark without CUDA graphs (vendor 09-27 build)</span><span style="--sw:var(--okfill)">decode on CUDA graphs</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
             f'<p class="note">{data.get("chart_note","")}</p></div>'
             '<div class="panel"><h2>Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 300"></svg></div>'
@@ -167,7 +174,7 @@ JS = """
   const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),star=css('--star'),ok=css('--okfill'),bad=css('--bad'),pend=css('--pend'),prev=css('--prev');
   const KC={bad:bad,ok:ok,prev:prev}; const TARGET=%(target)s;
-  const rows=%(rows)s;
+  const rows=(%(rows)s).slice().sort((a,b)=>b.v-a.v);
   const s1=document.getElementById('c1'); const W=960,L=360,R=40,rowH=50,top=30; const x=v=>L+(W-L-R)*v/TARGET;
   const H1=top+rows.length*rowH+34; s1.setAttribute('viewBox',`0 0 ${W} ${H1}`);
   const wrap=(s,n)=>{const w=s.split(' ');const out=[''];for(const t of w){const cur=out[out.length-1];if((cur+' '+t).trim().length>n&&cur){out.push(t)}else{out[out.length-1]=(cur+' '+t).trim()}}return out.slice(0,3)};
