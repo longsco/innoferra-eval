@@ -42,7 +42,7 @@ a{color:var(--ok)}
 <div class="panel win"><h2>Current winning serving setup (as of 02:25 UTC)</h2>
 <dl>
 <dt>Engine</dt><dd>MiniMax's 09-22 engine build (SGLang v0.5.17 fork, commit bef87f4) with our DSpark port: draft model on dense layers, 4096-token draft window, flashinfer draft attention, <b>CUDA graphs for draft and verify</b></dd>
-<dt>Layout</dt><dd>one engine, tp8 / ep8 / dp8 with DP attention, NVFP4 experts + MXFP8 dense, FP8 KV, training-matched numerics, chunked prefill 65536</dd>
+<dt>Layout</dt><dd>one engine, tp8 / ep8 / dp8 with DP attention, NVFP4 experts + MXFP8 dense, FP8 KV, training-matched numerics, chunked prefill 65536, mem-fraction 0.80 (0.85 OOMs on image traffic with 8 tokenizer workers on GPU 0)</dd>
 <dt>Spec decode</dt><dd>DSpark block 7; max running requests 128 (16 per rank) because graph capture only holds while verify batches stay ≤16 per rank (vendor kernel limit)</dd>
 <dt>Frontend</dt><dd><code>--tokenizer-worker-num 8</code> (the single-worker frontend capped every config at ~0.9 M/GPU), gateway with rate limits off</dd>
 <dt>Kernel patch</dt><dd>token count as a runtime argument in the router and KV-store Triton kernels (stops recompiles that stalled all ranks; bitwise-equal)</dd>
@@ -96,6 +96,7 @@ a{color:var(--ok)}
 
 <div class="panel"><h2>5. Timeline of changes (latest first)</h2><div class="wrap"><table>
 <tr><th>UTC</th><th>change</th><th>result (per GPU)</th></tr>
+<tr><td>02:50</td><td>Winning setup crashed at the first real-traffic image request (02:25): the 8 tokenizer workers each hold ~0.9 GB on GPU 0 for multimodal preprocessing and mem-fraction 0.85 left no headroom → CUDA OOM in the vision forward. Relaunched with mem-fraction 0.80 (team value); Route B 1× and the staircase restart on it</td><td>recipe change: mem-fraction 0.80</td></tr>
 <tr><td>02:45</td><td>Tried to verify the '18 nodes on M3.1' figure: hub logs (single upstream VIP), subnet probes (only 2 ingress VIPs answer), Slack search (EN + 中文): not verifiable from our side</td><td>per-GPU production figure depends on it: 5.8 M (5 nodes) vs 1.6 M (18 nodes)</td></tr>
 <tr><td>02:25</td><td>Queued: production-shaped 4×(tp2/ep2/dp2) DSpark under the Dynamo KV router, then its own staircase</td><td>pending</td></tr>
 <tr><td>02:24</td><td>Winning setup at c128 (max running 128)</td><td><b>3.20 M</b> (25.6 M node), TTFT 2.8 s, 31 tok/s per stream</td></tr>

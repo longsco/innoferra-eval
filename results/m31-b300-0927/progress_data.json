@@ -41,7 +41,7 @@
    ],
    [
     "Layout",
-    "one engine, tp8 / ep8 / dp8 with DP attention, NVFP4 experts + MXFP8 dense, FP8 KV, training-matched numerics, chunked prefill 65536"
+    "one engine, tp8 / ep8 / dp8 with DP attention, NVFP4 experts + MXFP8 dense, FP8 KV, training-matched numerics, chunked prefill 65536, mem-fraction 0.80 (0.85 OOMs on image traffic with 8 tokenizer workers on GPU 0)"
    ],
    [
     "Spec decode",
@@ -224,6 +224,11 @@
   ]
  },
  "timeline": [
+  [
+   "02:50",
+   "Winning setup crashed at the first real-traffic image request (02:25): the 8 tokenizer workers each hold ~0.9 GB on GPU 0 for multimodal preprocessing and mem-fraction 0.85 left no headroom → CUDA OOM in the vision forward. Relaunched with mem-fraction 0.80 (team value); Route B 1× and the staircase restart on it",
+   "recipe change: mem-fraction 0.80"
+  ],
   [
    "02:45",
    "Tried to verify the '18 nodes on M3.1' figure: hub logs (single upstream VIP), subnet probes (only 2 ingress VIPs answer), Slack search (EN + 中文): not verifiable from our side",
