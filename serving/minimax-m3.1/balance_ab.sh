@@ -18,4 +18,5 @@ while ! pgrep -f "^bash launch_tp2x4_old.sh" >/dev/null; do sleep 10; done; slee
   NPC_CAP=1024 PORT=8000 SERVED=minimax-m3.1 OPENAI_API_KEY=$KEY IMAGE=minimax-m31-sglang:demo-024129f MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private TAG=0927-$V-bal bash $K/bench_tpm.sh "64 128 256" 2>&1 | grep -E "^80k" | cut -c1-160
   wait; log "per-rank load during the balanced c128 phase: $(cat /tmp/bal-ranks.txt)"
   log "route counters: $(curl -s -m 3 http://127.0.0.1:8000/health)"
-  rm -f $K/HOLD; log "===== balance A/B done; HOLD released (next variant's launcher restarts the gateway with defaults)"; } >> $L 2>&1
+  if [ "${KEEP_HOLD:-0}" = 1 ]; then log "===== balance A/B done; HOLD kept (next chain decides)"; echo "===== BALANCE AB DONE $V"
+  else rm -f $K/HOLD; log "===== balance A/B done; HOLD released (next variant's launcher restarts the gateway with defaults)"; fi; } >> $L 2>&1
