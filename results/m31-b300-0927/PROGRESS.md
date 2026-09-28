@@ -122,5 +122,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 14:02 PDT (09-28) | tok8 real traffic: staircase 2938/2939 (1 ReadError at 2x on a 178k-token prompt; gateway 502 upstream-midstream RemoteProtocolError; engine TypeError "'str' object does not support item assignment", traceback lost when tok4 replaced the containers), hit 88.3%, TTFT p50/p99 0.77/6.5, 1.06/15.4, 1.37/34.8, 3.72/39.1; 2x minute bins p50 0.89-1.57, p99 5.6-23.1; decode 148/111/71/45; accept 4.15; closed loop c128 13.57 M node. catch_tb.sh armed (saves tracebacks before container replacement) | traffic/stairs-tok8.jsonl | real traffic on par |
 
+| 14:45 PDT (09-28) | tok4 static: c64 29.20 M (3.65/GPU, 1.68 s), c128 44.97 (5.62, 1.72 s), c256 61.13 (7.64, 2.55 s, p99 16.8), c384 65.25 (8.16, 9.70 s); engine TTFT/queue: c128 1.85/0.00, c256 3.04/0.28, c384 8.16/2.95. **Dropped-request root cause** (catch_tb.sh, engine 0, 21:39Z): serving_chat `_process_tool_call_stream` -> minimax_m3 `parse_streaming_increment` -> `_consume_complex_param` -> `_parse_parameter` -> `_assign_child(parent=str)` -> TypeError. Fix `patch_m3_toolparser.py` (f633d8c): child under text kept literally; test reproduces on original, passes on patch; applied to both trees | logs/tb-214014-tp2-0.log | fixed |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
