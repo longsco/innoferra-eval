@@ -27,7 +27,7 @@ def prodref():
 def timeline():
     return "\n".join(f"<tr><td>{t}</td><td>{c}</td><td>{r}</td></tr>" for t, c, r in data["timeline"])
 out = (tpl.replace("{{KPIS}}", kpis()).replace("{{WINNING}}", winning()).replace("{{ROUTEB}}", routeb()).replace("{{PRODREF}}", prodref())
-          .replace("{{TIMELINE}}", timeline()).replace("{{ROWS_JSON}}", json.dumps(data["configs"], ensure_ascii=False))
+          .replace("{{TIMELINE}}", timeline()).replace("{{SUBTITLE}}", data.get("subtitle","")).replace("{{ROWS_JSON}}", json.dumps(data["configs"], ensure_ascii=False))
           .replace("{{LEV_JSON}}", json.dumps(data["pareto"]["levers"], ensure_ascii=False))
           .replace("{{PARETO_BASE}}", str(data["pareto"]["base"])).replace("{{PARETO_TOP}}", str(data["pareto"]["top"])))
 # colour keys in the JS rows: template expects k to be a colour var name (bad/ok/prev) resolved in JS

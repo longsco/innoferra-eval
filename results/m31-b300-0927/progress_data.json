@@ -33,7 +33,7 @@
   }
  ],
  "winning": {
-  "title": "Current winning serving setup (as of 02:25 UTC)",
+  "title": "Current winning serving setup (as of 19:47 PDT, Sep 27)",
   "rows": [
    [
     "Engine",
@@ -187,7 +187,7 @@
   "note": "Trace: one node's share (1/24, sessions kept together) of 2026-09-18 11:05–11:15 UTC, 727 requests. Plain engine = plain decode + HiCache + 8 workers. The DSpark engine's real-traffic numbers come from the staircase on the 2026-09-27 peak hour (15:00–16:00 UTC)."
  },
  "prodref": {
-  "read_at": "02:20 UTC (last 12 minutes)",
+  "read_at": "19:20 PDT, Sep 27 (last 12 minutes)",
   "rows": [
    [
     "tpm per minute, whole M3.1 hub (dashboard, 12-min window)",
@@ -225,74 +225,76 @@
  },
  "timeline": [
   [
-   "02:50",
+   "19:50",
    "Winning setup crashed at the first real-traffic image request (02:25): the 8 tokenizer workers each hold ~0.9 GB on GPU 0 for multimodal preprocessing and mem-fraction 0.85 left no headroom → CUDA OOM in the vision forward. Relaunched with mem-fraction 0.80 (team value); Route B 1× and the staircase restart on it",
    "recipe change: mem-fraction 0.80"
   ],
   [
-   "02:45",
+   "19:45",
    "Tried to verify the '18 nodes on M3.1' figure: hub logs (single upstream VIP), subnet probes (only 2 ingress VIPs answer), Slack search (EN + 中文): not verifiable from our side",
    "per-GPU production figure depends on it: 5.8 M (5 nodes) vs 1.6 M (18 nodes)"
   ],
   [
-   "02:25",
+   "19:25",
    "Queued: production-shaped 4×(tp2/ep2/dp2) DSpark under the Dynamo KV router, then its own staircase",
    "pending"
   ],
   [
-   "02:24",
+   "19:24",
    "Winning setup at c128 (max running 128)",
    "<b>3.20 M</b> (25.6 M node), TTFT 2.8 s, 31 tok/s per stream"
   ],
   [
-   "02:20",
+   "19:20",
    "Longitudinal capacity on the winning setup: node's real-traffic share, caches warmed, 1×→8× staircase, 5 min each",
    "running"
   ],
   [
-   "02:15",
+   "19:15",
    "Static grid on the winning setup",
    "c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s)"
   ],
   [
-   "02:10",
+   "19:10",
    "Old-fork DSpark with CUDA graphs + 8 workers up (max running 128: graph capture only holds while verify tiers stay ≤16 per rank)",
    "per stream 135 tok/s at 6 streams (plain 37, eager 19); 96/96 decode batches on graph"
   ],
   [
-   "01:41",
+   "18:41",
    "NVIDIA module reload resets the leaked multicast state left by the incident; default NCCL passes again",
    "no reboot needed"
   ],
   [
-   "23:10",
+   "16:10",
    "Node incident (mass kill), NVLS leak; recovered",
    "no hardware errors"
   ],
   [
-   "21:40",
+   "14:40",
    "8 tokenizer workers on plain + HiCache",
    "0.91 → 2.92 M (c512), 2.57 M at c256"
   ],
   [
-   "21:20",
+   "14:20",
    "DSpark graphs override on the 09-27 build",
    "blocked: verify kernel host sync, then per-call multi-GB scratch under capture"
   ],
   [
-   "20:09",
+   "13:09",
    "Found the frontend cap: one process tokenizes each 80k prompt twice, ~2 req/s",
    "explains the 0.9 M ceiling of every config"
   ],
   [
-   "18:58",
+   "11:58",
    "Kernel patch: token count as runtime arg in 2 Triton kernels (recompile storm), bitwise-equal",
    "stalls gone; TPM unchanged (frontend-bound)"
   ],
   [
-   "17:23",
+   "10:23",
    "Vendor 09-27 demo §3.2 verbatim (tp8/ep8/dp8, DSpark, HiCache)",
    "0.01 M @c1, 13 tok/s, DSpark eager by design"
   ]
- ]
+ ],
+ "timeline_note": "Pacific time (PDT). All entries are Sep 27, 2026.",
+ "subtitle": "Node 0008, Sep 27, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8)."
 }

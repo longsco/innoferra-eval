@@ -29,7 +29,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em}
 a{color:var(--ok)}
 </style>
 <h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>
-<p class="sub">Node 0008, 2026-09-27/28. TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).</p>
+<p class="sub">Node 0008, Sep 27, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).</p>
 
 <div class="kpis">
   <div class="kpi"><div class="l">North star</div><div class="v star">7.00 M</div><div class="s">per GPU</div></div>
@@ -39,7 +39,7 @@ a{color:var(--ok)}
   <div class="kpi"><div class="l">Vendor demo as shipped</div><div class="v bad">0.72 M</div><div class="s">eager DSpark, 1 tokenizer worker</div></div>
 </div>
 
-<div class="panel win"><h2>Current winning serving setup (as of 02:25 UTC)</h2>
+<div class="panel win"><h2>Current winning serving setup (as of 19:47 PDT, Sep 27)</h2>
 <dl>
 <dt>Engine</dt><dd>MiniMax's 09-22 engine build (SGLang v0.5.17 fork, commit bef87f4) with our DSpark port: draft model on dense layers, 4096-token draft window, flashinfer draft attention, <b>CUDA graphs for draft and verify</b></dd>
 <dt>Layout</dt><dd>one engine, tp8 / ep8 / dp8 with DP attention, NVFP4 experts + MXFP8 dense, FP8 KV, training-matched numerics, chunked prefill 65536, mem-fraction 0.80 (0.85 OOMs on image traffic with 8 tokenizer workers on GPU 0)</dd>
@@ -82,7 +82,7 @@ a{color:var(--ok)}
 <div class="panel"><h2>4. Production reference</h2>
 <p style="margin:0 0 6px">Kibana dashboard <b>"Innoferra Token Hub M31 - Full Log"</b> (fleet VPN required): <a href="http://10.1.101.33:5601/app/dashboards#/view/6357c8fc-60ab-438b-9f0c-6dd266baa6e0?_g=(filters:!(),refreshInterval:(pause:!f,value:20000),time:(from:now-6h,to:now))">10.1.101.33:5601 → dashboard 6357c8fc</a>. Panels: tpm and req_count per minute, latency p50/p90/p99 per minute, 4xx/5xx per minute, recent failed requests with full bodies, sample of successful requests with token usage.</p>
 <div class="wrap"><table>
-<tr><th>read at 02:20 UTC (last 12 minutes)</th><th>value</th></tr>
+<tr><th>read at 19:20 PDT, Sep 27 (last 12 minutes)</th><th>value</th></tr>
 <tr><td>tpm per minute, whole M3.1 hub (dashboard, 12-min window)</td><td class="n">213 M – 262 M</td></tr>
 <tr><td>tokens in the last hour (Discover, ES|QL)</td><td class="n">6.18 G = 103 M TPM average</td></tr>
 <tr><td>requests per minute / last hour</td><td class="n">1,857 – 2,212 / 53.1k</td></tr>
@@ -94,22 +94,22 @@ a{color:var(--ok)}
 </table></div>
 <p class="note">This is the apples-to-apples target: same TPM definition, real traffic. Node count behind the hub should be confirmed with the team before quoting the per-GPU figure.</p></div>
 
-<div class="panel"><h2>5. Timeline of changes (latest first)</h2><div class="wrap"><table>
-<tr><th>UTC</th><th>change</th><th>result (per GPU)</th></tr>
-<tr><td>02:50</td><td>Winning setup crashed at the first real-traffic image request (02:25): the 8 tokenizer workers each hold ~0.9 GB on GPU 0 for multimodal preprocessing and mem-fraction 0.85 left no headroom → CUDA OOM in the vision forward. Relaunched with mem-fraction 0.80 (team value); Route B 1× and the staircase restart on it</td><td>recipe change: mem-fraction 0.80</td></tr>
-<tr><td>02:45</td><td>Tried to verify the '18 nodes on M3.1' figure: hub logs (single upstream VIP), subnet probes (only 2 ingress VIPs answer), Slack search (EN + 中文): not verifiable from our side</td><td>per-GPU production figure depends on it: 5.8 M (5 nodes) vs 1.6 M (18 nodes)</td></tr>
-<tr><td>02:25</td><td>Queued: production-shaped 4×(tp2/ep2/dp2) DSpark under the Dynamo KV router, then its own staircase</td><td>pending</td></tr>
-<tr><td>02:24</td><td>Winning setup at c128 (max running 128)</td><td><b>3.20 M</b> (25.6 M node), TTFT 2.8 s, 31 tok/s per stream</td></tr>
-<tr><td>02:20</td><td>Longitudinal capacity on the winning setup: node's real-traffic share, caches warmed, 1×→8× staircase, 5 min each</td><td>running</td></tr>
-<tr><td>02:15</td><td>Static grid on the winning setup</td><td>c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s)</td></tr>
-<tr><td>02:10</td><td>Old-fork DSpark with CUDA graphs + 8 workers up (max running 128: graph capture only holds while verify tiers stay ≤16 per rank)</td><td>per stream 135 tok/s at 6 streams (plain 37, eager 19); 96/96 decode batches on graph</td></tr>
-<tr><td>01:41</td><td>NVIDIA module reload resets the leaked multicast state left by the incident; default NCCL passes again</td><td>no reboot needed</td></tr>
-<tr><td>23:10</td><td>Node incident (mass kill), NVLS leak; recovered</td><td>no hardware errors</td></tr>
-<tr><td>21:40</td><td>8 tokenizer workers on plain + HiCache</td><td>0.91 → 2.92 M (c512), 2.57 M at c256</td></tr>
-<tr><td>21:20</td><td>DSpark graphs override on the 09-27 build</td><td>blocked: verify kernel host sync, then per-call multi-GB scratch under capture</td></tr>
-<tr><td>20:09</td><td>Found the frontend cap: one process tokenizes each 80k prompt twice, ~2 req/s</td><td>explains the 0.9 M ceiling of every config</td></tr>
-<tr><td>18:58</td><td>Kernel patch: token count as runtime arg in 2 Triton kernels (recompile storm), bitwise-equal</td><td>stalls gone; TPM unchanged (frontend-bound)</td></tr>
-<tr><td>17:23</td><td>Vendor 09-27 demo §3.2 verbatim (tp8/ep8/dp8, DSpark, HiCache)</td><td>0.01 M @c1, 13 tok/s, DSpark eager by design</td></tr>
+<div class="panel"><h2>5. Timeline of changes (latest first, Pacific time)</h2><div class="wrap"><table>
+<tr><th>PDT</th><th>change</th><th>result (per GPU)</th></tr>
+<tr><td>19:50</td><td>Winning setup crashed at the first real-traffic image request (02:25): the 8 tokenizer workers each hold ~0.9 GB on GPU 0 for multimodal preprocessing and mem-fraction 0.85 left no headroom → CUDA OOM in the vision forward. Relaunched with mem-fraction 0.80 (team value); Route B 1× and the staircase restart on it</td><td>recipe change: mem-fraction 0.80</td></tr>
+<tr><td>19:45</td><td>Tried to verify the '18 nodes on M3.1' figure: hub logs (single upstream VIP), subnet probes (only 2 ingress VIPs answer), Slack search (EN + 中文): not verifiable from our side</td><td>per-GPU production figure depends on it: 5.8 M (5 nodes) vs 1.6 M (18 nodes)</td></tr>
+<tr><td>19:25</td><td>Queued: production-shaped 4×(tp2/ep2/dp2) DSpark under the Dynamo KV router, then its own staircase</td><td>pending</td></tr>
+<tr><td>19:24</td><td>Winning setup at c128 (max running 128)</td><td><b>3.20 M</b> (25.6 M node), TTFT 2.8 s, 31 tok/s per stream</td></tr>
+<tr><td>19:20</td><td>Longitudinal capacity on the winning setup: node's real-traffic share, caches warmed, 1×→8× staircase, 5 min each</td><td>running</td></tr>
+<tr><td>19:15</td><td>Static grid on the winning setup</td><td>c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s)</td></tr>
+<tr><td>19:10</td><td>Old-fork DSpark with CUDA graphs + 8 workers up (max running 128: graph capture only holds while verify tiers stay ≤16 per rank)</td><td>per stream 135 tok/s at 6 streams (plain 37, eager 19); 96/96 decode batches on graph</td></tr>
+<tr><td>18:41</td><td>NVIDIA module reload resets the leaked multicast state left by the incident; default NCCL passes again</td><td>no reboot needed</td></tr>
+<tr><td>16:10</td><td>Node incident (mass kill), NVLS leak; recovered</td><td>no hardware errors</td></tr>
+<tr><td>14:40</td><td>8 tokenizer workers on plain + HiCache</td><td>0.91 → 2.92 M (c512), 2.57 M at c256</td></tr>
+<tr><td>14:20</td><td>DSpark graphs override on the 09-27 build</td><td>blocked: verify kernel host sync, then per-call multi-GB scratch under capture</td></tr>
+<tr><td>13:09</td><td>Found the frontend cap: one process tokenizes each 80k prompt twice, ~2 req/s</td><td>explains the 0.9 M ceiling of every config</td></tr>
+<tr><td>11:58</td><td>Kernel patch: token count as runtime arg in 2 Triton kernels (recompile storm), bitwise-equal</td><td>stalls gone; TPM unchanged (frontend-bound)</td></tr>
+<tr><td>10:23</td><td>Vendor 09-27 demo §3.2 verbatim (tp8/ep8/dp8, DSpark, HiCache)</td><td>0.01 M @c1, 13 tok/s, DSpark eager by design</td></tr>
 </table></div></div>
 
 <script>

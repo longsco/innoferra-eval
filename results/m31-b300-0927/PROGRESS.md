@@ -2,7 +2,7 @@
 
 Every launch and every variant on the node is also recorded automatically in `/data01/minimax31/bench/ledger.jsonl` (kind=launch:
 full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). TPM rows: `/data01/minimax31/bench/tpm-*-0927-*.csv`
-(frame: 80k cached prefix / 128 question / 600 output, generated-shared-prefix, warm). Times UTC, 2026-09-27.
+(frame: 80k cached prefix / 128 question / 600 output, generated-shared-prefix, warm). Times in the table below are UTC (node log clock) through the 02:50 row; from here on rows are stamped in Pacific time (PDT = UTC-7). Node logs stay UTC.
 
 | time | change / event | evidence | numbers |
 |---|---|---|---|
