@@ -324,6 +324,11 @@
  },
  "timeline": [
   [
+   "10:46",
+   "Diagnostic boots (logs kept) found both chain16 boot failures: 64 per rank overflowed flashinfer's 384 MiB workspace while capturing decode graphs (needs 476 MiB); HiCache is refused by our tree for NVFP4 KV ('does not yet support HiCache scale transfer'). chain17 started: 64 per rank with a 1 GiB workspace (grid to c384), then a frontier repeat for noise; every static level now logs a TTFT breakdown from engine metrics",
+   "64 per rank retried with the fix; HiCache blocked (queued as engineering)"
+  ],
+  [
    "10:34",
    "chain16 bblk4 (DSpark block 4, production's block size): static c128 4.93 M/GPU (tie), c256 5.67; acceptance 4.05 per request (block 7: 5.79) and 3.33 on real traffic (4.07); real traffic TTFT p50 0.82 / 1.07 / 1.41 / 3.5 s, decode 123 / 89 / 64 tok/s (block 7: 150 / 105 / 66); closed loop c128 13.4 M node (12.9). chain16 done: none of production's scheduling or spec-decode knobs beats the frontier on the static frame; bmfs helps under high real-traffic concurrency; b128 and bhic need isolated boots (running)",
    "frontier unchanged at 5.01 M/GPU; block 7 + bidirectional draft stays"
@@ -613,30 +618,34 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "Where we are: the vendor demo as shipped did 0.72 M TPM per GPU. Kernel and frontend fixes, DSpark on CUDA graphs, production's 4×tp2 worker shape, a lifted verify-graph envelope, a prefill kernel fix (P1), the vendor's bidirectional draft attention and a gateway that pins sessions and balances the rest on in-flight load now give <b>5.01 M per GPU</b> on the static frame (72% of the 7 M north star, TTFT 4.1 s) and 5.70 M at c256. On real traffic the same engines keep TTFT p50 ≤ 1.5 s up to ~3.3 req/s per node. Production is serving 2.95 M per GPU of observed load (5.8 req/s per node, TTFT p50 0.31 s) and is not saturated.",
  "running": {
-  "title": "Running now (diagnostic boots, since 10:34 PDT)",
-  "script": "serving/minimax-m3.1/diag_boot.sh",
-  "commit": "bbbdfe5",
-  "config": "One tp2 engine on GPUs 0–1 per case, full logs kept: 64 per rank at mem 0.66 (b128), HiCache (bhic), HiCache without the bidirectional draft.",
+  "title": "Running now (chain17, since 10:46 PDT)",
+  "script": "serving/minimax-m3.1/chain17.sh",
+  "commit": "latest",
+  "config": "Frontier base (balanced gateway, P1, bidirectional draft). Per static level: TTFT breakdown from engine metrics.",
   "steps": [
    [
-    "chain16 summary",
-    "done 10:34 PDT: no production knob beats the 5.01 M/GPU frontier on the static frame; bmfs +18% closed loop; bprod and bblk4 ties; b128 and bhic failed to boot"
+    "diag boots",
+    "done 10:44: b128 = flashinfer workspace overflow during graph capture (476 MiB needed, 384 MiB default); HiCache = explicit 'NVFP4 does not yet support HiCache scale transfer' guard"
    ],
    [
-    "b128-mf066: 128 per worker, mem 0.66",
-    "running since 10:34 PDT"
+    "b128ws: 64 per rank, mem 0.66, flashinfer workspace 1 GiB, grid c64–c384",
+    "running since 10:46 PDT"
    ],
    [
-    "bhic: HiCache ratio 3 on the host-cache tree",
-    "next"
-   ],
-   [
-    "bhic-nobd: HiCache without the bidirectional draft",
-    "next"
+    "frep: frontier repeat (run-to-run noise on both tests)",
+    "next; chain ends ~13:10 PDT"
    ]
   ]
  },
  "queued": [
+  {
+   "title": "HiCache for our NVFP4 KV: port host-cache scale transfer",
+   "detail": "Our tree refuses HiCache with NVFP4 KV ('MiniMax NVFP4 does not yet support HiCache scale transfer', kv_cache_configurator.py). The vendor 0927 tree has no such guard; port its host-cache path for KV4 scales or write the scale transfer.",
+   "why": "Production runs HiCache ratio 3 and holds 95–97% cache hit; ours is 87–90% on real traffic at 4×.",
+   "script": "to write",
+   "commit": "",
+   "status": "blocked on engineering"
+  },
   {
    "title": "Routing attribution: session pinning vs hash + spill on the same engines",
    "detail": "Re-run the staircase of chain14's best variant with ROUTE_SESSION_KEY unset (hash + spill) and with it set, back to back on the same engines.",
@@ -660,14 +669,6 @@
    "script": "patches/dspark_minimax/minimax_m3_dspark.py, accept_metrics.sh, analysis/accept_probe.py",
    "commit": "2e186e9",
    "status": "A/B running in chain15"
-  },
-  {
-   "title": "Isolated boot tests with logs kept: 64 per rank (b128) and HiCache (bhic)",
-   "detail": "Both failed to boot in chain16 (0 of 4 engines healthy twice, logs removed by the next launcher). Boot one tp2 engine per config with FOLLOW=1: b128 at mem 0.66 / 0.70 and with verify graphs capped at 32 per rank; bhic on the HiCache tree with and without the bidirectional draft, then without P1.",
-   "why": "Static TPM at c256 is capped by 32 running per rank (5.70 M/GPU at c256 with TTFT 13 s); room per rank is the next static lever after balancing.",
-   "script": "to write",
-   "commit": "",
-   "status": "after chain16"
   },
   {
    "title": "Kernel gap vs production (learn from their settings, no image)",

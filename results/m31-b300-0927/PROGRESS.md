@@ -112,5 +112,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 10:34 PDT (09-28) | chain16 bblk4 (frontier base, DSPARK_BLOCK=4): static c64 26.60 M (3.32/GPU), c128 39.47 (4.93, 3.25 s, p99 17.8, TPOT 16.3 ms), c256 45.37 (5.67); accept probe 4.05 (block 7: 5.79), staircase accept 3.33 (4.07); TTFT p50/p99 0.82/5.8, 1.07/15.1, 1.41/32.2, 3.54/65.3; decode 123/89/64/43; strict prod-parity to 2x; closed loop c128 13.37 M node. CHAIN16 DONE 17:34Z. diag_boot started (b128-mf066, bhic, bhic-nobd) | tpm-*-0927-bblk4.csv | no change |
 
+| 10:46 PDT (09-28) | diag_boot (single engine, GPUs 0-1, logs kept): b128-mf066 crashed after 287 s: flashinfer `AlignedAllocator` overflow during decode CUDA-graph capture (batch_prefill_tmp_v 499,122,176 B > 402,653,184 B workspace = 384 MiB default `SGLANG_FLASHINFER_WORKSPACE_SIZE`); bhic and bhic-nobd crashed after ~121 s: `ValueError: MiniMax NVFP4 does not yet support HiCache scale transfer` (kv_cache_configurator.py:1327, guard on SGLANG_MINIMAX_SPARSE_KV4 + HiCache; vendor 0927 tree has no such guard). chain17 started: b128ws (1 GiB workspace, grid c64-c384) + frep (frontier repeat), per-level TTFT breakdown (ttft_breakdown.sh) | logs/diag-*.log | causes found |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
