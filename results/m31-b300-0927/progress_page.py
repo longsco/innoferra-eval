@@ -55,6 +55,11 @@ code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em}
 .pill.run{border-color:var(--ok);color:var(--ok)}
 ol.steps{margin:6px 0 0;padding-left:20px}ol.steps li{margin:3px 0}
 a{color:var(--ok)}
+pre.cmd{background:var(--tab);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;line-height:1.45;white-space:pre;margin:6px 0 10px}
+details{margin-top:8px}summary{cursor:pointer;font-weight:500;font-size:.9rem}
+.panel.prod{border-color:var(--star)}
+.cmds{margin-top:6px}
+table.cmp td{vertical-align:top}table.cmp td:nth-child(2){background:color-mix(in srgb,var(--star) 7%,transparent)}
 """
 
 def kpis():
@@ -73,6 +78,21 @@ def winning():
     rt = data.get("realtraffic_best", "")
     return (f'<div class="panel win"><h2>Current winning setup: {fr["per_gpu"]:.2f} M per GPU ({fr["pct"]}% of target) — {fr["config"]}, {fr["at"]}</h2>\n<dl>\n{rows}</dl>'
             + (f'<p class="note">Real traffic: {rt}</p>' if rt else '') + '</div>')
+def comparison():
+    c = data.get("comparison")
+    if not c: return ""
+    head = "".join(f"<th>{h}</th>" for h in c["columns"])
+    body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f"<td>{x}</td>" for x in r[1:]) + "</tr>" for r in c["rows"])
+    return f'<div class="panel"><h2>{c["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div></div>'
+def launch_specs():
+    import html as _h
+    out = []
+    for s in data.get("launch_specs", []):
+        rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in s["digest"])
+        cmds = "".join(f'<details{" open" if i == 0 else ""}><summary>{lbl}</summary><pre class="cmd">{_h.escape(txt)}</pre></details>' for i, (lbl, txt) in enumerate(s["commands"]))
+        cls = "panel prod" if s.get("tag") == "production" else "panel"
+        out.append(f'<div class="{cls}"><h2>{s["title"]}</h2><dl>\n{rows}</dl><div class="cmds">{cmds}</div></div>')
+    return "".join(out)
 def glossary():
     rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in data["glossary"])
     return f'<div class="panel"><h2>What the setups and tests mean</h2><dl>\n{rows}</dl></div>'
@@ -148,7 +168,7 @@ tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
 overview = kpis() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
 results = staircase() + charts() + routeb()
-setup = winning() + glossary() + tools()
+setup = comparison() + winning() + launch_specs() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
         f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'
         f'<section class="tabpanel" id="overview">{overview}</section>\n<section class="tabpanel" id="results" hidden>{results}</section>\n'

@@ -37,6 +37,11 @@ code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em}
 .pill.run{border-color:var(--ok);color:var(--ok)}
 ol.steps{margin:6px 0 0;padding-left:20px}ol.steps li{margin:3px 0}
 a{color:var(--ok)}
+pre.cmd{background:var(--tab);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;line-height:1.45;white-space:pre;margin:6px 0 10px}
+details{margin-top:8px}summary{cursor:pointer;font-weight:500;font-size:.9rem}
+.panel.prod{border-color:var(--star)}
+.cmds{margin-top:6px}
+table.cmp td{vertical-align:top}table.cmp td:nth-child(2){background:color-mix(in srgb,var(--star) 7%,transparent)}
 </style>
 <h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>
 <p class="sub">Node 0008, Sep 27, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).</p>
@@ -67,7 +72,22 @@ a{color:var(--ok)}
 <tr><td class="k">cache hit</td><td class="n">98.9%</td><td class="n">73.5% (cold start)</td><td class="n">99.4%</td><td class="n">77.3% (cold start)</td></tr>
 </table></div>
 <p class="note">Trace: one node's share (1/24, sessions kept together) of 2026-09-18 11:05–11:15 UTC, 727 requests, engines started cold. The DSpark engine's 106 s TTFT is queueing: its max running requests is 128 (the CUDA-graph envelope) and cold prefills of 50–650k prompts in 8k chunks stall decode across the DP lockstep, so slots are held for minutes and arrivals wait. Production sees 98.9% cache hits because sessions continue; a cold replay does not. The staircase warms the caches with the preceding 30 minutes first, which is the fair measurement.</p></div></section>
-<section class="tabpanel" id="setup" hidden><div class="panel win"><h2>Current winning setup: 3.34 M per GPU (48% of target) — 4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape), c128, TTFT 3.0 s; c64 2.52 M at 1.25 s</h2>
+<section class="tabpanel" id="setup" hidden><div class="panel"><h2>Side by side: team production vs our dev-best</h2><div class="wrap"><table class="cmp">
+<tr><th></th><th>Team production (18 nodes)</th><th>Dev-best: static frontier (4×tp2 Dynamo)</th><th>Dev-best: real traffic (tp8/dp8 engine)</th></tr>
+<tr><td class="k">Per-GPU TPM</td><td>1.41 M observed (not saturated)</td><td><b>3.34 M</b> at c128, 80k-prefix frame</td><td>3.20 M at c128; ≈ 1 M sustained on real traffic</td></tr>
+<tr><td class="k">TTFT p50 (real traffic)</td><td>1.56 s at ~2 req/s/node, 97.6% hit</td><td>1.5–3.0 s at 1× (60% hit)</td><td>0.8–1.3 s at 1×, 1.3–3.4 s at 2× (91% hit)</td></tr>
+<tr><td class="k">Per-stream decode (real traffic)</td><td>~210 tok/s (M3 fleet reference)</td><td>71 tok/s</td><td>25 tok/s</td></tr>
+<tr><td class="k">Engine build</td><td>in-house SGLang 0.0.0+deploy + Dynamo 1.5.0 custom-policy</td><td>MiniMax 0922-sglang@bef87f4 + our DSpark port</td><td>same</td></tr>
+<tr><td class="k">Worker shape</td><td>4 × TP2, EP2, <b>dp 1</b> (attention TP2)</td><td>4 × tp2/ep2/<b>dp2</b> (attention TP1)</td><td>1 × tp8/ep8/<b>dp8</b> (attention TP1)</td></tr>
+<tr><td class="k">Numerics</td><td>training numerics off, MSA off, in-house KV4 kernels</td><td>training numerics on (Triton Q8KV4)</td><td>same</td></tr>
+<tr><td class="k">DSpark</td><td>block 4, fa4 draft, bounded SWA draft, fused verify</td><td>block 7, flashinfer draft, window 4096</td><td>same</td></tr>
+<tr><td class="k">Max running</td><td>256 per worker (1,024 per node)</td><td>32 per worker (128 per node)</td><td>128 per node</td></tr>
+<tr><td class="k">Prefill</td><td>chunk 16384, tc_piecewise graphs, trtllm_mha</td><td>chunk 32768, breakable graphs</td><td>chunk 65536, breakable graphs</td></tr>
+<tr><td class="k">Cache</td><td>HiCache ratio 3, write-through, page 128</td><td>none (fork can't host-cache NVFP4 scales)</td><td>none</td></tr>
+<tr><td class="k">Frontend</td><td>Rust chat processor, 2 frontends/node</td><td>Dynamo frontend, 8 preprocess workers</td><td>8 tokenizer workers in SGLang</td></tr>
+<tr><td class="k">Routing</td><td>KV router + incore-strict-affinity (≥2 blocks, >50%) + session-pin Redis</td><td>Dynamo KV router, strict affinity (load scale inf)</td><td>single engine, DP-rank pinning in our gateway</td></tr>
+<tr><td class="k">mem-fraction</td><td>0.8</td><td>0.8</td><td>0.80</td></tr>
+</table></div></div><div class="panel win"><h2>Current winning setup: 3.34 M per GPU (48% of target) — 4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape), c128, TTFT 3.0 s; c64 2.52 M at 1.25 s</h2>
 <dl>
 <dt>Engine</dt><dd>MiniMax's 09-22 engine build (SGLang v0.5.17 fork, bef87f4) with our DSpark port (4096-token draft window, flashinfer draft attention, <b>CUDA graphs for draft and verify</b>), Dynamo image demo-dynamo</dd>
 <dt>Layout</dt><dd><b>4 workers × (tp2 / ep2 / dp2 with DP attention)</b> = the production shape with attention TP1 (forced by the training-matched numerics); NVFP4 experts + MXFP8 dense, FP8 KV, chunked prefill 32768, mem-fraction 0.85, max running 32 per worker (16 per rank = graph envelope)</dd>
@@ -76,7 +96,105 @@ a{color:var(--ok)}
 <dt>Kernel patch</dt><dd>token count as a runtime argument in the router and KV-store Triton kernels (bind-mounted into the old tree)</dd>
 <dt>Measured</dt><dd>static (via router): c8 0.51 · c16 0.94 · c64 2.52 (TTFT 1.25 s) · <b>c128 3.34 M per GPU</b> (26.7 M node, TTFT 3.0 s); real traffic: per-stream 71 tok/s p50 (tp8 engine: 25) but cache hit 59.7% → TTFT p50 1.5–3 s at 1×, knee ~2.5 req/s</dd>
 <dt>Open issue</dt><dd>routing affinity: DP-rank flips inside a worker and image requests bypass KV routing halve the cache hits; the bare-gateway variant (chain11b) restores 80–94% hits and is being measured</dd>
-</dl><p class="note">Real traffic: at production's per-node operating point (~2 req/s real traffic) our single node holds p50 TTFT 1.3–3.4 s / p99 11–18 s on the tp8/dp8 engine (production: 1.6 s / 21.6 s at 97.6% cache hit), ≈ 0.7–1.1 M/GPU on the M3 trace mix; 4×tp2 layouts decode 3× faster per stream, routing-affinity run in progress</p></div><div class="panel"><h2>What the setups and tests mean</h2><dl>
+</dl><p class="note">Real traffic: at production's per-node operating point (~2 req/s real traffic) our single node holds p50 TTFT 1.3–3.4 s / p99 11–18 s on the tp8/dp8 engine (production: 1.6 s / 21.6 s at 97.6% cache hit), ≈ 0.7–1.1 M/GPU on the M3 trace mix; 4×tp2 layouts decode 3× faster per stream, routing-affinity run in progress</p></div><div class="panel prod"><h2>Production M3.1 (18 nodes × 4 workers), read 23:15 PDT from b300-18 / b300-22</h2><dl>
+<dt>Images</dt><dd>engine <code>ghcr.io/incoai/incore-deploy-innomatrix-minimax-m3.1@sha256:f24e886d…</code> (8.87 GB, SGLang 0.0.0+deploy, Dynamo 1.5.0); frontend <code>…-minimax-m3.1-frontend</code> (619 MB, Dynamo with custom-policy router plugin)</dd>
+<dt>Per node</dt><dd>4 engine workers × 2 GPUs (TP2, EP2, <b>no DP attention</b>), 2 frontends, 1 log collector; k3s namespace incore-serve; NATS event plane; Kubernetes discovery</dd>
+<dt>Numerics / kernels</dt><dd>training numerics <b>off</b>, MSA off, in-house KV4 kernels (attention V2, prefill V3, fused verify, index V2), fused router / norm-quant, shared-expert overlap</dd>
+<dt>Spec decode</dt><dd>DSpark block 4, fa4 draft attention, bounded sliding-window draft, fused top-p accept, 256 running requests per worker</dd>
+<dt>Prefill / cache</dt><dd>chunk 16384, piecewise prefill CUDA graphs, trtllm_mha attention, HiCache ratio 3 write-through, page 128</dd>
+<dt>Routing</dt><dd>Dynamo KV router, <code>incore-strict-affinity</code> plugin (overlap ≥ 2 blocks and > 50% of the request, else load), replica sync, session-pin Redis, ~10 router services, Envoy + meta-gateway in front, migration limit 3</dd>
+<dt>Observed</dt><dd>203 M TPM hub-wide, 1.41 M/GPU, ~2 req/s per node, 97.6% cache hit, TTFT p50 1.56 s (not request-saturated)</dd>
+</dl><div class="cmds"><details open><summary>engine argv (one worker)</summary><pre class="cmd">python3 -m dynamo.sglang \
+  --model-path /models --served-model-name minimax-m3.1 --trust-remote-code --dyn-contract-profile minimax_m31 \
+  --quantization mxfp8 --kv-cache-dtype fp8_e4m3 --fp8-gemm-backend flashinfer_cutedsl --moe-runner-backend deep_gemm \
+  --moe-a2a-backend megamoe --disable-shared-experts-fusion --enable-tf32-matmul \
+  --tensor-parallel-size 2 --dp-size 1 --ep-size 2 \
+  --attention-backend trtllm_mha --cuda-graph-backend-prefill tc_piecewise --flashinfer-allreduce-fusion-backend trtllm \
+  --context-length 1048576 --max-running-requests 256 --max-queued-requests 256 --mem-fraction-static 0.8 \
+  --page-size 128 --chunked-prefill-size 16384 \
+  --enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first \
+  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-dspark-block-size 4 --speculative-draft-attention-backend fa4 \
+  --enable-multimodal --media-url-max-file-size-mb 50 --limit-mm-data-per-request &#x27;{&quot;image&quot;: 200, &quot;video&quot;: 20}&#x27; \
+  --dyn-tool-call-parser minimax_m3 --dyn-reasoning-parser minimax_m3 --tokenizer-worker-num 1 --detokenizer-worker-num 1 \
+  --weight-loader-prefetch-checkpoints --enable-cache-report --enable-metrics --enable-mfu-metrics --incremental-streaming-output \
+  --kv-events-config &#x27;{&quot;publisher&quot;:&quot;zmq&quot;,&quot;endpoint&quot;:&quot;tcp://*:5557&quot;}&#x27; --engine-route flush_cache:tm \
+  --dist-timeout 1800 --host 0.0.0.0 --port 31000 --crash-dump-folder /home/incore/.cache/crash-dumps</pre></details><details><summary>engine env (tuning flags)</summary><pre class="cmd">SGLANG_M3_TRAINING_COMPATIBLE=0  SGLANG_DISABLE_MSA=1  SGLANG_MINIMAX_M3_TRAINING_ROUTER=1
+SGLANG_MINIMAX_SPARSE_KV4=1  SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE=16
+SGLANG_MINIMAX_KV4_ATTN_V2=1  SGLANG_MINIMAX_KV4_FUSED_PROLOGUE=1  SGLANG_MINIMAX_KV4_FUSED_VERIFY_ATTN=1
+SGLANG_MINIMAX_KV4_INDEX_TPSHARD=1  SGLANG_MINIMAX_KV4_INDEX_V2=1  SGLANG_MINIMAX_KV4_PREFILL_ATTN_V3=1  SGLANG_MINIMAX_KV4_PREFILL_INDEX_V3=1
+SGLANG_MINIMAX_DENSE_GEMM_TUNED=1  SGLANG_MINIMAX_FAST_COMM=1  SGLANG_MINIMAX_FUSED_NORM_QUANT=1  SGLANG_MINIMAX_FUSED_ROUTER=1
+SGLANG_MINIMAX_SHARED_EXPERT_OVERLAP=1  SGLANG_MINIMAX_SPLIT_BF16_ROUTER=1  SGLANG_M31_MOE_PREDISPATCH_SPLIT=1
+SGLANG_M3_KDA_INDEXER=1  SGLANG_M3_VERIFY_DECODE_INDEX=1  SGLANG_M3_VERIFY_DECODE_TOPK_RADIX=1
+SGLANG_DSPARK_BOUNDED_SWA_DRAFT=1  SGLANG_FA4_TARGET_VERIFY_NUM_SPLITS=16  SGLANG_SPEC_ACCEPT_SPLIT_VOCAB=1  SGLANG_SPEC_FUSED_TOPP_ACCEPT=1
+SGLANG_EXPERIMENTAL_SPEC_DECODE_RADIX=1  SGLANG_ENABLE_OVERLAP_PLAN_STREAM=1  SGLANG_KV_BF16_FIRST_LAYERS=0  SGLANG_DFLASH_TAIL_CACHE_ENTRIES=0
+SGLANG_FORWARD_UNKNOWN_TOOLS=true  SGLANG_ENABLE_METRICS_DEVICE_TIMER=true
+DYN_SGLANG_NATIVE_HTTP=1  DYN_EVENT_PLANE=nats  DYN_DISCOVERY_BACKEND=kubernetes  DYN_HEALTH_CHECK_ENABLED=true  DYN_TCP_MAX_MESSAGE_SIZE=201326592
+INCORE_ROLE=worker  INCORE_SCHEDULING=unified  INCORE_STACK_ID=m31</pre></details><details><summary>frontend argv</summary><pre class="cmd">python3 -m dynamo.frontend --http-port 8000 --model-name minimax-m3.1 --model-path /model-metadata \
+  --dyn-chat-processor dynamo --router-mode kv --router-replica-sync \
+  --router-policy-config /etc/incore/config/router-policy.yaml \
+  --migration-limit 3 --migration-replay-token-budget 1073741824 --enable-anthropic-api</pre></details><details><summary>router-policy.yaml</summary><pre class="cmd">worker_selection:
+  prefill: strict-affinity        # the prefill hop owns the prefix cache: overlap-first after two floors, then load
+  aggregated: strict-affinity     # the unified (aggregated) pool routes the same way
+  decode: default                 # decode hop: Dynamo&#x27;s load-only default
+  instances:
+    - name: strict-affinity
+      type: incore-strict-affinity    # plugin in vendor/libs/dynamo/lib/router-plugins/incore (needs --features custom-policy)
+      parameters:
+        min_overlap_blocks: 2         # ignore the ~1-block shared chat-template header
+        min_overlap_fraction: 0.5     # affine only when overlap &gt; 0.5 x request blocks</pre></details></div></div><div class="panel"><h2>Ours: static-frame frontier, 4×(tp2/ep2/dp2) DSpark under the Dynamo KV router — 3.34 M/GPU at c128</h2><dl>
+<dt>Engine</dt><dd>MiniMax 0922-sglang@bef87f4 + our DSpark port (draft window 4096, flashinfer draft), CUDA graphs for draft and verify, training numerics on</dd>
+<dt>Layout</dt><dd>4 workers × tp2/ep2/dp2 with DP attention (attention TP1 is forced by the training numerics), max running 32/worker (16/rank = graph envelope), chunk 32768</dd>
+<dt>Routing</dt><dd>Dynamo KV router, strict affinity (prefill load scale inf), 8 preprocess workers, gateway in front</dd>
+<dt>Measured</dt><dd>c8 0.51 · c16 0.94 · c64 2.52 (TTFT 1.25 s) · c128 3.34 M/GPU; real traffic: 71 tok/s per stream, cache hit 60% (DP-rank flips, images bypass KV routing)</dd>
+</dl><div class="cmds"><details open><summary>reproduce + resolved argv</summary><pre class="cmd"># 4 workers x (tp2/ep2/dp2, attention TP1) under Dynamo (serving/minimax-m3.1/dynamo/up_tp2.sh = up.sh with MAXREQ 16 x WORKER_TP)
+WORKER_TP=2 SPEC=dspark bash dynamo/up_tp2.sh
+
+# each worker resolves to (GPUs 2i,2i+1; ports 19191/19291/19391/19491):
+python3 -m dynamo.sglang --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code --skip-tokenizer-init \
+  --dyn-tool-call-parser minimax_m3 --dyn-reasoning-parser minimax_m3 --host 0.0.0.0 --port 19491 \
+  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \
+  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \
+  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \
+  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.8 --max-running-requests 32 \
+  --kv-events-config &#x27;{&quot;publisher&quot;:&quot;zmq&quot;,&quot;endpoint&quot;:&quot;tcp://*:5617&quot;,&quot;topic&quot;:&quot;kv-events&quot;}&#x27; --enable-metrics --enable-cache-report \
+  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer
+# (same engine env as the tp8 setup below)
+
+# frontend (serving/minimax-m3.1/dynamo/frontend.sh):
+python3 -m dynamo.frontend --http-port 8001 --namespace m31 --router-mode kv --router-replica-sync \
+  --router-prefill-load-scale inf --router-temperature 0 --dyn-chat-processor sglang --dyn-preprocess-workers 8 --migration-limit 3
+# gateway :8000 -&gt; frontend :8001 (alias minimax-m3/MiniMax-M3 -&gt; minimax-m3.1-nvfp4, root-role kwarg, limits off)</pre></details></div></div><div class="panel"><h2>Ours: tp8/dp8 DSpark graphs + 8 tokenizer workers — 3.20 M/GPU at c128, best real-traffic TTFT</h2><dl>
+<dt>Engine</dt><dd>same engine and port as above, one engine over 8 GPUs</dd>
+<dt>Layout</dt><dd>tp8/ep8/dp8 with DP attention, max running 128 (16/rank), chunk 65536, mem-fraction 0.80 (0.85 OOMs on images with 8 tokenizer workers on GPU 0)</dd>
+<dt>Measured</dt><dd>c64 2.20 (TTFT 1.6 s) · c128 3.20 M/GPU; real traffic 91% cache hit, holds 2× a node's share at p50 1.3–3.4 s; knee ~2.5 req/s</dd>
+</dl><div class="cmds"><details open><summary>reproduce + resolved argv</summary><pre class="cmd"># node 0008, innoferra-eval/serving/minimax-m3.1/launch.sh. Image minimax-m31-sglang:demo-bef87f4 (MiniMax 0922-sglang@bef87f4 on SGLang v0.5.17)
+IMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private \
+  DEV_SRC=/data01/minimax31/src/0922-sglang/python NAME=m31-0927 PORT=19191 SPEC=dspark DRAFT_WINDOW=4096 TRAINING_COMPAT=1 \
+  CHUNK=65536 MEMFRAC=0.80 MAXREQ=128 EXTRA_ARGS=&quot;--tokenizer-worker-num 8&quot; bash launch.sh
+
+# resolves to:
+python3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code --host 0.0.0.0 --port 19191 \
+  --tp-size 8 --ep-size 8 --dp-size 8 --moe-dense-tp-size 1 --enable-dp-attention \
+  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \
+  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \
+  --chunked-prefill-size 65536 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.80 --max-running-requests 128 \
+  --tokenizer-worker-num 8 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \
+  --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints \
+  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer</pre></details><details><summary>engine env + docker + patches</summary><pre class="cmd">SGLANG_M3_TRAINING_COMPATIBLE=1  SGLANG_MINIMAX_M3_TRAINING_ROUTER=1  SGLANG_MINIMAX_SPARSE_KV4=1  SGLANG_MINIMAX_MOE_FC2_INPUT_SCALE=16
+SGLANG_DISABLE_MSA=1  SGLANG_DP_USE_GATHERV=1  SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK=16384  SGLANG_RAGGED_VERIFY_MODE=static
+SGLANG_DSPARK_ALLOW_A2A=1  SGLANG_M3_TRAINING_ALLOW_SPEC=1  SGLANG_DSPARK_NO_DP_LM_HEAD=1  SGLANG_DSPARK_M31_DRAFT_WINDOW=4096   # our DSpark port
+SGLANG_FORWARD_UNKNOWN_TOOLS=true  SGLANG_ENABLE_METRICS_DEVICE_TIMER=true
+# docker: --gpus all --network host --ipc host --shm-size 64g --ulimit memlock=-1 --ulimit stack=67108864
+#   -v &lt;model&gt;:/models:ro  -v /data01/minimax31/jit-cache:/root/.cache  -v /data01/minimax31/src/0922-sglang/python:/opt/0922-sglang/python:ro
+# the mounted tree carries: DSpark port (patches/dspark_minimax, 068e85d), Triton runtime-N patch (a08d072),
+#   env-gated sync-free verify (2652ef2, off unless SGLANG_Q8KV4_SORT_MIN_LANES is set)</pre></details></div></div><div class="panel"><h2>Ours: bare 4×(tp2/ep2/dp2) DSpark behind our gateway (engine + DP-rank affinity) — staircase in progress</h2><dl>
+<dt>Why</dt><dd>restores cache affinity the Dynamo run lost: 79–96% hits vs 60%</dd>
+<dt>Measured</dt><dd>real traffic 1×–2×: mean TTFT 1.3–5.4 s (final table pending)</dd>
+</dl><div class="cmds"><details open><summary>reproduce</summary><pre class="cmd"># same 4 tp2/ep2/dp2 engines, each with its own HTTP server, behind our gateway (serving/minimax-m3.1/launch_tp2x4_old.sh)
+CHUNK=32768 MAXREQ=32 MEMFRAC=0.80 TOKW=2 bash launch_tp2x4_old.sh
+# gateway env: SGLANG_URLS=:19191,:19291,:19391,:19491  ROUTE_DP_SIZE=2  ROUTE_PREFIX_CHARS=2048  (first 2048 prompt chars -&gt; engine + DP rank)
+#              MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key THINKING_MODE=m31 DEFAULT_REASONING_EFFORT=medium
+# boot rule: send short prompts to each engine right after /health (dp-attention engines can hang in the DP all-gather otherwise)</pre></details></div></div><div class="panel"><h2>What the setups and tests mean</h2><dl>
 <dt>Vendor demo as shipped</dt><dd>MiniMax's 09-27 demo doc §3.2 launched exactly as written: their 09-27 engine (commit 024129fb), tp8/ep8/dp8, DSpark block 7, HiCache 192 GB, training-matched numerics. On that build the numerics flag forces DSpark to run without CUDA graphs ("eager"), so decode is 13–42 tok/s per stream.</dd>
 <dt>Vendor verbatim + kernel patch</dt><dd>The same launch with our Triton recompile fix. Same eager decode, so same ceiling.</dd>
 <dt>Plain + HiCache</dt><dd>The 09-27 engine with DSpark switched off (normal decode, which keeps its CUDA graphs) and HiCache on. Today's highest static-frame number once the frontend was fixed, but slow per stream.</dd>
