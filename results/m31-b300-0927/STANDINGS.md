@@ -3,6 +3,7 @@
 | config | per-GPU TPM | at | % of target |
 |---|---|---|---|
 | 4×tp2 DSpark envelope lift (64/worker) + slot gateway | 3.97 M | c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s | 57% |
+| 4×tp2 lift + P1 kernel fix + session pinning (c13p1) | 3.80 M | c128, TTFT 4.0 s; c64 2.86 M at 1.7 s; c256 4.12 M at 19.8 s | 54% |
 | 4×tp2 lift + production scheduling knobs (v1: chunk 16384, overlap plan, streaming) | 3.72 M | c128, TTFT 3.3 s; c256 4.08 M at 21.7 s | 53% |
 | tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72) | 3.67 M | c256, TTFT 2.6 s; c128 3.02, c192 3.36 | 52% |
 | 4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape) | 3.34 M | c128, TTFT 3.0 s; c64 2.52 M at 1.25 s | 48% |
@@ -15,15 +16,15 @@
 
 ## Real traffic (staircase, node's share of the 09-27 peak hour)
 
-| load (× a node's share) | offered req/s | tp8/dp8: TTFT p50 / p99, s | 4×tp2 + Dynamo router | <b>4×tp2 + affinity gateway</b> | 4×tp2 lift + slot gateway (spill) | node TPM (M) |
-|---|---|---|---|---|---|---|
-| 1× | 0.6–1.2 | 0.8–1.3 / 3–8 | 1.5–3.0 / 9–28 | <b>0.7–0.9 / 3–9</b> | 1.0–1.9 / 10–40 | 1.6–5.7 |
-| 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | <b>0.8–1.6 / 6–24</b> | 1.3–6.8 / 21–62 | 5.3–8.7 |
-| 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | <b>1.1–2.0 / 13–54</b> (one 29 s bin) | 4.9–25 / 40–131 | 8–14 |
-| 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 2.3 → 28 / 29–91 | 41 → 111 / 150–240 (53 errors) | 14–33 |
-| cache hit / decode p50 per stream, 1× → 4× (tok/s) | – | 91% / 114 → 18 | 60% / 129 → 25 | <b>88.5% / 132 → 68</b> | 84% / 123 → 21 | – |
-| uncached prompt tokens per request at 1× (prefill work) | – | 6.4k | 26.7k | <b>7.8k</b> | 11.0k | – |
-| kept up with offered load | – | no (1,574 s) | no (1,571 s) | <b>yes (1,240 s, 0 errors)</b> | no (1,398 s, 53 errors) | 9.75 M node avg (tp8 7.7) |
+| load (× a node's share) | offered req/s | tp8/dp8: TTFT p50 / p99, s | 4×tp2 + Dynamo router | 4×tp2 + affinity gateway | 4×tp2 lift + slot gateway (spill) | <b>4×tp2 lift + P1 + session pinning</b> | node TPM (M) |
+|---|---|---|---|---|---|---|---|
+| 1× | 0.6–1.2 | 0.8–1.3 / 3–8 | 1.5–3.0 / 9–28 | 0.7–0.9 / 3–9 | 1.0–1.9 / 10–40 | <b>0.72–1.00 / 2–12</b> | 1.6–5.7 |
+| 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | 0.8–1.6 / 6–24 | 1.3–6.8 / 21–62 | <b>0.89–1.53 / 9–16</b> | 5.3–8.7 |
+| 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | 1.1–2.0 / 13–54 (one 29 s bin) | 4.9–25 / 40–131 | <b>1.2–3.3 / 7–45</b> | 8–14 |
+| 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 2.3 → 28 / 29–91 | 41 → 111 / 150–240 (53 errors) | <b>1.7 → 14 / 15–45</b> | 14–33 |
+| cache hit / decode p50 per stream, 1× → 4× (tok/s) | – | 91% / 114 → 18 | 60% / 129 → 25 | 88.5% / 132 → 68 | 84% / 123 → 21 | <b>89% / 135 → 63 tok/s</b> | – |
+| uncached prompt tokens per request at 1× (prefill work) | – | 6.4k | 26.7k | 7.8k | 11.0k | <b>7.5k</b> | – |
+| kept up with offered load | – | no (1,574 s) | no (1,571 s) | yes (1,240 s, 0 errors) | no (1,398 s, 53 errors) | <b>yes (1,239 s, 0 errors)</b> | 9.75 M node avg (tp8 7.7) |
 
 ## Production reference (read at 02:15 PDT, Sep 28 (window 01:59–02:09 PDT; Kibana ES|QL on the M3.1 hub index; read-only))
 
