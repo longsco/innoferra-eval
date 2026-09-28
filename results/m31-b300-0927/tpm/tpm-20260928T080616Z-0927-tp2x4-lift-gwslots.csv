@@ -1,0 +1,5 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-tp2x4-lift-gwslots,64,320,1.000,21.658,0.157,74.0,1.72,13.25,13.51
+80k-warm-0927-tp2x4-lift-gwslots,128,640,1.000,31.732,0.231,75.0,3.29,39.82,13.33
+80k-warm-0927-tp2x4-lift-gwslots,256,1024,1.000,33.425,0.243,58.9,21.69,64.94,16.98
+80k-warm-0927-tp2x4-lift-gwslots,384,1024,1.000,33.683,0.245,62.2,36.40,66.26,16.09

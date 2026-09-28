@@ -2,6 +2,7 @@
 
 | config | per-GPU TPM | at | % of target |
 |---|---|---|---|
+| 4×tp2 DSpark envelope lift (64/worker) + slot gateway | 3.97 M | c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s | 57% |
 | tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72) | 3.67 M | c256, TTFT 2.6 s; c128 3.02, c192 3.36 | 52% |
 | 4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape) | 3.34 M | c128, TTFT 3.0 s; c64 2.52 M at 1.25 s | 48% |
 | Old fork + DSpark graphs + 8 workers (winning setup) | 3.20 M | c128, TTFT 2.8 s; c64 2.20 M at 1.6 s | 46% |
@@ -13,26 +14,28 @@
 
 ## Real traffic (staircase, node's share of the 09-27 peak hour)
 
-| load (× a node's share) | offered req/s | tp8/dp8: TTFT p50 / p99, s | 4×tp2 + Dynamo router | <b>4×tp2 + affinity gateway</b> | node TPM (M) |
-|---|---|---|---|---|---|
-| 1× | 0.6–1.2 | 0.8–1.3 / 3–8 | 1.5–3.0 / 9–28 | <b>0.7–0.9 / 3–9</b> | 1.6–5.7 |
-| 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | <b>0.8–1.6 / 6–24</b> | 5.3–8.7 |
-| 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | <b>1.1–2.0 / 13–54</b> (one 29 s bin) | 8–14 |
-| 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 2.3 → 28 / 29–91 | 14–33 |
-| cache hit / per-stream decode | – | 91% / 25 tok/s | 60% / 71 tok/s | <b>88.5% / 75 tok/s</b> | – |
-| kept up with offered load | – | no (1,574 s) | no (1,571 s) | <b>yes (1,240 s, 0 errors)</b> | 9.75 M node avg (tp8 7.7) |
+| load (× a node's share) | offered req/s | tp8/dp8: TTFT p50 / p99, s | 4×tp2 + Dynamo router | <b>4×tp2 + affinity gateway</b> | 4×tp2 lift + slot gateway (spill) | node TPM (M) |
+|---|---|---|---|---|---|---|
+| 1× | 0.6–1.2 | 0.8–1.3 / 3–8 | 1.5–3.0 / 9–28 | <b>0.7–0.9 / 3–9</b> | 1.0–1.9 / 10–40 | 1.6–5.7 |
+| 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | <b>0.8–1.6 / 6–24</b> | 1.3–6.8 / 21–62 | 5.3–8.7 |
+| 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | <b>1.1–2.0 / 13–54</b> (one 29 s bin) | 4.9–25 / 40–131 | 8–14 |
+| 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 2.3 → 28 / 29–91 | 41 → 111 / 150–240 (53 errors) | 14–33 |
+| cache hit / per-stream decode | – | 91% / 25 tok/s | 60% / 71 tok/s | <b>88.5% / 75 tok/s</b> | 84% / 123 → 21 tok/s (1× → 4×) | – |
+| kept up with offered load | – | no (1,574 s) | no (1,571 s) | <b>yes (1,240 s, 0 errors)</b> | no (1,398 s, 53 errors) | 9.75 M node avg (tp8 7.7) |
 
-## Production reference (read at 23:07 PDT, Sep 27 (last 10 minutes, Kibana ES|QL on the M3.1 hub index))
+## Production reference (read at 02:15 PDT, Sep 28 (window 01:59–02:09 PDT; Kibana ES|QL on the M3.1 hub index; read-only))
 
-- hub TPM (tokens per minute, incl. cached): 203 M
-- requests: 21,279 in 10 min = 35.5 req/s
-- cache hit (cached ÷ prompt tokens): 97.6%
-- TTFT (upstream header time) p50 / p99: 1.56 s / 21.6 s
-- per-stream decode, streaming requests (completion ÷ (total − TTFB)) p10 / p50 / p90: 141 / 212 / 313 tok/s (65.8k requests, 30 min)
-- nodes / GPUs behind the hub (team, Sep 27): 18 / 144
-- per node: 11.3 M TPM, 1.97 req/s
-- per GPU (observed load; production is not saturated, so this is not its capacity): 1.41 M TPM
+- hub TPM (tokens per minute, incl. cached): 402 M (08:00–09:00 UTC hour average: 333 M)
+- requests: 41,542 in 10 min = 69 req/s
+- cache hit (cached ÷ prompt tokens): 97.1%
+- TTFT, streaming requests (upstream header time) p50 / p90 / p99: 0.34 s / 3.9 s / 10.1 s
+- per-stream decode, streaming (completion ÷ (total − TTFB)) p10 / p50 / p90: 109 / 174 / 244 tok/s (34.4k requests)
+- 5xx: 24 of 41,542 (0.06%)
+- nodes / GPUs behind the hub (team, Sep 27; not re-verified: the index shows only two load-balancer addresses): 18 / 144
+- per node: 22.3 M TPM, 3.85 req/s
+- per GPU (observed load, not capacity): 2.79 M TPM
+- trend: load doubled since 23:07 PDT (1.41 → 2.79 M/GPU); per-stream decode fell 212 → 174 tok/s as load rose
 
-Frontier: **3.67 M/GPU** (52% of target) - tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72) at c256, TTFT 2.6 s; c128 3.02, c192 3.36.
+Frontier: **3.97 M/GPU** (57% of target) - 4×tp2 DSpark envelope lift (64/worker) + slot gateway at c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s.
 
 Winning setup recipe: Setup tab of the progress page (derived from the same frontier).

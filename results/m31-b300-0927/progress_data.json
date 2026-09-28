@@ -9,9 +9,9 @@
   },
   {
    "label": "Production today (M3.1 hub)",
-   "value": "1.41 M",
+   "value": "2.79 M",
    "cls": "",
-   "sub": "203 M TPM ÷ 144 GPUs (18 nodes), 2.0 req/s per node, p50 TTFT 1.6 s"
+   "sub": "402 M TPM ÷ 144 GPUs (18 nodes), 3.9 req/s per node, TTFT p50 0.34 s (02:09 PDT)"
   },
   {
    "label": "Our best (static frame)",
@@ -26,10 +26,10 @@
    "sub": "per node, 4×tp2 + affinity gateway (production today: ~2 req/s per node)"
   },
   {
-   "label": "Winning setup at c64",
-   "value": "2.20 M",
+   "label": "Frontier at c64",
+   "value": "2.71 M",
    "cls": "ok",
-   "sub": "TTFT 1.6 s (plain: 1.54 M, 2.9 s)"
+   "sub": "TTFT 1.7 s (4×tp2 lift + slot gateway)"
   },
   {
    "label": "Vendor demo as shipped",
@@ -94,6 +94,13 @@
    "c": "c256, TTFT 2.6 s; c128 3.02, c192 3.36",
    "k": "ok",
    "acc": "accept 2.1–2.9"
+  },
+  {
+   "n": "4×tp2 DSpark envelope lift (64/worker) + slot gateway",
+   "v": 3.97,
+   "c": "c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s",
+   "k": "ok",
+   "acc": "accept not recorded"
   }
  ],
  "pareto": {
@@ -123,9 +130,14 @@
     "note": "not exercised"
    },
    {
-    "n": "Topology 4×tp2 + KV router",
-    "v": null,
-    "m": false
+    "n": "Topology 4×tp2 (production's worker shape)",
+    "v": 0.14,
+    "m": true
+   },
+   {
+    "n": "Verify envelope 16 → 32 per rank + all 8 DP ranks (slot gateway)",
+    "v": 0.63,
+    "m": true
    },
    {
     "n": "16 workers / Dynamo preprocess",
@@ -133,7 +145,17 @@
     "m": false
    },
    {
-    "n": "Vendor kernel: graph-safe verify (tiers >16)",
+    "n": "Graph-safe fused verify (256 per worker, production)",
+    "v": null,
+    "m": false
+   },
+   {
+    "n": "Attention TP2 without DP lockstep (production)",
+    "v": null,
+    "m": false
+   },
+   {
+    "n": "Production knobs: chunk 16384, block 4, HiCache (chain14)",
     "v": null,
     "m": false
    }
@@ -194,44 +216,77 @@
   "note": "Trace: one node's share (1/24, sessions kept together) of 2026-09-18 11:05–11:15 UTC, 727 requests, engines started cold. The DSpark engine's 106 s TTFT is queueing: its max running requests is 128 (the CUDA-graph envelope) and cold prefills of 50–650k prompts in 8k chunks stall decode across the DP lockstep, so slots are held for minutes and arrivals wait. Production sees 98.9% cache hits because sessions continue; a cold replay does not. The staircase warms the caches with the preceding 30 minutes first, which is the fair measurement."
  },
  "prodref": {
-  "read_at": "23:07 PDT, Sep 27 (last 10 minutes, Kibana ES|QL on the M3.1 hub index)",
+  "read_at": "02:15 PDT, Sep 28 (window 01:59–02:09 PDT; Kibana ES|QL on the M3.1 hub index; read-only)",
   "rows": [
    [
     "hub TPM (tokens per minute, incl. cached)",
-    "203 M"
+    "402 M (08:00–09:00 UTC hour average: 333 M)"
    ],
    [
     "requests",
-    "21,279 in 10 min = 35.5 req/s"
+    "41,542 in 10 min = 69 req/s"
    ],
    [
     "cache hit (cached ÷ prompt tokens)",
-    "97.6%"
+    "97.1%"
    ],
    [
-    "TTFT (upstream header time) p50 / p99",
-    "1.56 s / 21.6 s"
+    "TTFT, streaming requests (upstream header time) p50 / p90 / p99",
+    "0.34 s / 3.9 s / 10.1 s"
    ],
    [
-    "per-stream decode, streaming requests (completion ÷ (total − TTFB)) p10 / p50 / p90",
-    "141 / 212 / 313 tok/s (65.8k requests, 30 min)"
+    "per-stream decode, streaming (completion ÷ (total − TTFB)) p10 / p50 / p90",
+    "109 / 174 / 244 tok/s (34.4k requests)"
    ],
    [
-    "nodes / GPUs behind the hub (team, Sep 27)",
+    "5xx",
+    "24 of 41,542 (0.06%)"
+   ],
+   [
+    "nodes / GPUs behind the hub (team, Sep 27; not re-verified: the index shows only two load-balancer addresses)",
     "18 / 144"
    ],
    [
     "per node",
-    "11.3 M TPM, 1.97 req/s"
+    "22.3 M TPM, 3.85 req/s"
    ],
    [
-    "per GPU (observed load; production is not saturated, so this is not its capacity)",
-    "1.41 M TPM"
+    "per GPU (observed load, not capacity)",
+    "2.79 M TPM"
+   ],
+   [
+    "trend",
+    "load doubled since 23:07 PDT (1.41 → 2.79 M/GPU); per-stream decode fell 212 → 174 tok/s as load rose"
    ]
   ],
-  "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so 1.41 M/GPU is its load, not its capacity. Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
+  "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "02:20",
+   "Production re-read (Kibana, read-only): 402 M TPM on the M3.1 hub = 2.79 M per GPU (18 nodes), 3.9 req/s per node, 97.1% cache hit, TTFT p50 0.34 s / p99 10.1 s, decode 174 tok/s per stream; load doubled since 23:07",
+   "production KPI and side-by-side updated"
+  ],
+  [
+   "02:15",
+   "Gateway session pinning (production's session-pin, 4faf003): each prompt_cache_key sticks to one engine + DP rank; new sessions go to the least-loaded slot; pinned requests never spill; static frame unchanged. Unit-tested in the gateway image; chain14 paused 3 min between steps to switch it on before v1's first gateway test",
+   "all chain14 real-traffic tests use session pinning"
+  ],
+  [
+   "02:10",
+   "Why chain13 lost on real traffic (per-level analysis of both replays): cache hit 81% vs 87% at 1×, 11.0k vs 7.8k uncached tokens per request (+40% prefill). 589 distinct prefix heads for 995 sessions; head hashing put two slots at 25% of prompt tokens each, and spill moved those sessions off their cached rank. Decode per stream at 1× was equal (123 vs 132 tok/s)",
+   "routing, not engine speed, caused the regression"
+  ],
+  [
+   "02:05",
+   "chain13 real-traffic staircase: 2,886/2,939 ok (53 errors at 6×), cache 84%, TTFT p50 1× 1.0–1.9 s, 2× 1.3–6.8 s, 4× 4.9–25 s; worse than the plain affinity gateway (1.1–2.0 s at 4×)",
+   "real-traffic best unchanged: 4×tp2 + plain affinity gateway"
+  ],
+  [
+   "01:30",
+   "<b>New static frontier: 3.97 M per GPU</b> (31.7 M node) at c128, TTFT 3.3 s: 4×tp2 with the envelope lift (64 per worker, mem 0.72, sync-free verify) behind the fixed slot gateway; c64 2.71 M (1.7 s), c256 4.18 M (21.7 s), c384 4.21 M (36.4 s); spread 692/567/562/559 requests per engine; verify graphs on all 4 engines; canaries correct",
+   "3.67 → 3.97 M/GPU (57% of 7 M)"
+  ],
   [
    "00:57",
    "Real root cause of the multi-engine boot failures: SGLang's multi-tokenizer mode shares server args through shared memory named after the main PID (multi_tokenizer_args_1, sgl_shm_sync_1_*); PID is 1 in every container and --ipc host shares /dev/shm, so engines read each other's args (engine 1 started with engine 2's port). Engines now get a private IPC namespace as well as their own network namespace; chain13 restarted",
@@ -388,34 +443,46 @@
    "0.01 M @c1, 13 tok/s, DSpark eager by design"
   ]
  ],
- "timeline_note": "Pacific time (PDT). All entries are Sep 27, 2026.",
- "subtitle": "Node 0008, Sep 27, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
- "summary": "Where we are, in one breath: the vendor's demo as shipped did 0.72 M TPM per GPU. Two fixes (a Triton recompile patch and 8 tokenizer workers) and one swap (the older engine build that keeps DSpark on CUDA graphs) took the node to 3.20 M per GPU on the manual's static frame; the production-shaped 4×tp2 layout under a KV router nudged that to 3.34 M (48% of the north star) and decodes 2.8× faster per stream on real traffic. On real traffic both layouts still knee at about 2.5 req/s (≈ 1 M per GPU sustained) because cold prefill dominates: the single engine keeps 91% cache hits, the 4-worker layout only 60%. Routing affinity is the next lever.",
+ "timeline_note": "Pacific time (PDT), latest first. Entries from 00:00 on are Sep 28, 2026; earlier ones Sep 27.",
+ "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
+ "summary": "Where we are: the vendor demo as shipped did 0.72 M TPM per GPU. A Triton recompile patch, 8 tokenizer workers, DSpark on CUDA graphs, production's 4×tp2 worker shape, a lifted verify-graph envelope (32 per rank) and a gateway that uses all 8 DP ranks now give <b>3.97 M per GPU</b> on the static frame (57% of the 7 M north star, TTFT 3.3 s). On real traffic the best layout is still 4×tp2 behind the plain affinity gateway (≈ 2 req/s per node at production-parity latency); the new frontier setup lost cache hits there because spill broke session affinity, so chain14 now tests production's knobs with production-style session pinning. Production itself is at 2.79 M per GPU of observed load (3.9 req/s per node, TTFT p50 0.34 s) and is not saturated.",
  "running": {
-  "title": "Running now (chain13, started 23:53 PDT)",
-  "script": "serving/minimax-m3.1/chain13.sh + patch_shim_slots.py",
-  "commit": "b0fc20b",
-  "config": "4 × tp2/ep2/dp2 DSpark with the envelope lift (64 per worker = 32/rank, sync-free verify, mem-fraction 0.72) behind the fixed slot gateway (all 8 ranks, spill on). One router for both tests.",
+  "title": "Running now (chain14, started 02:03 PDT)",
+  "script": "serving/minimax-m3.1/chain14.sh + patch_shim_session.py",
+  "commit": "596f99a, dc9bb85, 4faf003",
+  "config": "4 × tp2/ep2/dp2 DSpark with the envelope lift (64 per worker, mem 0.72) behind the slot gateway, now with session pinning (prompt_cache_key → fixed engine + DP rank; the static frame has no key and keeps hash + spill). Production-knob variants, one at a time.",
   "steps": [
    [
-    "4 engines up in separate network namespaces + warm-up + graph check",
-    "running since 00:46 PDT (first attempt hung 2/4 engines at boot: shared port 28028)"
+    "v1: chunk 16384 + overlap plan stream + incremental streaming + queue cap 256",
+    "running since 02:03 PDT (engines up 02:10; paused 3 min at 02:11 to switch the gateway to session pinning before its first gateway test)"
    ],
    [
-    "canaries via gateway",
+    "v2: v1 + DSpark block 4 (production's block)",
     "next"
    ],
    [
-    "static grid c64/128/256/384 via gateway (spill should load-balance the shared prefix)",
+    "v3: v2 + HiCache ratio 3 write-through (MiniMax NVFP4 host-cache commit)",
     "next"
    ],
    [
-    "warm-up + real-traffic staircase",
+    "v4: best + 64 per rank (128 per worker, mem 0.66)",
     "next"
+   ],
+   [
+    "each variant: static grid c128/c256, closed-loop replay c64/c128, warm-up, staircase 2×/4×/6×",
+    "about 55 min per variant; chain ends around 05:45 PDT"
    ]
   ]
  },
  "queued": [
+  {
+   "title": "Routing attribution: session pinning vs hash + spill on the same engines",
+   "detail": "Re-run the staircase of chain14's best variant with ROUTE_SESSION_KEY unset (hash + spill) and with it set, back to back on the same engines.",
+   "why": "chain14 switched routing for all variants; this isolates how much of any real-traffic gain is routing and how much is the engine knobs.",
+   "script": "serving/minimax-m3.1/patch_shim_session.py (env toggle)",
+   "commit": "4faf003",
+   "status": "after chain14"
+  },
   {
    "title": "Close the DSpark acceptance gap (ours 2.1–3.4 vs vendor 4.1–5.1 on the same prompts)",
    "detail": "Compare our graph-enabled port against the vendor's eager DSpark on identical prompts: draft window (4096 vs full), verify mode (static), draft attention backend (flashinfer vs vendor), sampling path under graphs.",
@@ -431,14 +498,6 @@
    "script": "knowledge/prod-m31-serving-method-2026-09-27.md",
    "commit": "8abc804",
    "status": "analysis done; engineering to plan"
-  },
-  {
-   "title": "Production-knob combinations (chain14)",
-   "detail": "On 4×tp2 + lift + slot gateway: v1 chunk 16384 + overlap plan stream + incremental streaming; v2 + DSpark block 4; v3 + HiCache ratio 3 (MiniMax NVFP4 host-cache commit on our tree); v4 + 64 per rank.",
-   "why": "Every knob production uses that also exists in our build; each variant gets static grid, closed-loop replay and a short staircase.",
-   "script": "serving/minimax-m3.1/chain14.sh",
-   "commit": "596f99a, dc9bb85",
-   "status": "armed, starts when chain13 finishes"
   },
   {
    "title": "One router for both tests in the Dynamo path",
@@ -529,13 +588,14 @@
  "chart_note": "Red bars = MiniMax's 09-27 engine build, which turns off CUDA graphs for DSpark when training-matched numerics are on (its demo launch sets them), so DSpark decodes slowly (13–42 tok/s per stream). Teal bars = setups that keep CUDA graphs (MiniMax's 09-22 build + our DSpark port, or plain decode). Ranked by TPM; the order tested is in the Timeline tab. Bars are measured at different concurrencies (label under each value), so a high-concurrency bar is not directly comparable with one measured at c128. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128. Accept length = average tokens accepted per DSpark verify step (block 7), measured on the probe with 3 real 60–80k prompts; it is not measured on the static frame itself, whose random text gives the draft almost nothing to predict.",
  "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.",
  "staircase": {
-  "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): three layouts",
+  "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): four layouts",
   "columns": [
    "load (× a node's share)",
    "offered req/s",
    "tp8/dp8: TTFT p50 / p99, s",
    "4×tp2 + Dynamo router",
    "<b>4×tp2 + affinity gateway</b>",
+   "4×tp2 lift + slot gateway (spill)",
    "node TPM (M)"
   ],
   "rows": [
@@ -545,6 +605,7 @@
     "0.8–1.3 / 3–8",
     "1.5–3.0 / 9–28",
     "<b>0.7–0.9 / 3–9</b>",
+    "1.0–1.9 / 10–40",
     "1.6–5.7"
    ],
    [
@@ -553,6 +614,7 @@
     "1.3–3.4 / 11–18",
     "2.5–9.6 / 28–141",
     "<b>0.8–1.6 / 6–24</b>",
+    "1.3–6.8 / 21–62",
     "5.3–8.7"
    ],
    [
@@ -561,6 +623,7 @@
     "13 → 95 / 61–157",
     "10 → 49 / 108–179",
     "<b>1.1–2.0 / 13–54</b> (one 29 s bin)",
+    "4.9–25 / 40–131",
     "8–14"
    ],
    [
@@ -569,6 +632,7 @@
     "120 → 350",
     "86 → 332",
     "2.3 → 28 / 29–91",
+    "41 → 111 / 150–240 (53 errors)",
     "14–33"
    ],
    [
@@ -577,6 +641,7 @@
     "91% / 25 tok/s",
     "60% / 71 tok/s",
     "<b>88.5% / 75 tok/s</b>",
+    "84% / 123 → 21 tok/s (1× → 4×)",
     "–"
    ],
    [
@@ -585,10 +650,11 @@
     "no (1,574 s)",
     "no (1,571 s)",
     "<b>yes (1,240 s, 0 errors)</b>",
+    "no (1,398 s, 53 errors)",
     "9.75 M node avg (tp8 7.7)"
    ]
   ],
-  "note": "Same 2,939-request trace for all three. The affinity gateway pins each session's prefix to one engine and one DP rank, so caches stay warm (88.5%) and the 4×tp2 layout's faster decode (2-rank lockstep instead of 8) shows: it holds p50 ≤ 2 s up to the 4× level, where the tp8 engine had already backed up by minutes."
+  "note": "Same 2,939-request trace for all three. The affinity gateway pins each session's prefix to one engine and one DP rank, so caches stay warm (88.5%) and the 4×tp2 layout's faster decode (2-rank lockstep instead of 8) shows: it holds p50 ≤ 2 s up to the 4× level, where the tp8 engine had already backed up by minutes. The lift + slot gateway run (chain13) regressed on real traffic: per request it had to prefill 11k uncached tokens instead of 7.8k (hit 81% vs 87% at 1×). Cause: the prefix-head hash puts every session sharing a system prompt on one slot (two slots carried 25% of prompt tokens each) and spill then moved those sessions off the rank holding their KV; the smaller KV pool (mem 0.72) and 64 running per worker add to it. Fix in chain14: session pinning."
  },
  "setups": {
   "Old fork + DSpark graphs + 8 workers (winning setup)": {
@@ -698,27 +764,47 @@
      "not yet run on this config (the 4×tp2 version of the lift runs next)"
     ]
    ]
+  },
+  "4×tp2 DSpark envelope lift (64/worker) + slot gateway": {
+   "rows": [
+    [
+     "Engine",
+     "4 × tp2/ep2/dp2 DSpark (09-22 engine + our port + kernel patch), max running 64 per worker (32 per rank), mem-fraction 0.72, sync-free verify switch, chunked prefill 32768, 2 tokenizer workers each"
+    ],
+    [
+     "Isolation",
+     "each engine in its own network namespace and private IPC namespace (NVSHMEM port 28028 and SGLang shared-memory names collide otherwise)"
+    ],
+    [
+     "Router",
+     "our gateway, slot routing: prefix-head hash → (engine, DP rank) with independent digits (all 8 ranks used); spill to the least-loaded slot when a slot gets > 16 requests in 30 s and > 2× the mean"
+    ],
+    [
+     "Measured",
+     "static frame 3.97 M/GPU at c128 (TTFT 3.3 s), 4.18 at c256; real traffic regressed vs the plain affinity gateway: cache hit 81–86%, TTFT p50 1.35 s at 1×, 2.4 s at 2×, 9.2 s at 4×"
+    ]
+   ]
   }
  },
  "realtraffic_best": "4×tp2 + affinity gateway holds production-parity latency at ~2 req/s per node (production's own per-node load) and stays usable to ~3 req/s; 88.5% cache hit, 75 tok/s per stream (M3.1 production: 212)",
  "prod": {
   "nodes": 18,
   "gpus": 144,
-  "read_at": "23:07 PDT, Sep 27 (last 10 minutes, Kibana ES|QL on the M3.1 hub index)",
-  "tokens_10m": 2030013379,
-  "reqs_10m": 21279,
-  "cached_10m": 1964526720,
-  "prompt_10m": 2012566187,
-  "ttft_p50": 1.56,
-  "ttft_p99": 21.58,
+  "read_at": "02:15 PDT, Sep 28 (01:59–02:09 PDT window, Kibana ES|QL on the M3.1 hub index)",
+  "tokens_10m": 4020617659,
+  "reqs_10m": 41542,
+  "cached_10m": 3865504512,
+  "prompt_10m": 3980772851,
+  "ttft_p50": 0.34,
+  "ttft_p99": 10.13,
   "decode_tps": {
-   "p10": 141,
-   "p50": 212,
-   "p90": 313,
-   "n": 65793,
-   "ttft_p50": 1.52,
-   "out_p50": 274,
-   "read_at": "23:20 PDT, last 30 min"
+   "p10": 109,
+   "p50": 174,
+   "p90": 244,
+   "n": 34358,
+   "ttft_p50": 0.34,
+   "out_p50": 269,
+   "read_at": "01:59–02:09 PDT, streaming"
   }
  },
  "comparison": {
@@ -726,28 +812,28 @@
   "columns": [
    "",
    "Team production (18 nodes)",
-   "Dev-best: 4×(tp2/ep2/dp2) DSpark on the 09-22 engine"
+   "Dev-best: 4×(tp2/ep2/dp2) DSpark, envelope lift + slot gateway"
   ],
   "rows": [
    [
     "North-star metric: static frame, per GPU",
     "not measured (7 M claimed)",
-    "<b>3.34 M</b> at c128 (load-balancing Dynamo router)"
+    "<b>3.97 M</b> at c128, TTFT 3.3 s (4.18 at c256)"
    ],
    [
     "Production metric: real traffic at prod-parity latency (TTFT p50 ≤ 1.6 s, p99 ≤ 22 s)",
-    "~2 req/s per node today (not saturated), 1.41 M/GPU",
-    "<b>~2 req/s per node</b> holds; usable to ~3 req/s at p50 ~1.5 s (affinity gateway, 88.5% hit)"
+    "3.9 req/s per node now (not saturated), 2.79 M/GPU",
+    "this setup ≈ 1 req/s per node; real-traffic best stays the plain affinity gateway at ≈ 2 req/s (usable to ~3)"
    ],
    [
     "TTFT p50 on real traffic, 1× / 2× / 4× of a node's share",
-    "1.52 s at its own ~2 req/s",
-    "0.7–0.9 / 0.8–1.6 / 1.1–2.0 s"
+    "0.34 s at its own 3.9 req/s",
+    "1.0–1.9 / 1.3–6.8 / 4.9–25 s (plain affinity gateway: 0.7–0.9 / 0.8–1.6 / 1.1–2.0)"
    ],
    [
     "Per-stream decode on real traffic (p50)",
-    "212 tok/s (M3.1 hub, 23:20 PDT)",
-    "75 tok/s"
+    "174 tok/s (M3.1 hub, 02:09 PDT)",
+    "123 tok/s at 1×, 21 at 4×"
    ],
    [
     "Engine build",
@@ -772,12 +858,12 @@
    [
     "Max running",
     "256 per worker (1,024 per node)",
-    "32 per worker (128 per node)"
+    "64 per worker (256 per node)"
    ],
    [
     "Prefill",
     "chunk 16384, tc_piecewise graphs, trtllm_mha",
-    "chunk 32768, breakable graphs"
+    "chunk 32768 (16384 in chain14), breakable graphs"
    ],
    [
     "Cache",
@@ -787,15 +873,15 @@
    [
     "Routing",
     "KV router + strict affinity (≥2 blocks and >50% overlap, else load) + session-pin Redis",
-    "static test: Dynamo KV router (load-balanced); real traffic: our gateway, prefix hash → engine + DP rank"
+    "our gateway: prefix hash → engine + DP rank with spill (chain13); session pinning by prompt_cache_key from chain14"
    ],
    [
     "mem-fraction",
     "0.8",
-    "0.8"
+    "0.72"
    ]
   ],
-  "note": "Static-frame best overall is currently tp8/dp8 with the envelope lift, 3.67 M/GPU at c256; see the winning-setup panel below. The 4×tp2 version of that lift is running."
+  "note": "Static-frame best is now this 4×tp2 lift + slot gateway at 3.97 M/GPU. Production numbers read from the M3.1 hub at 02:15 PDT Sep 28 (18 nodes; production is not saturated, so its per-GPU figure is load, not capacity)."
  },
  "launch_specs": [
   {
@@ -847,6 +933,30 @@
     [
      "router-policy.yaml",
      "worker_selection:\n  prefill: strict-affinity        # the prefill hop owns the prefix cache: overlap-first after two floors, then load\n  aggregated: strict-affinity     # the unified (aggregated) pool routes the same way\n  decode: default                 # decode hop: Dynamo's load-only default\n  instances:\n    - name: strict-affinity\n      type: incore-strict-affinity    # plugin in vendor/libs/dynamo/lib/router-plugins/incore (needs --features custom-policy)\n      parameters:\n        min_overlap_blocks: 2         # ignore the ~1-block shared chat-template header\n        min_overlap_fraction: 0.5     # affine only when overlap > 0.5 x request blocks"
+    ]
+   ]
+  },
+  {
+   "title": "Ours (static frontier): 4×(tp2/ep2/dp2) DSpark, envelope lift (64 per worker, mem 0.72) behind the slot gateway",
+   "tag": "ours-lift-gw",
+   "digest": [
+    [
+     "Why",
+     "production's worker shape with the verify-graph envelope lifted to 32 per rank, and a gateway that uses all 8 DP ranks and spreads a hot prefix"
+    ],
+    [
+     "Measured",
+     "static frame 3.97 M/GPU at c128 (TTFT 3.3 s), 4.18 at c256 (21.7 s), 4.21 at c384; canaries correct; verify graphs captured on all 4 engines"
+    ],
+    [
+     "Caveat",
+     "real traffic regressed vs the plain affinity gateway (cache hit 81–86% vs 87–90%) because spill moved hot sessions off their cached rank; chain14 runs with session pinning"
+    ]
+   ],
+   "commands": [
+    [
+     "reproduce",
+     "# node 0008: serving/minimax-m3.1/launch_tp2x4_old.sh (4 engines + gateway), commit b0fc20b / b9fa07a\nexport NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30\nMAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=2 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000\" \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python bash launch_tp2x4_old.sh\n\n# each engine i = 0..3 (GPUs 2i,2i+1; port 19191+100i; own netns, --ipc private) resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 64 \\\n  --tokenizer-worker-num 2 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4096\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static\n\n# gateway :8000 (shim.py + patch_shim_slots.py; session pinning via patch_shim_session.py from 4faf003)\nSGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 \\\n  ROUTE_PREFIX_CHARS=2048 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SESSION_KEY=prompt_cache_key \\\n  MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key bash gateway.sh"
     ]
    ]
   },
@@ -1044,7 +1154,7 @@
    "trace",
    "cache hit",
    "TTFT p50 1× / 2× / 4×",
-   "per-stream tok/s",
+   "per-stream decode p50, 1× / 2× / 4× (tok/s)",
    "holds prod-parity latency up to"
   ],
   "rows": [
@@ -1115,7 +1225,7 @@
     "09-27 peak, warm",
     "90.9%",
     "0.8–1.3 / 1.3–3.4 / 13–95",
-    "25",
+    "114 / 49 / 18",
     "≈ 1.5 req/s/node"
    ],
    [
@@ -1143,7 +1253,7 @@
     "09-27 peak, warm",
     "88.5%",
     "0.7–0.9 / 0.8–1.6 / 1.1–2.0",
-    "75",
+    "132 / 91 / 68",
     "≈ 2 req/s/node (usable to ~3)"
    ],
    [
@@ -1161,18 +1271,18 @@
     "–"
    ],
    [
-    "4×tp2 lift + fixed slot gateway (all 8 ranks, spill)",
+    "4×tp2 DSpark envelope lift (64/worker) + slot gateway",
     "64 × 4",
-    "running (chain13)",
-    "",
-    "",
-    "",
-    "running",
+    "<b>3.97 M @c128</b> (4.18 @c256)",
+    "3.3 s (21.7 s @c256)",
+    "~100%",
+    "108–141",
+    "not recorded",
     "09-27 peak, warm",
-    "",
-    "running",
-    "",
-    ""
+    "81–86%",
+    "1.0–1.9 / 1.3–6.8 / 4.9–25",
+    "123 / 69 / 21",
+    "≈ 1 req/s/node (p50 1.35 s at 1×, 2.4 s at 2×)"
    ],
    [
     "Team production (18 nodes, for reference)",
@@ -1183,13 +1293,13 @@
     "–",
     "block 4 (not exposed)",
     "live traffic",
-    "97.6%",
-    "1.52 at ~2 req/s/node",
-    "212",
-    "≈ 2 req/s/node today (not saturated)"
+    "97.1%",
+    "0.34 at 3.9 req/s/node",
+    "174",
+    "≈ 3.9 req/s/node today (not saturated)"
    ]
   ],
-  "note": "Synthetic cache hit is ~100% by construction (one shared prefix), so the real-traffic columns are where routing and prefill differences show. 'Holds prod-parity latency' = highest load with per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s. Per-stream on the probe is decode speed with 6 concurrent real long prompts; per-stream on real traffic is the p50 over the whole replay. DSpark accept is the average number of tokens accepted per verify step. Our graph-enabled port accepts 2.1–3.4 on the same probe prompts where the vendor's own (eager) DSpark accepts 4.1–5.1: a separate lever now in the queue."
+  "note": "Synthetic cache hit is ~100% by construction (one shared prefix), so the real-traffic columns are where routing and prefill differences show. 'Holds prod-parity latency' = highest load with per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s. Per-stream on the probe is decode speed with 6 concurrent real long prompts; per-stream on real traffic is the p50 over the whole replay. DSpark accept is the average number of tokens accepted per verify step. Our graph-enabled port accepts 2.1–3.4 on the same probe prompts where the vendor's own (eager) DSpark accepts 4.1–5.1: a separate lever now in the queue. Per-stream decode is now given per load level (it falls as the node fills); earlier whole-run medians were dominated by the overloaded levels. The 4×tp2 lift + slot gateway row is the new static frontier but lost cache hits on real traffic: spill moved hot sessions off the rank holding their KV."
  },
  "profile_rows": [
   [
@@ -1271,10 +1381,10 @@
  ],
  "prod_profile": {
   "static": "not measured (7 M claimed)",
-  "real": "~2 req/s per node today (not saturated), 1.41 M/GPU observed",
-  "ttft": "1.52 s at ~2 req/s/node",
-  "decode": "212 tok/s p50 (141–313)",
-  "hit": "97.6%",
+  "real": "3.9 req/s per node now (not saturated), 2.79 M/GPU observed",
+  "ttft": "0.34 s p50 (p99 10 s) at 3.9 req/s/node",
+  "decode": "174 tok/s p50 (109–244)",
+  "hit": "97.1%",
   "build": "in-house SGLang 0.0.0+deploy + Dynamo 1.5.0 (custom-policy)",
   "shape": "4 × (TP2, EP2, dp 1), attention TP2",
   "maxrun": "256 per worker (1,024 per node)",
@@ -1345,13 +1455,33 @@
    "frontend": "SGLang HTTP server, 8 tokenizer workers",
    "routing": "single engine",
    "env": "SGLANG_M3_TRAINING_COMPATIBLE=1, SGLANG_DSPARK_M31_DRAFT_WINDOW=4096"
+  },
+  "4×tp2 DSpark envelope lift (64/worker) + slot gateway": {
+   "static": "<b>3.97 M</b> at c128 (TTFT 3.3 s); 4.18 at c256 (21.7 s)",
+   "real": "≈ 1 req/s per node at prod-parity p50; real-traffic best is still the plain affinity gateway (≈ 2 req/s)",
+   "ttft": "3.3 s at c128; real traffic 1.35 s p50 at 1×, 2.4 s at 2×",
+   "decode": "123 tok/s at 1× real traffic (p50), 108–141 at 6 streams (probe)",
+   "hit": "81–86% (plain affinity gateway: 87–90%)",
+   "build": "MiniMax 0922-sglang@bef87f4 + our DSpark port + Triton runtime-N patch",
+   "shape": "4 × (tp2, ep2, dp2), attention TP1 (DP attention)",
+   "maxrun": "64 per worker (32 per rank; 256 per node)",
+   "mem": "0.72",
+   "chunk": "32768",
+   "dspark": "DSpark block 7, flashinfer draft, draft window 4096",
+   "numerics": "training numerics on (Triton Q8KV4 path)",
+   "graphs": "decode + draft + verify up to 32 per rank; breakable prefill",
+   "hicache": "off",
+   "frontend": "4 SGLang HTTP servers, 2 tokenizer workers each",
+   "routing": "our gateway: prefix-head hash → (engine, DP rank), spill on hot slots (session pinning added for chain14)",
+   "env": "SGLANG_M3_TRAINING_COMPATIBLE=1, SGLANG_Q8KV4_SORT_MIN_LANES=1e12, SGLANG_DSPARK_M31_DRAFT_WINDOW=4096; NETNS=1 (own net + IPC namespace per engine)"
   }
  },
  "launch_cmd": {
   "production": "python3 -m dynamo.sglang \\\n  --model-path /models --served-model-name minimax-m3.1 --trust-remote-code --dyn-contract-profile minimax_m31 \\\n  --quantization mxfp8 --kv-cache-dtype fp8_e4m3 --fp8-gemm-backend flashinfer_cutedsl --moe-runner-backend deep_gemm \\\n  --moe-a2a-backend megamoe --disable-shared-experts-fusion --enable-tf32-matmul \\\n  --tensor-parallel-size 2 --dp-size 1 --ep-size 2 \\\n  --attention-backend trtllm_mha --cuda-graph-backend-prefill tc_piecewise --flashinfer-allreduce-fusion-backend trtllm \\\n  --context-length 1048576 --max-running-requests 256 --max-queued-requests 256 --mem-fraction-static 0.8 \\\n  --page-size 128 --chunked-prefill-size 16384 \\\n  --enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-dspark-block-size 4 --speculative-draft-attention-backend fa4 \\\n  --enable-multimodal --media-url-max-file-size-mb 50 --limit-mm-data-per-request '{\"image\": 200, \"video\": 20}' \\\n  --dyn-tool-call-parser minimax_m3 --dyn-reasoning-parser minimax_m3 --tokenizer-worker-num 1 --detokenizer-worker-num 1 \\\n  --weight-loader-prefetch-checkpoints --enable-cache-report --enable-metrics --enable-mfu-metrics --incremental-streaming-output \\\n  --kv-events-config '{\"publisher\":\"zmq\",\"endpoint\":\"tcp://*:5557\"}' --engine-route flush_cache:tm \\\n  --dist-timeout 1800 --host 0.0.0.0 --port 31000 --crash-dump-folder /home/incore/.cache/crash-dumps",
   "tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72)": "# node 0008 (innoferra-eval/serving/minimax-m3.1/launch.sh), image minimax-m31-sglang:demo-bef87f4\nIMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python SPEC=dspark DRAFT_WINDOW=4096 TRAINING_COMPAT=1 \\\n  CHUNK=65536 MEMFRAC=0.72 MAXREQ=256 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000\" \\\n  EXTRA_ARGS=\"--tokenizer-worker-num 8\" bash launch.sh\n\n# resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 8 --ep-size 8 --dp-size 8 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 65536 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 256 \\\n  --tokenizer-worker-num 8 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4096\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static",
   "4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape)": "# 4 workers x (tp2/ep2/dp2, attention TP1) under Dynamo (serving/minimax-m3.1/dynamo/up_tp2.sh = up.sh with MAXREQ 16 x WORKER_TP)\nWORKER_TP=2 SPEC=dspark bash dynamo/up_tp2.sh\n\n# each worker resolves to (GPUs 2i,2i+1; ports 19191/19291/19391/19491):\npython3 -m dynamo.sglang --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code --skip-tokenizer-init \\\n  --dyn-tool-call-parser minimax_m3 --dyn-reasoning-parser minimax_m3 --host 0.0.0.0 --port 19491 \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.8 --max-running-requests 32 \\\n  --kv-events-config '{\"publisher\":\"zmq\",\"endpoint\":\"tcp://*:5617\",\"topic\":\"kv-events\"}' --enable-metrics --enable-cache-report \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# (same engine env as the tp8 setup below)\n\n# frontend (serving/minimax-m3.1/dynamo/frontend.sh):\npython3 -m dynamo.frontend --http-port 8001 --namespace m31 --router-mode kv --router-replica-sync \\\n  --router-prefill-load-scale inf --router-temperature 0 --dyn-chat-processor sglang --dyn-preprocess-workers 8 --migration-limit 3\n# gateway :8000 -> frontend :8001 (alias minimax-m3/MiniMax-M3 -> minimax-m3.1-nvfp4, root-role kwarg, limits off)",
-  "Old fork + DSpark graphs + 8 workers (winning setup)": "# node 0008, innoferra-eval/serving/minimax-m3.1/launch.sh. Image minimax-m31-sglang:demo-bef87f4 (MiniMax 0922-sglang@bef87f4 on SGLang v0.5.17)\nIMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python NAME=m31-0927 PORT=19191 SPEC=dspark DRAFT_WINDOW=4096 TRAINING_COMPAT=1 \\\n  CHUNK=65536 MEMFRAC=0.80 MAXREQ=128 EXTRA_ARGS=\"--tokenizer-worker-num 8\" bash launch.sh\n\n# resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code --host 0.0.0.0 --port 19191 \\\n  --tp-size 8 --ep-size 8 --dp-size 8 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 65536 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.80 --max-running-requests 128 \\\n  --tokenizer-worker-num 8 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer"
+  "Old fork + DSpark graphs + 8 workers (winning setup)": "# node 0008, innoferra-eval/serving/minimax-m3.1/launch.sh. Image minimax-m31-sglang:demo-bef87f4 (MiniMax 0922-sglang@bef87f4 on SGLang v0.5.17)\nIMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python NAME=m31-0927 PORT=19191 SPEC=dspark DRAFT_WINDOW=4096 TRAINING_COMPAT=1 \\\n  CHUNK=65536 MEMFRAC=0.80 MAXREQ=128 EXTRA_ARGS=\"--tokenizer-worker-num 8\" bash launch.sh\n\n# resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code --host 0.0.0.0 --port 19191 \\\n  --tp-size 8 --ep-size 8 --dp-size 8 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 65536 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.80 --max-running-requests 128 \\\n  --tokenizer-worker-num 8 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer",
+  "4×tp2 DSpark envelope lift (64/worker) + slot gateway": "# node 0008: serving/minimax-m3.1/launch_tp2x4_old.sh (4 engines + gateway), commit b0fc20b / b9fa07a\nexport NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30\nMAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=2 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000\" \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python bash launch_tp2x4_old.sh\n\n# each engine i = 0..3 (GPUs 2i,2i+1; port 19191+100i; own netns, --ipc private) resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 64 \\\n  --tokenizer-worker-num 2 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4096\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static\n\n# gateway :8000 (shim.py + patch_shim_slots.py; session pinning via patch_shim_session.py from 4faf003)\nSGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 \\\n  ROUTE_PREFIX_CHARS=2048 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SESSION_KEY=prompt_cache_key \\\n  MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key bash gateway.sh"
  },
  "kernel_gap": {
   "title": "Kernel gap vs production (from production's live settings; no image used)",
