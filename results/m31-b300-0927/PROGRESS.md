@@ -104,5 +104,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 06:18 PDT (09-28) | chain16 bmfs (base + `--min-free-slots-delay 1`, balanced gateway): static c64 27.14 M (3.39/GPU, 2.37 s), c128 38.85 (4.86, 4.77 s, p99 19.95), c256 45.25 (5.66, 14.3 s); accept probe 5.79, staircase accept 4.12; staircase TTFT p50/p99 per level 0.85/4.8, 1.13/12.8, 1.42/22.3, 2.87/52.3; decode 151/107/77/57; hit 88.8%; closed loop c128 15.29 M node, 4.04 req/s (c13p1bd 12.90 M, 3.38 req/s) | tpm-*-0927-bmfs.csv, traffic/*bmfs* | mixed: static -3%, closed loop +18% |
 
+| 07:26 PDT (09-28) | chain16 b128 (MAXREQ 128/worker = 64/rank, MEMFRAC 0.66) FAILED to boot: TIMEOUT 0/4 healthy, restart pass 1 and 2 both 0/4 (13:19-14:26Z). Engine logs lost (next launcher removed the containers); chain's error extraction used ERE `[^\n]` which excludes 'n' ('Error: Error i'). Templates fixed to keep logs. bprod started 14:26Z | logs/launch-20260928T131901Z.log | cause unknown |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

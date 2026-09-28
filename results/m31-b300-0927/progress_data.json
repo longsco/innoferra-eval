@@ -308,6 +308,11 @@
  },
  "timeline": [
   [
+   "07:26",
+   "chain16 b128 (128 per worker = 64 per rank, mem 0.66) failed to boot: 0 of 4 engines healthy after two 20-minute attempts. The engine logs were removed when the next variant launched, so the cause is not known (likely verify-graph capture at 64 per rank running out of memory at mem 0.66; not confirmed). Chain templates now keep engine logs on a failed boot",
+   "64 per rank needs an isolated boot test; bprod running"
+  ],
+  [
    "06:18",
    "chain16 bmfs (prefill-hold rule off, --min-free-slots-delay 1) on the balanced frontier base: static c128 4.86 M/GPU (−3%, within noise), c256 5.66; real traffic TTFT p50 0.85 / 1.13 / 1.42 / 2.9 s, decode 151 / 107 / 77 / 57 tok/s (4× +17%), p99 at 4× 22 s (32) but 52 s at 6× (32); DSpark accept 4.12; <b>closed loop c128 15.3 M node vs 12.9</b> (+18%)",
    "keep in mind for the final combination: helps under high real-traffic concurrency"
@@ -586,7 +591,7 @@
    ],
    [
     "chain16 on the new base with balancing on: bmfs, b128 (64/rank), bprod (production scheduling), bhic (HiCache), bblk4 (block 4)",
-    "bmfs done 06:18 (static −3%, closed loop +18%); b128 running since 06:18 PDT; ends ~11:00 PDT"
+    "bmfs done (static −3%, closed loop +18%); b128 FAILED to boot (06:18–07:26, 0/4 healthy twice); bprod running since 07:26 PDT; ends ~11:00 PDT"
    ]
   ]
  },
@@ -614,6 +619,14 @@
    "script": "patches/dspark_minimax/minimax_m3_dspark.py, accept_metrics.sh, analysis/accept_probe.py",
    "commit": "2e186e9",
    "status": "A/B running in chain15"
+  },
+  {
+   "title": "64 requests per rank: isolated boot test with logs kept",
+   "detail": "Boot one tp2 engine at 128 per worker with mem 0.66 and 0.70, and with verify graphs capped at 32 per rank, to find what fails.",
+   "why": "Static TPM at c256 is capped by 32 running per rank (5.70 M/GPU at c256 with TTFT 13 s); room per rank is the next static lever after balancing.",
+   "script": "to write",
+   "commit": "",
+   "status": "after chain16"
   },
   {
    "title": "Kernel gap vs production (learn from their settings, no image)",
