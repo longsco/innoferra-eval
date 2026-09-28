@@ -241,6 +241,11 @@
  },
  "timeline": [
   [
+   "22:54",
+   "Bare 4×tp2 behind the gateway (chain11b): all engines up after restart + warm-up; canaries correct; static grid flattened at 0.9 M/GPU by hot-prefix pinning (expected, single shared prefix); real-traffic staircase running",
+   "–"
+  ],
+  [
    "22:23",
    "Bare 4×tp2 behind the gateway, attempt 1: 2/4 engines hung at startup in the DP all-gather with no request received (fresh-worker DP-sync race; same one the Dynamo kit guards with an immediate short warm-up). Restarted with per-engine warm-up (chain11b)",
    "running"
@@ -352,19 +357,23 @@
   "steps": [
    [
     "restart hung engines + wait 4/4 healthy",
-    "running"
+    "done"
    ],
    [
-    "direct warm-up per engine (4 short + 2 long prompts)",
-    "next"
+    "direct warm-up per engine",
+    "done"
    ],
    [
-    "canaries, static grid c8/16/64/128 via gateway",
-    "next"
+    "canaries via gateway",
+    "done: 391 / primes correct, deterministic"
    ],
    [
-    "warm-up + staircase (cache hit vs Dynamo's 60%)",
-    "next"
+    "static grid via gateway",
+    "done: c8 0.50 · c16 0.78 · c64 0.88 · c128 0.90 M/GPU, flattened: one shared prefix → one (engine, rank) pair gets every request (hot-prefix pinning); not a valid number for this routing"
+   ],
+   [
+    "warm-up + staircase on real traffic",
+    "running since 22:49 PDT: the test that matters (cache hit vs Dynamo's 60%)"
    ]
   ]
  },

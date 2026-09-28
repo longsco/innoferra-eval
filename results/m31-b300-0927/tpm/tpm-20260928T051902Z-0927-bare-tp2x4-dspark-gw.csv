@@ -1,3 +1,5 @@
 frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
 80k-warm-0927-bare-tp2x4-dspark-gw,8,40,0.000,0.000,0.000,0.0,0.00,0.00,0.00
 80k-warm-0927-bare-tp2x4-dspark-gw,16,80,0.000,0.000,0.000,0.0,0.00,0.00,0.00
+80k-warm-0927-bare-tp2x4-dspark-gw,64,320,0.000,0.000,0.000,0.0,0.00,0.00,0.00
+80k-warm-0927-bare-tp2x4-dspark-gw,128,640,0.000,0.000,0.000,0.0,0.00,0.00,0.00
