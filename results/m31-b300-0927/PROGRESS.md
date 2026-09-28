@@ -53,6 +53,8 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 02:10 | **DSpark with CUDA graphs works (old fork + port, MAXREQ 128, 8 workers)**: all 96 decode batches on graph, accept 2.3-3.4; single stream cold 126/207/184 tok/s, warm 94/260/162; c6 per stream **135 tok/s** (plain 37, eager vendor 19). Static frame c1 0.59 M node (random tokens, accept ~1: the manual frame cannot show spec-decode gains) | stress2-0927.log | TPM verdict comes from the real-traffic staircase |
 | 02:15 | **Static grid, old-fork DSpark graphs + 8 workers (MAXREQ 128)**: c8 3.85 M node (0.48/GPU), c16 6.90 (0.86), **c64 17.61 M node = 2.20 M/GPU, TTFT p50 1.6 s** (plain + 8 workers: 12.34 M / 1.54 per GPU / 2.9 s). c128 and the real-traffic staircase running | tpm-*-old-dspark-tok8.csv | new best at c64 |
 | 02:20 | Production reference recorded: Kibana "Innoferra Token Hub M31 - Full Log" (http://10.1.101.33:5601, dashboard 6357c8fc, fleet VPN): live 213-262 M TPM/min hub-wide, 1,857-2,212 req/min, p50 0.6-2.1 s, p99 11-17 s, 0-2 errors/min; per GPU ≈ 5.3-6.6 M if the hub is still the 5-node (40 GPU) stack recorded 09-26 (confirm node count with the team) | dashboard | apples-to-apples target |
+| 02:24 | **Winning setup c128: 25.58 M node = 3.20 M/GPU, TTFT p50 2.8 s, 31 tok/s per stream** (plain + 8 workers at c128: 2.11 M/GPU). 46% of the north star | tpm-*-old-dspark-tok8.csv | new best |
+| 02:25 | chain9 queued after the staircase: production-shaped 4 x (tp2/ep2/dp2) DSpark workers under the Dynamo KV router (attention TP1 is a hard requirement of the training numerics on both forks, so a true TP2 worker cannot run), MAXREQ 32/worker, 8 preprocess workers; gate, probes, grid, staircase | chain9.sh | topology lever |
 | 20:50 | Upstream survey: vendor branch = v0.5.17 + 10 commits (148 files); upstream v0.5.18-20 = 2,235 commits, 96 of the vendor files overlap. Cherry-pick candidates: #34338 DP sync collapse, #32313 TP LM head a2a, #37505 DP prefix off-by-one (correctness), #38936 DP burst hang, #30393 HiCache DSpark draft caches, #35640, #32434, #36630/1, #31470 | git, release notes | |
 
 ## Standing numbers — reported PER GPU (node total / 8); target 7 M TPM per GPU (= 56 M per node)
@@ -64,6 +66,6 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 0927 demo, DSpark + HiCache, vendor verbatim (eager), patched | 0.55 M @c64 · 0.82 M @c256 | 12% | p-vendor32 |
 | 0927 demo, plain + HiCache, 1 tokenizer worker | 0.88 M @c64 · 0.91 M @c128 | 13% | stress-hicache-nodspark |
 | 0927 demo, TC0 / DSpark graphs override | not viable on this image / shelved | – | – |
-| old fork DSpark (graphs) + 8 tokenizer workers, MAXREQ 128 (**winning setup**) | c8 0.48 M · c16 0.86 M · **c64 2.20 M** (TTFT 1.6 s); per-stream 135 tok/s @c6 | 31% | old-dspark-tok8 |
+| old fork DSpark (graphs) + 8 tokenizer workers, MAXREQ 128 (**winning setup**) | c8 0.48 M · c16 0.86 M · c64 2.20 M (1.6 s) · **c128 3.20 M** (2.8 s); per-stream 135 tok/s @c6 | **46%** | old-dspark-tok8 |
 
 Convention from 22:15Z: all TPM figures in this log and in reports are per GPU unless marked "node".

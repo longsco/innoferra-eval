@@ -34,8 +34,8 @@ a{color:var(--ok)}
 <div class="kpis">
   <div class="kpi"><div class="l">North star</div><div class="v star">7.00 M</div><div class="s">per GPU</div></div>
   <div class="kpi"><div class="l">Production today (M3.1 hub)</div><div class="v">≈ 5.8 M</div><div class="s">213–262 M TPM ÷ 40 GPUs, live dashboard</div></div>
-  <div class="kpi"><div class="l">Our best (static frame)</div><div class="v ok">2.92 M</div><div class="s">plain decode, c512, saturated</div></div>
-  <div class="kpi"><div class="l">Winning setup at c64</div><div class="v ok">2.20 M</div><div class="s">DSpark graphs, TTFT 1.6 s (plain: 1.54 M, 2.9 s)</div></div>
+  <div class="kpi"><div class="l">Our best (static frame)</div><div class="v ok">3.20 M</div><div class="s">winning setup, c128, TTFT 2.8 s</div></div>
+  <div class="kpi"><div class="l">Winning setup at c64</div><div class="v ok">2.20 M</div><div class="s">TTFT 1.6 s (plain: 1.54 M, 2.9 s)</div></div>
   <div class="kpi"><div class="l">Vendor demo as shipped</div><div class="v bad">0.72 M</div><div class="s">eager DSpark, 1 tokenizer worker</div></div>
 </div>
 
@@ -46,7 +46,7 @@ a{color:var(--ok)}
 <dt>Spec decode</dt><dd>DSpark block 7; max running requests 128 (16 per rank) because graph capture only holds while verify batches stay ≤16 per rank (vendor kernel limit)</dd>
 <dt>Frontend</dt><dd><code>--tokenizer-worker-num 8</code> (the single-worker frontend capped every config at ~0.9 M/GPU), gateway with rate limits off</dd>
 <dt>Kernel patch</dt><dd>token count as a runtime argument in the router and KV-store Triton kernels (stops recompiles that stalled all ranks; bitwise-equal)</dd>
-<dt>Measured</dt><dd>c8 0.48 M · c16 0.86 M · <b>c64 2.20 M</b> per GPU (TTFT p50 1.6 s); per stream 135 tok/s at 6 streams on real 60–80k prompts (plain 37, eager 19); gate: all canaries pass, deterministic</dd>
+<dt>Measured</dt><dd>c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s) · <b>c128 3.20 M per GPU (25.6 M node, TTFT p50 2.8 s, 31 tok/s per stream)</b>; per stream 135 tok/s at 6 streams on real 60–80k prompts (plain 37, eager 19); gate: all canaries pass, deterministic</dd>
 <dt>Not in it yet</dt><dd>HiCache (the 09-27 build's host cache does not run on this engine), TP2×4 layout, KV-aware router, 16 workers</dd>
 </dl></div>
 
@@ -64,11 +64,11 @@ a{color:var(--ok)}
 
 <div class="panel"><h2>1. Per-GPU TPM by configuration, in the order tested</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 380"></svg></div>
 <div class="legend"><span style="--sw:var(--bad)">eager DSpark (vendor gate)</span><span style="--sw:var(--okfill)">CUDA-graph decode</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>
-<p class="note">Concurrency in parentheses is where the configuration peaked or was measured. The DSpark-graphs row is at c64 (its c128 point and the real-traffic staircase are running); plain's 2.92 M is at c512, saturated with 29 s TTFT.</p></div>
+<p class="note">Concurrency in parentheses is where the configuration peaked or was measured. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128.</p></div>
 
 <div class="panel"><h2>2. Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 300"></svg></div>
 <div class="legend"><span style="--sw:var(--okfill)">measured gain (M/GPU)</span><span style="--sw:var(--pend)">pending, not yet measured</span></div>
-<p class="note">Gains are measured at c64 on the static frame (plain 1 worker 0.88 → 8 workers 1.54 → DSpark graphs 2.20). Pending bars are drawn at an equal share of the remaining 4.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.</p></div>
+<p class="note">Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.</p></div>
 
 <div class="panel"><h2>3. Real production traffic replay (Route B)</h2><div class="wrap"><table>
 <tr><th>metric</th><th>production (M3 fleet)</th><th>plain engine, 1×</th><th>plain engine, 2×</th><th>DSpark graphs engine</th></tr>
@@ -93,6 +93,8 @@ a{color:var(--ok)}
 
 <div class="panel"><h2>5. Timeline of changes (latest first)</h2><div class="wrap"><table>
 <tr><th>UTC</th><th>change</th><th>result (per GPU)</th></tr>
+<tr><td>02:25</td><td>Queued: production-shaped 4×(tp2/ep2/dp2) DSpark under the Dynamo KV router, then its own staircase</td><td>pending</td></tr>
+<tr><td>02:24</td><td>Winning setup at c128 (max running 128)</td><td><b>3.20 M</b> (25.6 M node), TTFT 2.8 s, 31 tok/s per stream</td></tr>
 <tr><td>02:20</td><td>Longitudinal capacity on the winning setup: node's real-traffic share, caches warmed, 1×→8× staircase, 5 min each</td><td>running</td></tr>
 <tr><td>02:15</td><td>Static grid on the winning setup</td><td>c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s)</td></tr>
 <tr><td>02:10</td><td>Old-fork DSpark with CUDA graphs + 8 workers up (max running 128: graph capture only holds while verify tiers stay ≤16 per rank)</td><td>per stream 135 tok/s at 6 streams (plain 37, eager 19); 96/96 decode batches on graph</td></tr>
@@ -115,7 +117,7 @@ a{color:var(--ok)}
     {n:'Plain + HiCache, 1 worker',v:0.91,c:'c128',k:ok},
     {n:'Vendor verbatim + kernel patch (eager)',v:0.82,c:'c256',k:bad},
     {n:'Plain + HiCache + patch + 8 tokenizer workers',v:2.92,c:'c512, saturated',k:ok},
-    {n:'Old fork + DSpark graphs + 8 workers (winning setup)',v:2.20,c:'c64, TTFT 1.6 s; c128 running',k:ok},
+    {n:'Old fork + DSpark graphs + 8 workers (winning setup)',v:3.20,c:'c128, TTFT 2.8 s; c64 2.20 M at 1.6 s',k:ok},
     {n:'Previous best 09-26: old fork, Dynamo 2×tp4, DSpark graphs',v:2.34,c:'c64',k:prev},
   ];
   const s1=document.getElementById('c1'); const W=960,L=340,R=40,rowH=46,top=30; const x=v=>L+(W-L-R)*v/TARGET;
@@ -125,20 +127,20 @@ a{color:var(--ok)}
   g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star 7.00 M / GPU</text>`;
   s1.innerHTML=g;
   const lev=[
-    {n:'Frontend: 8 tokenizer workers',v:0.66,m:true},
-    {n:'DSpark with CUDA graphs',v:0.66,m:true},
+    {n:'Frontend: 8 tokenizer workers',v:1.20,m:true},
+    {n:'DSpark with CUDA graphs',v:1.09,m:true},
     {n:'Kernel patch (runtime-N)',v:0.0,m:true,note:'stalls removed'},
     {n:'HiCache (static frame)',v:0.0,m:true,note:'not exercised'},
     {n:'Topology TP2×4 + KV router',v:null,m:false},
     {n:'16 workers / Dynamo preprocess',v:null,m:false},
     {n:'Vendor kernel: graph-safe verify (tiers >16)',v:null,m:false},
   ];
-  const base=0.88, measuredTop=2.20, remaining=TARGET-measuredTop, pendN=lev.filter(d=>!d.m).length, pendEach=remaining/pendN;
+  const base=0.91, measuredTop=3.20, remaining=TARGET-measuredTop, pendN=lev.filter(d=>!d.m).length, pendEach=remaining/pendN;
   const s2=document.getElementById('c2'); const W2=960,H2=300,l2=60,r2=60,t2=30,b2=70; const bw=(W2-l2-r2)/(lev.length+0.6); const ymax=7; const yv=v=>t2+(H2-t2-b2)*(1-v/ymax);
   let h='';
   for(let t=0;t<=7;t++){h+=`<line x1="${l2}" y1="${yv(t)}" x2="${W2-r2}" y2="${yv(t)}" stroke="${grid}"/><text x="${l2-8}" y="${yv(t)+4}" font-size="11" fill="${muted}" text-anchor="end">${t} M</text>`;}
   let cum=base; const pts=[]; const x0=l2+bw*0.3;
-  h+=`<rect x="${l2}" y="${yv(base)}" width="${bw*0.6}" height="${yv(0)-yv(base)}" fill="${grid}" stroke="${muted}" stroke-dasharray="3 3"/><text x="${x0}" y="${yv(base)-6}" font-size="11" fill="${muted}" text-anchor="middle">start 0.88 (c64)</text>`;
+  h+=`<rect x="${l2}" y="${yv(base)}" width="${bw*0.6}" height="${yv(0)-yv(base)}" fill="${grid}" stroke="${muted}" stroke-dasharray="3 3"/><text x="${x0}" y="${yv(base)-6}" font-size="11" fill="${muted}" text-anchor="middle">start 0.91 (c128)</text>`;
   lev.forEach((d,i)=>{const cx=l2+bw*(i+1)+bw*0.3; const val=d.m?d.v:pendEach; cum+=val; const y0=yv(cum-val),y1=yv(cum); pts.push([cx,yv(cum),d.m]);
     h+=`<rect x="${cx-bw*0.3}" y="${Math.min(y0,y1)}" width="${bw*0.6}" height="${Math.max(2,Math.abs(y0-y1))}" fill="${d.m?ok:pend}" ${d.m?'':'fill-opacity="0.35" stroke="'+pend+'" stroke-dasharray="4 3"'} rx="2"/>`;
     h+=`<text x="${cx}" y="${Math.min(y0,y1)-6}" font-size="11" fill="${ink}" text-anchor="middle">${d.m?(d.v>0?'+'+d.v.toFixed(2)+' M':'0'):'?'}</text>`;
