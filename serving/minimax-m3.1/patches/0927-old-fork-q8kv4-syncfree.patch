@@ -1,0 +1,24 @@
+diff --git a/python/sglang/kernels/ops/attention/minimax_sparse/q8kv4_msa.py b/python/sglang/kernels/ops/attention/minimax_sparse/q8kv4_msa.py
+index de7109c45..aa4ea5e82 100644
+--- a/python/sglang/kernels/ops/attention/minimax_sparse/q8kv4_msa.py
++++ b/python/sglang/kernels/ops/attention/minimax_sparse/q8kv4_msa.py
+@@ -34,6 +34,10 @@
+ # merges the score-ordered partials.
+ 
+ from __future__ import annotations
++import os as _os
++# graph-safe override (innoferra 09-27): the block-major schedule below needs one host sync (int(...).item()) that cannot run under
++# CUDA-graph capture; SGLANG_Q8KV4_SORT_MIN_LANES=<huge> keeps every batch on the sync-free one-lane-per-work-item path. Default unchanged.
++_SORT_MIN_LANES = int(_os.environ.get("SGLANG_Q8KV4_SORT_MIN_LANES", "32768"))
+ 
+ import math
+ from typing import Optional
+@@ -708,7 +712,7 @@ def q8kv4_sparse_attention(
+     )
+     inf_key = num_kv_heads * batch * max_pages
+     qpw = 128 // group
+-    if num_lanes > 32768:
++    if num_lanes > _SORT_MIN_LANES:
+         # Block-major schedule: sort lanes by (head, request, block) and cut
+         # runs of up to qpw entries. One host sync for the work count.
+         key, order = torch.sort(e_key)
