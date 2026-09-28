@@ -12,7 +12,7 @@ def derive_frontier(d):
     best = max(meas, key=lambda c: c["v"])
     d["pareto"]["top"] = best["v"]
     for k in d["kpis"]:
-        if k["label"].startswith("Our best"):
+        if k["label"].startswith(("Our best", "Static frame best")):
             k["value"] = f"{best['v']:.2f} M"; k["sub"] = f"{best['n']} ({best['c']})"
     d["frontier"] = {"per_gpu": best["v"], "config": best["n"], "at": best["c"], "pct": round(best["v"] / TARGET * 100)}
     return d
@@ -192,7 +192,7 @@ def realtraffic_rank_panel():
     return (f'<div class="panel"><h2>Real traffic, ranked: TTFT p50 at 4× a node\'s share (lower is better)</h2><div class="wrap">{"".join(svg)}</div>'
             f'<p class="note">{data.get("realtraffic_rank_note","")}</p></div>')
 def charts():
-    return ('<div class="panel"><h2>Per-GPU TPM by configuration, ranked (static frame)</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
+    return ('<div class="panel"><h2>TPM per GPU by configuration: static frame vs real traffic</h2><p class="sub" style="margin:0 0 8px"><span style="display:inline-block;width:14px;height:10px;background:var(--okfill);border-radius:2px"></span> static frame (synthetic best case) &nbsp; <span style="display:inline-block;width:14px;height:6px;background:var(--prev);border-radius:2px"></span> real traffic, 128 real prompts in flight &nbsp; <span style="color:var(--star)">▲</span> strict prod-parity limit &nbsp; <span style="color:var(--prev)">┆</span> production observed load &nbsp; <span style="color:var(--star)">┆</span> north star</p><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
             '<div class="legend"><span style="--sw:var(--bad)">DSpark without CUDA graphs (vendor 09-27 build)</span><span style="--sw:var(--okfill)">decode on CUDA graphs</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
             f'<p class="note">{data.get("chart_note","")}</p></div>'
             '<div class="panel"><h2>Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 330"></svg></div>'
@@ -205,12 +205,23 @@ JS = """
   const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),star=css('--star'),ok=css('--okfill'),bad=css('--bad'),pend=css('--pend'),prev=css('--prev');
   const KC={bad:bad,ok:ok,prev:prev}; const TARGET=%(target)s;
   const rows=(%(rows)s).slice().sort((a,b)=>b.v-a.v);
-  const s1=document.getElementById('c1'); const XMAX=Math.ceil(Math.max(TARGET,...rows.map(r=>r.v)))+1; const W=960,L=360,R=190,rowH=50,top=30; const x=v=>L+(W-L-R)*v/XMAX;
+  const s1=document.getElementById('c1'); const XMAX=Math.ceil(Math.max(TARGET,...rows.map(r=>r.v)))+1; const W=960,L=360,R=190,rowH=58,top=44; const x=v=>L+(W-L-R)*v/XMAX;
   const H1=top+rows.length*rowH+34; s1.setAttribute('viewBox',`0 0 ${W} ${H1}`);
   const wrap=(s,n)=>{const w=s.split(' ');const out=[''];for(const t of w){const cur=out[out.length-1];if((cur+' '+t).trim().length>n&&cur){out.push(t)}else{out[out.length-1]=(cur+' '+t).trim()}}return out.slice(0,3)};
   let g='';
   for(let t=0;t<=XMAX;t++){g+=`<line x1="${x(t)}" y1="${top-8}" x2="${x(t)}" y2="${top+rows.length*rowH}" stroke="${grid}"/><text x="${x(t)}" y="${top+rows.length*rowH+16}" font-size="11" fill="${muted}" text-anchor="middle">${t} M</text>`;}
-  rows.forEach((r,i)=>{const k=KC[r.k]||r.k; const y=top+i*rowH; const ln=wrap(r.n,46); const y0=y+19-(ln.length-1)*7;g+=`<text x="${L-10}" y="${y0}" font-size="11.5" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${ln.map((t,j)=>`<tspan x="${L-10}" dy="${j?14:0}">${t}</tspan>`).join('')}</text><rect x="${L}" y="${y+6}" width="${x(r.v)-L}" height="26" fill="${k}" rx="2"/><text x="${x(r.v)+8}" y="${y+18}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M <tspan fill="${muted}" font-size="10.5" font-weight="400">· ${r.acc||""}</tspan></text><text x="${x(r.v)+8}" y="${y+32}" font-size="10.5" fill="${muted}">${wrap(r.c,40)[0]}${wrap(r.c,40).length>1?'…':''}</text>`;});
+  rows.forEach((r,i)=>{const k=KC[r.k]||r.k; const y=top+i*rowH; const ln=wrap(r.n,46); const y0=y+21-(ln.length-1)*7; const cc=(r.c||'').split(';')[0].split(' (')[0].split(' —')[0];
+    g+=`<text x="${L-10}" y="${y0}" font-size="11.5" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${ln.map((t,j)=>`<tspan x="${L-10}" dy="${j?14:0}">${t}</tspan>`).join('')}</text>`;
+    g+=`<rect x="${L}" y="${y+5}" width="${x(r.v)-L}" height="20" fill="${k}" rx="2"/><text x="${x(r.v)+8}" y="${y+19}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M <tspan fill="${muted}" font-size="10.5" font-weight="400">static · ${cc}</tspan></text>`;
+    const rc=r.rt_closed, rs=r.rt_strict;
+    if(typeof rc==='number'){g+=`<rect x="${L}" y="${y+29}" width="${Math.max(2,x(rc)-L)}" height="11" fill="${prev}" rx="2"/>`;}
+    if(typeof rs==='number'){const xs=x(Math.max(rs,0.02)); g+=`<path d="M${xs-6},${y+49} L${xs+6},${y+49} L${xs},${y+40} Z" fill="${star}"/>`;}
+    const lab = (rc===undefined||rc===null)&&(rs===undefined||rs===null) ? 'real traffic: not run with the same procedure'
+      : (rc==='running' ? 'real traffic: running'
+      : `real: ${typeof rc==='number'?rc.toFixed(2)+' M closed loop c128':'closed loop not run'} · ▲ strict ${typeof rs==='number'?(rs>0?rs.toFixed(2)+' M':'misses at 1×'):'n/a'}`);
+    const xl = (typeof rc==='number'? x(rc) : L) + 8;
+    g+=`<text x="${xl}" y="${y+39}" font-size="10.5" fill="${prev}">${lab}</text>`;});
+  const PROD=%(prod)s; g+=`<line x1="${x(PROD)}" y1="${top-26}" x2="${x(PROD)}" y2="${top+rows.length*rowH+4}" stroke="${prev}" stroke-width="2" stroke-dasharray="3 4"/><text x="${x(PROD)+6}" y="${top-28}" font-size="11.5" fill="${prev}">production observed ${PROD.toFixed(2)} M / GPU (not saturated)</text>`;
   g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star ${TARGET.toFixed(2)} M / GPU</text>`;
   s1.innerHTML=g;
   const lev=%(lev)s; const base=%(base)s, measuredTop=%(top)s, remaining=Math.max(0,TARGET-measuredTop), pendN=lev.filter(d=>!d.m).length, pendEach=remaining/Math.max(1,pendN);
@@ -248,7 +259,7 @@ page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="h
         f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'
         f'<section class="tabpanel" id="overview">{overview}</section>\n<section class="tabpanel" id="results" hidden>{results}</section>\n'
         f'<section class="tabpanel" id="setup" hidden>{setup}</section>\n<section class="tabpanel" id="production" hidden>{prodref()}</section>\n'
-        f'<section class="tabpanel" id="timeline" hidden>{timeline()}</section>\n<script>{JS % dict(target=TARGET, rows=json.dumps(data["configs"], ensure_ascii=False), lev=json.dumps(data["pareto"]["levers"], ensure_ascii=False), base=data["pareto"]["base"], top=data["pareto"]["top"])}</script>\n')
+        f'<section class="tabpanel" id="timeline" hidden>{timeline()}</section>\n<script>{JS % dict(target=TARGET, prod=data.get("prod_per_gpu", 0), rows=json.dumps(data["configs"], ensure_ascii=False), lev=json.dumps(data["pareto"]["levers"], ensure_ascii=False), base=data["pareto"]["base"], top=data["pareto"]["top"])}</script>\n')
 # standings file (linked from PROGRESS.md / PLAN.md) so every page shows the same frontier
 lines = ["# Standings (per GPU, target %.2f M) - generated by progress_page.py, do not edit" % TARGET, "", "| config | per-GPU TPM | at | % of target |", "|---|---|---|---|"]
 for c in sorted(data["configs"], key=lambda c: -c["v"]):
