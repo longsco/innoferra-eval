@@ -241,6 +241,11 @@
  },
  "timeline": [
   [
+   "22:23",
+   "Bare 4×tp2 behind the gateway, attempt 1: 2/4 engines hung at startup in the DP all-gather with no request received (fresh-worker DP-sync race; same one the Dynamo kit guards with an immediate short warm-up). Restarted with per-engine warm-up (chain11b)",
+   "running"
+  ],
+  [
    "21:53",
    "Router diagnosis: KV events flow, strict affinity on, but DP-rank flips within tp2 workers and image requests bypass KV routing → 54–59% hit per worker. chain11 = same engines behind our gateway with engine+rank pinning",
    "running"
@@ -340,26 +345,26 @@
  "subtitle": "Node 0008, Sep 27, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "Where we are, in one breath: the vendor's demo as shipped did 0.72 M TPM per GPU. Two fixes (a Triton recompile patch and 8 tokenizer workers) and one swap (the older engine build that keeps DSpark on CUDA graphs) took the node to 3.20 M per GPU on the manual's static frame; the production-shaped 4×tp2 layout under a KV router nudged that to 3.34 M (48% of the north star) and decodes 2.8× faster per stream on real traffic. On real traffic both layouts still knee at about 2.5 req/s (≈ 1 M per GPU sustained) because cold prefill dominates: the single engine keeps 91% cache hits, the 4-worker layout only 60%. Routing affinity is the next lever.",
  "running": {
-  "title": "Running now (chain11, started 21:53 PDT)",
-  "script": "serving/minimax-m3.1/chain11.sh + launch_tp2x4_old.sh",
-  "commit": "6d15acf",
-  "config": "the same 4 × (tp2/ep2/dp2) DSpark engines, but behind our gateway instead of the Dynamo router: prefix-hash routing pinned to engine AND DP rank (the Dynamo run kept only 60% cache hits because rank selection flipped within a worker and image requests bypassed KV routing)",
+  "title": "Running now (chain11b, started 22:23 PDT)",
+  "script": "serving/minimax-m3.1/chain11b.sh",
+  "commit": "404d2d0",
+  "config": "bare 4 × (tp2/ep2/dp2) DSpark engines behind our gateway (prefix hash pinned to engine + DP rank). First attempt: 2 of 4 engines hung right after startup in the DP all-gather (dp_attn.py:184) before any request; restarted, and every engine is now warmed directly (short then long prompts) before the gateway goes in front",
   "steps": [
    [
-    "bring-up of 4 engines + gateway",
+    "restart hung engines + wait 4/4 healthy",
     "running"
    ],
    [
-    "canaries via gateway",
+    "direct warm-up per engine (4 short + 2 long prompts)",
     "next"
    ],
    [
-    "static grid c8/16/64/128 via gateway",
+    "canaries, static grid c8/16/64/128 via gateway",
     "next"
    ],
    [
-    "warm-up + staircase",
-    "next: compare cache hit and TTFT with the Dynamo run"
+    "warm-up + staircase (cache hit vs Dynamo's 60%)",
+    "next"
    ]
   ]
  },
