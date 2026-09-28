@@ -38,39 +38,6 @@
    "sub": "eager DSpark, 1 tokenizer worker"
   }
  ],
- "winning": {
-  "title": "Current winning serving setup (as of 19:47 PDT, Sep 27)",
-  "rows": [
-   [
-    "Engine",
-    "MiniMax's 09-22 engine build (SGLang v0.5.17 fork, commit bef87f4) with our DSpark port: draft model on dense layers, 4096-token draft window, flashinfer draft attention, <b>CUDA graphs for draft and verify</b>"
-   ],
-   [
-    "Layout",
-    "one engine, tp8 / ep8 / dp8 with DP attention, NVFP4 experts + MXFP8 dense, FP8 KV, training-matched numerics, chunked prefill 65536, mem-fraction 0.80 (0.85 OOMs on image traffic with 8 tokenizer workers on GPU 0)"
-   ],
-   [
-    "Spec decode",
-    "DSpark block 7; max running requests 128 (16 per rank) because graph capture only holds while verify batches stay ≤16 per rank (vendor kernel limit)"
-   ],
-   [
-    "Frontend",
-    "<code>--tokenizer-worker-num 8</code> (the single-worker frontend capped every config at ~0.9 M/GPU), gateway with rate limits off"
-   ],
-   [
-    "Kernel patch",
-    "token count as a runtime argument in the router and KV-store Triton kernels (stops recompiles that stalled all ranks; bitwise-equal)"
-   ],
-   [
-    "Measured",
-    "c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s) · <b>c128 3.20 M per GPU (25.6 M node, TTFT p50 2.8 s, 31 tok/s per stream)</b>; per stream 135 tok/s at 6 streams on real 60–80k prompts (plain 37, eager 19); gate: all canaries pass, deterministic"
-   ],
-   [
-    "Not in it yet",
-    "HiCache (the 09-27 build's host cache does not run on this engine), the 4×tp2 layout under the KV router (queued), 16 workers"
-   ]
-  ]
- },
  "configs": [
   {
    "n": "Vendor demo as shipped (eager DSpark, 1 worker)",
@@ -530,5 +497,92 @@
    ]
   ],
   "note": "Same trace both runs (2,939 requests, 100% success on tp2, 1 timeout on tp8). The 4×tp2 layout decodes far faster per stream and wins the static frame (c64 2.52 M/GPU at TTFT 1.25 s, c128 3.34 M) but its cache-hit rate on real traffic was 59.7% vs 90.9% on the single engine: sessions were spread over four separate caches, so it paid more cold prefill and its TTFT was worse at 1×–2×. Routing affinity (prompt_cache_key passthrough / KV-event routing) is the next fix; with production-level cache hits (98.9%) the tp2 layout should pull ahead on both axes."
- }
+ },
+ "setups": {
+  "Old fork + DSpark graphs + 8 workers (winning setup)": {
+   "rows": [
+    [
+     "Engine",
+     "MiniMax's 09-22 engine build (SGLang v0.5.17 fork, commit bef87f4) with our DSpark port: draft model on dense layers, 4096-token draft window, flashinfer draft attention, <b>CUDA graphs for draft and verify</b>"
+    ],
+    [
+     "Layout",
+     "one engine, tp8 / ep8 / dp8 with DP attention, NVFP4 experts + MXFP8 dense, FP8 KV, training-matched numerics, chunked prefill 65536, mem-fraction 0.80 (0.85 OOMs on image traffic with 8 tokenizer workers on GPU 0)"
+    ],
+    [
+     "Spec decode",
+     "DSpark block 7; max running requests 128 (16 per rank) because graph capture only holds while verify batches stay ≤16 per rank (vendor kernel limit)"
+    ],
+    [
+     "Frontend",
+     "<code>--tokenizer-worker-num 8</code> (the single-worker frontend capped every config at ~0.9 M/GPU), gateway with rate limits off"
+    ],
+    [
+     "Kernel patch",
+     "token count as a runtime argument in the router and KV-store Triton kernels (stops recompiles that stalled all ranks; bitwise-equal)"
+    ],
+    [
+     "Measured",
+     "c8 0.48 M · c16 0.86 M · c64 2.20 M (TTFT 1.6 s) · <b>c128 3.20 M per GPU (25.6 M node, TTFT p50 2.8 s, 31 tok/s per stream)</b>; per stream 135 tok/s at 6 streams on real 60–80k prompts (plain 37, eager 19); gate: all canaries pass, deterministic"
+    ],
+    [
+     "Not in it yet",
+     "HiCache (the 09-27 build's host cache does not run on this engine), the 4×tp2 layout under the KV router (queued), 16 workers"
+    ]
+   ]
+  },
+  "4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape)": {
+   "rows": [
+    [
+     "Engine",
+     "MiniMax's 09-22 engine build (SGLang v0.5.17 fork, bef87f4) with our DSpark port (4096-token draft window, flashinfer draft attention, <b>CUDA graphs for draft and verify</b>), Dynamo image demo-dynamo"
+    ],
+    [
+     "Layout",
+     "<b>4 workers × (tp2 / ep2 / dp2 with DP attention)</b> = the production shape with attention TP1 (forced by the training-matched numerics); NVFP4 experts + MXFP8 dense, FP8 KV, chunked prefill 32768, mem-fraction 0.85, max running 32 per worker (16 per rank = graph envelope)"
+    ],
+    [
+     "Router",
+     "Dynamo frontend, <code>--router-mode kv --router-replica-sync --router-prefill-load-scale inf</code>, 8 preprocess workers, KV events over ZMQ; gateway :8000 in front (alias, root kwarg, limits off)"
+    ],
+    [
+     "Spec decode",
+     "DSpark block 7; accept ~3.5 on real traffic; all decode batches on graph"
+    ],
+    [
+     "Kernel patch",
+     "token count as a runtime argument in the router and KV-store Triton kernels (bind-mounted into the old tree)"
+    ],
+    [
+     "Measured",
+     "static (via router): c8 0.51 · c16 0.94 · c64 2.52 (TTFT 1.25 s) · <b>c128 3.34 M per GPU</b> (26.7 M node, TTFT 3.0 s); real traffic: per-stream 71 tok/s p50 (tp8 engine: 25) but cache hit 59.7% → TTFT p50 1.5–3 s at 1×, knee ~2.5 req/s"
+    ],
+    [
+     "Open issue",
+     "routing affinity: DP-rank flips inside a worker and image requests bypass KV routing halve the cache hits; the bare-gateway variant (chain11b) restores 80–94% hits and is being measured"
+    ]
+   ]
+  },
+  "Bare 4×(tp2/ep2/dp2) DSpark behind our gateway (prefix hash → engine + DP rank)": {
+   "rows": [
+    [
+     "Engine",
+     "same 4 × tp2/ep2/dp2 DSpark engines (old fork + port + kernel patch), each with its own HTTP frontend (2 tokenizer workers), mem-fraction 0.80, max running 32/engine, chunked prefill 32768"
+    ],
+    [
+     "Router",
+     "our gateway: prefix-hash routing (first 2048 chars) pinned to (engine, DP rank) via X-Data-Parallel-Rank; rate limits off"
+    ],
+    [
+     "Boot rule",
+     "dp-attention engines need a short warm-up right after health or they can hang in the DP all-gather (seen 2/4 at first boot)"
+    ],
+    [
+     "Measured",
+     "real traffic: cache hit 79–94%, TTFT p50 1–3 s at 1× (staircase running); static frame invalid for this routing (single shared prefix pins to one rank → 0.9 M/GPU)"
+    ]
+   ]
+  }
+ },
+ "realtraffic_best": "best sustained so far ≈ 1 M/GPU at 2× a node's share (tp8/dp8 engine, 91% cache hit, p99 TTFT < 20 s); the 4×tp2 layouts decode 3× faster per stream but need the routing-affinity fix to keep cache hits (bare-gateway run in progress)"
 }

@@ -67,8 +67,12 @@ def queued():
     rows = "\n".join(f'<tr><td class="k">{q["name"]}</td><td>{q["why"]}</td><td><code>{q["script"]}</code></td><td class="w">{q["commit"]}</td><td>{q["status"]}</td></tr>' for q in data["queued"])
     return f'<div class="panel"><h2>Queued experiments, in order</h2><div class="wrap"><table><tr><th>experiment</th><th>why</th><th>script</th><th>commit</th><th>status</th></tr>\n{rows}\n</table></div></div>'
 def winning():
-    w = data["winning"]; rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in w["rows"])
-    return f'<div class="panel win"><h2>{w["title"]}</h2>\n<dl>\n{rows}</dl></div>'
+    """The winning box always shows the frontier config's recipe (derived), plus the real-traffic status line."""
+    fr = data["frontier"]; setup = data["setups"].get(fr["config"]) or {"rows": [["recipe", "(add to progress_data.json → setups)"]]}
+    rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in setup["rows"])
+    rt = data.get("realtraffic_best", "")
+    return (f'<div class="panel win"><h2>Current winning setup: {fr["per_gpu"]:.2f} M per GPU ({fr["pct"]}% of target) — {fr["config"]}, {fr["at"]}</h2>\n<dl>\n{rows}</dl>'
+            + (f'<p class="note">Real traffic: {rt}</p>' if rt else '') + '</div>')
 def glossary():
     rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in data["glossary"])
     return f'<div class="panel"><h2>What the setups and tests mean</h2><dl>\n{rows}</dl></div>'
