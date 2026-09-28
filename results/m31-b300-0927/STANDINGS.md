@@ -8,8 +8,8 @@
 | Plain + HiCache + patch + 8 tokenizer workers | 2.92 M | c512, saturated | 42% |
 | Previous best 09-26: old fork, Dynamo 2×tp4, DSpark graphs | 2.34 M | c64 | 33% |
 | Plain + HiCache, 1 worker | 0.91 M | c128 | 13% |
-| Vendor verbatim + kernel patch (eager) | 0.82 M | c256 | 12% |
-| Vendor demo as shipped (eager DSpark, 1 worker) | 0.72 M | c128 | 10% |
+| Vendor 09-27 demo launch + our kernel patch (DSpark without CUDA graphs) | 0.82 M | c256 | 12% |
+| Vendor 09-27 demo launch as written (DSpark without CUDA graphs) | 0.72 M | c128 | 10% |
 
 ## Real traffic (staircase, node's share of the 09-27 peak hour)
 

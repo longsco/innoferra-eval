@@ -40,7 +40,7 @@
  ],
  "configs": [
   {
-   "n": "Vendor demo as shipped (eager DSpark, 1 worker)",
+   "n": "Vendor 09-27 demo launch as written (DSpark without CUDA graphs)",
    "v": 0.72,
    "c": "c128",
    "k": "bad"
@@ -52,7 +52,7 @@
    "k": "ok"
   },
   {
-   "n": "Vendor verbatim + kernel patch (eager)",
+   "n": "Vendor 09-27 demo launch + our kernel patch (DSpark without CUDA graphs)",
    "v": 0.82,
    "c": "c256",
    "k": "bad"
@@ -468,7 +468,7 @@
   ],
   [
    "Vendor verbatim + kernel patch",
-   "The same launch with our Triton recompile fix. Same eager decode, so same ceiling."
+   "MiniMax's 09-27 demo doc §3.2 launch run exactly as written (tp8/ep8/dp8, DSpark block 7, HiCache 192 GB, training-matched numerics, 1 tokenizer worker), plus our Triton kernel patch. Same slow DSpark as the unpatched launch because the build disables CUDA graphs for DSpark in this mode."
   ],
   [
    "Plain + HiCache",
@@ -495,7 +495,7 @@
    "Route B held at 1×, 2×, 4×, 6×, 8× of a node's share for 5 minutes each after warming the caches with the preceding 30 minutes; the level where TTFT or errors break is the node's real-traffic capacity."
   ]
  ],
- "chart_note": "Concurrency in parentheses is where the configuration peaked or was measured. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128.",
+ "chart_note": "Red bars = MiniMax's 09-27 engine build, which turns off CUDA graphs for DSpark when training-matched numerics are on (its demo launch sets them), so DSpark decodes slowly (13–42 tok/s per stream). Teal bars = setups that keep CUDA graphs (MiniMax's 09-22 build + our DSpark port, or plain decode). Concurrency in parentheses is where the configuration peaked or was measured. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128.",
  "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.",
  "staircase": {
   "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): three layouts",
@@ -1017,7 +1017,7 @@
   ],
   "rows": [
    [
-    "Vendor demo as shipped (eager DSpark, 1 worker)",
+    "Vendor 09-27 demo launch as written (DSpark without CUDA graphs)",
     "256",
     "0.72 M @c128",
     "54 s",
@@ -1043,7 +1043,7 @@
     "–"
    ],
    [
-    "Vendor verbatim + kernel patch (eager)",
+    "Vendor 09-27 demo launch + our kernel patch (DSpark without CUDA graphs)",
     "1,024",
     "0.82 M @c256",
     "114 s",

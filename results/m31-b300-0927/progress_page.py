@@ -140,7 +140,7 @@ def timeline():
     return f'<div class="panel"><h2>Timeline of changes (latest first, Pacific time)</h2><div class="wrap"><table><tr><th>PDT</th><th>change</th><th>result (per GPU)</th></tr>\n{rows}\n</table></div></div>'
 def charts():
     return ('<div class="panel"><h2>Per-GPU TPM by configuration, in the order tested</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
-            '<div class="legend"><span style="--sw:var(--bad)">eager DSpark (vendor gate)</span><span style="--sw:var(--okfill)">CUDA-graph decode</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
+            '<div class="legend"><span style="--sw:var(--bad)">DSpark without CUDA graphs (vendor 09-27 build)</span><span style="--sw:var(--okfill)">decode on CUDA graphs</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
             f'<p class="note">{data.get("chart_note","")}</p></div>'
             '<div class="panel"><h2>Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 300"></svg></div>'
             '<div class="legend"><span style="--sw:var(--okfill)">measured gain (M/GPU)</span><span style="--sw:var(--pend)">pending, not yet measured</span></div>'
