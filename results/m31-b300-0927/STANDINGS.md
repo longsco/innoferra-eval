@@ -20,7 +20,8 @@
 | 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | <b>0.8–1.6 / 6–24</b> | 1.3–6.8 / 21–62 | 5.3–8.7 |
 | 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | <b>1.1–2.0 / 13–54</b> (one 29 s bin) | 4.9–25 / 40–131 | 8–14 |
 | 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 2.3 → 28 / 29–91 | 41 → 111 / 150–240 (53 errors) | 14–33 |
-| cache hit / per-stream decode | – | 91% / 25 tok/s | 60% / 71 tok/s | <b>88.5% / 75 tok/s</b> | 84% / 123 → 21 tok/s (1× → 4×) | – |
+| cache hit / decode p50 per stream, 1× → 4× (tok/s) | – | 91% / 114 → 18 | 60% / 129 → 25 | <b>88.5% / 132 → 68</b> | 84% / 123 → 21 | – |
+| uncached prompt tokens per request at 1× (prefill work) | – | 6.4k | 26.7k | <b>7.8k</b> | 11.0k | – |
 | kept up with offered load | – | no (1,574 s) | no (1,571 s) | <b>yes (1,240 s, 0 errors)</b> | no (1,398 s, 53 errors) | 9.75 M node avg (tp8 7.7) |
 
 ## Production reference (read at 02:15 PDT, Sep 28 (window 01:59–02:09 PDT; Kibana ES|QL on the M3.1 hub index; read-only))

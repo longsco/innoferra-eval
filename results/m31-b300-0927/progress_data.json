@@ -108,7 +108,7 @@
   "top": 3.2,
   "levers": [
    {
-    "n": "Frontend: 8 tokenizer workers",
+    "n": "8 tokenizer workers",
     "v": 1.2,
     "m": true
    },
@@ -130,32 +130,32 @@
     "note": "not exercised"
    },
    {
-    "n": "Topology 4×tp2 (production's worker shape)",
+    "n": "4×tp2 worker shape",
     "v": 0.14,
     "m": true
    },
    {
-    "n": "Verify envelope 16 → 32 per rank + all 8 DP ranks (slot gateway)",
+    "n": "Verify envelope 32/rank + all 8 ranks",
     "v": 0.63,
     "m": true
    },
    {
-    "n": "16 workers / Dynamo preprocess",
+    "n": "16 tokenizer workers",
     "v": null,
     "m": false
    },
    {
-    "n": "Graph-safe fused verify (256 per worker, production)",
+    "n": "Graph-safe fused verify",
     "v": null,
     "m": false
    },
    {
-    "n": "Attention TP2 without DP lockstep (production)",
+    "n": "Attention TP2, no lockstep",
     "v": null,
     "m": false
    },
    {
-    "n": "Production knobs: chunk 16384, block 4, HiCache (chain14)",
+    "n": "Prod knobs (chain14)",
     "v": null,
     "m": false
    }
@@ -636,12 +636,21 @@
     "14–33"
    ],
    [
-    "cache hit / per-stream decode",
+    "cache hit / decode p50 per stream, 1× → 4× (tok/s)",
     "–",
-    "91% / 25 tok/s",
-    "60% / 71 tok/s",
-    "<b>88.5% / 75 tok/s</b>",
-    "84% / 123 → 21 tok/s (1× → 4×)",
+    "91% / 114 → 18",
+    "60% / 129 → 25",
+    "<b>88.5% / 132 → 68</b>",
+    "84% / 123 → 21",
+    "–"
+   ],
+   [
+    "uncached prompt tokens per request at 1× (prefill work)",
+    "–",
+    "6.4k",
+    "26.7k",
+    "<b>7.8k</b>",
+    "11.0k",
     "–"
    ],
    [
@@ -654,7 +663,7 @@
     "9.75 M node avg (tp8 7.7)"
    ]
   ],
-  "note": "Same 2,939-request trace for all three. The affinity gateway pins each session's prefix to one engine and one DP rank, so caches stay warm (88.5%) and the 4×tp2 layout's faster decode (2-rank lockstep instead of 8) shows: it holds p50 ≤ 2 s up to the 4× level, where the tp8 engine had already backed up by minutes. The lift + slot gateway run (chain13) regressed on real traffic: per request it had to prefill 11k uncached tokens instead of 7.8k (hit 81% vs 87% at 1×). Cause: the prefix-head hash puts every session sharing a system prompt on one slot (two slots carried 25% of prompt tokens each) and spill then moved those sessions off the rank holding their KV; the smaller KV pool (mem 0.72) and 64 running per worker add to it. Fix in chain14: session pinning."
+  "note": "Same 2,939-request trace for all three. The affinity gateway pins each session's prefix to one engine and one DP rank, so caches stay warm (88.5%) and the 4×tp2 layout's faster decode (2-rank lockstep instead of 8) shows: it holds p50 ≤ 2 s up to the 4× level, where the tp8 engine had already backed up by minutes. The lift + slot gateway run (chain13) regressed on real traffic: per request it had to prefill 11k uncached tokens instead of 7.8k (hit 81% vs 87% at 1×). Cause: the prefix-head hash puts every session sharing a system prompt on one slot (two slots carried 25% of prompt tokens each) and spill then moved those sessions off the rank holding their KV; the smaller KV pool (mem 0.72) and 64 running per worker add to it. Fix in chain14: session pinning. Uncached prompt tokens per request track the knee across all four layouts: the more prefill each request needs, the earlier TTFT breaks. Decode per stream at 1× is similar everywhere (114–132 tok/s); what separates the layouts is how well routing keeps sessions on the rank that holds their KV."
  },
  "setups": {
   "Old fork + DSpark graphs + 8 workers (winning setup)": {
@@ -1239,7 +1248,7 @@
     "09-27 peak, warm",
     "59.7%",
     "1.5–3.0 / 2.5–9.6 / 10–49",
-    "71",
+    "129 / 67 / 25",
     "< 1 req/s/node (p50 > 1.6 s)"
    ],
    [

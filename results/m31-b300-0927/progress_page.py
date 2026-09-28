@@ -171,7 +171,7 @@ def charts():
     return ('<div class="panel"><h2>Per-GPU TPM by configuration, ranked (static frame)</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
             '<div class="legend"><span style="--sw:var(--bad)">DSpark without CUDA graphs (vendor 09-27 build)</span><span style="--sw:var(--okfill)">decode on CUDA graphs</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
             f'<p class="note">{data.get("chart_note","")}</p></div>'
-            '<div class="panel"><h2>Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 300"></svg></div>'
+            '<div class="panel"><h2>Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 330"></svg></div>'
             '<div class="legend"><span style="--sw:var(--okfill)">measured gain (M/GPU)</span><span style="--sw:var(--pend)">pending, not yet measured</span></div>'
             f'<p class="note">{data.get("pareto_note","")}</p></div>')
 
@@ -190,7 +190,7 @@ JS = """
   g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star ${TARGET.toFixed(2)} M / GPU</text>`;
   s1.innerHTML=g;
   const lev=%(lev)s; const base=%(base)s, measuredTop=%(top)s, remaining=TARGET-measuredTop, pendN=lev.filter(d=>!d.m).length, pendEach=remaining/Math.max(1,pendN);
-  const s2=document.getElementById('c2'); const W2=960,H2=300,l2=60,r2=60,t2=30,b2=70; const bw=(W2-l2-r2)/(lev.length+0.6); const ymax=7; const yv=v=>t2+(H2-t2-b2)*(1-v/ymax);
+  const s2=document.getElementById('c2'); const W2=960,H2=330,l2=60,r2=60,t2=30,b2=66; const bw=(W2-l2-r2)/(lev.length+0.6); const ymax=7; const yv=v=>t2+(H2-t2-b2)*(1-v/ymax);
   let h='';
   for(let t=0;t<=7;t++){h+=`<line x1="${l2}" y1="${yv(t)}" x2="${W2-r2}" y2="${yv(t)}" stroke="${grid}"/><text x="${l2-8}" y="${yv(t)+4}" font-size="11" fill="${muted}" text-anchor="end">${t} M</text>`;}
   let cum=base; const pts=[]; const x0=l2+bw*0.3;
@@ -198,8 +198,8 @@ JS = """
   lev.forEach((d,i)=>{const cx=l2+bw*(i+1)+bw*0.3; const val=d.m?d.v:pendEach; cum+=val; const y0=yv(cum-val),y1=yv(cum); pts.push([cx,yv(cum),d.m]);
     h+=`<rect x="${cx-bw*0.3}" y="${Math.min(y0,y1)}" width="${bw*0.6}" height="${Math.max(2,Math.abs(y0-y1))}" fill="${d.m?ok:pend}" ${d.m?'':'fill-opacity="0.35" stroke="'+pend+'" stroke-dasharray="4 3"'} rx="2"/>`;
     h+=`<text x="${cx}" y="${Math.min(y0,y1)-6}" font-size="11" fill="${ink}" text-anchor="middle">${d.m?(d.v>0?'+'+d.v.toFixed(2)+' M':'0'):'?'}</text>`;
-    const words=d.n.split(' '); const half=Math.ceil(words.length/2); const line1=words.slice(0,half).join(' '), line2=words.slice(half).join(' ');
-    h+=`<text x="${cx}" y="${H2-b2+18}" font-size="10.5" fill="${ink}" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif">${line1}</text><text x="${cx}" y="${H2-b2+32}" font-size="10.5" fill="${ink}" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif">${line2}</text>`;
+    const lines=[]; let cur=''; d.n.split(' ').forEach(w=>{ if(cur && (cur+' '+w).length>Math.max(10,Math.floor(bw/6.2))){lines.push(cur); cur=w;} else cur=cur?cur+' '+w:w; }); if(cur) lines.push(cur);
+    lines.slice(0,4).forEach((ln,k)=>{ h+=`<text x="${cx}" y="${H2-b2+16+k*13}" font-size="10.5" fill="${ink}" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif">${ln}</text>`; });
   });
   h+=`<line x1="${l2}" y1="${yv(TARGET)}" x2="${W2-r2}" y2="${yv(TARGET)}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${W2-r2}" y="${yv(TARGET)-6}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">${TARGET.toFixed(2)} M</text>`;
   const mp=pts.filter(p=>p[2]), pp=pts.filter(p=>!p[2]);
