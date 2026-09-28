@@ -62,15 +62,5 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 22:23 PDT | chain11 (bare 4x tp2/ep2/dp2 + gateway affinity) attempt 1: m31-tp2-0/1 hung right after "server fired up" with zero requests (py-spy: scheduler in `dp_attn.py:184 all_gather`; detokenizer heartbeat stopped); tp2-2/3 fine. Same fresh-worker DP-sync race the Dynamo kit avoids with immediate short warm-ups. chain11b: restart + per-engine warm-up, then canaries/grid/staircase | logs, py-spy | dp-attention engines need a warm-up right after boot |
 | 20:50 | Upstream survey: vendor branch = v0.5.17 + 10 commits (148 files); upstream v0.5.18-20 = 2,235 commits, 96 of the vendor files overlap. Cherry-pick candidates: #34338 DP sync collapse, #32313 TP LM head a2a, #37505 DP prefix off-by-one (correctness), #38936 DP burst hang, #30393 HiCache DSpark draft caches, #35640, #32434, #36630/1, #31470 | git, release notes | |
 
-## Standing numbers — reported PER GPU (node total / 8); target 7 M TPM per GPU (= 56 M per node)
-| family | per-GPU TPM | % of 7 M | where |
-|---|---|---|---|
-| target | 7.00 M | 100% | team's verified peak |
-| 0927 demo, plain + HiCache + kernel patch + 8 tokenizer workers | c64 1.54 M · c128 2.11 M · c256 **2.57 M** · c512 2.92 M (saturated, TTFT 29 s) | 37-42% | p-plain-hicache-tok8 |
-| previous best (old fork, Dynamo 2x tp4, windowed DSpark) | 2.34 M @c64 | 33% | 09-26 |
-| 0927 demo, DSpark + HiCache, vendor verbatim (eager), patched | 0.55 M @c64 · 0.82 M @c256 | 12% | p-vendor32 |
-| 0927 demo, plain + HiCache, 1 tokenizer worker | 0.88 M @c64 · 0.91 M @c128 | 13% | stress-hicache-nodspark |
-| 0927 demo, TC0 / DSpark graphs override | not viable on this image / shelved | – | – |
-| old fork DSpark (graphs) + 8 tokenizer workers, MAXREQ 128 (**winning setup**) | c8 0.48 M · c16 0.86 M · c64 2.20 M (1.6 s) · **c128 3.20 M** (2.8 s); per-stream 135 tok/s @c6 | **46%** | old-dspark-tok8 |
-
-Convention from 22:15Z: all TPM figures in this log and in reports are per GPU unless marked "node".
+## Standing numbers
+See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

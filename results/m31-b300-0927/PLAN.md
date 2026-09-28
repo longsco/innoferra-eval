@@ -1,6 +1,6 @@
 # MiniMax-M3.1 single-node serving: fair comparison + incremental improvement plan
 
-Date: 2026-09-27. Node: 0008 (8x B300). Target: 56 M TPM per node (7 M per GPU, team's verified peak). Status of the stack under test:
+Date: 2026-09-27. Live numbers: [STANDINGS.md](STANDINGS.md) and the progress page https://claude.ai/artifact/1yxo8dUFzr4pBVomt6LT5V (both regenerated from progress_data.json). Node: 0008 (8x B300). Target: 56 M TPM per node (7 M per GPU, team's verified peak). Status of the stack under test:
 vendor 0927 demo (0922-sglang@024129fb) with our runtime-N kernel patch.
 
 ## 1. Fair comparison protocol (two routes, always both)
