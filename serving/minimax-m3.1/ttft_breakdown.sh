@@ -8,7 +8,7 @@ import sys, re, collections
 agg = collections.defaultdict(float)
 for l in sys.stdin:
     name, val = l.rsplit(' ', 1)
-    base = re.match(r'sglang:([a-z_]+)_(sum|count)', name); stage = re.search(r'stage=\"([^\"]+)\"', name)
+    base = re.match(r'sglang:([a-z0-9_]+)_(sum|count)', name); stage = re.search(r'stage=\"([^\"]+)\"', name)
     key = base.group(1) + ((':' + stage.group(1)) if stage else '') + '|' + base.group(2)
     agg[key] += float(val)
 for k, v in sorted(agg.items()): print(k, v)"; }
