@@ -12,6 +12,8 @@ ap.add_argument("--limit", type=int, default=0); ap.add_argument("--max-inflight
 ap.add_argument("--out", required=True); ap.add_argument("--model", default=None, help="override body.model (default: as-is)")
 ap.add_argument("--ramp", default=None, help="S0:S1:DURATION_S — speed factor rises linearly from S0 to S1 over DURATION_S wall seconds (trace order kept, inter-arrivals compressed); stops at DURATION_S or end of trace")
 ap.add_argument("--bin", type=int, default=60, help="reporting bin in wall seconds")
+ap.add_argument("--closed-loop", type=int, default=0, help="C > 0: ignore timestamps and keep exactly C requests in flight (real prompts at saturation, comparable to the static frame's concurrency c)")
+ap.add_argument("--duration", type=float, default=600, help="closed-loop run length in seconds")
 ap.add_argument("--stairs", default=None, help="S1:D1,S2:D2,... — hold speed factor S1 for D1 wall seconds, then S2 for D2, ... (piecewise-constant load levels)")
 ap.add_argument("--no-fix-images", action="store_true", help="keep image URLs as logged (default: replace redacted '/base64/' placeholders and expired signed http URLs with a 1x1 PNG data URI)")
 a = ap.parse_args()
@@ -63,7 +65,7 @@ def schedule():
         prev_t = r["t"]
         if w > D: return
         r["_w"] = w; r["_speed"] = s0 + (s1 - s0) * min(w, D) / D; yield w, r
-sem = asyncio.Semaphore(a.max_inflight); results = []; inflight = [0]
+sem = asyncio.Semaphore(max(a.max_inflight, a.closed_loop or 0)); results = []; inflight = [0]
 async def one(client, r, t_start, w_sched):
     body = json.loads(json.dumps(r["body"])); img_fixed = 0
     if a.model: body["model"] = a.model
@@ -106,8 +108,23 @@ async def one(client, r, t_start, w_sched):
     out.update({"status": status, "error": err, "ttft": ttft, "total": total, "chunks": nchunks, "prompt_tokens": u.get("prompt_tokens"),
                 "completion_tokens": u.get("completion_tokens"), "cached_tokens": det.get("cached_tokens", u.get("cached_tokens"))})
     results.append(out); return out
+async def closed_loop(client, t_start):
+    it = iter_trace(); lock = asyncio.Lock(); tasks = []
+    async def worker():
+        while time.perf_counter() - t_start < a.duration:
+            async with lock:
+                try: r = next(it)
+                except StopIteration: return
+            r["_speed"] = 0
+            await one(client, r, t_start, 0.0)
+    await asyncio.gather(*(worker() for _ in range(a.closed_loop)))
+
 async def main():
     t_start = time.perf_counter()
+    if a.closed_loop > 0:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(a.timeout, connect=30), limits=httpx.Limits(max_connections=a.closed_loop + 8)) as client:
+            await closed_loop(client, t_start)
+        await report(time.perf_counter() - t_start); return
     async with httpx.AsyncClient(timeout=httpx.Timeout(a.timeout, connect=30), limits=httpx.Limits(max_connections=a.max_inflight + 8)) as client:
         tasks = []
         for w, r in schedule():
@@ -117,7 +134,9 @@ async def main():
             if ahead > 30: await asyncio.sleep(ahead - 30)
         await asyncio.gather(*tasks)
     recs = results
-    wall = time.perf_counter() - t_start
+    await report(time.perf_counter() - t_start)
+
+async def report(wall):
     with open(a.out, "w") as f:
         for r in results: f.write(json.dumps(r) + "\n")
     ok = [r for r in results if r["status"] == 200 and not r["error"]]
@@ -127,7 +146,7 @@ async def main():
     def fmt(x): return "-" if x is None else f"{x:.2f}"
     s_ok = [r for r in ok if r["stream"] and r["ttft"] is not None]
     print(f"== replay {os.path.basename(a.trace)} speed={a.speed}x n={len(results)} ok={len(ok)} errors={len(results)-len(ok)} wall={wall:.0f}s "
-          f"rate={len(results)/wall:.2f} req/s{' ramp ' + a.ramp if a.ramp else ''}{' stairs ' + a.stairs if a.stairs else ''}")
+          f"rate={len(results)/wall:.2f} req/s{' ramp ' + a.ramp if a.ramp else ''}{' stairs ' + a.stairs if a.stairs else ''}{' closed-loop c=' + str(a.closed_loop) if a.closed_loop else ''}")
     st_codes = {}
     for r in results: st_codes[str(r["status"]) + ("" if not r["error"] else " err")] = st_codes.get(str(r["status"]) + ("" if not r["error"] else " err"), 0) + 1
     print("   status:", st_codes)

@@ -1,6 +1,6 @@
 #!/bin/bash
 # chain14: production-knob combinations on 4 x tp2/ep2/dp2 DSpark + envelope lift behind the slot gateway. Each variant:
-# boot + warm-up + canary + static grid c128/c256 via gateway + real-traffic short staircase (warm-up 8x, then 2x/4x/6x x 180 s).
+# boot + warm-up + canary + static grid c128/c256 via gateway + real-prompt closed loop c64/c128 x 240 s + real-traffic short staircase (2x/4x/6x x 180 s).
 #  V1 prod scheduling: chunk 16384, SGLANG_ENABLE_OVERLAP_PLAN_STREAM=1, --incremental-streaming-output, --max-queued-requests 256
 #  V2 V1 + DSpark block 4 (production's block size)
 #  V3 V2 + HiCache ratio 3 write-through page_first (MiniMax NVFP4 host-cache commit 2ecd8a6ae applied on a copy of our tree)
@@ -24,6 +24,7 @@ variant(){ # TAG then env assignments via the caller
   printf '  canary: '; curl -s -m 90 http://127.0.0.1:8000/v1/chat/completions -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d "{\"model\":\"minimax-m3.1\",\"messages\":[{\"role\":\"user\",\"content\":\"What is 17*23? Answer with the number only.\"}],\"max_tokens\":40,\"temperature\":0,\"thinking\":{\"type\":\"disabled\"}}" | python3 -c "import json,sys; d=json.load(sys.stdin); print(repr((d.get('choices') or [{}])[0].get('message',{}).get('content',''))[:40])" 2>&1 | tail -1
   NPC_CAP=1024 PORT=8000 SERVED=minimax-m3.1 OPENAI_API_KEY=$KEY IMAGE=minimax-m31-sglang:demo-024129f MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private TAG=0927-$TAG bash $K/bench_tpm.sh "128 256" 2>&1 | grep -E "^80k" | cut -c1-160
   RUN --trace /tr/trace_node_1430_30m.jsonl --base-url http://127.0.0.1:8000 --key-file /key --speed 8 --max-inflight 4096 --timeout 600 --out /tr/warmup-$TAG.jsonl | grep "^== replay" | cut -c1-120
+  for C in 64 128; do RUN --trace /tr/trace_node_1500_60m.jsonl --base-url http://127.0.0.1:8000 --key-file /key --closed-loop $C --duration 240 --timeout 900 --out /tr/closed-$TAG-c$C.jsonl | tee -a $T/replay.log | grep -E "^== replay|TTFT\(stream\)|per-stream|tokens:"; done
   RUN --trace /tr/trace_node_1500_60m.jsonl --base-url http://127.0.0.1:8000 --key-file /key --stairs 2:180,4:180,6:180 --bin 60 --max-inflight 4096 --timeout 900 --out /tr/stairs-$TAG.jsonl | tee -a $T/replay.log | grep -E "^== replay|TTFT\(stream\)|per-stream|tokens:|^ +[0-9]+s \|"
   log "===== variant $TAG done"
 }
