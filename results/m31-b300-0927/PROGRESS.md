@@ -120,5 +120,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 13:28 PDT (09-28) | **NORTH STAR PASSED (static frame): chain18 tok8 = frontier + `--tokenizer-worker-num 8` per engine**: c64 29.59 M (3.70/GPU, TTFT 1.18 s, p99 3.95), c128 45.40 (5.67, 1.30 s, p99 7.94), **c256 62.58 (7.82/GPU, TTFT 2.11 s, p99 19.88)**, c384 67.69 (8.46, 10.33 s). Engine TTFT/queue/prefill: c64 1.36/0.01/0.28, c128 1.42/0.00/0.15, c256 2.43/0.38/0.18, c384 7.90/5.40/0.20 (32-per-rank cap binds at c384). Frontier repeat real traffic: strict 2x, staircase accept 4.21, closed loop c128 14.27 M node | tpm-*-0927-tok8.csv | 5.10 -> 7.82 M/GPU |
 
+| 14:02 PDT (09-28) | tok8 real traffic: staircase 2938/2939 (1 ReadError at 2x on a 178k-token prompt; gateway 502 upstream-midstream RemoteProtocolError; engine TypeError "'str' object does not support item assignment", traceback lost when tok4 replaced the containers), hit 88.3%, TTFT p50/p99 0.77/6.5, 1.06/15.4, 1.37/34.8, 3.72/39.1; 2x minute bins p50 0.89-1.57, p99 5.6-23.1; decode 148/111/71/45; accept 4.15; closed loop c128 13.57 M node. catch_tb.sh armed (saves tracebacks before container replacement) | traffic/stairs-tok8.jsonl | real traffic on par |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
