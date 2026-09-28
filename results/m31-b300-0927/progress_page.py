@@ -102,7 +102,8 @@ def comparison():
     if not c: return ""
     head = "".join(f"<th>{h}</th>" for h in c["columns"])
     body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f"<td>{x}</td>" for x in r[1:]) + "</tr>" for r in c["rows"])
-    return f'<div class="panel"><h2>{c["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div></div>'
+    note = f'<p class="note">{c["note"]}</p>' if c.get("note") else ""
+    return f'<div class="panel"><h2>{c["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div>{note}</div>'
 def launch_specs():
     import html as _h
     out = []

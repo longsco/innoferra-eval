@@ -101,22 +101,22 @@ table.cmp td{vertical-align:top}table.cmp td:nth-child(2){background:color-mix(i
 <tr><td class="k">cache hit</td><td class="n">98.9%</td><td class="n">73.5% (cold start)</td><td class="n">99.4%</td><td class="n">77.3% (cold start)</td></tr>
 </table></div>
 <p class="note">Trace: one node's share (1/24, sessions kept together) of 2026-09-18 11:05–11:15 UTC, 727 requests, engines started cold. The DSpark engine's 106 s TTFT is queueing: its max running requests is 128 (the CUDA-graph envelope) and cold prefills of 50–650k prompts in 8k chunks stall decode across the DP lockstep, so slots are held for minutes and arrivals wait. Production sees 98.9% cache hits because sessions continue; a cold replay does not. The staircase warms the caches with the preceding 30 minutes first, which is the fair measurement.</p></div></section>
-<section class="tabpanel" id="setup" hidden><div class="panel"><h2>Side by side: team production vs our dev-best (one layout, two routers)</h2><div class="wrap"><table class="cmp">
-<tr><th></th><th>Team production (18 nodes)</th><th>Dev-best: 4×(tp2/ep2/dp2) DSpark on the 09-22 engine</th><th>Runner-up: tp8/dp8 DSpark</th></tr>
-<tr><td class="k">North-star metric: static frame, per GPU</td><td>not measured (7 M claimed)</td><td><b>3.34 M</b> at c128 (load-balancing Dynamo router)</td><td>3.20 M at c128</td></tr>
-<tr><td class="k">Production metric: real traffic at prod-parity latency (TTFT p50 ≤ 1.6 s, p99 ≤ 22 s)</td><td>~2 req/s per node today (not saturated), 1.41 M/GPU</td><td><b>~2 req/s per node</b> holds; usable to ~3 req/s at p50 ~1.5 s (affinity gateway, 88.5% hit)</td><td>~1.5 req/s (p50 up to 3.4 s at 2×)</td></tr>
-<tr><td class="k">TTFT p50 on real traffic, 1× / 2× / 4× of a node's share</td><td>1.52 s at its own ~2 req/s</td><td>0.7–0.9 / 0.8–1.6 / 1.1–2.0 s</td><td>0.8–1.3 / 1.3–3.4 / 13–95 s</td></tr>
-<tr><td class="k">Per-stream decode on real traffic (p50)</td><td>212 tok/s (M3.1 hub, 23:20 PDT)</td><td>75 tok/s</td><td>25 tok/s</td></tr>
-<tr><td class="k">Engine build</td><td>in-house SGLang 0.0.0+deploy + Dynamo 1.5.0 custom-policy</td><td>MiniMax 0922-sglang@bef87f4 + our DSpark port</td><td>same</td></tr>
-<tr><td class="k">Worker shape</td><td>4 × TP2, EP2, <b>dp 1</b> (attention TP2)</td><td>4 × tp2/ep2/<b>dp2</b> (attention TP1)</td><td>1 × tp8/ep8/<b>dp8</b> (attention TP1)</td></tr>
-<tr><td class="k">Numerics</td><td>training numerics off, MSA off, in-house KV4 kernels</td><td>training numerics on (Triton Q8KV4)</td><td>same</td></tr>
-<tr><td class="k">DSpark</td><td>block 4, fa4 draft, bounded SWA draft, fused verify</td><td>block 7, flashinfer draft, window 4096</td><td>same</td></tr>
-<tr><td class="k">Max running</td><td>256 per worker (1,024 per node)</td><td>32 per worker (128 per node)</td><td>128 per node</td></tr>
-<tr><td class="k">Prefill</td><td>chunk 16384, tc_piecewise graphs, trtllm_mha</td><td>chunk 32768, breakable graphs</td><td>chunk 65536, breakable graphs</td></tr>
-<tr><td class="k">Cache</td><td>HiCache ratio 3, write-through, page 128</td><td>none</td><td>none</td></tr>
-<tr><td class="k">Routing</td><td>KV router + strict affinity (≥2 blocks and >50% overlap, else load) + session-pin Redis</td><td>static test: Dynamo KV router (load-balanced); real traffic: our gateway, prefix hash → engine + DP rank</td><td>single engine, DP-rank pinning</td></tr>
-<tr><td class="k">mem-fraction</td><td>0.8</td><td>0.8</td><td>0.80</td></tr>
-</table></div></div><div class="panel win"><h2>Current winning setup: 3.67 M per GPU (52% of target) — tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72), c256, TTFT 2.6 s; c128 3.02, c192 3.36</h2>
+<section class="tabpanel" id="setup" hidden><div class="panel"><h2>Side by side: team production vs our dev-best</h2><div class="wrap"><table class="cmp">
+<tr><th></th><th>Team production (18 nodes)</th><th>Dev-best: 4×(tp2/ep2/dp2) DSpark on the 09-22 engine</th></tr>
+<tr><td class="k">North-star metric: static frame, per GPU</td><td>not measured (7 M claimed)</td><td><b>3.34 M</b> at c128 (load-balancing Dynamo router)</td></tr>
+<tr><td class="k">Production metric: real traffic at prod-parity latency (TTFT p50 ≤ 1.6 s, p99 ≤ 22 s)</td><td>~2 req/s per node today (not saturated), 1.41 M/GPU</td><td><b>~2 req/s per node</b> holds; usable to ~3 req/s at p50 ~1.5 s (affinity gateway, 88.5% hit)</td></tr>
+<tr><td class="k">TTFT p50 on real traffic, 1× / 2× / 4× of a node's share</td><td>1.52 s at its own ~2 req/s</td><td>0.7–0.9 / 0.8–1.6 / 1.1–2.0 s</td></tr>
+<tr><td class="k">Per-stream decode on real traffic (p50)</td><td>212 tok/s (M3.1 hub, 23:20 PDT)</td><td>75 tok/s</td></tr>
+<tr><td class="k">Engine build</td><td>in-house SGLang 0.0.0+deploy + Dynamo 1.5.0 custom-policy</td><td>MiniMax 0922-sglang@bef87f4 + our DSpark port</td></tr>
+<tr><td class="k">Worker shape</td><td>4 × TP2, EP2, <b>dp 1</b> (attention TP2)</td><td>4 × tp2/ep2/<b>dp2</b> (attention TP1)</td></tr>
+<tr><td class="k">Numerics</td><td>training numerics off, MSA off, in-house KV4 kernels</td><td>training numerics on (Triton Q8KV4)</td></tr>
+<tr><td class="k">DSpark</td><td>block 4, fa4 draft, bounded SWA draft, fused verify</td><td>block 7, flashinfer draft, window 4096</td></tr>
+<tr><td class="k">Max running</td><td>256 per worker (1,024 per node)</td><td>32 per worker (128 per node)</td></tr>
+<tr><td class="k">Prefill</td><td>chunk 16384, tc_piecewise graphs, trtllm_mha</td><td>chunk 32768, breakable graphs</td></tr>
+<tr><td class="k">Cache</td><td>HiCache ratio 3, write-through, page 128</td><td>none</td></tr>
+<tr><td class="k">Routing</td><td>KV router + strict affinity (≥2 blocks and >50% overlap, else load) + session-pin Redis</td><td>static test: Dynamo KV router (load-balanced); real traffic: our gateway, prefix hash → engine + DP rank</td></tr>
+<tr><td class="k">mem-fraction</td><td>0.8</td><td>0.8</td></tr>
+</table></div><p class="note">Static-frame best overall is currently tp8/dp8 with the envelope lift, 3.67 M/GPU at c256; see the winning-setup panel below. The 4×tp2 version of that lift is running.</p></div><div class="panel win"><h2>Current winning setup: 3.67 M per GPU (52% of target) — tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72), c256, TTFT 2.6 s; c128 3.02, c192 3.36</h2>
 <dl>
 <dt>Engine</dt><dd>MiniMax 0922-sglang@bef87f4 + our DSpark port + Triton runtime-N patch + env-gated sync-free verify (commit 2652ef2)</dd>
 <dt>Layout</dt><dd>tp8/ep8/dp8 with DP attention, <b>max running 256 (32/rank)</b>, chunk 65536, <b>mem-fraction 0.72</b> (leaves the CUDA-graph pool room for verify tiers up to 32/rank), 8 tokenizer workers</dd>
