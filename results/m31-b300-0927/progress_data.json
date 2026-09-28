@@ -216,12 +216,9 @@
    [
     "per GPU at the 12-min peak if the hub is 18 nodes (144 GPUs, as heard)",
     "≈ 1.5 – 1.8 M (observed load, not capacity)"
-   ],
-   [
-    "node count: verifiable from here?",
-    "No. The hub logs route everything via one upstream (162.43.172.250:80); only the two ingress VIPs answer probes; no Slack message states it. Ask the team, plus how 7 M/GPU was measured."
    ]
-  ]
+  ],
+  "note": "Same TPM definition as ours, real traffic. Node count behind the hub is not verifiable from our side: the hub logs route everything via one upstream (162.43.172.250:80), only the two ingress VIPs answer probes, and no Slack message states it. Ask the team for the node count and for how the 7 M/GPU figure was measured."
  },
  "timeline": [
   [

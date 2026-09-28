@@ -22,6 +22,7 @@ svg{width:100%;height:auto;display:block;font-family:"IBM Plex Mono",ui-monospac
 .legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;background:var(--sw)}
 table{border-collapse:collapse;width:100%;font-size:.88rem}td,th{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:left;vertical-align:top}th{color:var(--muted);font-weight:500;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
 td.n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+td.w{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;text-align:left}
 td.k{white-space:nowrap;font-weight:500}
 .wrap{overflow-x:auto}
 dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:0;font-size:.9rem}dt{font-weight:500;white-space:nowrap}dd{margin:0;color:var(--ink)}
@@ -89,10 +90,9 @@ a{color:var(--ok)}
 <tr><td>latency p50 / p90 / p99, s</td><td class="n">0.6–2.1 / 4.5–10.2 / 11–17</td></tr>
 <tr><td>errors per minute (4xx / 5xx)</td><td class="n">0–2 / 0–2</td></tr>
 <tr><td>per GPU at the 12-min peak if the hub is 5 nodes (40 GPUs, Slack 09-26)</td><td class="n">≈ 5.3 – 6.6 M</td></tr>
-<tr><td>per GPU at the 12-min peak if the hub is 18 nodes (144 GPUs, as heard)</td><td class="n">≈ 1.5 – 1.8 M (observed load, not capacity)</td></tr>
-<tr><td>node count: verifiable from here?</td><td class="n">No. The hub logs route everything via one upstream (162.43.172.250:80); only the two ingress VIPs answer probes; no Slack message states it. Ask the team, plus how 7 M/GPU was measured.</td></tr>
+<tr><td>per GPU at the 12-min peak if the hub is 18 nodes (144 GPUs, as heard)</td><td class="w">≈ 1.5 – 1.8 M (observed load, not capacity)</td></tr>
 </table></div>
-<p class="note">This is the apples-to-apples target: same TPM definition, real traffic. Node count behind the hub should be confirmed with the team before quoting the per-GPU figure.</p></div>
+<p class="note">Same TPM definition as ours, real traffic. Node count behind the hub is not verifiable from our side: the hub logs route everything via one upstream (162.43.172.250:80), only the two ingress VIPs answer probes, and no Slack message states it. Ask the team for the node count and for how the 7 M/GPU figure was measured.</p></div>
 
 <div class="panel"><h2>5. Timeline of changes (latest first, Pacific time)</h2><div class="wrap"><table>
 <tr><th>PDT</th><th>change</th><th>result (per GPU)</th></tr>

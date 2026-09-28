@@ -18,12 +18,12 @@ def routeb():
     body = "\n".join("<tr>" + f'<td class="k">{row[0]}</td>' + "".join(f'<td class="n">{c}</td>' for c in row[1:]) + "</tr>" for row in r["rows"])
     return f'<div class="panel"><h2>3. Real production traffic replay (Route B)</h2><div class="wrap"><table>\n<tr>{head}</tr>\n{body}\n</table></div>\n<p class="note">{r["note"]}</p></div>'
 def prodref():
-    p = data["prodref"]; body = "\n".join(f"<tr><td>{a}</td><td class=\"n\">{b}</td></tr>" for a, b in p["rows"])
+    p = data["prodref"]; body = "\n".join(f"<tr><td>{a}</td><td class=\"{'n' if len(b) <= 36 else 'w'}\">{b}</td></tr>" for a, b in p["rows"])
     url = "http://10.1.101.33:5601/app/dashboards#/view/6357c8fc-60ab-438b-9f0c-6dd266baa6e0?_g=(filters:!(),refreshInterval:(pause:!f,value:20000),time:(from:now-6h,to:now))"
     return (f'<div class="panel"><h2>4. Production reference</h2>\n<p style="margin:0 0 6px">Kibana dashboard <b>"Innoferra Token Hub M31 - Full Log"</b> (fleet VPN required): '
             f'<a href="{url}">10.1.101.33:5601 → dashboard 6357c8fc</a>. Panels: tpm and req_count per minute, latency p50/p90/p99 per minute, 4xx/5xx per minute, recent failed requests with full bodies, sample of successful requests with token usage.</p>\n'
             f'<div class="wrap"><table>\n<tr><th>read at {p["read_at"]}</th><th>value</th></tr>\n{body}\n</table></div>\n'
-            f'<p class="note">This is the apples-to-apples target: same TPM definition, real traffic. Node count behind the hub should be confirmed with the team before quoting the per-GPU figure.</p></div>')
+            f'<p class="note">{p.get("note","")}</p></div>')
 def timeline():
     return "\n".join(f"<tr><td>{t}</td><td>{c}</td><td>{r}</td></tr>" for t, c, r in data["timeline"])
 out = (tpl.replace("{{KPIS}}", kpis()).replace("{{WINNING}}", winning()).replace("{{ROUTEB}}", routeb()).replace("{{PRODREF}}", prodref())

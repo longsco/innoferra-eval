@@ -1,0 +1,2 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-old-dspark-tok8-mf80,1,8,1.000,0.598,0.004,80.4,0.90,1.16,12.44
