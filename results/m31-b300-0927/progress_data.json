@@ -23,7 +23,7 @@
    "label": "Real traffic at prod-parity latency",
    "value": "~2 req/s",
    "cls": "ok",
-   "sub": "per node, strict per-minute rule; p50 ≤ 1.5 s to ~3.3 req/s (lift + P1 + session pinning)"
+   "sub": "per node, strict per-minute rule; p50 ≤ 1.5 s to ~3.3 req/s (c13p1bd: + bidirectional draft)"
   },
   {
    "label": "Frontier at c64",
@@ -121,7 +121,7 @@
    "v": 4.01,
    "c": "c128, TTFT 3.5 s; c64 3.02 M at 1.7 s; c256 4.18 M at 20.9 s",
    "k": "ok",
-   "acc": "accept 5.79 (probe, per request)"
+   "acc": "accept 5.79 probe · 4.07 real traffic"
   }
  ],
  "pareto": {
@@ -283,6 +283,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "05:07",
+   "<b>c13p1bd is the best setup on both tests.</b> Real traffic (same procedure): TTFT p50 0.75 / 1.05 / 1.49 / 3.1 s at 1× / 2× / 4× / 6× (causal draft 0.80 / 1.13 / 1.47 / 3.6), p99 at 6× 32 s (44), decode per stream 150 / 105 / 66 tok/s (135 / 91 / 63), DSpark acceptance on real traffic 4.07 (3.78), 0 errors; closed loop c128 12.9 M node (11.9)",
+   "real-traffic frontier moves again"
+  ],
   [
    "04:50",
    "Plan change: chain15's remaining variants lacked the bidirectional draft, so chain16 (armed) takes over after c13p1bd's balance A/B and runs the knob variants on the new base: min-free-slots delay off, 64 per rank, production scheduling, HiCache, block 4",
@@ -534,11 +539,11 @@
    ],
    [
     "c13p1bd (+ bidirectional draft)",
-    "static done 04:42: <b>4.01 M/GPU</b>; staircase running"
+    "done 05:07: best on both tests (static 4.01 M/GPU; real traffic p50 0.75/1.05/1.49 s; accept 4.07)"
    ],
    [
     "balance A/B on the same engines (in-flight balancing for keyless requests)",
-    "next, at the hold point (~05:15)"
+    "running since 05:07 PDT"
    ],
    [
     "chain16 on the new base: bmfs (--min-free-slots-delay 1), b128 (64/rank), bprod (production scheduling), bhic (HiCache), bblk4 (block 4)",
@@ -668,7 +673,7 @@
  "chart_note": "Red bars = MiniMax's 09-27 engine build, which turns off CUDA graphs for DSpark when training-matched numerics are on (its demo launch sets them), so DSpark decodes slowly (13–42 tok/s per stream). Teal bars = setups that keep CUDA graphs (MiniMax's 09-22 build + our DSpark port, or plain decode). Ranked by TPM; the order tested is in the Timeline tab. Bars are measured at different concurrencies (label under each value), so a high-concurrency bar is not directly comparable with one measured at c128. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128. Accept length = average tokens accepted per DSpark verify step (block 7), measured on the probe with 3 real 60–80k prompts; it is not measured on the static frame itself, whose random text gives the draft almost nothing to predict.",
  "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.",
  "staircase": {
-  "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): five layouts",
+  "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): six layouts",
   "columns": [
    "load (× a node's share)",
    "offered req/s",
@@ -676,7 +681,8 @@
    "4×tp2 + Dynamo router",
    "4×tp2 + affinity gateway",
    "4×tp2 lift + slot gateway (spill)",
-   "<b>4×tp2 lift + P1 + session pinning</b>",
+   "4×tp2 lift + P1 + session pinning",
+   "<b>+ bidirectional draft (c13p1bd)</b>",
    "node TPM (M)"
   ],
   "rows": [
@@ -687,7 +693,8 @@
     "1.5–3.0 / 9–28",
     "0.7–0.9 / 3–9",
     "1.0–1.9 / 10–40",
-    "<b>0.72–1.00 / 2–12</b>",
+    "0.72–1.00 / 2–12",
+    "<b>0.68–0.98 / 3–7</b>",
     "1.6–5.7"
    ],
    [
@@ -697,7 +704,8 @@
     "2.5–9.6 / 28–141",
     "0.8–1.6 / 6–24",
     "1.3–6.8 / 21–62",
-    "<b>0.89–1.53 / 9–16</b>",
+    "0.89–1.53 / 9–16",
+    "<b>0.84–1.54 / 6–17</b>",
     "5.3–8.7"
    ],
    [
@@ -707,7 +715,8 @@
     "10 → 49 / 108–179",
     "1.1–2.0 / 13–54 (one 29 s bin)",
     "4.9–25 / 40–131",
-    "<b>1.2–3.3 / 7–45</b>",
+    "1.2–3.3 / 7–45",
+    "<b>1.2–2.5 / 8–42</b>",
     "8–14"
    ],
    [
@@ -717,7 +726,8 @@
     "86 → 332",
     "2.3 → 28 / 29–91",
     "41 → 111 / 150–240 (53 errors)",
-    "<b>1.7 → 14 / 15–45</b>",
+    "1.7 → 14 / 15–45",
+    "<b>1.5 → 6 / 14–35</b>",
     "14–33"
    ],
    [
@@ -727,7 +737,8 @@
     "60% / 129 → 25",
     "88.5% / 132 → 68",
     "84% / 123 → 21",
-    "<b>89% / 135 → 63 tok/s</b>",
+    "89% / 135 → 63 tok/s",
+    "<b>89% / 150 → 66 tok/s</b>",
     "–"
    ],
    [
@@ -737,7 +748,8 @@
     "26.7k",
     "7.8k",
     "11.0k",
-    "<b>7.5k</b>",
+    "7.5k",
+    "<b>7.2k</b>",
     "–"
    ],
    [
@@ -747,11 +759,12 @@
     "no (1,571 s)",
     "yes (1,240 s, 0 errors)",
     "no (1,398 s, 53 errors)",
-    "<b>yes (1,239 s, 0 errors)</b>",
+    "yes (1,239 s, 0 errors)",
+    "<b>yes (1,253 s, 0 errors)</b>",
     "9.75 M node avg (tp8 7.7)"
    ]
   ],
-  "note": "Same 2,939-request trace for all three. The affinity gateway pins each session's prefix to one engine and one DP rank, so caches stay warm (88.5%) and the 4×tp2 layout's faster decode (2-rank lockstep instead of 8) shows: it holds p50 ≤ 2 s up to the 4× level, where the tp8 engine had already backed up by minutes. The lift + slot gateway run (chain13) regressed on real traffic: per request it had to prefill 11k uncached tokens instead of 7.8k (hit 81% vs 87% at 1×). Cause: the prefix-head hash puts every session sharing a system prompt on one slot (two slots carried 25% of prompt tokens each) and spill then moved those sessions off the rank holding their KV; the smaller KV pool (mem 0.72) and 64 running per worker add to it. Fix in chain14: session pinning. Uncached prompt tokens per request track the knee across all four layouts: the more prefill each request needs, the earlier TTFT breaks. Decode per stream at 1× is similar everywhere (114–132 tok/s); what separates the layouts is how well routing keeps sessions on the rank that holds their KV. <b>New real-traffic best (c13p1, 04:00 PDT)</b>: the frontier engine config with the P1 kernel fix and session pinning. Same procedure and trace: TTFT p50 0.80 / 1.13 / 1.47 / 3.6 s at 1× / 2× / 4× / 6× (previous best 0.77 / 1.12 / 1.67 / 14.2), p99 at 6× 44 s vs 87 s, 0 errors. Cold 80k-token first token 4.0 s (was 9.2–9.4 s before P1). By the strict per-minute rule (p50 ≤ 1.6 s and p99 ≤ 22 s in every minute) it holds 2× (≈ 2 req/s); two 4× minutes exceed p99."
+  "note": "Same 2,939-request trace for all three. The affinity gateway pins each session's prefix to one engine and one DP rank, so caches stay warm (88.5%) and the 4×tp2 layout's faster decode (2-rank lockstep instead of 8) shows: it holds p50 ≤ 2 s up to the 4× level, where the tp8 engine had already backed up by minutes. The lift + slot gateway run (chain13) regressed on real traffic: per request it had to prefill 11k uncached tokens instead of 7.8k (hit 81% vs 87% at 1×). Cause: the prefix-head hash puts every session sharing a system prompt on one slot (two slots carried 25% of prompt tokens each) and spill then moved those sessions off the rank holding their KV; the smaller KV pool (mem 0.72) and 64 running per worker add to it. Fix in chain14: session pinning. Uncached prompt tokens per request track the knee across all four layouts: the more prefill each request needs, the earlier TTFT breaks. Decode per stream at 1× is similar everywhere (114–132 tok/s); what separates the layouts is how well routing keeps sessions on the rank that holds their KV. <b>New real-traffic best (c13p1, 04:00 PDT)</b>: the frontier engine config with the P1 kernel fix and session pinning. Same procedure and trace: TTFT p50 0.80 / 1.13 / 1.47 / 3.6 s at 1× / 2× / 4× / 6× (previous best 0.77 / 1.12 / 1.67 / 14.2), p99 at 6× 44 s vs 87 s, 0 errors. Cold 80k-token first token 4.0 s (was 9.2–9.4 s before P1). By the strict per-minute rule (p50 ≤ 1.6 s and p99 ≤ 22 s in every minute) it holds 2× (≈ 2 req/s); two 4× minutes exceed p99. <b>c13p1bd (05:00 PDT)</b> adds the bidirectional DSpark draft: TTFT p50 0.75 / 1.05 / 1.49 / 3.1 s, p99 at 6× 32 s, decode 150 tok/s per stream at 1× (causal draft 135), DSpark acceptance on real traffic 4.07 (causal 3.78). Every 2× minute meets the strict rule; two 4× minutes exceed p99 22 s."
  },
  "setups": {
   "Old fork + DSpark graphs + 8 workers (winning setup)": {
@@ -903,7 +916,7 @@
    ]
   }
  },
- "realtraffic_best": "4×tp2 lift + P1 kernel fix + session pinning: TTFT p50 ≤ 1.5 s up to 4× a node's share (≈ 3.3 req/s), 3.6 s at 6×, 0 errors; strict per-minute prod-parity holds at 2× (≈ 2 req/s); 89% cache hit; 135 tok/s per stream at 1× (production now: 3.9 req/s per node at TTFT 0.34 s)",
+ "realtraffic_best": "4×tp2 lift + P1 + bidirectional draft + session pinning (c13p1bd): TTFT p50 ≤ 1.5 s up to 4× a node's share (≈ 3.3 req/s), 3.1 s at 6×, 0 errors; strict per-minute prod-parity holds at 2× (≈ 2 req/s); 150 tok/s per stream at 1×; DSpark accept 4.07 on real traffic",
  "prod": {
   "nodes": 18,
   "gpus": 144,
@@ -929,13 +942,13 @@
   "columns": [
    "",
    "Team production (18 nodes)",
-   "Dev-best: 4×(tp2/ep2/dp2) DSpark, envelope lift + slot gateway"
+   "Dev-best: 4×(tp2/ep2/dp2) DSpark, lift + P1 + bidirectional draft + session pinning"
   ],
   "rows": [
    [
     "North-star metric: static frame, per GPU",
     "not measured (7 M claimed)",
-    "<b>3.97 M</b> at c128, TTFT 3.3 s (4.18 at c256)"
+    "<b>4.01 M</b> at c128, TTFT 3.5 s (4.18 at c256)"
    ],
    [
     "Production metric: real traffic at prod-parity latency (TTFT p50 ≤ 1.6 s, p99 ≤ 22 s)",
@@ -945,12 +958,12 @@
    [
     "TTFT p50 on real traffic, 1× / 2× / 4× of a node's share",
     "0.31 s (03:52–04:02 PDT)",
-    "0.80 / 1.13 / 1.47 s at 1× / 2× / 4× (c13p1)"
+    "0.75 / 1.05 / 1.49 s at 1× / 2× / 4× (c13p1bd)"
    ],
    [
     "Per-stream decode on real traffic (p50)",
     "100 tok/s p50 now (174 at 02:09; longer outputs now)",
-    "135 tok/s at 1×, 63 at 4× (c13p1)"
+    "150 tok/s at 1×, 66 at 4× (c13p1bd)"
    ],
    [
     "Engine build",
@@ -970,7 +983,7 @@
    [
     "DSpark",
     "block 4, fa4 draft, bounded SWA draft, fused verify",
-    "block 7, flashinfer draft, window 4096"
+    "block 7, flashinfer draft, bidirectional in-block attention, window 4095"
    ],
    [
     "Max running",
@@ -998,7 +1011,7 @@
     "0.72"
    ]
   ],
-  "note": "Static-frame best is now this 4×tp2 lift + slot gateway at 3.97 M/GPU. Production numbers read from the M3.1 hub at 04:12 PDT Sep 28 (18 nodes; production is not saturated, so its per-GPU figure is load, not capacity)."
+  "note": "Dev-best on both tests is now c13p1bd: 4.01 M/GPU static, TTFT p50 ≤ 1.5 s to ~3.3 req/s per node on real traffic. Production numbers read from the M3.1 hub at 04:12 PDT Sep 28 (18 nodes; production is not saturated, so its per-GPU figure is load, not capacity)."
  },
  "launch_specs": [
   {
@@ -1425,9 +1438,9 @@
     "3.78 (metrics, real)",
     "09-27 peak, warm",
     "87–90%",
-    "<b>0.80 / 1.13 / 1.47</b> (6×: 3.6)",
+    "0.80 / 1.13 / 1.47 (6×: 3.6)",
     "135 / 91 / 63",
-    "<b>≈ 2 req/s strict; p50 ≤ 1.5 s to ~3.3 req/s</b>"
+    "≈ 2 req/s strict; p50 ≤ 1.5 s to ~3.3 req/s"
    ],
    [
     "4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd)",
@@ -1436,12 +1449,12 @@
     "3.5 s (1.7 s @c64)",
     "~100%",
     "134–211 (c1)",
-    "<b>5.79 per request (probe)</b>",
+    "<b>5.79 / 4.07</b>",
     "09-27 peak, warm",
-    "running",
-    "running",
-    "running",
-    "running"
+    "87–90%",
+    "<b>0.75 / 1.05 / 1.49</b> (6×: 3.1)",
+    "<b>150 / 105 / 66</b>",
+    "<b>≈ 2 req/s strict; p50 ≤ 1.5 s to ~3.3 req/s; closed loop c128 12.9 M node</b>"
    ],
    [
     "Team production (18 nodes, for reference)",
@@ -1636,10 +1649,10 @@
   },
   "4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd)": {
    "static": "<b>4.01 M</b> at c128 (TTFT 3.5 s); 3.02 at c64 (1.7 s); 4.18 at c256",
-   "real": "with P1 + session pinning (c13p1): strict prod-parity at ≈ 2 req/s per node; p50 ≤ 1.5 s to ~3.3 req/s; 0 errors at 6×",
-   "ttft": "3.3 s at c128 (static); real traffic 0.80 s p50 at 1×, 1.13 at 2×, 1.47 at 4× (c13p1)",
-   "decode": "12.2 ms/token at c128 static (causal draft 13.2); real traffic: staircase running",
-   "hit": "87–90% (c13p1, session pinning)",
+   "real": "strict prod-parity at ≈ 2 req/s per node; TTFT p50 ≤ 1.5 s to ~3.3 req/s; 0 errors at 6×; closed loop c128 12.9 M node",
+   "ttft": "3.5 s at c128 (static); real traffic 0.75 s p50 at 1×, 1.05 at 2×, 1.49 at 4×",
+   "decode": "12.2 ms/token at c128 static; real traffic 150 tok/s per stream at 1×, 105 at 2×, 66 at 4×",
+   "hit": "87–90% (session pinning)",
    "build": "MiniMax 0922-sglang@bef87f4 + our DSpark port + Triton runtime-N patch",
    "shape": "4 × (tp2, ep2, dp2), attention TP1 (DP attention)",
    "maxrun": "64 per worker (32 per rank; 256 per node)",

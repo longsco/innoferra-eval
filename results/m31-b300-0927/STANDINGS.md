@@ -17,15 +17,15 @@
 
 ## Real traffic (staircase, node's share of the 09-27 peak hour)
 
-| load (× a node's share) | offered req/s | tp8/dp8: TTFT p50 / p99, s | 4×tp2 + Dynamo router | 4×tp2 + affinity gateway | 4×tp2 lift + slot gateway (spill) | <b>4×tp2 lift + P1 + session pinning</b> | node TPM (M) |
-|---|---|---|---|---|---|---|---|
-| 1× | 0.6–1.2 | 0.8–1.3 / 3–8 | 1.5–3.0 / 9–28 | 0.7–0.9 / 3–9 | 1.0–1.9 / 10–40 | <b>0.72–1.00 / 2–12</b> | 1.6–5.7 |
-| 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | 0.8–1.6 / 6–24 | 1.3–6.8 / 21–62 | <b>0.89–1.53 / 9–16</b> | 5.3–8.7 |
-| 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | 1.1–2.0 / 13–54 (one 29 s bin) | 4.9–25 / 40–131 | <b>1.2–3.3 / 7–45</b> | 8–14 |
-| 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 2.3 → 28 / 29–91 | 41 → 111 / 150–240 (53 errors) | <b>1.7 → 14 / 15–45</b> | 14–33 |
-| cache hit / decode p50 per stream, 1× → 4× (tok/s) | – | 91% / 114 → 18 | 60% / 129 → 25 | 88.5% / 132 → 68 | 84% / 123 → 21 | <b>89% / 135 → 63 tok/s</b> | – |
-| uncached prompt tokens per request at 1× (prefill work) | – | 6.4k | 26.7k | 7.8k | 11.0k | <b>7.5k</b> | – |
-| kept up with offered load | – | no (1,574 s) | no (1,571 s) | yes (1,240 s, 0 errors) | no (1,398 s, 53 errors) | <b>yes (1,239 s, 0 errors)</b> | 9.75 M node avg (tp8 7.7) |
+| load (× a node's share) | offered req/s | tp8/dp8: TTFT p50 / p99, s | 4×tp2 + Dynamo router | 4×tp2 + affinity gateway | 4×tp2 lift + slot gateway (spill) | 4×tp2 lift + P1 + session pinning | <b>+ bidirectional draft (c13p1bd)</b> | node TPM (M) |
+|---|---|---|---|---|---|---|---|---|
+| 1× | 0.6–1.2 | 0.8–1.3 / 3–8 | 1.5–3.0 / 9–28 | 0.7–0.9 / 3–9 | 1.0–1.9 / 10–40 | 0.72–1.00 / 2–12 | <b>0.68–0.98 / 3–7</b> | 1.6–5.7 |
+| 2× | 1.5–2.1 | 1.3–3.4 / 11–18 | 2.5–9.6 / 28–141 | 0.8–1.6 / 6–24 | 1.3–6.8 / 21–62 | 0.89–1.53 / 9–16 | <b>0.84–1.54 / 6–17</b> | 5.3–8.7 |
+| 4× | 2.7–3.5 | 13 → 95 / 61–157 | 10 → 49 / 108–179 | 1.1–2.0 / 13–54 (one 29 s bin) | 4.9–25 / 40–131 | 1.2–3.3 / 7–45 | <b>1.2–2.5 / 8–42</b> | 8–14 |
+| 6× | 4.0–6.2 | 120 → 350 | 86 → 332 | 2.3 → 28 / 29–91 | 41 → 111 / 150–240 (53 errors) | 1.7 → 14 / 15–45 | <b>1.5 → 6 / 14–35</b> | 14–33 |
+| cache hit / decode p50 per stream, 1× → 4× (tok/s) | – | 91% / 114 → 18 | 60% / 129 → 25 | 88.5% / 132 → 68 | 84% / 123 → 21 | 89% / 135 → 63 tok/s | <b>89% / 150 → 66 tok/s</b> | – |
+| uncached prompt tokens per request at 1× (prefill work) | – | 6.4k | 26.7k | 7.8k | 11.0k | 7.5k | <b>7.2k</b> | – |
+| kept up with offered load | – | no (1,574 s) | no (1,571 s) | yes (1,240 s, 0 errors) | no (1,398 s, 53 errors) | yes (1,239 s, 0 errors) | <b>yes (1,253 s, 0 errors)</b> | 9.75 M node avg (tp8 7.7) |
 
 ## Production reference (read at 04:12 PDT, Sep 28 (window 03:52–04:02 PDT; Kibana ES|QL; read-only; the index lags ~8 min, so windows end ≥ 10 min before the read))
 
