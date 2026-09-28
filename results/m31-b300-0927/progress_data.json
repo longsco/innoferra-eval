@@ -316,6 +316,11 @@
  },
  "timeline": [
   [
+   "09:42",
+   "chain16 bhic (HiCache ratio 3 on the MiniMax host-cache tree) failed to boot like b128 (0 of 4 healthy twice; logs lost because this chain predates the log-keeping fix). bblk4 then booted cleanly (verify graphs captured on all 4 engines, GPUs had been fully released), so both failures are config-specific",
+   "isolated boot tests queued"
+  ],
+  [
    "08:45",
    "TPM is now the headline in 'Every configuration': two green columns (static TPM per GPU; real-traffic TPM per GPU at the strict prod-parity limit and with 128 real prompts in flight). The longitudinal table shows offered TPM per GPU per level. Real-traffic TPM per GPU at the strict limit: frontier 0.92 (2× level); closed loop 1.61 (bmfs 1.91)",
    "answers the viewer request to highlight TPM"
@@ -614,7 +619,7 @@
    ],
    [
     "chain16 on the new base with balancing on: bmfs, b128 (64/rank), bprod (production scheduling), bhic (HiCache), bblk4 (block 4)",
-    "bmfs mixed; b128 failed to boot; bprod static tie (5.02) but worse on real traffic; bhic running since 08:26 PDT; ends ~10:40 PDT"
+    "bmfs mixed; b128 and bhic FAILED to boot (config-specific: bblk4 then booted cleanly); bprod tie; bblk4 running since 09:34 PDT, ends ~10:40"
    ]
   ]
  },
@@ -644,8 +649,8 @@
    "status": "A/B running in chain15"
   },
   {
-   "title": "64 requests per rank: isolated boot test with logs kept",
-   "detail": "Boot one tp2 engine at 128 per worker with mem 0.66 and 0.70, and with verify graphs capped at 32 per rank, to find what fails.",
+   "title": "Isolated boot tests with logs kept: 64 per rank (b128) and HiCache (bhic)",
+   "detail": "Both failed to boot in chain16 (0 of 4 engines healthy twice, logs removed by the next launcher). Boot one tp2 engine per config with FOLLOW=1: b128 at mem 0.66 / 0.70 and with verify graphs capped at 32 per rank; bhic on the HiCache tree with and without the bidirectional draft, then without P1.",
    "why": "Static TPM at c256 is capped by 32 running per rank (5.70 M/GPU at c256 with TTFT 13 s); room per rank is the next static lever after balancing.",
    "script": "to write",
    "commit": "",

@@ -108,5 +108,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 08:26 PDT (09-28) | chain16 bprod (chunk 16384 + overlap plan stream + incremental streaming + queue cap 256, on the balanced bidirectional base): static c64 27.22 M (3.40/GPU), c128 40.20 (5.02, TTFT 3.56 s, p99 17.3), c256 44.95 (5.62); staircase TTFT p50/p99 0.83/17.8, 1.06/14.8, 1.76/49.1, 3.87/32.9; decode 147/111/70/53; accept 4.14; closed loop c128 11.64 M node. Static tie, real traffic worse at 4x: not adopted (config flagged frontier:false so the page keeps the balanced c13p1bd setup as winner) | tpm-*-0927-bprod.csv | no change |
 
+| 09:42 PDT (09-28) | chain16 bhic (0922-sglang-hicache tree + P1 + bidirectional gate, `--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first`) FAILED to boot: 0/4 twice (15:26-16:34Z), logs lost (chain16 predates 176ecf1). bblk4 booted cleanly right after (GPUs at 0-4 MiB before launch; target/draft verify graphs captured 16:39Z), so b128 and bhic failures are config-specific | stress2-0927.log | isolated boot tests queued |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
