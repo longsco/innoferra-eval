@@ -233,6 +233,11 @@
  },
  "timeline": [
   [
+   "00:57",
+   "Real root cause of the multi-engine boot failures: SGLang's multi-tokenizer mode shares server args through shared memory named after the main PID (multi_tokenizer_args_1, sgl_shm_sync_1_*); PID is 1 in every container and --ipc host shares /dev/shm, so engines read each other's args (engine 1 started with engine 2's port). Engines now get a private IPC namespace as well as their own network namespace; chain13 restarted",
+   "expected to end the 2-of-4 boot hangs; the 4-of-8-ranks and 28028 fixes stay"
+  ],
+  [
    "00:46",
    "Root cause of the recurring 4×tp2 boot hangs: all four engines bound 127.0.0.1:28028 (NVSHMEM bootstrap, fixed port) under host networking, so bootstrap connections could land in another engine. Engines now run in their own network namespace (NETNS=1, HTTP port published only); chain13 restarted",
    "no shared ports left on the host"

@@ -79,5 +79,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 00:48 PDT (09-28) | **DSpark acceptance gap found** (probe, same 3 real 60-80k prompts, block 7): vendor eager DSpark 4.1-5.1 accepted per step vs our graph-enabled port 2.3-3.4 (tp8) and 2.1-2.9 (tp8 lift); real traffic 3.5 p50. Queued as its own lever (draft window 4096 vs full, verify mode, draft attention backend, sampling under graphs). Production image item dropped per user (cannot copy their image); replaced by a kernel-gap table (verify path, attention without DP lockstep, KV4 prefill V3, fusions, draft, scheduling, routing) on the Setup tab | stress2-0927.log, ab-0927-1751Z.log | new lever: acceptance x decode |
 
+| 00:57 PDT (09-28) | **Real root cause of multi-engine boot hangs**: SGLang multi-tokenizer mode passes server args through a shared-memory segment named `multi_tokenizer_args_<main pid>` (also `sgl_shm_sync_<pid>_*`); the main PID is 1 in every container and `--ipc host` shares /dev/shm, so the 4 engines overwrote each other's args (engine 1's warm-up called engine 2's port 19391). Fix: `--ipc private` whenever NETNS=1 (each engine keeps its own 64 GB /dev/shm). chain13 restarted with both namespaces private | launch.sh | explains chain11/chain13 2-of-4 hangs and the earlier cross-engine symptoms |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
