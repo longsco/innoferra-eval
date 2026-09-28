@@ -37,6 +37,7 @@ code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85em}
 .pill.run{border-color:var(--ok);color:var(--ok)}
 ol.steps{margin:6px 0 0;padding-left:20px}ol.steps li{margin:3px 0}
 a{color:var(--ok)}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.vs>div{min-width:0}.vs h3{font-size:.9rem;margin:0 0 4px}@media (max-width:820px){.vs{grid-template-columns:1fr}}
 table.mx{font-size:.8rem}table.mx td,table.mx th{white-space:nowrap}table.mx td.k{white-space:normal;min-width:220px}th.grp{text-align:center;border-bottom:2px solid var(--line);color:var(--ink)}td.sep{border-left:1px solid var(--line)}
 pre.cmd{background:var(--tab);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;line-height:1.45;white-space:pre;margin:6px 0 10px}
 details{margin-top:8px}summary{cursor:pointer;font-weight:500;font-size:.9rem}
@@ -101,7 +102,36 @@ table.cmp td{vertical-align:top}table.cmp td:nth-child(2){background:color-mix(i
 <tr><td class="k">cache hit</td><td class="n">98.9%</td><td class="n">73.5% (cold start)</td><td class="n">99.4%</td><td class="n">77.3% (cold start)</td></tr>
 </table></div>
 <p class="note">Trace: one node's share (1/24, sessions kept together) of 2026-09-18 11:05–11:15 UTC, 727 requests, engines started cold. The DSpark engine's 106 s TTFT is queueing: its max running requests is 128 (the CUDA-graph envelope) and cold prefills of 50–650k prompts in 8k chunks stall decode across the DP lockstep, so slots are held for minutes and arrivals wait. Production sees 98.9% cache hits because sessions continue; a cold replay does not. The staircase warms the caches with the preceding 30 minutes first, which is the fair measurement.</p></div></section>
-<section class="tabpanel" id="setup" hidden><div class="panel"><h2>Side by side: team production vs our dev-best</h2><div class="wrap"><table class="cmp">
+<section class="tabpanel" id="setup" hidden><div class="panel win"><h2>Production vs current winner (3.67 M per GPU, 52% of target)</h2><div class="wrap"><table class="cmp"><tr><th></th><th>Team production (18 nodes)</th><th>Current winner: tp8/dp8 DSpark graphs, envelope lift (max running 256, sync-free verify, mem 0.72)</th></tr><tr><th colspan="3" class="grp" style="text-align:left">Digest</th></tr><tr><td class="k">Static frame, per GPU (best)</td><td>not measured (7 M claimed)</td><td><b>3.67 M</b> at c256 (3.02 at c128)</td></tr><tr><td class="k">Real traffic at prod-parity latency (p50 ≤ 1.6 s, p99 ≤ 22 s)</td><td>~2 req/s per node today (not saturated), 1.41 M/GPU observed</td><td>not run yet (the 4×tp2 version of this lift is running)</td></tr><tr><td class="k">TTFT p50</td><td>1.52 s at ~2 req/s/node</td><td>2.6 s at c256 (1.8 s at c128)</td></tr><tr><td class="k">Per-stream decode</td><td>212 tok/s p50 (141–313)</td><td>130 tok/s at 6 streams (probe)</td></tr><tr><td class="k">Cache hit (real traffic)</td><td>97.6%</td><td>not run yet</td></tr><tr><th colspan="3" class="grp" style="text-align:left">Launch terms</th></tr><tr><td class="k">Engine build</td><td>in-house SGLang 0.0.0+deploy + Dynamo 1.5.0 (custom-policy)</td><td>MiniMax 0922-sglang@bef87f4 + our DSpark port + Triton runtime-N patch</td></tr><tr><td class="k">Worker shape</td><td>4 × (TP2, EP2, dp 1), attention TP2</td><td>1 × (tp8, ep8, dp8), attention TP1 (DP attention)</td></tr><tr><td class="k">Max running requests</td><td>256 per worker (1,024 per node)</td><td>256 (32 per rank)</td></tr><tr><td class="k">mem-fraction-static</td><td>0.8</td><td>0.72</td></tr><tr><td class="k">Chunked prefill</td><td>16384</td><td>65536</td></tr><tr><td class="k">Spec decode</td><td>DSpark block 4, fa4 draft, bounded SWA draft, fused verify + top-p accept</td><td>DSpark block 7, flashinfer draft, draft window 4096</td></tr><tr><td class="k">Numerics / kernels</td><td>training numerics off, MSA off, in-house KV4 kernels (attn V2, prefill V3, fused verify, index V2)</td><td>training numerics on (Triton Q8KV4 path)</td></tr><tr><td class="k">CUDA graphs</td><td>decode + verify + piecewise prefill (tc_piecewise)</td><td>decode + draft + verify up to 32 per rank; breakable prefill</td></tr><tr><td class="k">HiCache</td><td>ratio 3, write-through, page_first</td><td>off</td></tr><tr><td class="k">Frontend / tokenizer</td><td>Dynamo frontend, Rust chat processor, 2 per node</td><td>SGLang HTTP server, 8 tokenizer workers</td></tr><tr><td class="k">Routing</td><td>KV router + incore-strict-affinity (≥2 blocks, >50%) + session-pin Redis</td><td>single engine; gateway pins prompt prefix → DP rank</td></tr><tr><td class="k">Key env</td><td>SGLANG_M3_TRAINING_COMPATIBLE=0, SGLANG_DISABLE_MSA=1, SGLANG_MINIMAX_KV4_*=1, SGLANG_DSPARK_BOUNDED_SWA_DRAFT=1, SGLANG_ENABLE_OVERLAP_PLAN_STREAM=1</td><td>SGLANG_M3_TRAINING_COMPATIBLE=1, SGLANG_Q8KV4_SORT_MIN_LANES=1e12, SGLANG_DSPARK_M31_DRAFT_WINDOW=4096, SGLANG_RAGGED_VERIFY_MODE=static</td></tr></table></div><div class="vs"><div><h3>Production engine launch</h3><pre class="cmd">python3 -m dynamo.sglang \
+  --model-path /models --served-model-name minimax-m3.1 --trust-remote-code --dyn-contract-profile minimax_m31 \
+  --quantization mxfp8 --kv-cache-dtype fp8_e4m3 --fp8-gemm-backend flashinfer_cutedsl --moe-runner-backend deep_gemm \
+  --moe-a2a-backend megamoe --disable-shared-experts-fusion --enable-tf32-matmul \
+  --tensor-parallel-size 2 --dp-size 1 --ep-size 2 \
+  --attention-backend trtllm_mha --cuda-graph-backend-prefill tc_piecewise --flashinfer-allreduce-fusion-backend trtllm \
+  --context-length 1048576 --max-running-requests 256 --max-queued-requests 256 --mem-fraction-static 0.8 \
+  --page-size 128 --chunked-prefill-size 16384 \
+  --enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first \
+  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-dspark-block-size 4 --speculative-draft-attention-backend fa4 \
+  --enable-multimodal --media-url-max-file-size-mb 50 --limit-mm-data-per-request &#x27;{&quot;image&quot;: 200, &quot;video&quot;: 20}&#x27; \
+  --dyn-tool-call-parser minimax_m3 --dyn-reasoning-parser minimax_m3 --tokenizer-worker-num 1 --detokenizer-worker-num 1 \
+  --weight-loader-prefetch-checkpoints --enable-cache-report --enable-metrics --enable-mfu-metrics --incremental-streaming-output \
+  --kv-events-config &#x27;{&quot;publisher&quot;:&quot;zmq&quot;,&quot;endpoint&quot;:&quot;tcp://*:5557&quot;}&#x27; --engine-route flush_cache:tm \
+  --dist-timeout 1800 --host 0.0.0.0 --port 31000 --crash-dump-folder /home/incore/.cache/crash-dumps</pre></div><div><h3>Current winner launch</h3><pre class="cmd"># node 0008 (innoferra-eval/serving/minimax-m3.1/launch.sh), image minimax-m31-sglang:demo-bef87f4
+IMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private \
+  DEV_SRC=/data01/minimax31/src/0922-sglang/python SPEC=dspark DRAFT_WINDOW=4096 TRAINING_COMPAT=1 \
+  CHUNK=65536 MEMFRAC=0.72 MAXREQ=256 EXTRA_ENV=&quot;SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000&quot; \
+  EXTRA_ARGS=&quot;--tokenizer-worker-num 8&quot; bash launch.sh
+
+# resolves to:
+python3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \
+  --tp-size 8 --ep-size 8 --dp-size 8 --moe-dense-tp-size 1 --enable-dp-attention \
+  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \
+  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \
+  --chunked-prefill-size 65536 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 256 \
+  --tokenizer-worker-num 8 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \
+  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer
+# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4096
+#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static</pre></div></div></div><div class="panel"><h2>Side by side: team production vs our dev-best</h2><div class="wrap"><table class="cmp">
 <tr><th></th><th>Team production (18 nodes)</th><th>Dev-best: 4×(tp2/ep2/dp2) DSpark on the 09-22 engine</th></tr>
 <tr><td class="k">North-star metric: static frame, per GPU</td><td>not measured (7 M claimed)</td><td><b>3.34 M</b> at c128 (load-balancing Dynamo router)</td></tr>
 <tr><td class="k">Production metric: real traffic at prod-parity latency (TTFT p50 ≤ 1.6 s, p99 ≤ 22 s)</td><td>~2 req/s per node today (not saturated), 1.41 M/GPU</td><td><b>~2 req/s per node</b> holds; usable to ~3 req/s at p50 ~1.5 s (affinity gateway, 88.5% hit)</td></tr>
