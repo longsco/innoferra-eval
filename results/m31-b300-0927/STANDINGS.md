@@ -5,6 +5,7 @@
 | Frontier base + production scheduling knobs (bprod: chunk 16384, overlap plan, streaming, queue cap) | 5.02 M | c128, TTFT 3.6 s; c64 3.40 M; c256 5.62 M — static tie, worse on real traffic | 72% |
 | 4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway | 5.01 M | c128, TTFT 4.1 s (p99 15 s); c64 3.55 M at 2.1 s; c256 5.70 M at 13.3 s | 72% |
 | Frontier base + DSpark block 4 (bblk4, production's block size) | 4.93 M | c128, TTFT 3.3 s; c64 3.32 M; c256 5.67 M | 70% |
+| Frontier + 64 per rank (b128ws: mem 0.66, flashinfer workspace 1 GiB) | 4.92 M | c128, TTFT 4.3 s; c256 5.55 M; c384 5.66 M at 29.8 s | 70% |
 | Frontier base + prefill-hold rule off (bmfs: --min-free-slots-delay 1) | 4.86 M | c128, TTFT 4.8 s; c64 3.39 M; c256 5.66 M | 69% |
 | 4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd) | 4.01 M | c128, TTFT 3.5 s; c64 3.02 M at 1.7 s; c256 4.18 M at 20.9 s | 57% |
 | 4×tp2 DSpark envelope lift (64/worker) + slot gateway | 3.97 M | c128, TTFT 3.3 s; c64 2.71 M at 1.7 s; c256 4.18 M at 21.7 s | 57% |

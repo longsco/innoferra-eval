@@ -114,5 +114,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 10:46 PDT (09-28) | diag_boot (single engine, GPUs 0-1, logs kept): b128-mf066 crashed after 287 s: flashinfer `AlignedAllocator` overflow during decode CUDA-graph capture (batch_prefill_tmp_v 499,122,176 B > 402,653,184 B workspace = 384 MiB default `SGLANG_FLASHINFER_WORKSPACE_SIZE`); bhic and bhic-nobd crashed after ~121 s: `ValueError: MiniMax NVFP4 does not yet support HiCache scale transfer` (kv_cache_configurator.py:1327, guard on SGLANG_MINIMAX_SPARSE_KV4 + HiCache; vendor 0927 tree has no such guard). chain17 started: b128ws (1 GiB workspace, grid c64-c384) + frep (frontier repeat), per-level TTFT breakdown (ttft_breakdown.sh) | logs/diag-*.log | causes found |
 
+| 11:55 PDT (09-28) | chain17 b128ws (MAXREQ 128/worker, MEMFRAC 0.66, SGLANG_FLASHINFER_WORKSPACE_SIZE=1 GiB): boots (450 s), verify graphs 33-35 s; static c64 27.94 M (3.49/GPU, 2.19 s), c128 39.35 (4.92, 4.32 s), c256 44.40 (5.55, 12.5 s), c384 45.29 (5.66, 29.8 s, per-stream 126 tok/s): saturation ~45 M node as with 32/rank. Staircase TTFT p50/p99 0.83/6.1, 1.15/12.9, 1.45/58.8, 3.71/50.3; decode 157/100/77/48; accept 4.11; strict prod-parity only 1x; closed loop c128 12.47 M node. Not adopted. ttft_breakdown parser failed on 'e2e' (digits), fixed e6ced0d | tpm-*-0927-b128ws.csv | no change |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

@@ -152,6 +152,14 @@
    "k": "ok",
    "frontier": false,
    "acc": "accept 4.05 probe · 3.33 real traffic"
+  },
+  {
+   "n": "Frontier + 64 per rank (b128ws: mem 0.66, flashinfer workspace 1 GiB)",
+   "v": 4.92,
+   "c": "c128, TTFT 4.3 s; c256 5.55 M; c384 5.66 M at 29.8 s",
+   "k": "ok",
+   "frontier": false,
+   "acc": "accept 5.79 probe · 4.11 real traffic"
   }
  ],
  "pareto": {
@@ -323,6 +331,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "11:55",
+   "chain17 b128ws (64 per rank, mem 0.66, 1 GiB flashinfer workspace): boots now; static c64 3.49, c128 4.92, c256 5.55, c384 5.66 M/GPU (TTFT 29.8 s) — the static frame saturates at ~45 M TPM per node whether ranks hold 32 or 64, so the ceiling is not slot count. Real traffic TTFT p50 0.83 / 1.15 / 1.45 / 3.7 s, p99 at 4× 59 s (frontier 32), closed loop c128 12.5 M node (12.9). Not adopted. The first TTFT-breakdown attempt failed (parser bug, fixed); frep will log it per level",
+   "ceiling is elsewhere: prefill admission under DP lockstep is the lead hypothesis"
+  ],
   [
    "10:46",
    "Diagnostic boots (logs kept) found both chain16 boot failures: 64 per rank overflowed flashinfer's 384 MiB workspace while capturing decode graphs (needs 476 MiB); HiCache is refused by our tree for NVFP4 KV ('does not yet support HiCache scale transfer'). chain17 started: 64 per rank with a 1 GiB workspace (grid to c384), then a frontier repeat for noise; every static level now logs a TTFT breakdown from engine metrics",
@@ -620,20 +633,16 @@
  "running": {
   "title": "Running now (chain17, since 10:46 PDT)",
   "script": "serving/minimax-m3.1/chain17.sh",
-  "commit": "latest",
-  "config": "Frontier base (balanced gateway, P1, bidirectional draft). Per static level: TTFT breakdown from engine metrics.",
+  "commit": "4f5635f, e6ced0d",
+  "config": "Frontier base (balanced gateway, P1, bidirectional draft). Per static level: TTFT breakdown from engine metrics (queue, prefill, stages).",
   "steps": [
    [
-    "diag boots",
-    "done 10:44: b128 = flashinfer workspace overflow during graph capture (476 MiB needed, 384 MiB default); HiCache = explicit 'NVFP4 does not yet support HiCache scale transfer' guard"
+    "b128ws: 64 per rank with a 1 GiB flashinfer workspace",
+    "done 11:55: boots; no gain (static saturates at ~45 M node, 5.66 M/GPU at c384; real traffic slightly worse)"
    ],
    [
-    "b128ws: 64 per rank, mem 0.66, flashinfer workspace 1 GiB, grid c64–c384",
-    "running since 10:46 PDT"
-   ],
-   [
-    "frep: frontier repeat (run-to-run noise on both tests)",
-    "next; chain ends ~13:10 PDT"
+    "frep: frontier repeat with TTFT breakdown per level",
+    "running since 11:55 PDT; ends ~13:05"
    ]
   ]
  },
@@ -1663,6 +1672,22 @@
     "0.82 / 1.07 / 1.41 (6×: 3.5)",
     "123 / 89 / 64",
     "strict 2×; slower decode at low load (acceptance capped at 5 per step)"
+   ],
+   [
+    "Frontier + 64 per rank (b128ws: mem 0.66, flashinfer workspace 1 GiB)",
+    "4.92",
+    "0.41 (2× misses) · 1.56 closed",
+    "128 × 4",
+    "4.92 M @c128 (3.49 @c64, 5.55 @c256, 5.66 @c384)",
+    "4.3 s (c384: 29.8 s)",
+    "~100%",
+    "–",
+    "5.79 / 4.11",
+    "09-27 peak, warm",
+    "87–89%",
+    "0.83 / 1.15 / 1.45 (6×: 3.7)",
+    "157 / 100 / 77",
+    "no gain: static saturates at ~45 M node with 32 or 64 per rank"
    ],
    [
     "Team production (18 nodes, for reference)",

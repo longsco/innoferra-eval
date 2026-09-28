@@ -1,0 +1,2 @@
+frame,conc,requests,sr,total_tpm_M,out_tpm_M,p50_tps,p50_ttft_s,p99_ttft_s,median_tpot_ms
+80k-warm-0927-b128ws,64,320,1.000,27.938,0.203,82.6,2.19,8.19,12.11
