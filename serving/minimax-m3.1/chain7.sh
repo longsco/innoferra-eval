@@ -7,7 +7,7 @@ export NPC_CAP=1024 MAXREQ=1024
   sudo -n docker rm -f m31-0927 >/dev/null 2>&1; sleep 3
   LAUNCHER=launch.sh IMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private \
     DEV_SRC=/data01/minimax31/src/0922-sglang/python NAME=m31-0927 PORT=19191 SPEC=dspark DRAFT_WINDOW=4096 TRAINING_COMPAT=1 \
-    CHUNK=65536 EXTRA_ENV="NCCL_NVLS_ENABLE=0" EXTRA_ARGS="--tokenizer-worker-num 8" DSPARK=1 HICACHE=0 GRID="1 8 16 64 128 256" TAG=old-dspark-tok8 bash ab_0927.sh
+    CHUNK=65536 EXTRA_ENV="NCCL_NVLS_ENABLE=0" EXTRA_ARGS="--tokenizer-worker-num 8 --disable-custom-all-reduce" DSPARK=1 HICACHE=0 GRID="1 8 16 64 128 256" TAG=old-dspark-tok8 bash ab_0927.sh
   echo "$(date -u +%H:%M:%S) engine check: $(sudo -n docker inspect m31-0927 --format '{{.Config.Image}}' 2>/dev/null) devsrc=$(sudo -n docker inspect m31-0927 --format '{{range .Mounts}}{{.Source}} {{end}}' 2>/dev/null | grep -c 0922-sglang/python) spec=$(sudo -n docker inspect m31-0927 --format '{{.Args}}' 2>/dev/null | grep -c DSPARK)"
   bash gate.sh http://127.0.0.1:19191 minimax-m3.1-nvfp4 2>&1 | grep -E "FAIL|PASS|healthy"
   while ! grep -q "bucket key=" $T/extract_peak.out 2>/dev/null; do sleep 30; done

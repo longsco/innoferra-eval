@@ -1,0 +1,110 @@
+<title>M3.1 Node 0008 Progress</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#F3F5F7;--panel:#FFFFFF;--ink:#1B2430;--muted:#5B6B7A;--line:#D5DBE1;--grid:#E6EAEE;--star:#D97A00;--ok:#0F766E;--okfill:#14B8A6;--bad:#B42318;--pend:#94A3B8;--prev:#3B5BDB;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0F1419;--panel:#171D24;--ink:#E7ECF1;--muted:#9AA8B5;--line:#2B3540;--grid:#232C36;--star:#F2A33A;--ok:#2DD4BF;--okfill:#14B8A6;--bad:#F87171;--pend:#64748B;--prev:#7B93FF;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1419;--panel:#171D24;--ink:#E7ECF1;--muted:#9AA8B5;--line:#2B3540;--grid:#232C36;--star:#F2A33A;--ok:#2DD4BF;--okfill:#14B8A6;--bad:#F87171;--pend:#64748B;--prev:#7B93FF;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;padding-block:28px;padding-inline:clamp(16px,4vw,40px);max-width:1080px;margin:0 auto;line-height:1.45}
+h1{font-size:1.5rem;font-weight:600;margin:0 0 4px;text-wrap:balance}
+h2{font-size:1.05rem;font-weight:600;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 22px;font-size:.95rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.kpi .l{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:1.5rem;font-weight:500;font-variant-numeric:tabular-nums}
+.kpi .v.star{color:var(--star)}.kpi .v.ok{color:var(--ok)}.kpi .v.bad{color:var(--bad)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-bottom:20px}
+svg{width:100%;height:auto;display:block;font-family:"IBM Plex Mono",ui-monospace,monospace}
+.note{color:var(--muted);font-size:.85rem;margin:8px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;background:var(--sw)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}td,th{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:left;vertical-align:top}th{color:var(--muted);font-weight:500;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+td.n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;text-align:right}
+.wrap{overflow-x:auto}
+</style>
+<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>
+<p class="sub">Node 0008, 2026-09-27. Manual frame: 80k cached prefix / 128 question / 600 output, warm. All figures per GPU (node ÷ 8), at the best concurrency measured for that configuration.</p>
+<div class="kpis">
+  <div class="kpi"><div class="l">North star</div><div class="v star">7.00 M</div></div>
+  <div class="kpi"><div class="l">Best so far (today)</div><div class="v ok">2.92 M</div></div>
+  <div class="kpi"><div class="l">Vendor demo as shipped</div><div class="v bad">0.72 M</div></div>
+  <div class="kpi"><div class="l">Gap remaining</div><div class="v">4.08 M</div></div>
+</div>
+
+<div class="panel"><h2>1. Per-GPU TPM by configuration, in the order tested</h2><div class="wrap"><svg id="c1" viewBox="0 0 960 330"></svg></div>
+<div class="legend"><span style="--sw:var(--bad)">eager DSpark (vendor gate)</span><span style="--sw:var(--okfill)">CUDA-graph decode</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>
+<p class="note">Concurrency in parentheses is where the configuration peaked (or was saturated). Vendor verbatim numbers are with the kernel patch; without it the c1 run gave 0.01 M.</p></div>
+
+<div class="panel"><h2>2. Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 300"></svg></div>
+<div class="legend"><span style="--sw:var(--okfill)">measured gain (M/GPU)</span><span style="--sw:var(--pend)">pending, not yet measured</span></div>
+<p class="note">Cumulative line is share of the north star. The three pending levers together must produce the remaining 4.08 M; DSpark with CUDA graphs is running now and is the only one that changes decode speed, the current limiter (12.7 tok/s per stream at saturation).</p></div>
+
+<div class="panel"><h2>3. Real production traffic replay (Route B, one node share of 11:05–11:15 UTC)</h2><div class="wrap"><table>
+<tr><th>metric</th><th>production (M3 fleet)</th><th>ours at 1×</th><th>ours at 2×</th></tr>
+<tr><td>per-stream decode, tok/s (p50)</td><td class="n">246</td><td class="n">14</td><td class="n">23</td></tr>
+<tr><td>TTFT p50, s</td><td class="n">0.34</td><td class="n">2.55</td><td class="n">1.34</td></tr>
+<tr><td>request total p50, s</td><td class="n">1.40</td><td class="n">27.6</td><td class="n">10.2</td></tr>
+<tr><td>cache hit</td><td class="n">98.9%</td><td class="n">73.5% (cold)</td><td class="n">99.4%</td></tr>
+</table></div>
+<p class="note">Plain decode + HiCache + 8 tokenizer workers. The static frame uses random tokens, so spec decode cannot show gains there; the real-traffic per-stream gap (14 vs 246) is where DSpark has to land.</p></div>
+
+<div class="panel"><h2>4. Timeline of changes</h2><div class="wrap"><table>
+<tr><th>UTC</th><th>change</th><th>result (per GPU)</th></tr>
+<tr><td>17:23</td><td>Vendor 0927 demo §3.2 verbatim (tp8/ep8/dp8, DSpark, HiCache)</td><td>0.01 M @c1, 13 tok/s, DSpark eager by design</td></tr>
+<tr><td>18:58</td><td>Kernel patch: token count as runtime arg in 2 Triton kernels (recompile storm), bitwise-equal</td><td>stalls gone; TPM unchanged (frontend-bound)</td></tr>
+<tr><td>20:09</td><td>Found the frontend cap: one process tokenizes each 80k prompt twice, ~2 req/s</td><td>explains the 0.9 M ceiling of every config</td></tr>
+<tr><td>21:40</td><td>8 tokenizer workers on plain + HiCache</td><td>0.91 → 2.92 M (c512), 2.57 M at c256</td></tr>
+<tr><td>21:20</td><td>DSpark graphs override on the 0927 build</td><td>blocked: verify kernel host sync, then per-call multi-GB scratch under capture</td></tr>
+<tr><td>23:10</td><td>Node incident (mass kill), NVLS leak, recovered with NCCL_NVLS_ENABLE=0 and custom all-reduce off</td><td>no hardware errors</td></tr>
+<tr><td>01:11</td><td>Old-fork DSpark with CUDA graphs + 8 workers, then production ramp 0.25×→3× of peak hour</td><td>running</td></tr>
+</table></div></div>
+
+<script>
+(function(){
+  const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),star=css('--star'),ok=css('--okfill'),bad=css('--bad'),pend=css('--pend'),prev=css('--prev');
+  const TARGET=7.0;
+  // Chart 1: horizontal bars, chronological
+  const rows=[
+    {n:'Vendor demo as shipped (eager DSpark, 1 worker)',v:0.72,c:'c128',k:bad},
+    {n:'Plain + HiCache, 1 worker',v:0.91,c:'c128',k:ok},
+    {n:'Vendor verbatim + kernel patch (eager)',v:0.82,c:'c256',k:bad},
+    {n:'Plain + HiCache + patch + 8 tokenizer workers',v:2.92,c:'c512, saturated',k:ok},
+    {n:'Previous best 09-26: old fork, Dynamo 2×tp4, DSpark graphs',v:2.34,c:'c64',k:prev},
+  ];
+  const s1=document.getElementById('c1'); const W=960,L=330,R=40,rowH=46,top=30; const x=v=>L+(W-L-R)*v/TARGET;
+  let g='';
+  for(let t=0;t<=7;t++){g+=`<line x1="${x(t)}" y1="${top-8}" x2="${x(t)}" y2="${top+rows.length*rowH}" stroke="${grid}"/><text x="${x(t)}" y="${top+rows.length*rowH+16}" font-size="11" fill="${muted}" text-anchor="middle">${t} M</text>`;}
+  rows.forEach((r,i)=>{const y=top+i*rowH;g+=`<text x="${L-10}" y="${y+21}" font-size="12" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${r.n}</text><rect x="${L}" y="${y+6}" width="${x(r.v)-L}" height="26" fill="${r.k}" rx="2"/><text x="${x(r.v)+8}" y="${y+24}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M <tspan fill="${muted}" font-size="11">(${r.c})</tspan></text>`;});
+  g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star 7.00 M / GPU</text>`;
+  s1.innerHTML=g;
+  // Chart 2: Pareto of levers
+  const lev=[
+    {n:'Frontend: 8 tokenizer workers',v:2.01,m:true},
+    {n:'Kernel patch (runtime-N)',v:0.0,m:true,note:'stalls removed'},
+    {n:'HiCache (static frame)',v:0.0,m:true,note:'not exercised'},
+    {n:'DSpark with CUDA graphs',v:null,m:false},
+    {n:'Topology TP2×4 + KV router',v:null,m:false},
+    {n:'16 workers / Dynamo preprocess',v:null,m:false},
+  ];
+  const base=0.91, remaining=TARGET-2.92, pendEach=remaining/3;
+  const s2=document.getElementById('c2'); const W2=960,H2=300,l2=60,r2=60,t2=30,b2=70; const bw=(W2-l2-r2)/lev.length; const ymax=7; const yv=v=>t2+(H2-t2-b2)*(1-v/ymax);
+  let h='';
+  for(let t=0;t<=7;t++){h+=`<line x1="${l2}" y1="${yv(t)}" x2="${W2-r2}" y2="${yv(t)}" stroke="${grid}"/><text x="${l2-8}" y="${yv(t)+4}" font-size="11" fill="${muted}" text-anchor="end">${t} M</text>`;}
+  let cum=base; const pts=[];
+  h+=`<rect x="${l2}" y="${yv(base)}" width="${bw*0.6}" height="${yv(0)-yv(base)}" fill="${grid}" stroke="${muted}" stroke-dasharray="3 3"/><text x="${l2+bw*0.3}" y="${yv(base)-6}" font-size="11" fill="${muted}" text-anchor="middle">start 0.91</text>`;
+  lev.forEach((d,i)=>{const cx=l2+bw*(i+0.5)+bw*0.3; const val=d.m?d.v:pendEach; cum+=val; const y0=yv(cum-val),y1=yv(cum); pts.push([cx,yv(cum)]);
+    h+=`<rect x="${cx-bw*0.3}" y="${Math.min(y0,y1)}" width="${bw*0.6}" height="${Math.max(2,Math.abs(y0-y1))}" fill="${d.m?ok:pend}" ${d.m?'':'fill-opacity="0.35" stroke="'+pend+'" stroke-dasharray="4 3"'} rx="2"/>`;
+    h+=`<text x="${cx}" y="${Math.min(y0,y1)-6}" font-size="11" fill="${ink}" text-anchor="middle">${d.m?(d.v>0?'+'+d.v.toFixed(2)+' M':'0 ('+d.note+')'):'?'}</text>`;
+    const words=d.n.split(' '); let line1=words.slice(0,Math.ceil(words.length/2)).join(' '), line2=words.slice(Math.ceil(words.length/2)).join(' ');
+    h+=`<text x="${cx}" y="${H2-b2+18}" font-size="11" fill="${ink}" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif">${line1}</text><text x="${cx}" y="${H2-b2+32}" font-size="11" fill="${ink}" text-anchor="middle" font-family="IBM Plex Sans,system-ui,sans-serif">${line2}</text>`;
+  });
+  h+=`<line x1="${l2}" y1="${yv(TARGET)}" x2="${W2-r2}" y2="${yv(TARGET)}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${W2-r2}" y="${yv(TARGET)-6}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">7.00 M</text>`;
+  // cumulative share line (measured part solid, pending dashed)
+  const measuredPts=pts.slice(0,3), pendPts=pts.slice(2);
+  h+=`<polyline points="${[[l2+bw*0.3,yv(base)],...measuredPts].map(p=>p.join(',')).join(' ')}" fill="none" stroke="${ink}" stroke-width="1.5"/><polyline points="${pendPts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="${ink}" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+  measuredPts.forEach((p,i)=>{const share=((i===0?base+2.01:i===1?2.92:2.92)/TARGET*100).toFixed(0);h+=`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${ink}"/><text x="${p[0]+8}" y="${p[1]-8}" font-size="11" fill="${ink}">${share}%</text>`;});
+  h+=`<text x="${W2-r2}" y="${yv(0)+50}" font-size="11" fill="${muted}" text-anchor="end">pending bars are drawn at an equal share of the remaining 4.08 M; their real sizes are unknown</text>`;
+  s2.innerHTML=h;
+})();
+</script>
