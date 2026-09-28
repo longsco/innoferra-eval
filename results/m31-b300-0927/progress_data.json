@@ -284,6 +284,11 @@
  },
  "timeline": [
   [
+   "04:50",
+   "Plan change: chain15's remaining variants lacked the bidirectional draft, so chain16 (armed) takes over after c13p1bd's balance A/B and runs the knob variants on the new base: min-free-slots delay off, 64 per rank, production scheduling, HiCache, block 4",
+   "all later tests build on the 4.01 M/GPU config"
+  ],
+  [
    "04:42",
    "<b>New static frontier: 4.01 M per GPU</b> at c128 (TTFT 3.5 s) with the bidirectional DSpark draft (vendor's in-block attention) on the P1 engine; c64 3.02 M (1.7 s), c256 4.18. Decode per token 12.2 vs 13.2 ms (c128), 13.2 vs 14.4 (c64), 15.1 vs 17.5 (c256) against the causal draft. Per-request acceptance probe 5.79 (3.95–7.86)",
    "3.97 → 4.01 M/GPU; decode 7–14% faster per token"
@@ -518,42 +523,26 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "Where we are: the vendor demo as shipped did 0.72 M TPM per GPU. A Triton recompile patch, 8 tokenizer workers, DSpark on CUDA graphs, production's 4×tp2 worker shape, a lifted verify-graph envelope (32 per rank) and a gateway that uses all 8 DP ranks now give <b>3.97 M per GPU</b> on the static frame (57% of the 7 M north star, TTFT 3.3 s). On real traffic the best layout is still 4×tp2 behind the plain affinity gateway (≈ 2 req/s per node at production-parity latency); the new frontier setup lost cache hits there because spill broke session affinity, so the gateway now pins sessions like production does. A kernel fix (P1) restores fast cold prefill, and chain15 re-runs the frontier setup with both, plus a DSpark draft fix. Production itself is at 2.79 M per GPU of observed load (3.9 req/s per node, TTFT p50 0.34 s) and is not saturated.",
  "running": {
-  "title": "Running now (chain15, started 03:13 PDT)",
-  "script": "serving/minimax-m3.1/chain15.sh",
-  "commit": "6f16e52, 2e186e9, 4a93fd7",
-  "config": "4 × tp2/ep2/dp2 DSpark with the envelope lift, P1 (eager extends on the fast sorted schedule, verified bitwise-equal), session-pinning gateway. Per variant: static grid c64/c128/c256, DSpark acceptance (per request and engine-wide), warm-up + long staircase 1×/2×/4×/6× (same procedure as chain13), closed loop c128.",
+  "title": "Running now (chain15 → chain16, since 03:13 PDT)",
+  "script": "serving/minimax-m3.1/chain15.sh, balance_ab.sh, chain16.sh",
+  "commit": "4a93fd7, aea59f0, 611653c",
+  "config": "Base = 4 × tp2/ep2/dp2 DSpark envelope lift + P1 kernel fix + bidirectional draft + session-pinning gateway (the 4.01 M/GPU frontier). Per variant: static grid c64/c128/c256, per-request DSpark acceptance, warm-up + long staircase 1×/2×/4×/6×, closed loop c128.",
   "steps": [
    [
-    "c13p1: chain13's frontier engine config + P1",
-    "done 04:07 PDT: new real-traffic best; static 3.80 M/GPU at c128"
+    "c13p1 (P1 + session pinning)",
+    "done 04:07: real-traffic best"
    ],
    [
-    "c13p1bd: + bidirectional draft attention (vendor's), window 4095",
-    "static done: <b>4.01 M/GPU at c128</b> (new frontier); staircase running"
+    "c13p1bd (+ bidirectional draft)",
+    "static done 04:42: <b>4.01 M/GPU</b>; staircase running"
    ],
    [
-    "balance A/B at the hold point: same engines, gateway in-flight balancing for keyless requests, grid c64/c128/c256",
-    "armed (balance_ab.sh, aea59f0)"
+    "balance A/B on the same engines (in-flight balancing for keyless requests)",
+    "next, at the hold point (~05:15)"
    ],
    [
-    "v1p1: chain14 v1 scheduling knobs + P1",
-    "next"
-   ],
-   [
-    "v2p1: + DSpark block 4",
-    "next"
-   ],
-   [
-    "v3p1: + HiCache ratio 3",
-    "next"
-   ],
-   [
-    "v4p1: + 128 per worker (mem 0.66)",
-    "next"
-   ],
-   [
-    "about 70 min per variant",
-    "chain ends around 10:15 PDT"
+    "chain16 on the new base: bmfs (--min-free-slots-delay 1), b128 (64/rank), bprod (production scheduling), bhic (HiCache), bblk4 (block 4)",
+    "armed; keeps balancing if it gains ≥ 3% at c128; about 70 min per variant, ends ~11:30 PDT"
    ]
   ]
  },
@@ -567,26 +556,10 @@
    "status": "after chain14"
   },
   {
-   "title": "Static-frame balance: in-flight balancing for requests without a session key",
-   "detail": "Gateway option ROUTE_BALANCE_SLACK=1: a keyless request leaves its hash slot for the least-busy slot when the hash slot has more than 1 extra request in flight. Grid c128/c256/c384 on the best chain14 engine config, with and without.",
-   "why": "chain13's c128 run has TTFT p99 ~40 s with p50 3.3 s and a 692/567/562/559 engine spread: a hot rank hits its 32-running cap and queues. Balanced, each rank holds ~16 at c128.",
-   "script": "serving/minimax-m3.1/patch_shim_balance.py",
-   "commit": "0d56e0e",
-   "status": "after chain14 (would confound its static grids if deployed now)"
-  },
-  {
    "title": "Prefill trims (P2): size scratch buffers to the request, reuse page metadata across layers",
    "detail": "Pass only the active pages to the extend path (8,193 → ~641 pages at 80k), in-kernel dequant for ≤ 4 query tiles, cache page-table-derived indices once per forward. Bitwise-equal by construction; about 20 fewer launches per layer.",
    "why": "Scratch is sized for the 1M context (K/V predequant ~1 GB per layer call at 1 request, ~20 GB at 16); robustness under bursts plus an estimated 10–20% on warm extends.",
    "script": "to write (analysis 09-28)",
-   "commit": "",
-   "status": "after chain15"
-  },
-  {
-   "title": "Scheduler: MinFreeSlotsDelayer off at high concurrency (--min-free-slots-delay 1)",
-   "detail": "DSpark counts as DFlash-family, which auto-enables a delayer that holds new prefills until 4 of 32 slots per rank are free.",
-   "why": "Bites at c256 (all 32 slots per rank busy); cheap flag test.",
-   "script": "launch flag",
    "commit": "",
    "status": "after chain15"
   },
