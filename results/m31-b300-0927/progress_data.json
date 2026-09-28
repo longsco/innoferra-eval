@@ -20,6 +20,12 @@
    "sub": "winning setup, c128, TTFT 2.8 s"
   },
   {
+   "label": "Real traffic, sustained",
+   "value": "≈ 1 M",
+   "cls": "",
+   "sub": "winning setup at 2× node share, p99 TTFT < 20 s (staircase, warm caches)"
+  },
+  {
    "label": "Winning setup at c64",
    "value": "2.20 M",
    "cls": "ok",
@@ -229,6 +235,16 @@
  },
  "timeline": [
   [
+   "20:52",
+   "4×(tp2/ep2/dp2) DSpark under the Dynamo KV router started (chain9)",
+   "running"
+  ],
+  [
+   "20:52",
+   "Staircase on the winning setup, caches warmed (90.9% hit)",
+   "holds 1×–2× of a node's share (TTFT p50 ≤ 3.4 s), knee at ~2.5 req/s (4×), saturated at 6×; ≈ 1 M/GPU sustained on real traffic vs 3.20 M on the static frame"
+  ],
+  [
    "20:10",
    "Route B 1× on the winning setup, cold start",
    "719/727 ok but TTFT p50 106 s, 8 tok/s per stream: max-running 128 + 8k-chunk cold prefills queue the node; plain engine did 2.55 s / 14 tok/s on the same trace"
@@ -306,39 +322,32 @@
  ],
  "timeline_note": "Pacific time (PDT). All entries are Sep 27, 2026.",
  "subtitle": "Node 0008, Sep 27, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
- "summary": "Where we are, in one breath: the vendor's demo as shipped did 0.72 M TPM per GPU. Two fixes (a Triton recompile patch and 8 tokenizer workers) and one swap (the older engine build that keeps DSpark on CUDA graphs) took the same node to 3.20 M per GPU at 128 concurrent requests, 46% of the 7 M north star, with 135 tok/s per stream on real prompts. The next levers are the production-shaped 4×tp2 layout with a KV router, and real-traffic capacity numbers from the staircase now running.",
+ "summary": "Where we are, in one breath: the vendor's demo as shipped did 0.72 M TPM per GPU. Two fixes (a Triton recompile patch and 8 tokenizer workers) and one swap (the older engine build that keeps DSpark on CUDA graphs) took the same node to 3.20 M per GPU on the manual's static frame, 46% of the 7 M north star. On real production traffic with warm caches the same node sustains about 1 M per GPU (2× one node's share) before TTFT runs away, because tp8/dp8 DP attention makes every prefill chunk stall decode on all eight ranks. The production-shaped 4×tp2 layout under a KV router is running now to attack exactly that.",
  "running": {
-  "title": "Running now (chain10, started 19:46 PDT)",
-  "script": "serving/minimax-m3.1/chain10.sh",
-  "commit": "478b57b",
-  "config": "winning setup, mem-fraction 0.80 (was 0.85: OOM on the first image request because the 8 tokenizer workers each hold ~0.9 GB on GPU 0)",
+  "title": "Running now (chain9, started 20:52 PDT)",
+  "script": "serving/minimax-m3.1/chain9.sh + dynamo/up.sh",
+  "commit": "aae68ae / 8d1c3e4",
+  "config": "production shape: 4 workers × (tp2/ep2/dp2, attention TP1) with DSpark graphs on the 09-22 engine, max running 32/worker, Dynamo KV-aware router with 8 preprocess workers, gateway in front",
   "steps": [
    [
-    "gate",
-    "6/7 canaries pass; effort=low failed once (rerun after the staircase)"
+    "bring-up (4 workers + router + gateway)",
+    "running"
    ],
    [
-    "Route B 1× (real traffic, cold)",
-    "done 20:10 PDT: 719/727 ok, TTFT p50 106 s, 8 tok/s per stream (queueing at max-running 128 + cold prefill)"
+    "gate + single-stream probes via the router",
+    "next"
    ],
    [
-    "cache warm-up (node share of 14:30–15:00 UTC at 8×)",
-    "running since 20:10 PDT"
+    "static grid c8/16/64/128 via the router",
+    "next"
    ],
    [
-    "staircase 1×/2×/4×/6×/8× × 5 min (node share of the 15:00–16:00 UTC peak hour)",
-    "next: the longitudinal capacity curve"
+    "warm-up + staircase 1×/2×/4×/6×/8× via the gateway",
+    "next"
    ]
   ]
  },
  "queued": [
-  {
-   "name": "4 × (tp2/ep2/dp2) DSpark workers under the Dynamo KV router",
-   "why": "production shape (attention TP1 is forced by the training numerics, so a true TP2 worker cannot run on these forks); 4 frontends, 2-rank lockstep, prefix-affinity routing",
-   "script": "serving/minimax-m3.1/chain9.sh + dynamo/up.sh",
-   "commit": "aae68ae / 8d1c3e4",
-   "status": "armed, starts when chain10 finishes"
-  },
   {
    "name": "16 tokenizer workers",
    "why": "team runs 16 preprocess workers; 8 lifted us from 0.9 to 2.9 M/GPU on plain",
@@ -430,5 +439,59 @@
   ]
  ],
  "chart_note": "Concurrency in parentheses is where the configuration peaked or was measured. The DSpark-graphs row is at c128 with 2.8 s TTFT (its max running requests is 128, the graph envelope); plain's 2.92 M is at c512, saturated with 29 s TTFT, and 2.11 M at the same c128.",
- "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix."
+ "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.",
+ "staircase": {
+  "title": "Longitudinal capacity on real traffic: winning setup (tp8/dp8 DSpark graphs, 8 workers), caches warmed, 90.9% hit",
+  "columns": [
+   "load level (× one node's share of today's fleet peak)",
+   "offered req/s",
+   "TTFT p50 / p99, s",
+   "node TPM (M, incl. cached)",
+   "per GPU (M)",
+   "verdict"
+  ],
+  "rows": [
+   [
+    "1× (0.6–1.2 req/s)",
+    "0.6–1.2",
+    "0.8–1.3 / 3–8",
+    "1.6–5.7",
+    "0.2–0.7",
+    "holds"
+   ],
+   [
+    "2× (1.5–2.1)",
+    "1.5–2.1",
+    "1.3–3.4 / 11–18",
+    "5.3–8.7",
+    "0.7–1.1",
+    "holds, p99 rising"
+   ],
+   [
+    "4× (2.7–3.5)",
+    "2.7–3.5",
+    "13 → 95 / 61–157",
+    "8–14",
+    "1.0–1.7",
+    "backlog builds: the knee"
+   ],
+   [
+    "6× (4–6.2)",
+    "4.0–6.2",
+    "120 → 350 / 158–364",
+    "14–33 (momentary)",
+    "1.7–4.1",
+    "saturated, requests queue for minutes"
+   ],
+   [
+    "8×",
+    "–",
+    "–",
+    "–",
+    "–",
+    "not reached (trace exhausted behind the backlog)"
+   ]
+  ],
+  "note": "Node's session-bucketed share (1/24) of the 09-27 15:00–16:00 UTC peak hour, 2,939 requests, 2,938 succeeded (1 read timeout), replayed after a warm-up with the preceding 30 minutes. Real-traffic capacity of this setup ≈ 2–2.5× one node's share ≈ 2 req/s ≈ 1 M TPM per GPU at p99 TTFT under 20 s. Production p50 TTFT on the same requests was 0.23 s, per-stream 210 tok/s (ours 25 at p50 across the run)."
+ }
 }

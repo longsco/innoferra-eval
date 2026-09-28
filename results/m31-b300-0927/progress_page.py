@@ -67,6 +67,12 @@ def routeb():
     r = data["routeb"]; head = "".join(f"<th>{c}</th>" for c in r["columns"])
     body = "\n".join("<tr>" + f'<td class="k">{row[0]}</td>' + "".join(f'<td class="n">{c}</td>' for c in row[1:]) + "</tr>" for row in r["rows"])
     return f'<div class="panel"><h2>Real production traffic replay (Route B)</h2><div class="wrap"><table>\n<tr>{head}</tr>\n{body}\n</table></div>\n<p class="note">{r["note"]}</p></div>'
+def staircase():
+    s = data.get("staircase")
+    if not s: return ""
+    head = "".join(f"<th>{c}</th>" for c in s["columns"])
+    body = "\n".join("<tr>" + f'<td class="k">{row[0]}</td>' + "".join(f'<td class="{"n" if i < 4 else ""}">{c}</td>' for i, c in enumerate(row[1:])) + "</tr>" for row in s["rows"])
+    return f'<div class="panel"><h2>{s["title"]}</h2><div class="wrap"><table>\n<tr>{head}</tr>\n{body}\n</table></div>\n<p class="note">{s["note"]}</p></div>'
 def prodref():
     p = data["prodref"]; body = "\n".join(f"<tr><td>{a}</td><td class=\"{'n' if len(b) <= 36 else 'w'}\">{b}</td></tr>" for a, b in p["rows"])
     url = "http://10.1.101.33:5601/app/dashboards#/view/6357c8fc-60ab-438b-9f0c-6dd266baa6e0?_g=(filters:!(),refreshInterval:(pause:!f,value:20000),time:(from:now-6h,to:now))"
@@ -125,7 +131,7 @@ JS = """
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
 overview = kpis() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
-results = charts() + routeb()
+results = staircase() + charts() + routeb()
 setup = winning() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
         f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'
