@@ -144,6 +144,14 @@
    "k": "ok",
    "frontier": false,
    "acc": "accept 5.79 probe · 4.14 real traffic"
+  },
+  {
+   "n": "Frontier base + DSpark block 4 (bblk4, production's block size)",
+   "v": 4.93,
+   "c": "c128, TTFT 3.3 s; c64 3.32 M; c256 5.67 M",
+   "k": "ok",
+   "frontier": false,
+   "acc": "accept 4.05 probe · 3.33 real traffic"
   }
  ],
  "pareto": {
@@ -315,6 +323,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "10:34",
+   "chain16 bblk4 (DSpark block 4, production's block size): static c128 4.93 M/GPU (tie), c256 5.67; acceptance 4.05 per request (block 7: 5.79) and 3.33 on real traffic (4.07); real traffic TTFT p50 0.82 / 1.07 / 1.41 / 3.5 s, decode 123 / 89 / 64 tok/s (block 7: 150 / 105 / 66); closed loop c128 13.4 M node (12.9). chain16 done: none of production's scheduling or spec-decode knobs beats the frontier on the static frame; bmfs helps under high real-traffic concurrency; b128 and bhic need isolated boots (running)",
+   "frontier unchanged at 5.01 M/GPU; block 7 + bidirectional draft stays"
+  ],
   [
    "09:42",
    "chain16 bhic (HiCache ratio 3 on the MiniMax host-cache tree) failed to boot like b128 (0 of 4 healthy twice; logs lost because this chain predates the log-keeping fix). bblk4 then booted cleanly (verify graphs captured on all 4 engines, GPUs had been fully released), so both failures are config-specific",
@@ -600,26 +613,26 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "Where we are: the vendor demo as shipped did 0.72 M TPM per GPU. Kernel and frontend fixes, DSpark on CUDA graphs, production's 4×tp2 worker shape, a lifted verify-graph envelope, a prefill kernel fix (P1), the vendor's bidirectional draft attention and a gateway that pins sessions and balances the rest on in-flight load now give <b>5.01 M per GPU</b> on the static frame (72% of the 7 M north star, TTFT 4.1 s) and 5.70 M at c256. On real traffic the same engines keep TTFT p50 ≤ 1.5 s up to ~3.3 req/s per node. Production is serving 2.95 M per GPU of observed load (5.8 req/s per node, TTFT p50 0.31 s) and is not saturated.",
  "running": {
-  "title": "Running now (chain16, since 05:21 PDT)",
-  "script": "serving/minimax-m3.1/chain15.sh, balance_ab.sh, chain16.sh",
-  "commit": "4a93fd7, aea59f0, 611653c",
-  "config": "Base = 4 × tp2/ep2/dp2 DSpark envelope lift + P1 kernel fix + bidirectional draft + session-pinning gateway (the 4.01 M/GPU frontier). Per variant: static grid c64/c128/c256, per-request DSpark acceptance, warm-up + long staircase 1×/2×/4×/6×, closed loop c128.",
+  "title": "Running now (diagnostic boots, since 10:34 PDT)",
+  "script": "serving/minimax-m3.1/diag_boot.sh",
+  "commit": "bbbdfe5",
+  "config": "One tp2 engine on GPUs 0–1 per case, full logs kept: 64 per rank at mem 0.66 (b128), HiCache (bhic), HiCache without the bidirectional draft.",
   "steps": [
    [
-    "c13p1 (P1 + session pinning)",
-    "done 04:07"
+    "chain16 summary",
+    "done 10:34 PDT: no production knob beats the 5.01 M/GPU frontier on the static frame; bmfs +18% closed loop; bprod and bblk4 ties; b128 and bhic failed to boot"
    ],
    [
-    "c13p1bd (+ bidirectional draft)",
-    "done 05:07: best on both tests"
+    "b128-mf066: 128 per worker, mem 0.66",
+    "running since 10:34 PDT"
    ],
    [
-    "balance A/B on the same engines",
-    "done 05:21: <b>5.01 M/GPU at c128</b> (+25%), 5.70 at c256"
+    "bhic: HiCache ratio 3 on the host-cache tree",
+    "next"
    ],
    [
-    "chain16 on the new base with balancing on: bmfs, b128 (64/rank), bprod (production scheduling), bhic (HiCache), bblk4 (block 4)",
-    "bmfs mixed; b128 and bhic FAILED to boot (config-specific: bblk4 then booted cleanly); bprod tie; bblk4 running since 09:34 PDT, ends ~10:40"
+    "bhic-nobd: HiCache without the bidirectional draft",
+    "next"
    ]
   ]
  },
@@ -1633,6 +1646,22 @@
     "0.83 / 1.06 / 1.76 (6×: 3.9)",
     "147 / 111 / 70",
     "worse at 4× (p99 49 s vs 32); closed loop c128 11.6 M (base 12.9)"
+   ],
+   [
+    "Frontier base + DSpark block 4 (bblk4, production's block size)",
+    "4.93",
+    "0.92 · 1.67 closed",
+    "64 × 4",
+    "4.93 M @c128 (3.32 @c64, 5.67 @c256)",
+    "3.3 s (p99 18 s)",
+    "~100%",
+    "–",
+    "4.05 / 3.33",
+    "09-27 peak, warm",
+    "87–90%",
+    "0.82 / 1.07 / 1.41 (6×: 3.5)",
+    "123 / 89 / 64",
+    "strict 2×; slower decode at low load (acceptance capped at 5 per step)"
    ],
    [
     "Team production (18 nodes, for reference)",

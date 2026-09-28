@@ -110,5 +110,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 09:42 PDT (09-28) | chain16 bhic (0922-sglang-hicache tree + P1 + bidirectional gate, `--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first`) FAILED to boot: 0/4 twice (15:26-16:34Z), logs lost (chain16 predates 176ecf1). bblk4 booted cleanly right after (GPUs at 0-4 MiB before launch; target/draft verify graphs captured 16:39Z), so b128 and bhic failures are config-specific | stress2-0927.log | isolated boot tests queued |
 
+| 10:34 PDT (09-28) | chain16 bblk4 (frontier base, DSPARK_BLOCK=4): static c64 26.60 M (3.32/GPU), c128 39.47 (4.93, 3.25 s, p99 17.8, TPOT 16.3 ms), c256 45.37 (5.67); accept probe 4.05 (block 7: 5.79), staircase accept 3.33 (4.07); TTFT p50/p99 0.82/5.8, 1.07/15.1, 1.41/32.2, 3.54/65.3; decode 123/89/64/43; strict prod-parity to 2x; closed loop c128 13.37 M node. CHAIN16 DONE 17:34Z. diag_boot started (b128-mf066, bhic, bhic-nobd) | tpm-*-0927-bblk4.csv | no change |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
