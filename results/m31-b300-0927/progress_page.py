@@ -205,18 +205,18 @@ JS = """
   const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),star=css('--star'),ok=css('--okfill'),bad=css('--bad'),pend=css('--pend'),prev=css('--prev');
   const KC={bad:bad,ok:ok,prev:prev}; const TARGET=%(target)s;
   const rows=(%(rows)s).slice().sort((a,b)=>b.v-a.v);
-  const s1=document.getElementById('c1'); const W=960,L=360,R=40,rowH=50,top=30; const x=v=>L+(W-L-R)*v/TARGET;
+  const s1=document.getElementById('c1'); const XMAX=Math.ceil(Math.max(TARGET,...rows.map(r=>r.v)))+1; const W=960,L=360,R=190,rowH=50,top=30; const x=v=>L+(W-L-R)*v/XMAX;
   const H1=top+rows.length*rowH+34; s1.setAttribute('viewBox',`0 0 ${W} ${H1}`);
   const wrap=(s,n)=>{const w=s.split(' ');const out=[''];for(const t of w){const cur=out[out.length-1];if((cur+' '+t).trim().length>n&&cur){out.push(t)}else{out[out.length-1]=(cur+' '+t).trim()}}return out.slice(0,3)};
   let g='';
-  for(let t=0;t<=7;t++){g+=`<line x1="${x(t)}" y1="${top-8}" x2="${x(t)}" y2="${top+rows.length*rowH}" stroke="${grid}"/><text x="${x(t)}" y="${top+rows.length*rowH+16}" font-size="11" fill="${muted}" text-anchor="middle">${t} M</text>`;}
+  for(let t=0;t<=XMAX;t++){g+=`<line x1="${x(t)}" y1="${top-8}" x2="${x(t)}" y2="${top+rows.length*rowH}" stroke="${grid}"/><text x="${x(t)}" y="${top+rows.length*rowH+16}" font-size="11" fill="${muted}" text-anchor="middle">${t} M</text>`;}
   rows.forEach((r,i)=>{const k=KC[r.k]||r.k; const y=top+i*rowH; const ln=wrap(r.n,46); const y0=y+19-(ln.length-1)*7;g+=`<text x="${L-10}" y="${y0}" font-size="11.5" fill="${ink}" text-anchor="end" font-family="IBM Plex Sans,system-ui,sans-serif">${ln.map((t,j)=>`<tspan x="${L-10}" dy="${j?14:0}">${t}</tspan>`).join('')}</text><rect x="${L}" y="${y+6}" width="${x(r.v)-L}" height="26" fill="${k}" rx="2"/><text x="${x(r.v)+8}" y="${y+18}" font-size="12" fill="${ink}" font-weight="500">${r.v.toFixed(2)} M <tspan fill="${muted}" font-size="10.5" font-weight="400">· ${r.acc||""}</tspan></text><text x="${x(r.v)+8}" y="${y+32}" font-size="10.5" fill="${muted}">${wrap(r.c,40)[0]}${wrap(r.c,40).length>1?'…':''}</text>`;});
   g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star ${TARGET.toFixed(2)} M / GPU</text>`;
   s1.innerHTML=g;
-  const lev=%(lev)s; const base=%(base)s, measuredTop=%(top)s, remaining=TARGET-measuredTop, pendN=lev.filter(d=>!d.m).length, pendEach=remaining/Math.max(1,pendN);
-  const s2=document.getElementById('c2'); const W2=960,H2=330,l2=60,r2=60,t2=30,b2=66; const bw=(W2-l2-r2)/(lev.length+0.6); const ymax=7; const yv=v=>t2+(H2-t2-b2)*(1-v/ymax);
+  const lev=%(lev)s; const base=%(base)s, measuredTop=%(top)s, remaining=Math.max(0,TARGET-measuredTop), pendN=lev.filter(d=>!d.m).length, pendEach=remaining/Math.max(1,pendN);
+  const s2=document.getElementById('c2'); const W2=960,H2=330,l2=60,r2=60,t2=30,b2=66; const bw=(W2-l2-r2)/(lev.length+0.6); const ymax=Math.max(7,Math.ceil(measuredTop))+1; const yv=v=>t2+(H2-t2-b2)*(1-v/ymax);
   let h='';
-  for(let t=0;t<=7;t++){h+=`<line x1="${l2}" y1="${yv(t)}" x2="${W2-r2}" y2="${yv(t)}" stroke="${grid}"/><text x="${l2-8}" y="${yv(t)+4}" font-size="11" fill="${muted}" text-anchor="end">${t} M</text>`;}
+  for(let t=0;t<=ymax;t++){h+=`<line x1="${l2}" y1="${yv(t)}" x2="${W2-r2}" y2="${yv(t)}" stroke="${grid}"/><text x="${l2-8}" y="${yv(t)+4}" font-size="11" fill="${muted}" text-anchor="end">${t} M</text>`;}
   let cum=base; const pts=[]; const x0=l2+bw*0.3;
   h+=`<rect x="${l2}" y="${yv(base)}" width="${bw*0.6}" height="${yv(0)-yv(base)}" fill="${grid}" stroke="${muted}" stroke-dasharray="3 3"/><text x="${x0}" y="${yv(base)-6}" font-size="11" fill="${muted}" text-anchor="middle">start ${base.toFixed(2)}</text>`;
   lev.forEach((d,i)=>{const cx=l2+bw*(i+1)+bw*0.3; const val=d.m?d.v:pendEach; cum+=val; const y0=yv(cum-val),y1=yv(cum); pts.push([cx,yv(cum),d.m]);
