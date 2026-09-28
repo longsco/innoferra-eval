@@ -173,7 +173,7 @@ def realtraffic_rank_panel():
     rows = data.get("realtraffic_rank") or []
     if not rows: return ""
     rows = sorted(rows, key=lambda r: r["p50_4x"])
-    W, L, R, top, rh = 960, 330, 150, 36, 30
+    W, L, R, top, rh = 960, 300, 340, 36, 30
     H = top + rh * len(rows) + 34
     x = lambda v: L + (W - L - R) * (math.log10(max(v, 1.0)) / 2.0)          # 1 s .. 100 s
     svg = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Real-traffic TTFT at 4x load by configuration">']
