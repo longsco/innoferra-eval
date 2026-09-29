@@ -1,31 +1,80 @@
 {
  "rows": [
   {
+   "model": "m31",
    "name": "r1_nothink_t256_c32",
    "scenario": "No thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 32,
-   "status": "queued",
-   "accept": null
+   "status": "running",
+   "progress": {
+    "completed": 2400,
+    "errors": 0,
+    "request_s": 2.12
+   }
   },
   {
+   "model": "m31",
+   "name": "r4_nothink_t256_c16",
+   "scenario": "No thinking time",
+   "trace": "256 sampled from 1024",
+   "lanes": 16,
+   "status": "queued"
+  },
+  {
+   "model": "m31",
    "name": "r2_think_t256_c32",
    "scenario": "Thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 32,
-   "status": "queued",
-   "accept": null
+   "status": "queued"
   },
   {
+   "model": "m31",
    "name": "r3_think_t512_c64",
    "scenario": "Thinking time",
    "trace": "1024, 512 sampled",
    "lanes": 64,
-   "status": "queued",
-   "accept": null
+   "status": "queued"
+  },
+  {
+   "model": "m3",
+   "name": "r1_nothink_t256_c32",
+   "scenario": "No thinking time",
+   "trace": "256 sampled from 1024",
+   "lanes": 32,
+   "status": "queued"
+  },
+  {
+   "model": "m3",
+   "name": "r4_nothink_t256_c16",
+   "scenario": "No thinking time",
+   "trace": "256 sampled from 1024",
+   "lanes": 16,
+   "status": "queued"
+  },
+  {
+   "model": "m3",
+   "name": "r2_think_t256_c32",
+   "scenario": "Thinking time",
+   "trace": "256 sampled from 1024",
+   "lanes": 32,
+   "status": "queued"
+  },
+  {
+   "model": "m3",
+   "name": "r3_think_t512_c64",
+   "scenario": "Thinking time",
+   "trace": "1024, 512 sampled",
+   "lanes": 64,
+   "status": "queued"
   }
  ],
  "log_tail": [
-  "04:59:10 ===== inference-perf on B300 (M3.1 frontier + HiCache): launching engines + gateway"
+  "04:59:10 ===== inference-perf on B300 (M3.1 frontier + HiCache): launching engines + gateway",
+  "all 4 engines healthy after 480s",
+  "{\"object\":\"list\",\"data\":[{\"id\":\"minimax-m3.1-nvfp4\",\"object\":\"model\",\"created\":1790658464,\"owned_by\"",
+  "05:08:08 canary via gateway (model minimax-m3): '391'",
+  "05:08:08 ===== r1_nothink_t256_c32: inference-replay benchmark --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time"
  ]
 }

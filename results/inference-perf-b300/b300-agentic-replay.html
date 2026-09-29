@@ -52,24 +52,26 @@ code { font-family: var(--mono); font-size: .92em; }
 <header>
   <div class="eyebrow">inference-perf · real-world MiniMax agentic benchmark</div>
   <h1>B300 Agentic Replay</h1>
-  <p>Runs are in progress on node 0008. Numbers fill in as each run finishes. The replay client sends each trajectory's recorded turns closed loop (a turn waits for the turns it depends on), with outputs forced to the recorded length. These runs mirror the MI355X baseline table in the repo's <code>docs/benchmarking.md</code>.</p>
-  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 28, 22:07 PDT</span></div>
+  <p>0 of 8 runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends. The replay client sends each trajectory's recorded turns closed loop (a turn waits for the turns it depends on), with outputs forced to the recorded length. These runs mirror the MI355X baseline table in the repo's <code>docs/benchmarking.md</code>.</p>
+  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 28, 22:30 PDT</span></div>
 </header>
 
 <section>
   <h2>Results</h2>
   <div class="tablebox"><table>
-    <thead><tr><th>Status</th><th>Scenario</th><th>Trace</th><th>Lanes</th><th>Duration</th><th>Req/s</th><th>Tok/s per GPU</th><th>TPM per GPU</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>DSpark accept</th></tr></thead>
+    <thead><tr><th>Status</th><th>Scenario</th><th>Trace</th><th>Lanes</th><th>Duration</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
     <tbody>
-      <tr class="sep"><td colspan="14">B300 · MiniMax-M3.1 · 4 engines (TP2) + gateway · this run</td></tr>
-      <tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+      <tr class="sep"><td colspan="14">B300 · MiniMax-M3.1 (NVFP4) · 4 × TP2 engines, DSpark + gateway</td></tr>
+      <tr><td><span class="chip run">Running · 2400 done</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">2.12</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">0</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">16¹</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+      <tr class="sep"><td colspan="14">B300 · MiniMax-M3 (NVIDIA NVFP4) · 4 × TP2 engines, NVIDIA DSpark draft · runs after M3.1</td></tr>
+      <tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">16¹</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
       <tr class="sep"><td colspan="14">MI355X · MiniMax-M3 · SGLang 1P1D, MXFP4 KV transport · reference from the repo docs</td></tr>
-      <tr class="mi"><td><span class="chip ref">MI355X</span></td><td>No thinking time</td><td>256 (234 used)</td><td class="n">32</td><td class="n">2465 s</td><td class="n">0.949</td><td class="n">–</td><td class="n">–</td><td class="n">4.05 / 24.8</td><td class="n">3.30 / 11.30</td><td class="n">27.7 ms</td><td class="n">0.904</td><td class="n">6</td><td class="n">–</td></tr><tr class="mi"><td><span class="chip ref">MI355X</span></td><td>No thinking time</td><td>256 (234 used)</td><td class="n">16¹</td><td class="n">2602 s</td><td class="n">0.900</td><td class="n">–</td><td class="n">–</td><td class="n">2.66 / 10.9</td><td class="n">2.59 / 7.40</td><td class="n">18.4 ms</td><td class="n">0.900</td><td class="n">3</td><td class="n">–</td></tr><tr class="mi"><td><span class="chip ref">MI355X</span></td><td>Thinking time</td><td>256 (234 used)</td><td class="n">32</td><td class="n">4383 s</td><td class="n">0.535</td><td class="n">–</td><td class="n">–</td><td class="n">0.67 / 10.1</td><td class="n">0.17 / 0.87</td><td class="n">13.2 ms</td><td class="n">0.925</td><td class="n">1</td><td class="n">–</td></tr><tr class="mi"><td><span class="chip ref">MI355X</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">5403 s</td><td class="n">1.033</td><td class="n">–</td><td class="n">–</td><td class="n">0.92 / 7.8</td><td class="n">0.26 / 1.68</td><td class="n">19.1 ms</td><td class="n">0.928</td><td class="n">2²</td><td class="n">–</td></tr>
+      <tr class="mi"><td><span class="chip ref">MI355X</span></td><td>No thinking time</td><td>256 (234 used)</td><td class="n">32</td><td class="n">2465 s</td><td class="n">0.949</td><td class="n">–</td><td class="n">–</td><td class="n">4.05 / 24.8</td><td class="n">3.30 / 11.30</td><td class="n">27.7 ms</td><td class="n">0.904</td><td class="n">6</td><td class="n">–</td></tr><tr class="mi"><td><span class="chip ref">MI355X</span></td><td>No thinking time</td><td>256 (234 used)</td><td class="n">16¹</td><td class="n">2602 s</td><td class="n">0.900</td><td class="n">–</td><td class="n">–</td><td class="n">2.66 / 10.9</td><td class="n">2.59 / 7.40</td><td class="n">18.4 ms</td><td class="n">0.900</td><td class="n">3</td><td class="n">–</td></tr><tr class="mi"><td><span class="chip ref">MI355X</span></td><td>Thinking time</td><td>256 (234 used)</td><td class="n">32</td><td class="n">4383 s</td><td class="n">0.535</td><td class="n">–</td><td class="n">–</td><td class="n">0.67 / 10.1</td><td class="n">0.17 / 0.87</td><td class="n">13.2 ms</td><td class="n">0.925</td><td class="n">1</td><td class="n">–</td></tr><tr class="mi"><td><span class="chip ref">MI355X</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">5403 s</td><td class="n">1.033</td><td class="n">–</td><td class="n">–</td><td class="n">0.92 / 7.8</td><td class="n">0.26 / 1.68</td><td class="n">19.1 ms</td><td class="n">0.928</td><td class="n">2</td><td class="n">no²</td></tr>
     </tbody>
   </table></div>
   <div class="foot">
-    <span>Tok/s per GPU = (prompt + output tokens) ÷ run span ÷ 8 GPUs, as InferenceX computes it; TPM per GPU = the same × 60. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s (<code>scripts/lane_steady_ttft.py</code> logic); the MI355X steady TTFT was measured server-side, so compare it loosely.</span>
-    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² Flagged not valid for performance comparison (one reader underrun). DSpark accept = mean accepted tokens per verify step from the engines' metrics over the run.</span>
+    <span>Columns are the repo's own metrics (<code>docs/benchmarking.md</code> baseline table and the <code>concurrency_sweep.py</code> summary), computed with the repo's summarize code from each run's <code>result.json</code>. Total tok/s = (prompt + output tokens) ÷ run span for the 8-GPU node. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s; the MI355X steady TTFT was measured server-side. While a run is in progress its row shows requests completed and the running req/s.</span>
+    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² Flagged not valid for performance comparison in the repo (one reader underrun; 2 failed).</span>
   </div>
 </section>
 
@@ -77,20 +79,21 @@ code { font-family: var(--mono); font-size: .92em; }
 <section>
   <h2>Read before comparing</h2>
   <ul>
-    <li><b>Different model.</b> The B300 node has MiniMax-M3.1 weights only; the MI355X rows serve MiniMax-M3. Both accept the same requests (the trace's model name <code>minimax-m3</code> maps to M3.1 in our gateway).</li>
+    <li><b>Model.</b> The M3 rows serve the same model as the MI355X reference (MiniMax-M3), from NVIDIA's NVFP4 checkpoint. The M3.1 rows serve MiniMax-M3.1; the trace's model name <code>minimax-m3</code> maps to M3.1 in our gateway.</li>
     <li><b>Different scheduler.</b> The repo notes its MI355X baselines predate the current scheduler: they dispatched a turn when its parent was sent (open loop) and used recorded <code>max_tokens</code> caps. The B300 runs use today's closed-loop scheduler with recorded output lengths, which is a heavier, stricter workload.</li>
     <li><b>Trace selection.</b> The MI355X 256-trajectory trace was a separate selection. Here 256 trajectories are sampled from the committed 1,024-trajectory trace with seed 42. The 512-trajectory run matches the MI355X selection method (1024 trace, 512 sampled, seed 42).</li>
     <li><b>Topology.</b> MI355X used prefill/decode disaggregation (TP4 prefill + TP4 decode). B300 runs four aggregated TP2 engines behind a session-pinning gateway.</li>
   </ul>
 </section>
 <section>
-  <h2>B300 serving setup</h2>
+  <h2>B300 serving setup (M3.1 rows)</h2>
   <dl>
     <dt>Engine</dt><dd>MiniMax 0922 SGLang fork + our DSpark port, 4 × (TP2, EP2, DP-attention 2), 64 running per engine, mem 0.72, chunk 32,768</dd>
     <dt>Speculation</dt><dd>DSpark block 7, bidirectional draft, draft window 4,095, flashinfer draft attention</dd>
     <dt>Cache</dt><dd>radix prefix cache + HiCache ratio 3 (write-through, host memory)</dd>
     <dt>Frontend</dt><dd>4 tokenizer workers per engine; gateway on :8000 pins sessions by <code>prompt_cache_key</code></dd>
     <dt>Numerics</dt><dd>training-compatible Q8KV4 attention (vendor default), NVFP4 weights</dd>
+    <dt>M3 rows</dt><dd>nvidia/MiniMax-M3-NVFP4 with the nvidia/MiniMax-M3-DSpark draft, 4 × TP2 engines behind the same gateway; settings are tuned briefly on the node before its runs and listed here once fixed</dd>
   </dl>
 </section>
 </div>
@@ -110,6 +113,10 @@ inference-replay benchmark --url http://127.0.0.1:8000 --benchmark-presets minim
 
 <section>
   <h2>Latest log lines</h2>
-<pre>04:59:10 ===== inference-perf on B300 (M3.1 frontier + HiCache): launching engines + gateway</pre>
+<pre>04:59:10 ===== inference-perf on B300 (M3.1 frontier + HiCache): launching engines + gateway
+all 4 engines healthy after 480s
+{&quot;object&quot;:&quot;list&quot;,&quot;data&quot;:[{&quot;id&quot;:&quot;minimax-m3.1-nvfp4&quot;,&quot;object&quot;:&quot;model&quot;,&quot;created&quot;:1790658464,&quot;owned_by&quot;
+05:08:08 canary via gateway (model minimax-m3): &#x27;391&#x27;
+05:08:08 ===== r1_nothink_t256_c32: inference-replay benchmark --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time</pre>
 </section>
 </div>

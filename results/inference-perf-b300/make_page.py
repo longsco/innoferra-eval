@@ -14,26 +14,33 @@ MI = [  # docs/benchmarking.md "Scenarios and baselines" (SGLang 1P1D, MXFP4 KV 
     ("Thinking time", "256 (234 used)", "32", 4383, 0.535, (0.67, 10.1), (0.17, 0.87), 13.2, 0.925, 1),
     ("Thinking time", "1024, 512 sampled", "64", 5403, 1.033, (0.92, 7.8), (0.26, 1.68), 19.1, 0.928, "2²")]
 STATUS = {"done": ("Done", "ok"), "running": ("Running", "run"), "queued": ("Queued", "wait")}
-b300_rows = []
-for r in data["rows"]:
-    lab, cls = STATUS.get(r["status"], (r["status"], "wait"))
+NCOL = 14
+def row_cells(r):
     if r["status"] == "done":
-        cells = [f(r.get("duration_s"), 0, " s"), f(r.get("request_s"), 3), f(r.get("total_tok_s_per_gpu"), 0),
-                 f(r.get("tpm_per_gpu_m"), 2, " M"), pair(r.get("ttft_p50_s"), r.get("ttft_p90_s")),
-                 pair(r.get("steady_ttft_p50_s"), r.get("steady_ttft_p90_s")), f(r.get("tpot_p50_ms"), 1, " ms"),
-                 f(r.get("cache_hit"), 3), str(r.get("failed", "–")), r.get("accept") or "–"]
-    else:
-        cells = ["–"] * 10
-    lanes = f'{r["lanes"]}¹' if r["name"] == "r4_nothink_t256_c16" else str(r["lanes"])
-    b300_rows.append(f'<tr><td><span class="chip {cls}">{lab}</span></td><td>{E(r["scenario"])}</td><td>{E(r["trace"])}</td><td class="n">{lanes}</td>'
-                     + "".join(f'<td class="n">{E(c)}</td>' for c in cells) + "</tr>")
+        return [f(r.get("duration_s"), 0, " s"), f(r.get("request_s"), 3), f(r.get("total_tok_s"), 0), f(r.get("output_tok_s"), 0),
+                pair(r.get("ttft_p50_s"), r.get("ttft_p90_s")), pair(r.get("steady_ttft_p50_s"), r.get("steady_ttft_p90_s")),
+                f(r.get("tpot_p50_ms"), 1, " ms"), f(r.get("cache_hit"), 3), str(r.get("failed", "–")),
+                "yes" if r.get("valid") else ("no" if r.get("valid") is False else "–")]
+    if r.get("progress"):
+        pg = r["progress"]; return ["–", f(pg["request_s"], 2), "–", "–", "–", "–", "–", "–", str(pg["errors"]), "–"]
+    return ["–"] * 10
+def b300_rows(model):
+    out = []
+    for r in data["rows"]:
+        if r.get("model", "m31") != model: continue
+        lab, cls = STATUS.get(r["status"], (r["status"], "wait"))
+        if r["status"] == "running" and r.get("progress"): lab = f'Running · {r["progress"]["completed"]} done'
+        lanes = f'{r["lanes"]}¹' if r["name"] == "r4_nothink_t256_c16" else str(r["lanes"])
+        out.append(f'<tr><td><span class="chip {cls}">{lab}</span></td><td>{E(r["scenario"])}</td><td>{E(r["trace"])}</td><td class="n">{lanes}</td>'
+                   + "".join(f'<td class="n">{E(c)}</td>' for c in row_cells(r)) + "</tr>")
+    return "".join(out)
 mi_rows = []
-for s, tr, ln, dur, rps, ttft, st, tpot, hit, fail in MI:
-    mi_rows.append(f'<tr class="mi"><td><span class="chip ref">MI355X</span></td><td>{s}</td><td>{tr}</td><td class="n">{ln}</td><td class="n">{dur} s</td><td class="n">{rps:.3f}</td>'
-                   f'<td class="n">–</td><td class="n">–</td><td class="n">{ttft[0]:.2f} / {ttft[1]:.1f}</td><td class="n">{st[0]:.2f} / {st[1]:.2f}</td><td class="n">{tpot} ms</td><td class="n">{hit:.3f}</td><td class="n">{fail}</td><td class="n">–</td></tr>')
+for i, (s_, tr, ln, dur, rps, ttft, st, tpot, hit, fail) in enumerate(MI):
+    valid = "no²" if i == 3 else "–"
+    mi_rows.append(f'<tr class="mi"><td><span class="chip ref">MI355X</span></td><td>{s_}</td><td>{tr}</td><td class="n">{ln}</td><td class="n">{dur} s</td><td class="n">{rps:.3f}</td>'
+                   f'<td class="n">–</td><td class="n">–</td><td class="n">{ttft[0]:.2f} / {ttft[1]:.1f}</td><td class="n">{st[0]:.2f} / {st[1]:.2f}</td><td class="n">{tpot} ms</td><td class="n">{hit:.3f}</td><td class="n">{str(fail).replace("²","")}</td><td class="n">{valid}</td></tr>')
 done = sum(r["status"] == "done" for r in data["rows"]); n = len(data["rows"])
-lead = {0: "Runs are in progress on node 0008. Numbers fill in as each run finishes.",
-        n: f"All {n} runs finished."}.get(done, f"{done} of {n} runs finished; the rest are running or queued.")
+lead = f"{done} of {n} runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends."
 log_tail = "\n".join(data.get("log_tail") or [])
 page = f"""<title>B300 Agentic Replay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -96,17 +103,19 @@ code {{ font-family: var(--mono); font-size: .92em; }}
 <section>
   <h2>Results</h2>
   <div class="tablebox"><table>
-    <thead><tr><th>Status</th><th>Scenario</th><th>Trace</th><th>Lanes</th><th>Duration</th><th>Req/s</th><th>Tok/s per GPU</th><th>TPM per GPU</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>DSpark accept</th></tr></thead>
+    <thead><tr><th>Status</th><th>Scenario</th><th>Trace</th><th>Lanes</th><th>Duration</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
     <tbody>
-      <tr class="sep"><td colspan="14">B300 · MiniMax-M3.1 · 4 engines (TP2) + gateway · this run</td></tr>
-      {''.join(b300_rows)}
+      <tr class="sep"><td colspan="14">B300 · MiniMax-M3.1 (NVFP4) · 4 × TP2 engines, DSpark + gateway</td></tr>
+      {b300_rows("m31")}
+      <tr class="sep"><td colspan="14">B300 · MiniMax-M3 (NVIDIA NVFP4) · 4 × TP2 engines, NVIDIA DSpark draft · runs after M3.1</td></tr>
+      {b300_rows("m3")}
       <tr class="sep"><td colspan="14">MI355X · MiniMax-M3 · SGLang 1P1D, MXFP4 KV transport · reference from the repo docs</td></tr>
       {''.join(mi_rows)}
     </tbody>
   </table></div>
   <div class="foot">
-    <span>Tok/s per GPU = (prompt + output tokens) ÷ run span ÷ 8 GPUs, as InferenceX computes it; TPM per GPU = the same × 60. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s (<code>scripts/lane_steady_ttft.py</code> logic); the MI355X steady TTFT was measured server-side, so compare it loosely.</span>
-    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² Flagged not valid for performance comparison (one reader underrun). DSpark accept = mean accepted tokens per verify step from the engines' metrics over the run.</span>
+    <span>Columns are the repo's own metrics (<code>docs/benchmarking.md</code> baseline table and the <code>concurrency_sweep.py</code> summary), computed with the repo's summarize code from each run's <code>result.json</code>. Total tok/s = (prompt + output tokens) ÷ run span for the 8-GPU node. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s; the MI355X steady TTFT was measured server-side. While a run is in progress its row shows requests completed and the running req/s.</span>
+    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² Flagged not valid for performance comparison in the repo (one reader underrun; 2 failed).</span>
   </div>
 </section>
 
@@ -114,20 +123,21 @@ code {{ font-family: var(--mono); font-size: .92em; }}
 <section>
   <h2>Read before comparing</h2>
   <ul>
-    <li><b>Different model.</b> The B300 node has MiniMax-M3.1 weights only; the MI355X rows serve MiniMax-M3. Both accept the same requests (the trace's model name <code>minimax-m3</code> maps to M3.1 in our gateway).</li>
+    <li><b>Model.</b> The M3 rows serve the same model as the MI355X reference (MiniMax-M3), from NVIDIA's NVFP4 checkpoint. The M3.1 rows serve MiniMax-M3.1; the trace's model name <code>minimax-m3</code> maps to M3.1 in our gateway.</li>
     <li><b>Different scheduler.</b> The repo notes its MI355X baselines predate the current scheduler: they dispatched a turn when its parent was sent (open loop) and used recorded <code>max_tokens</code> caps. The B300 runs use today's closed-loop scheduler with recorded output lengths, which is a heavier, stricter workload.</li>
     <li><b>Trace selection.</b> The MI355X 256-trajectory trace was a separate selection. Here 256 trajectories are sampled from the committed 1,024-trajectory trace with seed 42. The 512-trajectory run matches the MI355X selection method (1024 trace, 512 sampled, seed 42).</li>
     <li><b>Topology.</b> MI355X used prefill/decode disaggregation (TP4 prefill + TP4 decode). B300 runs four aggregated TP2 engines behind a session-pinning gateway.</li>
   </ul>
 </section>
 <section>
-  <h2>B300 serving setup</h2>
+  <h2>B300 serving setup (M3.1 rows)</h2>
   <dl>
     <dt>Engine</dt><dd>MiniMax 0922 SGLang fork + our DSpark port, 4 × (TP2, EP2, DP-attention 2), 64 running per engine, mem 0.72, chunk 32,768</dd>
     <dt>Speculation</dt><dd>DSpark block 7, bidirectional draft, draft window 4,095, flashinfer draft attention</dd>
     <dt>Cache</dt><dd>radix prefix cache + HiCache ratio 3 (write-through, host memory)</dd>
     <dt>Frontend</dt><dd>4 tokenizer workers per engine; gateway on :8000 pins sessions by <code>prompt_cache_key</code></dd>
     <dt>Numerics</dt><dd>training-compatible Q8KV4 attention (vendor default), NVFP4 weights</dd>
+    <dt>M3 rows</dt><dd>nvidia/MiniMax-M3-NVFP4 with the nvidia/MiniMax-M3-DSpark draft, 4 × TP2 engines behind the same gateway; settings are tuned briefly on the node before its runs and listed here once fixed</dd>
   </dl>
 </section>
 </div>
