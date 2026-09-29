@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "14:14 (09-29)",
+   "inference-perf benchmark on B300 done (user's priority task, node lent 21:55–14:14 PDT): the repo's four MI355X-baseline scenarios on M3.1 (this frontier + HiCache) and on MiniMax-M3 (nvidia NVFP4 + nvidia DSpark, 4×TP2, bidirectional draft patch: accept 3.44 vs 2.82 causal), cold cache per run. M3 beats M3.1 on req/s without thinking time (1.68 vs 1.32 at 32 lanes; 1.36 vs 1.01 at 16). Report: claude.ai/artifact/QeN98rsnNoWKU6rk2574NP. M3.1 queue resumed: chain23b protocol v2 ladder → chain25 → chain24.",
+   "benchmark delivered; v2 ladder running"
+  ],
+  [
    "21:55",
    "Fair chunk share 0.5 crashed engine 0 at its first static load (scheduler assertion: a second request was chunked in the same step while the capped one was still mid-prefill). Fix: once the ongoing chunked request is truncated, new requests are admitted only if they fit whole (inert at share 1.0). chain23 (protocol v2) started 21:50 PDT; the node pauses after its 1× run for the user's priority task.",
    "fair chunk bug fixed; v2 1× running; pause after"
@@ -886,26 +891,26 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic.</b> Best so far on real production prompts: <b>1.14 M per GPU</b> at the strict per-minute SLA (4×tp2 DSpark engines, bidirectional draft, 4 tokenizer workers, session-pinning gateway, after a 2-hour warm-up; HiCache measured the same; 16% of 7 M), and 1.91 M per GPU with 128 real prompts always in flight (2.08 at 384: the engine saturates near 2 M on these prompts). Production serves 3.38 M per GPU at its 24 h peak without saturating. The synthetic static frame (7.82 M per GPU) is kept as a secondary ranking only: it is fully cached random text and rewards levers real traffic barely feels. Next: the production-faithful replay of real M3.1 traffic (logs in, traces building) becomes the reported number.",
  "running": {
-  "title": "Running now: chain23 protocol v2 at 1×, then PAUSE (B300 lent to a high-priority task)",
+  "title": "Running now: chain23b protocol v2 ladder (real M3.1 traffic), then chain25, chain24",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain21 fair4 (fair chunk share 0.5)",
-    "CRASHED 21:16 PDT: engine 0 scheduler AssertionError (two chunked requests in one step). Fixed in patch_fair_chunk_v2.py (one chunked request per step); re-test queued as chain25 fair2"
+    "inference-perf B300 benchmark (user priority)",
+    "done 14:14 PDT: 8 runs (M3.1, M3) — see the B300 Agentic Replay page"
    ],
    [
-    "chain23: protocol v2 1× calibration (frontier + HiCache, real M3.1 traffic)",
-    "running since 21:50 PDT; result ≈ 22:45 PDT"
+    "chain23b: protocol v2 on real M3.1 traffic, 1× → 4× (frontier + HiCache)",
+    "started 14:14 PDT; ≈ 1 h per level"
    ],
    [
-    "PAUSE after the 1× run",
-    "user needs the B300 for a high-priority task: chain23 stops after 1×, engines + gateway removed, GPUs free"
+    "chain25: fair chunk 0.5 (crash fixed) and HiCache ratio 4 at 2×/3×",
+    "queued after chain23b"
    ],
    [
-    "queued, not armed",
-    "chain23 2×–4× ladder; chain25 (fair chunk 0.5 fixed; HiCache ratio 4) at 2×/3×; chain24 (production DSpark: fa4 draft, block 4)"
+    "chain24: production DSpark settings (fa4 draft, block 4)",
+    "queued after chain25"
    ]
   ]
  },
