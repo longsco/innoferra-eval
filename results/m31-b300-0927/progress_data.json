@@ -23,13 +23,13 @@
    "label": "Real traffic at prod-parity",
    "value": "0.92 M",
    "cls": "ok",
-   "sub": "per GPU at the strict per-minute rule (2× a node's share, ≈ 2 req/s); closed loop on real prompts at c128: 1.6–1.9 M/GPU"
+   "sub": "per GPU at the strict per-minute rule (2× a node's share, ≈ 2 req/s), warm caches (88–89% hit; production 96%)"
   },
   {
    "label": "Real traffic, 128 in flight",
    "value": "1.70 M",
    "cls": "",
-   "sub": "per GPU for the static frontier (best 1.91 with prefill-hold off); production observed 2.83 M, not saturated"
+   "sub": "per GPU, warm (after a 30-min cache warm-up and the staircase): cache hit 85–87% (staircase 88–89%) vs production 96%; best 1.91 with prefill-hold off; production observed 2.83 M, not saturated"
   },
   {
    "label": "Frontier at c64",
@@ -787,6 +787,14 @@
    "script": "to write (gateway)",
    "commit": "",
    "status": "after chain21"
+  },
+  {
+   "title": "Longer cache warm-up for the replay (closer to production's always-warm caches)",
+   "detail": "Extract the node's share of the 90 minutes before the staircase window (13:30–15:00 on 09-27) and replay it as warm-up, instead of 30 minutes. Sessions that began earlier then arrive with their history cached, as they would in production.",
+   "why": "Replay hit is 88–89% vs production 96%; each point of hit is ~7% fewer uncached prefill tokens, and prefill is most of the GPU time on real traffic.",
+   "script": "traffic_extract.py on the 09-27 logs (node share, 13:30–14:30)",
+   "commit": "",
+   "status": "next methodology step"
   },
   {
    "title": "HiCache for our NVFP4 KV: port host-cache scale transfer",
