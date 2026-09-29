@@ -6,12 +6,21 @@
    "scenario": "No thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 32,
-   "status": "running",
-   "progress": {
-    "completed": 2400,
-    "errors": 0,
-    "request_s": 2.12
-   }
+   "status": "done",
+   "thinking": "off",
+   "duration_s": 1839.3027285499847,
+   "requests": 2418,
+   "failed": 0,
+   "request_s": 1.314628615761491,
+   "total_tok_s": 117318.66906183823,
+   "output_tok_s": 775.1236258557291,
+   "ttft_p50_s": 1.1350428749865387,
+   "ttft_p90_s": 3.9530568887130375,
+   "steady_ttft_p50_s": 1.1777862349990755,
+   "steady_ttft_p90_s": 2.544463245372753,
+   "tpot_p50_ms": 12.296138819876045,
+   "cache_hit": 0.9210864784030414,
+   "valid": true
   },
   {
    "model": "m31",
@@ -27,7 +36,12 @@
    "scenario": "Thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 32,
-   "status": "queued"
+   "status": "running",
+   "progress": {
+    "completed": 525,
+    "errors": 0,
+    "request_s": 0.82
+   }
   },
   {
    "model": "m31",
@@ -71,10 +85,11 @@
   }
  ],
  "log_tail": [
-  "04:59:10 ===== inference-perf on B300 (M3.1 frontier + HiCache): launching engines + gateway",
-  "all 4 engines healthy after 480s",
-  "{\"object\":\"list\",\"data\":[{\"id\":\"minimax-m3.1-nvfp4\",\"object\":\"model\",\"created\":1790658464,\"owned_by\"",
-  "05:08:08 canary via gateway (model minimax-m3): '391'",
-  "05:08:08 ===== r1_nothink_t256_c32: inference-replay benchmark --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time"
+  "    \"minimax-m3-agentic\"",
+  "  ],",
+  "  \"benchmark_plan_hash\": \"de9feccda09af6906ccdae71bde76a4e8900c298e3bd6c887a452a5791420d29\"",
+  "}",
+  "r1_nothink_t256_c32: lanes=32 think=False full-lane window 600-754 s of 1839 s, n=449 req/s=2.917 TTFT p50 1.18 s p90 2.54 s p99 6.30 s failed=0",
+  "05:39:42 ===== r2_think_t256_c32: inference-replay benchmark --trajectory 256 --active-trajectories 32"
  ]
 }

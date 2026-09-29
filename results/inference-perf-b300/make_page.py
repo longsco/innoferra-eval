@@ -135,7 +135,7 @@ code {{ font-family: var(--mono); font-size: .92em; }}
     <dt>Cache</dt><dd>radix prefix cache + HiCache ratio 3 (write-through, host memory)</dd>
     <dt>Frontend</dt><dd>4 tokenizer workers per engine; gateway on :8000 pins sessions by <code>prompt_cache_key</code></dd>
     <dt>Numerics</dt><dd>training-compatible Q8KV4 attention (vendor default), NVFP4 weights</dd>
-    <dt>M3 rows</dt><dd>nvidia/MiniMax-M3-NVFP4 with the nvidia/MiniMax-M3-DSpark draft, 4 × TP2 engines behind the same gateway; settings are tuned briefly on the node before its runs and listed here once fixed</dd>
+    <dt>M3 rows</dt><dd>nvidia/MiniMax-M3-NVFP4 (ModelOpt mixed: NVFP4 experts, MXFP8 attention) with the nvidia/MiniMax-M3-DSpark draft; 4 × plain TP2 engines (no DP attention) behind the same gateway; <code>trtllm_mha</code> attention, FP8 KV, page 128, <code>flashinfer_trtllm_routed</code> MoE, HiCache ratio 3, 4 tokenizer workers, chunk 32,768, 64 running per engine. The draft block (8 or 4) and in-block draft attention (causal or bidirectional, as the draft was trained) are picked by a short tune before the runs.</dd>
   </dl>
 </section>
 </div>
