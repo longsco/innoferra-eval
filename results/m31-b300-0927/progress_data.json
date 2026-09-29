@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "21:55",
+   "Fair chunk share 0.5 crashed engine 0 at its first static load (scheduler assertion: a second request was chunked in the same step while the capped one was still mid-prefill). Fix: once the ongoing chunked request is truncated, new requests are admitted only if they fit whole (inert at share 1.0). chain23 (protocol v2) started 21:50 PDT; the node pauses after its 1× run for the user's priority task.",
+   "fair chunk bug fixed; v2 1× running; pause after"
+  ],
+  [
    "21:25",
    "Protocol v2 built. The 09-28 M3.1 logs reproduce the dashboard's 24 h peak exactly (650 M TPM = 3.38 M/GPU, 96.3% hit), so they are the complete production load. Traces: 48 half-node session buckets (one = 44,774 requests, 14,348 sessions over 5 h). New replayer: empty cache per level, cache-state rebuild from the prior hour, causal sessions at real time, answer priming, per-minute SLA. Gateway: null tool-schema keywords dropped (production accepts them). chain23 runs 1× calibration, then 2×–4×.",
    "v2 armed (starts ≈ 22:00 PDT)"
@@ -881,34 +886,26 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic.</b> Best so far on real production prompts: <b>1.14 M per GPU</b> at the strict per-minute SLA (4×tp2 DSpark engines, bidirectional draft, 4 tokenizer workers, session-pinning gateway, after a 2-hour warm-up; HiCache measured the same; 16% of 7 M), and 1.91 M per GPU with 128 real prompts always in flight (2.08 at 384: the engine saturates near 2 M on these prompts). Production serves 3.38 M per GPU at its 24 h peak without saturating. The synthetic static frame (7.82 M per GPU) is kept as a secondary ranking only: it is fully cached random text and rewards levers real traffic barely feels. Next: the production-faithful replay of real M3.1 traffic (logs in, traces building) becomes the reported number.",
  "running": {
-  "title": "Running now (chain21 fair4 → chain23 protocol v2)",
+  "title": "Running now: chain23 protocol v2 at 1×, then PAUSE (B300 lent to a high-priority task)",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain22 lwhc: HiCache ratio 3 + 2-hour warm-up",
-    "done 19:43 PDT: strict to 2.5× = 1.14 M/GPU, hit 90.8%"
+    "chain21 fair4 (fair chunk share 0.5)",
+    "CRASHED 21:16 PDT: engine 0 scheduler AssertionError (two chunked requests in one step). Fixed in patch_fair_chunk_v2.py (one chunked request per step); re-test queued as chain25 fair2"
    ],
    [
-    "chain22 lw: same 2-hour warm-up without HiCache",
-    "done 20:49 PDT: strict to 2.5× = 1.14 M/GPU (tie), hit 88.8%, accept 4.08 → the gain was the warm-up"
+    "chain23: protocol v2 1× calibration (frontier + HiCache, real M3.1 traffic)",
+    "running since 21:50 PDT; result ≈ 22:45 PDT"
    ],
    [
-    "closed-loop probe c128/c256/c384 on the lw engines",
-    "done 21:06 PDT: 1.91 / 1.98 / 2.08 M/GPU, TTFT p50 4.5 / 9.4 / 18.9 s → saturated near 2 M/GPU"
+    "PAUSE after the 1× run",
+    "user needs the B300 for a high-priority task: chain23 stops after 1×, engines + gateway removed, GPUs free"
    ],
    [
-    "chain21: fair chunk share A/B (fair4 = share 0.5)",
-    "running since 21:06 PDT; fair4c16 arm deferred for protocol v2"
-   ],
-   [
-    "chain23: protocol v2 on real M3.1 traffic (frontier + HiCache)",
-    "armed: 1× calibration then 2×, 3×, 4× (≈ 1 h per level); traces built 21:20 PDT"
-   ],
-   [
-    "chain24: production DSpark settings (fa4 draft, block 4) under protocol v2",
-    "armed after chain23"
+    "queued, not armed",
+    "chain23 2×–4× ladder; chain25 (fair chunk 0.5 fixed; HiCache ratio 4) at 2×/3×; chain24 (production DSpark: fa4 draft, block 4)"
    ]
   ]
  },
