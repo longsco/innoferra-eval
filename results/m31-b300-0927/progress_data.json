@@ -411,6 +411,11 @@
  },
  "timeline": [
   [
+   "18:25",
+   "Replay protocol v2 defined (viewer request: define the simulation in principle): node unit = 1/24 of sessions with real timing; converged warm-up; cache-consistent replay (prime the logged answer); validity gate on per-request hit vs production; load scaled by merging session buckets at real time; per-minute SLA clamp from production's own peak (TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, errors < 0.1%); primary metric = SLA capacity as TPM per GPU. Waiting on M3.1 log access",
+   "test design"
+  ],
+  [
    "18:15",
    "Live M3.1 trace feasibility (read-only): the hub index stores every request (1.2 M docs / 3 h) with full bodies (60/60 sampled parse as JSON, 55/60 byte-exact) and session keys, but the peak 10 minutes hold 41 GB of request bodies and the indexed request.session_id is empty, so one node's share cannot be selected server-side or pulled through the browser. Asked for the hourly log export (like the M3 files) or a read-only ES key; chain22 continues on the current trace",
    "better real-traffic setup: waiting on data access"
@@ -2365,5 +2370,43 @@
   }
  ],
  "realtraffic_rank_note": "Apples to apples: every bar replays the same 2,939 real requests (node share of the 09-27 peak hour) after the same cache warm-up, at 4× their original rate (≈ 3 req/s per node), and reports the stage's TTFT p50 over all 933 requests at that level (log scale). Excluded: chain14 v1 (its staircase ran after closed-loop replays of the same prompts, so caches were pre-filled). The static chart above ranks something different (one shared 80k prefix, fixed concurrency), and its bars sit at different concurrencies and routings; use the two together, and the table below for all numbers.",
- "prod_per_gpu": 3.38
+ "prod_per_gpu": 3.38,
+ "protocol_v2": {
+  "title": "Replay protocol v2: production-faithful (proposed; waiting for M3.1 log access)",
+  "items": [
+   [
+    "Unit = one production node",
+    "The hub pins each session to one worker, so a node serves ~1/24 of sessions, whole. Trace = every request of the sessions whose key hashes into one of 24 buckets, with real timestamps and bodies, plus production's own per-request cached tokens and TTFT for comparison."
+   ],
+   [
+    "Cache state = steady state",
+    "Replay the W hours before the measured window at 8× first. W is chosen by convergence (1 / 2 / 4 h: keep the smallest W after which window hit rate stops rising)."
+   ],
+   [
+    "Cache-consistent replay",
+    "Our answers differ from the logged ones, so a replayed session's next turn misses. After each response, a max_tokens=1 request primes the cache with the logged answer, so later turns hit as they did in production (costs a few hundred prefill tokens per turn)."
+   ],
+   [
+    "Validity gate",
+    "At production's own load, hit rate must match production's for the same requests within ~2 points (production 96%), with a miss breakdown (first-seen / divergence / eviction). HiCache is judged here: eviction misses should fall."
+   ],
+   [
+    "Load scaled by users, not speed",
+    "k× = k buckets merged at real time (k times the users, each with real history), not the same users typing k times faster. Keeps think time and grows the cache working set as production does. Ladder 1× (production's 24 h peak share, 5.8 req/s per node) to 4× in 0.5× steps."
+   ],
+   [
+    "SLA clamp (every minute must pass)",
+    "TTFT p50 ≤ 1.0 s (production 0.35 s at peak), TTFT p99 ≤ 15 s (production 10.2 s), per-stream decode p50 ≥ 60 tok/s (production p10 48), errors < 0.1%."
+   ],
+   [
+    "Reported",
+    "Primary: SLA capacity = highest passing k, as TPM per GPU (reads directly against production's 3.38 M at 1×). Secondary: closed-loop saturation on the same prompts (ceiling, no SLA). Static frame: synthetic sanity check only."
+   ],
+   [
+    "Plan",
+    "1) M3.1 hourly logs or a read-only ES key (the one blocker). 2) Build the v2 trace on node 0008 (24 buckets, the 16:10 UTC peak hour + 4 h history). 3) Calibrate W and priming at 1× on the frontier. 4) Ladder for the frontier and the chain22 HiCache winner. The 09-27 trace stays as a regression reference."
+   ]
+  ],
+  "note": "Protocol v1 (in use until v2 data lands): 09-27 M3-era trace, one node's share, 30-min (or 2-hour) warm-up, time-compressed staircase, strict rule TTFT p50 ≤ 1.6 s and p99 ≤ 22 s per minute."
+ }
 }

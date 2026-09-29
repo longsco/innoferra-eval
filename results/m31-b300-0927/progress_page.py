@@ -93,7 +93,7 @@ def metrics_panel():
     if not m: return ""
     rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in m)
     return f'<div class="panel"><h2>Which number to trust</h2><dl>\n{rows}</dl></div>'
-def tests_panel():
+def tests_panel() + protocol_panel():
     t = data.get("tests")
     if not t: return ""
     head = "".join(f"<th>{h}</th>" for h in t["columns"])
@@ -191,6 +191,11 @@ def realtraffic_rank_panel():
     svg.append("</svg>")
     return (f'<div class="panel"><h2>Real traffic, ranked: TTFT p50 at 4× a node\'s share (lower is better)</h2><div class="wrap">{"".join(svg)}</div>'
             f'<p class="note">{data.get("realtraffic_rank_note","")}</p></div>')
+def protocol_panel():
+    p = data.get("protocol_v2")
+    if not p: return ""
+    items = "".join(f'<li><b>{a}.</b> {b}</li>' for a, b in p["items"])
+    return f'<div class="panel"><h2>{p["title"]}</h2><ol style="margin:0;padding-left:20px;line-height:1.5">{items}</ol><p class="note">{p.get("note","")}</p></div>'
 def charts():
     return ('<div class="panel"><h2>TPM per GPU by configuration: static frame vs real traffic</h2><p class="sub" style="margin:0 0 8px"><span style="display:inline-block;width:14px;height:10px;background:var(--okfill);border-radius:2px"></span> static frame (synthetic best case) &nbsp; <span style="display:inline-block;width:14px;height:6px;background:var(--prev);border-radius:2px"></span> real traffic, 128 real prompts in flight &nbsp; <span style="color:var(--star)">▲</span> strict prod-parity limit &nbsp; <span style="color:var(--prev)">┆</span> production 24 h peak &nbsp; <span style="color:var(--star)">┆</span> north star</p><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
             '<div class="legend"><span style="--sw:var(--bad)">DSpark without CUDA graphs (vendor 09-27 build)</span><span style="--sw:var(--okfill)">decode on CUDA graphs</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
