@@ -440,6 +440,11 @@
  },
  "timeline": [
   [
+   "20:05",
+   "S3 access to the M3.1 hub logs works (bucket per domain / load balancer / day, 5-minute gzip parts, same JSON schema as the api-v1 logs). Downloading 09-28 12:00–17:00 UTC (peak hour + 4 h warm-up, 194 GB). Replay failures explained: 41 × 400 = a client tool schema with \"maximum\": null that our engine's strict validation rejects (production accepts; gateway fix planned), 20 × 500 = logged images redacted to /base64/ (replay-tool fix). Eval protocol v2 refined for the report",
+   "production-faithful eval unblocked"
+  ],
+  [
    "19:43",
    "HiCache ratio 3 with a 2-hour warm-up (lwhc), fine staircase: cache hit 90.8% (fine4 without HiCache, 30-min warm-up: 89.3%), uncached tokens per request 5–7k (was 6–8k); strict prod-parity holds to 2.5× = 1.14 M/GPU (fine4: 2× = 0.88) and also at 3.5× (1.28), failing 3× on one minute; TTFT p50 0.77 / 1.1 / 1.9 s at 1× / 2× / 4×; accept 4.18; 0 staircase errors. Its closed loop (31.5 M node, 99.8% hit) is invalid: it replays prompts the staircase just sent and HiCache still holds. 61 warm-up requests failed with 400/500 that production served; being reproduced",
    "strict real-traffic capacity 0.88 → 1.14 M/GPU (HiCache + longer warm-up; split pending)"
@@ -856,12 +861,8 @@
     "after chain22"
    ],
    [
-    "Replay compatibility: 61 warm-up requests production served (200) got 400/500 from our stack",
-    "reproducing against an engine to get the raw errors"
-   ],
-   [
-    "Live M3.1 trace (protocol v2)",
-    "waiting for S3 credentials on node 0008"
+    "M3.1 production logs for protocol v2",
+    "downloading 09-28 12:00–17:00 UTC from S3 (5,984 parts, 194 GB, ~80 min)"
    ]
   ]
  },
@@ -880,8 +881,8 @@
    "why": "Fixes the model-era mismatch (M3 prompts on M3.1), aligns 1× with production's peak load, and cuts cold first-in-replay sessions (21% hit today).",
    "script": "traffic_extract.py (hourly .gz) or an ES point-in-time pull on node 0008",
    "commit": "",
-   "status": "needs input: M3.1 hourly access-log export for 09-28 12:00–17:00 UTC, or a read-only ES key reachable from node 0008",
-   "needs_ok": true
+   "status": "data access working (S3); 12:00–17:00 UTC downloading (194 GB)",
+   "needs_ok": false
   },
   {
    "title": "Real-traffic tail: isolate giant prefills (gateway lane for new sessions with huge prompts)",
@@ -2449,41 +2450,41 @@
  "realtraffic_rank_note": "Apples to apples: every bar replays the same 2,939 real requests (node share of the 09-27 peak hour) after the same cache warm-up, at 4× their original rate (≈ 3 req/s per node), and reports the stage's TTFT p50 over all 933 requests at that level (log scale). Excluded: chain14 v1 (its staircase ran after closed-loop replays of the same prompts, so caches were pre-filled). The static chart above ranks something different (one shared 80k prefix, fixed concurrency), and its bars sit at different concurrencies and routings; use the two together, and the table below for all numbers.",
  "prod_per_gpu": 3.38,
  "protocol_v2": {
-  "title": "Replay protocol v2: production-faithful (proposed; waiting for M3.1 log access)",
+  "title": "Eval protocol v2: fair, production-faithful (data unblocked; building now)",
   "items": [
    [
+    "Workload = real M3.1 production traffic",
+    "M3.1 hub access logs from S3 (both load balancers, 5-minute parts). Measured window = the 24 h peak hour, 09-28 16:00–17:00 UTC; the 4 hours before it are warm-up. Same model era, prompts, tools and output lengths as production."
+   ],
+   [
     "Unit = one production node",
-    "The hub pins each session to one worker, so a node serves ~1/24 of sessions, whole. Trace = every request of the sessions whose key hashes into one of 24 buckets, with real timestamps and bodies, plus production's own per-request cached tokens and TTFT for comparison."
+    "Sessions (prompt_cache_key) hashed into 24 buckets; one bucket = what one of the 24 nodes serves, whole sessions, real timestamps. Production's own per-request cached tokens and TTFT kept for comparison."
    ],
    [
     "Cache state = steady state",
-    "Replay the W hours before the measured window at 8× first. W is chosen by convergence (1 / 2 / 4 h: keep the smallest W after which window hit rate stops rising)."
+    "Warm-up length chosen by convergence (1 / 2 / 4 h). HiCache on, as in production. Cache-consistent replay: after each response, prime the cache with the logged answer (max_tokens=1), so later turns hit as they did in production."
    ],
    [
-    "Cache-consistent replay",
-    "Our answers differ from the logged ones, so a replayed session's next turn misses. After each response, a max_tokens=1 request primes the cache with the logged answer, so later turns hit as they did in production (costs a few hundred prefill tokens per turn)."
+    "Fidelity fixes",
+    "Gateway drops null-valued tool-schema keywords (production accepts a tool with \"maximum\": null; our engine rejected 41 of 2,317 warm-up requests). Logged image bytes are redacted to /base64/: replace with a synthetic image of similar size. Every other request replays byte-for-byte."
    ],
    [
-    "Validity gate",
-    "At production's own load, hit rate must match production's for the same requests within ~2 points (production 96%), with a miss breakdown (first-seen / divergence / eviction). HiCache is judged here: eviction misses should fall."
+    "Validity gate before any number",
+    "At 1×, per-request cache hit within ~2 points of production's (96%) and TTFT distribution within 2× of production's for the same requests; report the miss breakdown (first-seen / divergence / eviction)."
    ],
    [
-    "Load scaled by users, not speed",
-    "k× = k buckets merged at real time (k times the users, each with real history), not the same users typing k times faster. Keeps think time and grows the cache working set as production does. Ladder 1× (production's 24 h peak share, 5.8 req/s per node) to 4× in 0.5× steps."
+    "Load scaled by users, at real time",
+    "k× = k session buckets merged at their real timestamps, not time compression. Ladder 1× (one node's share of the peak, ≈ 5.8 req/s) to 4× in 0.5× steps."
    ],
    [
-    "SLA clamp (every minute must pass)",
-    "TTFT p50 ≤ 1.0 s (production 0.35 s at peak), TTFT p99 ≤ 15 s (production 10.2 s), per-stream decode p50 ≥ 60 tok/s (production p10 48), errors < 0.1%."
+    "SLA clamp, every minute",
+    "TTFT p50 ≤ 1.0 s, TTFT p99 ≤ 15 s, per-stream decode p50 ≥ 60 tok/s, errors < 0.1% (production at its peak: 0.35 s, 10.2 s, 100 tok/s, 0.06%)."
    ],
    [
-    "Reported",
-    "Primary: SLA capacity = highest passing k, as TPM per GPU (reads directly against production's 3.38 M at 1×). Secondary: closed-loop saturation on the same prompts (ceiling, no SLA). Static frame: synthetic sanity check only."
-   ],
-   [
-    "Plan",
-    "1) M3.1 hourly logs or a read-only ES key (the one blocker). 2) Build the v2 trace on node 0008 (24 buckets, the 16:10 UTC peak hour + 4 h history). 3) Calibrate W and priming at 1× on the frontier. 4) Ladder for the frontier and the chain22 HiCache winner. The 09-27 trace stays as a regression reference."
+    "What the report shows",
+    "Primary: SLA capacity = highest passing k, as TPM per GPU, next to production's 24 h peak (3.38 M/GPU). Secondary: closed-loop saturation on a disjoint window (never on prompts already replayed). Appendix: static frame. Each headline run twice to show noise."
    ]
   ],
-  "note": "Protocol v1 (in use until v2 data lands): 09-27 M3-era trace, one node's share, 30-min (or 2-hour) warm-up, time-compressed staircase, strict rule TTFT p50 ≤ 1.6 s and p99 ≤ 22 s per minute."
+  "note": "Status 20:05 PDT: S3 access works; 09-28 12:00–17:00 UTC (5,984 parts, 194 GB) downloading to node 0008. Next: multi-part extractor → 24-bucket trace → gateway tool-schema fix + image placeholder fix + answer priming → calibration at 1× → ladder on the frontier (4 tokenizer workers + HiCache). Protocol v1 (09-27 M3-era trace, time-compressed staircase) stays as a regression reference."
  }
 }
