@@ -14,16 +14,15 @@ MI = [  # docs/benchmarking.md "Scenarios and baselines" (SGLang 1P1D, MXFP4 KV 
     ("Thinking time", "256 (234 used)", "32", 4383, 0.535, (0.67, 10.1), (0.17, 0.87), 13.2, 0.925, 1),
     ("Thinking time", "1024, 512 sampled", "64", 5403, 1.033, (0.92, 7.8), (0.26, 1.68), 19.1, 0.928, "2²")]
 STATUS = {"done": ("Done", "ok"), "running": ("Running", "run"), "queued": ("Queued", "wait")}
-NCOL = 14
+NCOL = 11
 def row_cells(r):
     if r["status"] == "done":
-        return [f(r.get("duration_s"), 0, " s"), f(r.get("request_s"), 3), f(r.get("total_tok_s"), 0), f(r.get("output_tok_s"), 0),
+        return [f(r.get("duration_s"), 0, " s"), f(r.get("request_s"), 3),
                 pair(r.get("ttft_p50_s"), r.get("ttft_p90_s")), pair(r.get("steady_ttft_p50_s"), r.get("steady_ttft_p90_s")),
-                f(r.get("tpot_p50_ms"), 1, " ms"), f(r.get("cache_hit"), 3), str(r.get("failed", "–")),
-                "yes" if r.get("valid") else ("no" if r.get("valid") is False else "–")]
+                f(r.get("tpot_p50_ms"), 1, " ms"), f(r.get("cache_hit"), 3), str(r.get("failed", "–")) + ("³" if r.get("valid") is False else "")]
     if r.get("progress"):
-        pg = r["progress"]; return ["–", f(pg["request_s"], 2), "–", "–", "–", "–", "–", "–", str(pg["errors"]), "–"]
-    return ["–"] * 10
+        pg = r["progress"]; return ["–", f(pg["request_s"], 2), "–", "–", "–", "–", str(pg["errors"])]
+    return ["–"] * 7
 def b300_rows(model):
     out = []
     for r in data["rows"]:
@@ -36,9 +35,8 @@ def b300_rows(model):
     return "".join(out)
 mi_rows = []
 for i, (s_, tr, ln, dur, rps, ttft, st, tpot, hit, fail) in enumerate(MI):
-    valid = "no²" if i == 3 else "–"
     mi_rows.append(f'<tr class="mi"><td><span class="chip ref">MI355X</span></td><td>{s_}</td><td>{tr}</td><td class="n">{ln}</td><td class="n">{dur} s</td><td class="n">{rps:.3f}</td>'
-                   f'<td class="n">–</td><td class="n">–</td><td class="n">{ttft[0]:.2f} / {ttft[1]:.1f}</td><td class="n">{st[0]:.2f} / {st[1]:.2f}</td><td class="n">{tpot} ms</td><td class="n">{hit:.3f}</td><td class="n">{str(fail).replace("²","")}</td><td class="n">{valid}</td></tr>')
+                   f'<td class="n">{ttft[0]:.2f} / {ttft[1]:.1f}</td><td class="n">{st[0]:.2f} / {st[1]:.2f}</td><td class="n">{tpot} ms</td><td class="n">{hit:.3f}</td><td class="n">{fail}</td></tr>')
 done = sum(r["status"] == "done" for r in data["rows"]); n = len(data["rows"])
 lead = f"{done} of {n} runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends."
 log_tail = "\n".join(data.get("log_tail") or [])
@@ -103,19 +101,19 @@ code {{ font-family: var(--mono); font-size: .92em; }}
 <section>
   <h2>Results</h2>
   <div class="tablebox"><table>
-    <thead><tr><th>Status</th><th>Scenario</th><th>Trace</th><th>Lanes</th><th>Duration</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
+    <thead><tr><th>Status</th><th>Scenario</th><th>Trace</th><th>Lanes</th><th>Duration</th><th>Req/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th></tr></thead>
     <tbody>
-      <tr class="sep"><td colspan="14">B300 · MiniMax-M3.1 (NVFP4) · 4 × TP2 engines, DSpark + gateway</td></tr>
+      <tr class="sep"><td colspan="11">B300 · MiniMax-M3.1 (NVFP4) · 4 × TP2 engines, DSpark + gateway</td></tr>
       {b300_rows("m31")}
-      <tr class="sep"><td colspan="14">B300 · MiniMax-M3 (NVIDIA NVFP4) · 4 × TP2 engines, NVIDIA DSpark draft · runs after M3.1</td></tr>
+      <tr class="sep"><td colspan="11">B300 · MiniMax-M3 (NVIDIA NVFP4) · 4 × TP2 engines, NVIDIA DSpark draft · runs after M3.1</td></tr>
       {b300_rows("m3")}
-      <tr class="sep"><td colspan="14">MI355X · MiniMax-M3 · SGLang 1P1D, MXFP4 KV transport · reference from the repo docs</td></tr>
+      <tr class="sep"><td colspan="11">MI355X · MiniMax-M3 · SGLang 1P1D, MXFP4 KV transport · reference from the repo docs</td></tr>
       {''.join(mi_rows)}
     </tbody>
   </table></div>
   <div class="foot">
-    <span>Columns are the repo's own metrics (<code>docs/benchmarking.md</code> baseline table and the <code>concurrency_sweep.py</code> summary), computed with the repo's summarize code from each run's <code>result.json</code>. Total tok/s = (prompt + output tokens) ÷ run span for the 8-GPU node. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s; the MI355X steady TTFT was measured server-side. While a run is in progress its row shows requests completed and the running req/s.</span>
-    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² Flagged not valid for performance comparison in the repo (one reader underrun; 2 failed).</span>
+    <span>Columns are exactly the baseline table in the repo's <code>docs/benchmarking.md</code>, computed with the repo's own summarize code from each run's <code>result.json</code>. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s; ours is client-side, while the MI355X steady TTFT in the doc was measured server-side, so the two are not identical measurements. While a run is in progress its row shows the requests completed and the running req/s.</span>
+    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² The doc flags this MI355X run as not valid for performance comparison (one reader underrun, 0.11 s total wait). ³ Our run's <code>result.json</code> flags it not valid for performance comparison.</span>
   </div>
 </section>
 
