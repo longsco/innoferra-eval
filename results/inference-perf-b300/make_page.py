@@ -24,7 +24,8 @@ for r in data["rows"]:
                  f(r.get("cache_hit"), 3), str(r.get("failed", "–")), r.get("accept") or "–"]
     else:
         cells = ["–"] * 10
-    b300_rows.append(f'<tr><td><span class="chip {cls}">{lab}</span></td><td>{E(r["scenario"])}</td><td>{E(r["trace"])}</td><td class="n">{r["lanes"]}</td>'
+    lanes = f'{r["lanes"]}¹' if r["name"] == "r4_nothink_t256_c16" else str(r["lanes"])
+    b300_rows.append(f'<tr><td><span class="chip {cls}">{lab}</span></td><td>{E(r["scenario"])}</td><td>{E(r["trace"])}</td><td class="n">{lanes}</td>'
                      + "".join(f'<td class="n">{E(c)}</td>' for c in cells) + "</tr>")
 mi_rows = []
 for s, tr, ln, dur, rps, ttft, st, tpot, hit, fail in MI:
@@ -32,7 +33,7 @@ for s, tr, ln, dur, rps, ttft, st, tpot, hit, fail in MI:
                    f'<td class="n">–</td><td class="n">–</td><td class="n">{ttft[0]:.2f} / {ttft[1]:.1f}</td><td class="n">{st[0]:.2f} / {st[1]:.2f}</td><td class="n">{tpot} ms</td><td class="n">{hit:.3f}</td><td class="n">{fail}</td><td class="n">–</td></tr>')
 done = sum(r["status"] == "done" for r in data["rows"]); n = len(data["rows"])
 lead = {0: "Runs are in progress on node 0008. Numbers fill in as each run finishes.",
-        n: "All three runs finished."}.get(done, f"{done} of {n} runs finished; the rest are running or queued.")
+        n: f"All {n} runs finished."}.get(done, f"{done} of {n} runs finished; the rest are running or queued.")
 log_tail = "\n".join(data.get("log_tail") or [])
 page = f"""<title>B300 Agentic Replay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -105,7 +106,7 @@ code {{ font-family: var(--mono); font-size: .92em; }}
   </table></div>
   <div class="foot">
     <span>Tok/s per GPU = (prompt + output tokens) ÷ run span ÷ 8 GPUs, as InferenceX computes it; TPM per GPU = the same × 60. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s (<code>scripts/lane_steady_ttft.py</code> logic); the MI355X steady TTFT was measured server-side, so compare it loosely.</span>
-    <span>¹ MI355X run with <code>--max-in-flight 64</code>. ² Flagged not valid for performance comparison (one reader underrun). DSpark accept = mean accepted tokens per verify step from the engines' metrics over the run.</span>
+    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² Flagged not valid for performance comparison (one reader underrun). DSpark accept = mean accepted tokens per verify step from the engines' metrics over the run.</span>
   </div>
 </section>
 
@@ -138,6 +139,7 @@ inference-replay benchmark --url http://127.0.0.1:8000 --benchmark-presets minim
   --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time     # run 1
   --trajectory 256 --active-trajectories 32                              # run 2 (thinking time)
   --trajectory 512 --active-trajectories 64                              # run 3 (thinking time)
+  --trajectory 256 --active-trajectories 16 --max-in-flight 64 --no-sleep-thinking-time   # run 4 (after run 3)
 # results: /data01/minimax31/inference-perf/results/b300-m31/&lt;run&gt;/result.json
 # script:  innoferra-eval/serving/minimax-m3.1/run_inference_perf_b300.sh</pre>
   <p class="foot" style="margin-top:8px">Only local change to the client: it sends <code>Authorization: Bearer $OPENAI_API_KEY</code> when that variable is set, because our gateway requires a key.</p>

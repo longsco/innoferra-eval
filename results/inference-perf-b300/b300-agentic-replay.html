@@ -53,7 +53,7 @@ code { font-family: var(--mono); font-size: .92em; }
   <div class="eyebrow">inference-perf · real-world MiniMax agentic benchmark</div>
   <h1>B300 Agentic Replay</h1>
   <p>Runs are in progress on node 0008. Numbers fill in as each run finishes. The replay client sends each trajectory's recorded turns closed loop (a turn waits for the turns it depends on), with outputs forced to the recorded length. These runs mirror the MI355X baseline table in the repo's <code>docs/benchmarking.md</code>.</p>
-  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 28, 22:02 PDT</span></div>
+  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 28, 22:07 PDT</span></div>
 </header>
 
 <section>
@@ -69,7 +69,7 @@ code { font-family: var(--mono); font-size: .92em; }
   </table></div>
   <div class="foot">
     <span>Tok/s per GPU = (prompt + output tokens) ÷ run span ÷ 8 GPUs, as InferenceX computes it; TPM per GPU = the same × 60. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s (<code>scripts/lane_steady_ttft.py</code> logic); the MI355X steady TTFT was measured server-side, so compare it loosely.</span>
-    <span>¹ MI355X run with <code>--max-in-flight 64</code>. ² Flagged not valid for performance comparison (one reader underrun). DSpark accept = mean accepted tokens per verify step from the engines' metrics over the run.</span>
+    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² Flagged not valid for performance comparison (one reader underrun). DSpark accept = mean accepted tokens per verify step from the engines' metrics over the run.</span>
   </div>
 </section>
 
@@ -102,6 +102,7 @@ inference-replay benchmark --url http://127.0.0.1:8000 --benchmark-presets minim
   --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time     # run 1
   --trajectory 256 --active-trajectories 32                              # run 2 (thinking time)
   --trajectory 512 --active-trajectories 64                              # run 3 (thinking time)
+  --trajectory 256 --active-trajectories 16 --max-in-flight 64 --no-sleep-thinking-time   # run 4 (after run 3)
 # results: /data01/minimax31/inference-perf/results/b300-m31/&lt;run&gt;/result.json
 # script:  innoferra-eval/serving/minimax-m3.1/run_inference_perf_b300.sh</pre>
   <p class="foot" style="margin-top:8px">Only local change to the client: it sends <code>Authorization: Bearer $OPENAI_API_KEY</code> when that variable is set, because our gateway requires a key.</p>
