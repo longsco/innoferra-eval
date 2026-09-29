@@ -24,7 +24,8 @@ ap.add_argument("--warm-window", type=float, default=3600); ap.add_argument("--w
 ap.add_argument("--warm-budget", type=float, default=6e7, help="warm only the most recent sessions whose prompts sum to this many tokens "
                 "(~1.2x the node's GPU + host KV capacity; older prefixes would be evicted by LRU anyway)")
 ap.add_argument("--flush-urls", default=""); ap.add_argument("--match-output", action="store_true"); ap.add_argument("--open-loop", action="store_true")
-ap.add_argument("--img", default="1x1", help="WxH of the synthetic image replacing logged '/base64/' placeholders")
+ap.add_argument("--img", default="1064x1024", help="WxH of the synthetic image replacing logged '/base64/' placeholders (1064x1024 = +1,350 prompt tokens on M3.1, the mean missing per logged image at 1x)")
+ap.add_argument("--last-frac", type=float, default=1.0, help="keep only this fraction of the sessions of the LAST trace file (hash of the session key), for load levels between whole half-buckets")
 ap.add_argument("--timeout", type=float, default=1800); ap.add_argument("--no-prime", action="store_true"); ap.add_argument("--dry-run", action="store_true")
 ap.add_argument("--sla", default="1.0,15,60,0.001", help="per-minute SLA: TTFT p50 s, TTFT p99 s, decode p50 tok/s, error rate")
 a = ap.parse_args()
@@ -55,14 +56,19 @@ def fix_images(body):
                 elif isinstance(iu, str) and not iu.startswith("data:"): part["image_url"] = {"url": IMG}; n += 1
     return n
 
-def iter_file(fn):
+def iter_file(fn, frac=1.0):
+    import hashlib
     with open(fn) as f:
-        for l in f: yield json.loads(l)
+        for l in f:
+            r = json.loads(l)
+            if frac < 1.0 and int(hashlib.md5(r["key"].encode()).hexdigest()[:8], 16) / 0xFFFFFFFF >= frac: continue
+            yield r
 
 def load():
     """Merge buckets by t; keep each session's last warm-window turn and every measured-window request."""
     last_warm = {}; meas = []
-    for r in heapq.merge(*(iter_file(fn) for fn in a.traces.split(",")), key=lambda r: r["t"]):
+    fns = a.traces.split(",")
+    for r in heapq.merge(*(iter_file(fn, a.last_frac if i == len(fns) - 1 else 1.0) for i, fn in enumerate(fns)), key=lambda r: r["t"]):
         if r["t"] >= T_M1: break
         if r["t"] < T_W0: continue
         if r["t"] < T_M0: last_warm[r["key"]] = r
@@ -184,7 +190,7 @@ def f2(x): return "-" if x is None else f"{x:.2f}"
 def report(recs, wall, n_buckets):
     M = [r for r in recs if r["phase"] == "measured"]; ok = [r for r in M if r["status"] == 200 and not r["error"]]
     base = [r for r in M if r.get("prod_status") == 200]; fail = [r for r in base if r["status"] != 200 or r["error"]]
-    minutes = max(1, round((T_M1 - T_M0) / 60)); load = n_buckets / 2
+    minutes = max(1, round((T_M1 - T_M0) / 60)); load = (n_buckets - 1 + a.last_frac) / 2
     print(f"== replay_v2 load {load:g}x a node's share ({n_buckets} half-buckets), measured {minutes} min, {len(M)} requests, wall {wall:.0f}s, "
           f"{'open loop' if a.open_loop else 'causal sessions'}, {'output matched to production' if a.match_output else 'natural output length'}")
     print(f"   errors on production-200 requests: {len(fail)}/{len(base)} ({len(fail)/max(len(base),1)*100:.2f}%)")
