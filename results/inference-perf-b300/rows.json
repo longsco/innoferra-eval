@@ -50,7 +50,21 @@
    "scenario": "Thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 32,
-   "status": "running"
+   "status": "done",
+   "thinking": "on",
+   "duration_s": 7374.538610216929,
+   "requests": 2416,
+   "failed": 2,
+   "request_s": 0.32761371628765956,
+   "total_tok_s": 29243.530121906962,
+   "output_tok_s": 193.20869756190584,
+   "ttft_p50_s": 0.9108653180301189,
+   "ttft_p90_s": 2.9007988955127075,
+   "steady_ttft_p50_s": 0.9098533760989085,
+   "steady_ttft_p90_s": 3.03646795942914,
+   "tpot_p50_ms": 8.461669600647438,
+   "cache_hit": 0.9212142633203855,
+   "valid": true
   },
   {
    "model": "m31",
@@ -108,11 +122,11 @@
   }
  ],
  "log_tail": [
-  "11:07:08 flush before r2_think_t256_c32: e0 Cache flushed.",
-  "Please check backend logs for more details. (  e1 Cache flushed.",
-  "Please check backend logs for more details. (  e2 Cache flushed.",
-  "Please check backend logs for more details. (  e3 Cache flushed.",
-  "Please check backend logs for more details. (  ",
-  "11:07:08 ===== r2_think_t256_c32 (cold cache): inference-replay benchmark --trajectory 256 --active-trajectories 32"
+  "  \"benchmark_presets\": [",
+  "    \"minimax-m3-agentic\"",
+  "  ],",
+  "  \"benchmark_plan_hash\": \"795686ec76f8be8f3da22c0085a021a5529db0f761b64869510818bd23f1c964\"",
+  "}",
+  "13:10:52 ===== inference-perf B300 run 4 DONE (all M3.1 runs cold-cache except r1, which ran on fresh engines)"
  ]
 }
