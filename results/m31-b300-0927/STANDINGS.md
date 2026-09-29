@@ -6,6 +6,7 @@
 | Frontier + 8 tokenizer workers per engine (tok8) | 7.82 M | c256, TTFT 2.1 s (p99 20 s); c128 5.67 M at 1.3 s; c384 8.46 M at 10.3 s | 112% |
 | Frontier + 4 tokenizer workers per engine (tok4) | 7.64 M | c256, TTFT 2.6 s; c128 5.62 M at 1.7 s; c384 8.16 M at 9.7 s | 109% |
 | Frontier + 8 tokenizer workers + 64 per rank (t8r64) | 7.48 M | c256, TTFT 1.7 s; c384 7.87 M at 3.6 s; c512 8.20 M at 11.4 s | 107% |
+| Frontier (4 tok. workers) + HiCache ratio 3, 2-hour warm-up (lwhc) | 5.46 M | c128, TTFT 1.9 s (static grid ran c128 only) | 78% |
 | 4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway | 5.10 M | c128, TTFT 3.7 s (repeat; first run 5.01 at 4.1 s); c64 3.46 M; c256 5.65 M — run-to-run noise ~2% | 73% |
 | Frontier base + production scheduling knobs (bprod: chunk 16384, overlap plan, streaming, queue cap) | 5.02 M | c128, TTFT 3.6 s; c64 3.40 M; c256 5.62 M — static tie, worse on real traffic | 72% |
 | Frontier base + DSpark block 4 (bblk4, production's block size) | 4.93 M | c128, TTFT 3.3 s; c64 3.32 M; c256 5.67 M | 70% |

@@ -142,5 +142,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 18:36 PDT (09-28) | **HiCache correctness check PASS** (hicache_check.py, one tp2 engine each on GPUs 0-1): HiCache ratio 3 (hicache tree + patch_hicache_nvfp4.py): A#1 prompt 51,542 cold 4.0 s, A#2 51,456 cached 0.8 s, 48 fill prompts = 2.68 M tokens on rank 0, A#3 51,456 cached (100%) 1.03 s, output == A#1. Control (0922-sglang, no HiCache): A#3 0 cached, 2.97 s, output == A#1. Verdict PASS=1; chain22 lwhc started | logs/hc-check-*.out | HiCache works |
 
+| 19:43 PDT (09-28) | chain22 lwhc (tok4 frontier + HiCache ratio 3 write-through, hicache tree; warm-up 13:00-15:00 at 8x; fine staircase): static c128 43.70 M (5.46/GPU, 1.86 s); warm-up 4688 ok / 61 err (41x400 'Invalid request', 20x500, all 200 in production); staircase 2618/2618, hit 90.8%, strict per level 1x/1.5x/2x/2.5x pass, 3x fail, 3.5x pass, 4x fail -> 1.14 M/GPU (contiguous), TTFT p50/p99 per level 0.77/3.9 .. 1.88/20.8; accept 4.18. Closed loop c128 31.50 M node at 99.8% hit = INVALID (replays prompts HiCache retained from the staircase) | traffic/stairs-lwhc.jsonl | strict 0.88 -> 1.14 |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

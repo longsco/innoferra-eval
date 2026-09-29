@@ -252,6 +252,17 @@
    "rt_closed": 1.45,
    "rt_strict": 0.92,
    "rt_acc": 4.09
+  },
+  {
+   "n": "Frontier (4 tok. workers) + HiCache ratio 3, 2-hour warm-up (lwhc)",
+   "v": 5.46,
+   "c": "c128, TTFT 1.9 s (static grid ran c128 only)",
+   "k": "ok",
+   "frontier": false,
+   "acc": "accept 5.79 probe · 4.18 real traffic",
+   "rt_closed": null,
+   "rt_strict": 1.14,
+   "rt_acc": 4.18
   }
  ],
  "pareto": {
@@ -428,6 +439,11 @@
   ]
  },
  "timeline": [
+  [
+   "19:43",
+   "HiCache ratio 3 with a 2-hour warm-up (lwhc), fine staircase: cache hit 90.8% (fine4 without HiCache, 30-min warm-up: 89.3%), uncached tokens per request 5–7k (was 6–8k); strict prod-parity holds to 2.5× = 1.14 M/GPU (fine4: 2× = 0.88) and also at 3.5× (1.28), failing 3× on one minute; TTFT p50 0.77 / 1.1 / 1.9 s at 1× / 2× / 4×; accept 4.18; 0 staircase errors. Its closed loop (31.5 M node, 99.8% hit) is invalid: it replays prompts the staircase just sent and HiCache still holds. 61 warm-up requests failed with 400/500 that production served; being reproduced",
+   "strict real-traffic capacity 0.88 → 1.14 M/GPU (HiCache + longer warm-up; split pending)"
+  ],
   [
    "18:45",
    "Viewer question: is the ~2 M/GPU real-traffic ceiling the test setup? Partly (cache hit 87–89% vs production 96%, coarse and time-compressed staircase, closed loop fixed at c128, M3-era prompts) and partly the engine (DP-attention lockstep stalls behind giant prefills, 32 per rank vs production's 256, missing KV4 prefill and fused-verify kernels). Closed-loop runs at c256 and c384 on real prompts armed after the HiCache baseline",
@@ -824,28 +840,28 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain22 HiCache correctness check",
-    "PASSED 18:36 PDT: after 2.68 M fill tokens on one rank, the test prompt came back 100% cached from host memory (TTFT 1.03 s vs 2.97 s re-prefill on the control), identical greedy output"
+    "chain22 lwhc: HiCache ratio 3 + 2-hour warm-up",
+    "done 19:43 PDT: hit 90.8% (89.3% without), strict rule to 2.5× = 1.14 M/GPU (fine4: 2× = 0.88), 0 errors in the staircase"
    ],
    [
-    "chain22 lwhc: HiCache ratio 3, 2-hour warm-up, fine staircase, closed loop",
-    "running since 18:36 PDT"
+    "chain22 lw: same 2-hour warm-up without HiCache (isolates HiCache from warm-up)",
+    "running since 19:43 PDT"
    ],
    [
-    "chain22 lw: same without HiCache (baseline for the 2-hour warm-up)",
-    "next"
-   ],
-   [
-    "closed-loop probe at c256 and c384 on the lw engines (real prompts)",
-    "armed after lw: tests whether ~1.7 M/GPU at c128 is a concurrency setting or a ceiling"
+    "closed-loop probe at c256/c384 on the lw engines",
+    "after lw"
    ],
    [
     "chain21: fair chunk share A/B",
     "after chain22"
    ],
    [
+    "Replay compatibility: 61 warm-up requests production served (200) got 400/500 from our stack",
+    "reproducing against an engine to get the raw errors"
+   ],
+   [
     "Live M3.1 trace (protocol v2)",
-    "waiting for S3 credentials on node 0008 (profile m31logs)"
+    "waiting for S3 credentials on node 0008"
    ]
   ]
  },
@@ -856,7 +872,7 @@
    "why": "Production runs HiCache ratio 3 and holds 95–97% cache hit; ours is 87–90% on real traffic at 4×.",
    "script": "to write",
    "commit": "3defa8c",
-   "status": "correctness check PASSED 18:36 PDT; A/B running in chain22"
+   "status": "check passed; first A/B in (strict 0.88 → 1.14 M/GPU); separating HiCache from the longer warm-up with the lw baseline"
   },
   {
    "title": "Live M3.1 traffic trace from the production logs (better real-traffic proxy)",
@@ -1992,6 +2008,22 @@
     "0.89 / 1.14 / 1.95 (6×: 3.2)",
     "143 / 103 / 68",
     "worse at 4× (p99 59 s) and closed loop; not adopted"
+   ],
+   [
+    "Frontier (4 tok. workers) + HiCache ratio 3, 2-hour warm-up (lwhc)",
+    "5.46 (c128)",
+    "<b>1.14</b> (strict to 2.5×; 1.28 at 3.5×) · closed loop invalid*",
+    "64 × 4",
+    "5.46 M @c128",
+    "1.9 s",
+    "~100%",
+    "–",
+    "5.79 / 4.18",
+    "09-27 peak, 2-hour warm-up, fine staircase",
+    "90.8%",
+    "0.77 / 1.1 / 1.9 (1× / 2× / 4×)",
+    "158 / 107 / 78",
+    "strict to 2.5× vs 2× without HiCache (30-min warm-up); *closed loop c128 replays prompts HiCache still holds (99.8% hit): not comparable"
    ],
    [
     "Team production (24 nodes, 24 h peak)",
