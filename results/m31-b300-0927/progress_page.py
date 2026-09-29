@@ -164,8 +164,9 @@ def prodref():
     p = data["prodref"]; body = "\n".join(f"<tr><td>{a}</td><td class=\"{'n' if len(b) <= 36 else 'w'}\">{b}</td></tr>" for a, b in p["rows"])
     url = "http://10.1.101.33:5601/app/dashboards#/view/6357c8fc-60ab-438b-9f0c-6dd266baa6e0?_g=(filters:!(),refreshInterval:(pause:!f,value:20000),time:(from:now-6h,to:now))"
     return (f'<div class="panel"><h2>Production reference</h2>\n<p style="margin:0 0 6px">Kibana dashboard <b>"Innoferra Token Hub M31 - Full Log"</b> (fleet VPN required): '
-            f'<a href="{url}">10.1.101.33:5601 → dashboard 6357c8fc</a>. Panels: tpm and req_count per minute, latency p50/p90/p99 per minute, 4xx/5xx per minute, recent failed requests with full bodies, sample of successful requests with token usage.</p>\n'
-            f'<div class="wrap"><table>\n<tr><th>read at {p["read_at"]}</th><th>value</th></tr>\n{body}\n</table></div>\n<p class="note">{p.get("note","")}</p></div>')
+            f'<a href="{url}">10.1.101.33:5601 → dashboard 6357c8fc</a> (also "Innoferra Token Hub M31" on 10.1.101.32:5601). Panels: TPM and requests per minute, latency p50/p90/p99, 4xx/5xx, failed and sampled requests with full bodies.</p>\n'
+            + (('<ul class="note" style="margin:6px 0 8px;padding-left:18px">' + "".join(f"<li>{x}</li>" for x in p["read_lines"]) + '</ul>') if p.get("read_lines") else f'<p class="note">read at {p["read_at"]}</p>')
+            + f'<div class="wrap"><table>\n<tr><th>metric</th><th>value</th></tr>\n{body}\n</table></div>\n<p class="note">{p.get("note","")}</p></div>')
 def timeline():
     rows = "\n".join(f"<tr><td class=\"n\">{t}</td><td>{c}</td><td>{r}</td></tr>" for t, c, r in data["timeline"])
     return f'<div class="panel"><h2>Timeline of changes (latest first, Pacific time)</h2><div class="wrap"><table><tr><th>PDT</th><th>change</th><th>result (per GPU)</th></tr>\n{rows}\n</table></div></div>'

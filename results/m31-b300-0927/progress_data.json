@@ -420,7 +420,12 @@
     "Dynamo frontend with DYN_TOKENIZER=fastokens (fast tokenizer; our Python tokenization was the static-frame ceiling)"
    ]
   ],
-  "note": "Same TPM definition as ours. Production runs M3.1 on 24 nodes (96 workers, probed Sep 29 01:00 PDT; 18 on Sep 27) and is not request-saturated, so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
+  "note": "Same TPM definition as ours. Production runs M3.1 on 24 nodes (96 workers, probed Sep 29 01:00 PDT; 18 on Sep 27) and is not request-saturated, so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis.",
+  "read_lines": [
+   "<b>Read</b> 01:05 PDT Sep 29 (read-only)",
+   "<b>Throughput</b>: last-24-hour peak 10-minute window, 09:10–09:20 PDT Sep 28 (settled; the index back-fills for 30+ min)",
+   "<b>Node count</b>: probed from the Dynamo frontends' metrics on b300-18 and b300-22 (all four list the same 96 workers)"
+  ]
  },
  "timeline": [
   [
