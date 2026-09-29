@@ -412,6 +412,11 @@
  },
  "timeline": [
   [
+   "18:45",
+   "Viewer question: is the ~2 M/GPU real-traffic ceiling the test setup? Partly (cache hit 87–89% vs production 96%, coarse and time-compressed staircase, closed loop fixed at c128, M3-era prompts) and partly the engine (DP-attention lockstep stalls behind giant prefills, 32 per rank vs production's 256, missing KV4 prefill and fused-verify kernels). Closed-loop runs at c256 and c384 on real prompts armed after the HiCache baseline",
+   "separate setup limits from engine limits"
+  ],
+  [
    "18:36",
    "<b>HiCache for our NVFP4 KV works.</b> Correctness check (one engine each, same long prompt, 48 fill prompts = 2.68 M tokens on the same rank, above its ~1.58 M-token GPU pool): with HiCache ratio 3 the prompt came back 51,456 of 51,542 tokens cached from host memory, TTFT 1.03 s, output identical; the control without HiCache re-prefilled it (0 cached, 2.97 s), output identical. HiCache A/B with the 2-hour warm-up started",
    "HiCache unblocked on our frontier tree"
@@ -812,6 +817,10 @@
    [
     "chain22 lw: same without HiCache (baseline for the 2-hour warm-up)",
     "next"
+   ],
+   [
+    "closed-loop probe at c256 and c384 on the lw engines (real prompts)",
+    "armed after lw: tests whether ~1.7 M/GPU at c128 is a concurrency setting or a ceiling"
    ],
    [
     "chain21: fair chunk share A/B",
