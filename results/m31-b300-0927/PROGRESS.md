@@ -140,5 +140,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 18:17 PDT (09-28) | chain20 fine4 (tok4 frontier, fine staircase 1:180 .. 4:180 in 0.5x steps): 2618/2618 ok, hit 89.3%; per level offered req/s 0.91/1.29/1.84/2.02/2.17/2.69/3.62 and node TPM 2.5/5.93/7.05/9.1/6.59/10.25/18.11 (not monotonic: time compression replays different trace slices); strict passes 1x and 2x (0.88 M/GPU), fails 1.5x (one minute) and >= 2.5x; TTFT p50 0.73 (1x) .. 1.75 s (4x), p99 at 4x 14.3 s; accept 4.05; closed loop c128 13.93 M node (1.74/GPU). CHAIN20 DONE 01:17Z (fine2 skipped); chain22 (HiCache) started | traffic/stairs-fine4.jsonl | strict ~0.9 M/GPU |
 
+| 18:36 PDT (09-28) | **HiCache correctness check PASS** (hicache_check.py, one tp2 engine each on GPUs 0-1): HiCache ratio 3 (hicache tree + patch_hicache_nvfp4.py): A#1 prompt 51,542 cold 4.0 s, A#2 51,456 cached 0.8 s, 48 fill prompts = 2.68 M tokens on rank 0, A#3 51,456 cached (100%) 1.03 s, output == A#1. Control (0922-sglang, no HiCache): A#3 0 cached, 2.97 s, output == A#1. Verdict PASS=1; chain22 lwhc started | logs/hc-check-*.out | HiCache works |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

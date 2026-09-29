@@ -412,6 +412,11 @@
  },
  "timeline": [
   [
+   "18:36",
+   "<b>HiCache for our NVFP4 KV works.</b> Correctness check (one engine each, same long prompt, 48 fill prompts = 2.68 M tokens on the same rank, above its ~1.58 M-token GPU pool): with HiCache ratio 3 the prompt came back 51,456 of 51,542 tokens cached from host memory, TTFT 1.03 s, output identical; the control without HiCache re-prefilled it (0 cached, 2.97 s), output identical. HiCache A/B with the 2-hour warm-up started",
+   "HiCache unblocked on our frontier tree"
+  ],
+  [
    "18:17",
    "Fine staircase (1×–4× in 0.5× steps, 180 s each) on the frontier with 4 tokenizer workers: TTFT p50 0.73 / 1.1 / 1.75 s at 1× / 2× / 4×, p99 at 4× 14 s; the strict rule passes at 1× and 2× (7.05 M node = 0.88 M/GPU) but fails at 1.5× on one minute and from 2.5× up; closed loop c128 1.74 M/GPU; accept 4.05; 0 errors. Offered TPM per level is not monotonic under time compression (3× offered less than 2.5×: different trace slices), which is why protocol v2 scales users at real time instead",
    "real-traffic strict capacity ≈ 0.9 M/GPU; method limits confirmed"
@@ -797,12 +802,16 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain20 fine4 (fine staircase, 4 tokenizer workers)",
-    "done 18:17 PDT: strict rule passes at 1× and 2× (0.88 M/GPU), fails at 1.5× by one minute and from 2.5×; closed loop 1.74 M/GPU; 0 errors"
+    "chain22 HiCache correctness check",
+    "PASSED 18:36 PDT: after 2.68 M fill tokens on one rank, the test prompt came back 100% cached from host memory (TTFT 1.03 s vs 2.97 s re-prefill on the control), identical greedy output"
    ],
    [
-    "chain22: HiCache correctness check, then HiCache ratio 3 vs none after a 2-hour warm-up (fine staircase)",
-    "running since 18:17 PDT; ~3 h"
+    "chain22 lwhc: HiCache ratio 3, 2-hour warm-up, fine staircase, closed loop",
+    "running since 18:36 PDT"
+   ],
+   [
+    "chain22 lw: same without HiCache (baseline for the 2-hour warm-up)",
+    "next"
    ],
    [
     "chain21: fair chunk share A/B",
@@ -810,7 +819,7 @@
    ],
    [
     "Live M3.1 trace (protocol v2)",
-    "waiting for S3 credentials on node 0008 (profile m31logs); download script ready"
+    "waiting for S3 credentials on node 0008 (profile m31logs)"
    ]
   ]
  },
@@ -821,7 +830,7 @@
    "why": "Production runs HiCache ratio 3 and holds 95–97% cache hit; ours is 87–90% on real traffic at 4×.",
    "script": "to write",
    "commit": "3defa8c",
-   "status": "armed in chain22 (check, then A/B with a 2-hour warm-up)"
+   "status": "correctness check PASSED 18:36 PDT; A/B running in chain22"
   },
   {
    "title": "Live M3.1 traffic trace from the production logs (better real-traffic proxy)",
