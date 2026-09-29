@@ -180,14 +180,14 @@ def realtraffic_rank_panel():
     x = lambda v: L + (W - L - R) * (math.log10(max(v, 1.0)) / 2.0)          # 1 s .. 100 s
     svg = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="Real-traffic TTFT at 4x load by configuration">']
     for t in (1, 2, 5, 10, 20, 50, 100):
-        svg.append(f'<line x1="{x(t):.0f}" y1="{top-6}" x2="{x(t):.0f}" y2="{H-28}" stroke="var(--grid)"/><text x="{x(t):.0f}" y="{H-12}" font-size="11" fill="var(--muted)" text-anchor="middle">{t} s</text>')
-    svg.append(f'<line x1="{x(1.6):.0f}" y1="{top-14}" x2="{x(1.6):.0f}" y2="{H-28}" stroke="var(--star)" stroke-width="2" stroke-dasharray="5 4"/><text x="{x(1.6)+4:.0f}" y="{top-18}" font-size="11" fill="var(--star)">prod-parity p50 1.6 s</text>')
+        svg.append(f'<line x1="{x(t):.0f}" y1="{top-6}" x2="{x(t):.0f}" y2="{H-28}" style="stroke:var(--grid)"/><text x="{x(t):.0f}" y="{H-12}" font-size="11" style="fill:var(--muted)" text-anchor="middle">{t} s</text>')
+    svg.append(f'<line x1="{x(1.6):.0f}" y1="{top-14}" x2="{x(1.6):.0f}" y2="{H-28}" style="stroke:var(--star)" stroke-width="2" stroke-dasharray="5 4"/><text x="{x(1.6)+4:.0f}" y="{top-18}" font-size="11" style="fill:var(--star)">prod-parity p50 1.6 s</text>')
     for i, r in enumerate(rows):
         y = top + i * rh; good = r["p50_4x"] <= 1.6
         fill = "var(--okfill)" if good else "var(--pend)"
-        svg.append(f'<text x="{L-10}" y="{y+18}" font-size="12" fill="var(--ink)" text-anchor="end">{r["n"]}</text>')
-        svg.append(f'<rect x="{L}" y="{y+6}" width="{max(3, x(r["p50_4x"])-L):.0f}" height="16" rx="2" fill="{fill}"/>')
-        svg.append(f'<text x="{x(r["p50_4x"])+6:.0f}" y="{y+18}" font-size="12" fill="var(--ink)" font-weight="500">{r["p50_4x"]:.2f} s <tspan fill="var(--muted)" font-weight="400" font-size="10.5">· p99 {r["p99_4x"]:.0f} s · {r["decode_1x"]} tok/s at 1× · hit {r["hit"]}</tspan></text>')
+        svg.append(f'<text x="{L-10}" y="{y+18}" font-size="12" style="fill:var(--ink)" text-anchor="end">{r["n"]}</text>')
+        svg.append(f'<rect x="{L}" y="{y+6}" width="{max(3, x(r["p50_4x"])-L):.0f}" height="16" rx="2" style="fill:{fill}"/>')
+        svg.append(f'<text x="{x(r["p50_4x"])+6:.0f}" y="{y+18}" font-size="12" style="fill:var(--ink)" font-weight="500">{r["p50_4x"]:.2f} s <tspan style="fill:var(--muted)" font-weight="400" font-size="10.5">· p99 {r["p99_4x"]:.0f} s · {r["decode_1x"]} tok/s at 1× · hit {r["hit"]}</tspan></text>')
     svg.append("</svg>")
     return (f'<div class="panel"><h2>Real traffic, ranked: TTFT p50 at 4× a node\'s share (lower is better)</h2><div class="wrap">{"".join(svg)}</div>'
             f'<p class="note">{data.get("realtraffic_rank_note","")}</p></div>')
@@ -206,6 +206,7 @@ def charts():
 
 JS = """
 (function(){
+  function draw(){
   const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),star=css('--star'),ok=css('--okfill'),bad=css('--bad'),pend=css('--pend'),prev=css('--prev');
   const KC={bad:bad,ok:ok,prev:prev}; const TARGET=%(target)s;
@@ -247,6 +248,10 @@ JS = """
   if(mp.length&&pp.length) h+=`<polyline points="${[mp[mp.length-1],...pp].map(p=>p[0]+','+p[1]).join(' ')}" fill="none" stroke="${ink}" stroke-width="1.5" stroke-dasharray="4 4"/>`;
   let c=base; lev.filter(d=>d.m).forEach((d,i)=>{c+=d.v; const p=mp[i]; h+=`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${ink}"/><text x="${p[0]+8}" y="${p[1]-8}" font-size="11" fill="${ink}">${(c/TARGET*100).toFixed(0)}%%</text>`;});
   s2.innerHTML=h;
+  }
+  draw();
+  try{new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','class','style']});}catch(e){}
+  try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>draw());}catch(e){}
   const tabs=[...document.querySelectorAll('.tabs button')], panels=[...document.querySelectorAll('.tabpanel')];
   function show(id){tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id?'true':'false'));panels.forEach(p=>p.hidden=(p.id!==id));try{localStorage.setItem('m31tab',id)}catch(e){}}
   tabs.forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab);try{history.replaceState(null,'','#'+b.dataset.tab)}catch(e){}}));
