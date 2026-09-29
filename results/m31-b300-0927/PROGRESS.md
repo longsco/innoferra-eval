@@ -136,5 +136,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 17:55 PDT (09-28) | miss_anatomy.py (tok4): staircase first-in-replay n=941 hit 21.0% uncached 11.7M (prod 7.4M), repeat n=1998 hit 93.9% uncached 11.3M (prod 6.3M) -> 49% of misses on repeat sessions, 5.0M excess over production. Token usage max 0.22-0.32 per rank (running requests only; pool 1.58M tokens/rank). HiCache: our hicache tree == vendor 0927 except the KV4 guard and hybrid_cache_controller draft write-back; patched (3defa8c). Warm-up traces 13:00-14:00 + 14:00-14:30 extracting. chain22 armed | miss_anatomy.py, patch_hicache_nvfp4.py | HiCache test armed |
 
+| 18:05 PDT (09-28) | **Production node count probed: 24** (read-only GET of /metrics on the Dynamo frontends, pod IPs from `k3s crictl inspectp` on b300-18 and b300-22): frontend-a/b on both nodes (deployments `capacity-2582` and the older one) list the identical 96 decode workers (dynamo_frontend_worker_last_*; 72 updated within 75 s) = 24 nodes x 4 TP2 workers. Frontend env: DYN_TOKENIZER=fastokens, DYN_DISCOVERY_BACKEND=kubernetes. 24 h peak (settled, Kibana ES|QL): 16:10-16:20Z = 84,155 req, 6.497 B tokens -> 650 M TPM hub, hit 96.3%, TTFT p50/p90/p99 0.35/4.43/10.24 s, decode 48/100/169, out p50 303, 5xx 49; peak minute 16:37Z 668.5 M -> 3.38 M/GPU on 192 GPUs (4.51 on 144) | Kibana, frontends | baseline corrected |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
