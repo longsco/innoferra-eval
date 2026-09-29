@@ -21,6 +21,7 @@ fi
 [ "$HICACHE" = 1 ] && ARGV+=(--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first)
 ENVF=(); for e in "${ENV[@]}" ${EXTRA_ENV:-}; do ENVF+=(-e "$e"); done
 $DOCKER rm -f "$NAME" >/dev/null 2>&1
+for _ in $(seq 1 60); do ss -ltn 2>/dev/null | grep -q "127.0.0.1:$PORT " || break; sleep 2; done   # 09-29: wait until the old container released the port
 $DOCKER run -d --restart unless-stopped --name "$NAME" --gpus all -e CUDA_VISIBLE_DEVICES="$GPUS" -p 127.0.0.1:$PORT:$PORT --ipc private \
   --shm-size 64g --ulimit memlock=-1 --ulimit stack=67108864 --cap-add SYS_PTRACE --log-driver json-file --log-opt max-size=100m --log-opt max-file=5 \
   -v "$MODEL:/models:ro" -v "$DRAFT:/draft:ro" -v "$JIT:/root/.cache" -v "$LOGS:/logs" -v "$DEV_SRC:/opt/0922-sglang/python:ro" \
