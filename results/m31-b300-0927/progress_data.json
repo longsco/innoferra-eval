@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "16:15 (09-29)",
+   "<b>Protocol v2, first real M3.1 run at 1× (one node's share of production's peak hour, 10,517 requests, frontier + HiCache): FAIL.</b> The replay is faithful (prompt tokens 0.977× production, output 0.990×, cache hit 93.8% vs 96.2%), but the node could not keep up: offered 2.78 M TPM/GPU, the 30-min window took 97 min, TTFT p50/p90/p99 2.4 / 343 / 596 s (production 0.33 / 3.8 / 10 s), decode 54 tok/s per stream (production 104). Our real capacity is below production's per-node load. Two replay defects found and fixed: answer priming was blocked by our gateway's tool-history check (6,624 of 6,750 primes → 400), and image placeholders were 13% short on tokens (now a calibrated 1064×1024 image). 2×–4× dropped (pointless past saturation); chain26 measures 0.5× / 0.75× / 1× on the peak 15 minutes to find the passing level.",
+   "v2 1× FAIL: capacity < production's node load"
+  ],
+  [
    "14:14 (09-29)",
    "inference-perf benchmark on B300 done (user's priority task, node lent 21:55–14:14 PDT): the repo's four MI355X-baseline scenarios on M3.1 (this frontier + HiCache) and on MiniMax-M3 (nvidia NVFP4 + nvidia DSpark, 4×TP2, bidirectional draft patch: accept 3.44 vs 2.82 causal), cold cache per run. M3 beats M3.1 on req/s without thinking time (1.68 vs 1.32 at 32 lanes; 1.36 vs 1.01 at 16). Report: claude.ai/artifact/QeN98rsnNoWKU6rk2574NP. M3.1 queue resumed: chain23b protocol v2 ladder → chain25 → chain24.",
    "benchmark delivered; v2 ladder running"
@@ -891,26 +896,22 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic.</b> Best so far on real production prompts: <b>1.14 M per GPU</b> at the strict per-minute SLA (4×tp2 DSpark engines, bidirectional draft, 4 tokenizer workers, session-pinning gateway, after a 2-hour warm-up; HiCache measured the same; 16% of 7 M), and 1.91 M per GPU with 128 real prompts always in flight (2.08 at 384: the engine saturates near 2 M on these prompts). Production serves 3.38 M per GPU at its 24 h peak without saturating. The synthetic static frame (7.82 M per GPU) is kept as a secondary ranking only: it is fully cached random text and rewards levers real traffic barely feels. Next: the production-faithful replay of real M3.1 traffic (logs in, traces building) becomes the reported number.",
  "running": {
-  "title": "Running now: chain23b protocol v2 ladder (real M3.1 traffic), then chain25, chain24",
+  "title": "Running now: chain26 protocol v2 (corrected) at 0.5× / 0.75× / 1×",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "inference-perf B300 benchmark (user priority)",
-    "done 14:14 PDT: 8 runs (M3.1, M3) — see the B300 Agentic Replay page"
+    "chain23b protocol v2 at 1× (30 min window)",
+    "done 16:11 PDT: FAIL, offered 2.78 M/GPU, TTFT p90 343 s; 2×–4× dropped"
    ],
    [
-    "chain23b: protocol v2 on real M3.1 traffic, 1× → 4× (frontier + HiCache)",
-    "started 14:14 PDT; ≈ 1 h per level"
+    "chain26: corrected v2 (primes pass, calibrated images) at 0.5×, 0.75×, 1× on 16:10–16:25 UTC",
+    "started 16:14 PDT; ≈ 40–60 min per level"
    ],
    [
-    "chain25: fair chunk 0.5 (crash fixed) and HiCache ratio 4 at 2×/3×",
-    "queued after chain23b"
-   ],
-   [
-    "chain24: production DSpark settings (fa4 draft, block 4)",
-    "queued after chain25"
+    "next",
+    "levers at the passing level: fair chunk 0.5 (fixed), HiCache 4, 64/rank, fa4 draft; then the structural gap to production (TP2 attention without DP lockstep, graph-safe verify at high batch, faster prefill)"
    ]
   ]
  },
@@ -2660,6 +2661,6 @@
     "Primary: SLA capacity = highest passing k, as TPM per GPU, next to production's 24 h peak (3.38 M/GPU). Secondary: closed-loop saturation on a disjoint window (never on prompts already replayed). Appendix: static frame. Each headline run twice to show noise."
    ]
   ],
-  "note": "Status 21:25 PDT: traces built from 2.22 M production requests (5,984 parts, 181 GB); the logs reproduce the dashboard's 24 h peak exactly (09:10–09:20 PDT: 650 M TPM = 3.38 M/GPU, 96.3% hit). One half-node bucket = 44,774 requests / 14,348 sessions over 5 h; 59% of turns link to a next turn for priming. chain23 (armed, starts after chain21's fair4 arm, ≈ 22:00 PDT): frontier + HiCache, gateway null tool-schema fix, 1× calibration (validity gate) then 2×, 3×, 4×. Scripts: traffic_extract_v2.py, replay_v2.py, patch_shim_toolschema.py, chain23.sh (commit 104dd5c). Protocol v1 stays as a regression reference."
+  "note": "Status 16:15 PDT (09-29): first 1× run FAILED (offered 2.78 M/GPU; TTFT p90 343 s; 97 min to serve 30 min) with good fidelity (prompt 0.977×, output 0.990×, hit 93.8% vs 96.2%). Fixes: gateway validator off for primes (VALIDATE_TOOL_HISTORY=0), synthetic image 1064×1024 (+1,350 tokens), fractional load (--last-frac). chain26 now finds the passing level below 1×."
  }
 }
