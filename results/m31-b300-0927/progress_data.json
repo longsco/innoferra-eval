@@ -905,10 +905,22 @@
    [
     "chain23: protocol v2 on real M3.1 traffic (frontier + HiCache)",
     "armed: 1× calibration then 2×, 3×, 4× (≈ 1 h per level); traces built 21:20 PDT"
+   ],
+   [
+    "chain24: production DSpark settings (fa4 draft, block 4) under protocol v2",
+    "armed after chain23"
    ]
   ]
  },
  "queued": [
+  {
+   "title": "Production's DSpark settings under protocol v2 (chain24)",
+   "detail": "Production drafts with --speculative-draft-attention-backend fa4 at block 4 (plus in-house fused verify/accept kernels we lack). Our tree supports fa4 as a draft backend. dfa4 = frontier + HiCache with the fa4 draft (block 7); dfa4b4 = fa4 + block 4 (production's DSpark shape). Each: accept probe on 60–80k prompts (checks fa4 honours the 4095 draft window), single-stream decode, then protocol v2 at 1× and 2× against chain23's flashinfer/block-7 baseline.",
+   "why": "Learn from the team's DSpark config on the fair test: a cheaper draft kernel lifts per-stream decode, which the v2 SLA (decode p50 ≥ 60 tok/s) and TPM both depend on.",
+   "script": "serving/minimax-m3.1/chain24.sh",
+   "commit": "see git log",
+   "status": "armed: starts after CHAIN23 DONE (≈ 02:00 PDT)"
+  },
   {
    "title": "HiCache for our NVFP4 KV: port host-cache scale transfer",
    "detail": "Our HiCache tree already had the vendor's NVFP4 host pool; it differed from the vendor 0927 tree only by the 'does not yet support HiCache scale transfer' guard and a draft-pool write-back fix. Both ported (patch_hicache_nvfp4.py). A correctness check (host load-back must return the same greedy output; control must evict) gates the A/B.",
@@ -2514,8 +2526,8 @@
     "Draft",
     "DSpark block 4, --speculative-draft-attention-backend fa4, SGLANG_DSPARK_BOUNDED_SWA_DRAFT=1",
     "cheap bounded-window draft at a smaller verify tier",
-    "block 7, flashinfer draft, window 4096, causal inside the block (vendor: bidirectional)",
-    "bidirectional draft A/B in chain15 (c13p1bd); block 4 in chain15 v2p1"
+    "block 7, flashinfer draft, window 4095, bidirectional inside the block (adopted, accept 4.1–4.2 on real traffic)",
+    "block 4 tested on v1 (bblk4: accept 3.33, strict tie 0.92, closed loop 1.67 vs 1.78 → not adopted); fa4 draft attention and fa4 + block 4 queued under protocol v2 (chain24)"
    ],
    [
     "6",
