@@ -160,15 +160,29 @@
    "scenario": "Thinking time",
    "trace": "1024, 512 sampled",
    "lanes": 64,
-   "status": "running"
+   "status": "done",
+   "thinking": "on",
+   "duration_s": 9634.860667906003,
+   "requests": 5580,
+   "failed": 3,
+   "request_s": 0.5791469324083887,
+   "total_tok_s": 52493.55787396074,
+   "output_tok_s": 310.6121721063166,
+   "ttft_p50_s": 1.0288560320041142,
+   "ttft_p90_s": 3.3187934783287383,
+   "steady_ttft_p50_s": 0.9434192774933763,
+   "steady_ttft_p90_s": 3.689626640989445,
+   "tpot_p50_ms": 8.497642252066683,
+   "cache_hit": 0.9298296260363689,
+   "valid": false
   }
  ],
  "log_tail": [
-  "  r2_think_t256_c32: req/s 0.327 ok 2416 failed 2 TTFT p50 0.84 p90 2.54 TPOT p50 7.5 ms hit 0.921 valid True",
-  "18:31:59 flush (cold cache per run, like the repo's fresh-server runs): Cache flushed.",
   "Please check backend logs | Cache flushed.",
   "Please check backend logs | Cache flushed.",
-  "Please check backend logs | Cache flushed.",
-  "Please check backend logs | "
+  "Please check backend logs | ",
+  "21:13:31 r3_think_t512_c64 exit 0; DSpark accept (metrics delta): e0 2.91  e1 3.01  e2 3.26  e3 3.12  | all 3.09 (verify steps 966333)",
+  "  r3_think_t512_c64: req/s 0.579 ok 5580 failed 3 TTFT p50 1.03 p90 3.32 TPOT p50 8.5 ms hit 0.930 valid False",
+  "21:13:43 ===== M3 phase DONE (M3 engines + gateway removed; M3.1 queue resumes)"
  ]
 }

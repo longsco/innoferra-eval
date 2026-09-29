@@ -38,7 +38,7 @@ for i, (s_, tr, ln, dur, rps, ttft, st, tpot, hit, fail) in enumerate(MI):
     mi_rows.append(f'<tr class="mi"><td><span class="chip ref">MI355X</span></td><td>{s_}</td><td>{tr}</td><td class="n">{ln}</td><td class="n">{dur} s</td><td class="n">{rps:.3f}</td>'
                    f'<td class="n">{ttft[0]:.2f} / {ttft[1]:.1f}</td><td class="n">{st[0]:.2f} / {st[1]:.2f}</td><td class="n">{tpot} ms</td><td class="n">{hit:.3f}</td><td class="n">{fail}</td></tr>')
 done = sum(r["status"] == "done" for r in data["rows"]); n = len(data["rows"])
-lead = f"{done} of {n} runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends."
+lead = (f"All {n} runs finished (Sep 29, 14:13 PDT)." if done == n else f"{done} of {n} runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends.")
 log_tail = "\n".join(data.get("log_tail") or [])
 page = f"""<title>B300 Agentic Replay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,7 +113,7 @@ code {{ font-family: var(--mono); font-size: .92em; }}
   </table></div>
   <div class="foot">
     <span>Columns are exactly the baseline table in the repo's <code>docs/benchmarking.md</code>, computed with the repo's own summarize code from each run's <code>result.json</code>. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s; ours is client-side, while the MI355X steady TTFT in the doc was measured server-side, so the two are not identical measurements. While a run is in progress its row shows the requests completed and the running req/s.</span>
-    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² The doc flags this MI355X run as not valid for performance comparison (one reader underrun, 0.11 s total wait). ³ Our run's <code>result.json</code> flags it not valid for performance comparison. For M3.1 run 3 that is one trace-reader underrun (0.03 s total wait), the same kind of flag as the MI355X 64-lane run; its one failed request was a dropped gateway connection (server disconnected).</span>
+    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² The doc flags this MI355X run as not valid for performance comparison (one reader underrun, 0.11 s total wait). ³ Our run's <code>result.json</code> flags it not valid for performance comparison. For the 64-lane thinking-time runs (M3.1 and M3 run 3) that is one trace-reader underrun each (0.03 s and 0.05 s total wait), the same kind of flag as the MI355X 64-lane run; failed requests there were dropped gateway connections (server disconnected).</span>
     <span>Every B300 run starts from an empty cache (all engines flushed, host cache included), like the repo's managed runs that start a fresh server per scenario. A first run 2 made right after run 1 hit 99.9% cache, because it replays the same 256 trajectories and the engines still held run 1's prefixes; it was set aside and run 2 is repeated cold after run 4.</span>
   </div>
 </section>
