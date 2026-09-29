@@ -15,8 +15,9 @@ V2(){ sudo -n docker run --rm --network host -v $T:/tr -v /home/long/.m31_apikey
   export MAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=4 DRAFT_WINDOW=4095 DEV_SRC=/data01/minimax31/src/0922-sglang-hicache/python
   export EXTRA_ENV="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1 SGLANG_CHUNKED_REQ_SHARE=1.0"
   export XARGS="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first"
-  bash launch_tp2x4_old.sh 2>&1 | tail -2
-  up=0; for i in 0 1 2 3; do curl -sf -m 3 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done
+  up=0; for i in 0 1 2 3; do curl -sf -m 30 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done
+  if [ "${SKIP_LAUNCH:-0}" = 1 ] && [ "$up" = 4 ]; then log "engines already up (SKIP_LAUNCH=1); reusing them"; else bash launch_tp2x4_old.sh 2>&1 | tail -2
+  up=0; for i in 0 1 2 3; do curl -sf -m 30 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done; fi   # /health runs a 1-token generate: 2-3 s
   [ "$up" = 4 ] || { log "chain26 ABORT: $up/4 engines healthy"; echo "===== CHAIN26 DONE"; exit 1; }
   for LV in "0.5x:0:1.0" "0.75x:0 1:0.5" "1x:0 1:1.0"; do
     IFS=: read tag bs frac <<< "$LV"; tr=$(for b in $bs; do printf '/tr/v2/b%02d.jsonl,' $b; done); tr=${tr%,}
