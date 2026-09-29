@@ -113,7 +113,7 @@ code {{ font-family: var(--mono); font-size: .92em; }}
   </table></div>
   <div class="foot">
     <span>Columns are exactly the baseline table in the repo's <code>docs/benchmarking.md</code>, computed with the repo's own summarize code from each run's <code>result.json</code>. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s; ours is client-side, while the MI355X steady TTFT in the doc was measured server-side, so the two are not identical measurements. While a run is in progress its row shows the requests completed and the running req/s.</span>
-    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² The doc flags this MI355X run as not valid for performance comparison (one reader underrun, 0.11 s total wait). ³ Our run's <code>result.json</code> flags it not valid for performance comparison.</span>
+    <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² The doc flags this MI355X run as not valid for performance comparison (one reader underrun, 0.11 s total wait). ³ Our run's <code>result.json</code> flags it not valid for performance comparison. For M3.1 run 3 that is one trace-reader underrun (0.03 s total wait), the same kind of flag as the MI355X 64-lane run; its one failed request was a dropped gateway connection (server disconnected).</span>
     <span>Every B300 run starts from an empty cache (all engines flushed, host cache included), like the repo's managed runs that start a fresh server per scenario. A first run 2 made right after run 1 hit 99.9% cache, because it replays the same 256 trajectories and the engines still held run 1's prefixes; it was set aside and run 2 is repeated cold after run 4.</span>
   </div>
 </section>
