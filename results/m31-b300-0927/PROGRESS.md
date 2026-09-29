@@ -134,5 +134,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 17:21 PDT (09-28) | chain19 tok16 (TOKW 16): static c128 45.31 M (5.66/GPU, 1.26 s), c256 63.29 (7.91, 2.00 s), c384 63.64 (7.95, 6.35 s; queue 1.59 s); staircase TTFT p50/p99 0.89/4.8, 1.14/13.1, 1.95/59.3, 3.17/28.9; decode 143/103/68/46; accept 4.09; strict 2x; closed loop c128 11.60 M node (1.45/GPU). CHAIN19 DONE; chain20 started | tpm-*-0927-tok16*.csv | not adopted |
 
+| 17:55 PDT (09-28) | miss_anatomy.py (tok4): staircase first-in-replay n=941 hit 21.0% uncached 11.7M (prod 7.4M), repeat n=1998 hit 93.9% uncached 11.3M (prod 6.3M) -> 49% of misses on repeat sessions, 5.0M excess over production. Token usage max 0.22-0.32 per rank (running requests only; pool 1.58M tokens/rank). HiCache: our hicache tree == vendor 0927 except the KV4 guard and hybrid_cache_controller draft write-back; patched (3defa8c). Warm-up traces 13:00-14:00 + 14:00-14:30 extracting. chain22 armed | miss_anatomy.py, patch_hicache_nvfp4.py | HiCache test armed |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
