@@ -5,43 +5,43 @@
    "label": "North star",
    "value": "7.00 M",
    "cls": "star",
-   "sub": "TPM per GPU, target"
+   "sub": "target, per GPU"
   },
   {
-   "label": "Production · 24 h peak",
+   "label": "Prod · 24 h peak",
    "value": "3.38 M",
    "cls": "",
-   "sub": "24 nodes · 5.8 req/s per node · TTFT p50 0.35 s · hit 96%"
+   "sub": "24 nodes · TTFT 0.35 s"
   },
   {
-   "label": "Real traffic · strict SLA",
+   "label": "Real · strict SLA",
    "value": "0.92 M",
    "cls": "ok",
-   "sub": "frontier · 2× node share · every minute p50 ≤ 1.6 s, p99 ≤ 22 s"
+   "sub": "2× share · p50 ≤ 1.6 s"
   },
   {
-   "label": "Real traffic · 128 in flight",
+   "label": "Real · 128 in flight",
    "value": "1.74 M",
    "cls": "",
-   "sub": "frontier, 4 tokenizer workers · hit 88% · best 1.91 (prefill-hold off)"
+   "sub": "hit 88% · best 1.91"
   },
   {
-   "label": "Static frame best (synthetic)",
+   "label": "Static best (synthetic)",
    "value": "7.82 M",
    "cls": "ok",
-   "sub": "c256 · TTFT 2.1 s · 8 tokenizer workers"
+   "sub": "c256 · TTFT 2.1 s"
   },
   {
-   "label": "Static frame at c64 (synthetic)",
+   "label": "Static c64 (synthetic)",
    "value": "3.70 M",
    "cls": "ok",
-   "sub": "TTFT 1.2 s · 8 tokenizer workers"
+   "sub": "TTFT 1.2 s"
   },
   {
-   "label": "Vendor demo as shipped",
+   "label": "Vendor demo",
    "value": "0.72 M",
    "cls": "bad",
-   "sub": "static · eager DSpark · 1 tokenizer worker"
+   "sub": "as shipped"
   }
  ],
  "configs": [
@@ -209,7 +209,7 @@
    "acc": "accept 5.79 probe · 4.15 real traffic",
    "rt_closed": 1.7,
    "rt_strict": 0.41,
-   "kpi_sub": "c256 · TTFT 2.1 s · 8 tokenizer workers"
+   "kpi_sub": "c256 · TTFT 2.1 s"
   },
   {
    "n": "Frontier + 4 tokenizer workers per engine (tok4)",

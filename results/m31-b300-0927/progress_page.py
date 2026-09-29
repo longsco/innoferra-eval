@@ -12,7 +12,7 @@ def derive_frontier(d):
     best = max(meas, key=lambda c: c["v"])
     d["pareto"]["top"] = best["v"]
     for k in d["kpis"]:
-        if k["label"].startswith(("Our best", "Static frame best")):
+        if k["label"].startswith(("Our best", "Static frame best", "Static best")):
             k["value"] = f"{best['v']:.2f} M"; k["sub"] = best.get("kpi_sub") or f"{best['n']} ({best['c']})"
     d["frontier"] = {"per_gpu": best["v"], "config": best["n"], "at": best["c"], "pct": round(best["v"] / TARGET * 100)}
     return d
@@ -30,11 +30,11 @@ h2{font-size:1.05rem;font-weight:600;margin:0 0 10px}
 .tabs button{background:var(--tab);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 14px;font:inherit;font-weight:500;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tabs button:focus-visible{outline:2px solid var(--star);outline-offset:2px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:18px}
+.kpis{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-bottom:18px}@media (max-width:900px){.kpis{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
 .kpi .l{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .kpi .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:1.5rem;font-weight:500;font-variant-numeric:tabular-nums}
-.kpi .s{font-size:.76rem;color:var(--muted);line-height:1.35;margin-top:2px}.kpi .l{min-height:2.2em}
+.kpi .s{font-size:.74rem;color:var(--muted);line-height:1.3;margin-top:2px}.kpi .l{min-height:2.2em;font-size:.68rem}.kpi{padding:10px 11px}.kpi .v{font-size:1.3rem}
 .kpi .v.star{color:var(--star)}.kpi .v.ok{color:var(--ok)}.kpi .v.bad{color:var(--bad)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-bottom:18px}
 .panel.win{background:var(--win);border-color:var(--winline)}
