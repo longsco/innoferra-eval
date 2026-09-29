@@ -411,6 +411,11 @@
  },
  "timeline": [
   [
+   "17:58",
+   "User priority: HiCache first (the vendor shipped HiCache in its 09-27 build; our frontier runs on the 09-22 tree that refused it). The port is done (our cache code now equals the vendor's 09-27 code), so a separate run on the vendor build would test the same code; the correctness check replaces it. Queue reordered: chain20 fine4 finishes, fine2 skipped, chain22 (HiCache check + A/B) next, chain21 (fair chunk) after. Question to MiniMax added: is HiCache with NVFP4 KV validated for correctness",
+   "HiCache moved to the front"
+  ],
+  [
    "17:55",
    "Where real-traffic cache misses come from (tok4 replay): first-in-replay sessions hit only 21% (11.7 M uncached tokens; production had 7.4 M for the same requests, i.e. their history was already cached there); repeat sessions hit 94% (11.3 M uncached vs production 6.3 M: output divergence of the replay plus GPU-pool eviction). Actions: 2-hour warm-up traces extracted (13:00–15:00); HiCache for our NVFP4 KV ported from the vendor 0927 tree (guard removed, draft write-back fix) with a load-back correctness check; both A/B'd in chain22",
    "viewer request: test HiCache"
@@ -771,28 +776,20 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain20: fine staircase with 4 and 2 tokenizer workers",
-    "running since 17:21 PDT"
+    "chain20 fine4: fine staircase, 4 tokenizer workers",
+    "running (fine2 skipped: HiCache prioritised)"
+   ],
+   [
+    "chain22 (next, priority): HiCache correctness check (HiCache engine + control), then HiCache ratio 3 vs none after a 2-hour warm-up, fine staircase",
+    "starts when fine4 ends (~18:40 PDT); ~3 h"
    ],
    [
     "chain21: fair chunk share A/B",
-    "armed (~20:00–22:30 PDT)"
-   ],
-   [
-    "chain22: HiCache correctness check (HiCache engine + control), then HiCache ratio 3 vs none, both after a 2-hour warm-up (13:00–15:00 node share) with the fine staircase",
-    "armed after chain21 (~22:30 PDT–01:30)"
+    "after chain22"
    ]
   ]
  },
  "queued": [
-  {
-   "title": "Real-traffic tail: isolate giant prefills (gateway lane for new sessions with huge prompts)",
-   "detail": "If the fair chunk share is not enough: route a new session whose first prompt is very large (100k+ tokens) to a dedicated engine, so 100–490k-token prefills stop stalling small requests and the lockstep peer rank.",
-   "why": "Half of the 4× tail (33 of 60) are small requests stuck behind other requests' giant prefills.",
-   "script": "to write (gateway)",
-   "commit": "",
-   "status": "after chain21"
-  },
   {
    "title": "HiCache for our NVFP4 KV: port host-cache scale transfer",
    "detail": "Our HiCache tree already had the vendor's NVFP4 host pool; it differed from the vendor 0927 tree only by the 'does not yet support HiCache scale transfer' guard and a draft-pool write-back fix. Both ported (patch_hicache_nvfp4.py). A correctness check (host load-back must return the same greedy output; control must evict) gates the A/B.",
@@ -800,6 +797,14 @@
    "script": "to write",
    "commit": "3defa8c",
    "status": "armed in chain22 (check, then A/B with a 2-hour warm-up)"
+  },
+  {
+   "title": "Real-traffic tail: isolate giant prefills (gateway lane for new sessions with huge prompts)",
+   "detail": "If the fair chunk share is not enough: route a new session whose first prompt is very large (100k+ tokens) to a dedicated engine, so 100–490k-token prefills stop stalling small requests and the lockstep peer rank.",
+   "why": "Half of the 4× tail (33 of 60) are small requests stuck behind other requests' giant prefills.",
+   "script": "to write (gateway)",
+   "commit": "",
+   "status": "after chain21"
   },
   {
    "title": "Routing attribution: session pinning vs hash + spill on the same engines",
@@ -851,7 +856,7 @@
   },
   {
    "title": "Asks to MiniMax",
-   "detail": "Graph-safe verify kernel upstream (tiers above 32 per rank), NextN/MTP for M3.1, upstream cherry-picks #34338 #32313 #37505 #38936.",
+   "detail": "Graph-safe verify kernel upstream (tiers above 32 per rank), NextN/MTP for M3.1, upstream cherry-picks #34338 #32313 #37505 #38936. New: confirm that HiCache with MiniMax NVFP4 KV (09-27 demo: pool_host/minimax_nvfp4.py, guard removed) is validated for correctness (KV4 scales and index-K round-trip through host memory) and which ratio / write policy production uses with DSpark.",
    "why": "Durable fixes instead of our env switch and patches.",
    "script": "vendor",
    "commit": "",
