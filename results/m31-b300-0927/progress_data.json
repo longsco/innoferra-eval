@@ -11,13 +11,13 @@
    "label": "Prod · 24 h peak",
    "value": "3.38 M",
    "cls": "",
-   "sub": "24 nodes · TTFT 0.35 s"
+   "sub": "24 nodes · TTFT 0.35 s · hit 96%"
   },
   {
    "label": "Real · strict SLA",
    "value": "0.92 M",
    "cls": "ok",
-   "sub": "2× share · p50 ≤ 1.6 s"
+   "sub": "2× share · p50 ≤ 1.6 s · hit 89%"
   },
   {
    "label": "Real · 128 in flight",
@@ -29,7 +29,7 @@
    "label": "Static best (synthetic)",
    "value": "7.82 M",
    "cls": "ok",
-   "sub": "c256 · TTFT 2.1 s"
+   "sub": "c256 · TTFT 2.1 s · hit ~100% by design"
   },
   {
    "label": "Static c64 (synthetic)",
@@ -88,7 +88,8 @@
    "k": "ok",
    "acc": "accept 2.3–3.4 (real traffic 3.5)",
    "rt_closed": null,
-   "rt_strict": 0.41
+   "rt_strict": 0.41,
+   "rt_acc": 3.5
   },
   {
    "n": "4×(tp2/ep2/dp2) DSpark graphs under Dynamo KV router (team shape)",
@@ -142,7 +143,8 @@
    "k": "ok",
    "acc": "accept 3.78 (real traffic)",
    "rt_closed": 1.48,
-   "rt_strict": 0.92
+   "rt_strict": 0.92,
+   "rt_acc": 3.78
   },
   {
    "n": "4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd)",
@@ -151,7 +153,8 @@
    "k": "ok",
    "acc": "accept 5.79 probe · 4.07 real traffic",
    "rt_closed": 1.61,
-   "rt_strict": 0.92
+   "rt_strict": 0.92,
+   "rt_acc": 4.07
   },
   {
    "n": "4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway",
@@ -160,7 +163,8 @@
    "k": "ok",
    "acc": "accept 5.79 probe · 4.07 real traffic",
    "rt_closed": 1.78,
-   "rt_strict": 0.92
+   "rt_strict": 0.92,
+   "rt_acc": 4.21
   },
   {
    "n": "Frontier base + prefill-hold rule off (bmfs: --min-free-slots-delay 1)",
@@ -169,7 +173,8 @@
    "k": "ok",
    "acc": "accept 5.79 probe · 4.12 real traffic",
    "rt_closed": 1.91,
-   "rt_strict": 0.41
+   "rt_strict": 0.41,
+   "rt_acc": 4.12
   },
   {
    "n": "Frontier base + production scheduling knobs (bprod: chunk 16384, overlap plan, streaming, queue cap)",
@@ -179,7 +184,8 @@
    "frontier": false,
    "acc": "accept 5.79 probe · 4.14 real traffic",
    "rt_closed": 1.46,
-   "rt_strict": 0.92
+   "rt_strict": 0.92,
+   "rt_acc": 4.14
   },
   {
    "n": "Frontier base + DSpark block 4 (bblk4, production's block size)",
@@ -189,7 +195,8 @@
    "frontier": false,
    "acc": "accept 4.05 probe · 3.33 real traffic",
    "rt_closed": 1.67,
-   "rt_strict": 0.92
+   "rt_strict": 0.92,
+   "rt_acc": 3.33
   },
   {
    "n": "Frontier + 64 per rank (b128ws: mem 0.66, flashinfer workspace 1 GiB)",
@@ -199,7 +206,8 @@
    "frontier": false,
    "acc": "accept 5.79 probe · 4.11 real traffic",
    "rt_closed": 1.56,
-   "rt_strict": 0.41
+   "rt_strict": 0.41,
+   "rt_acc": 4.11
   },
   {
    "n": "Frontier + 8 tokenizer workers per engine (tok8)",
@@ -209,7 +217,8 @@
    "acc": "accept 5.79 probe · 4.15 real traffic",
    "rt_closed": 1.7,
    "rt_strict": 0.41,
-   "kpi_sub": "c256 · TTFT 2.1 s"
+   "kpi_sub": "c256 · TTFT 2.1 s · hit ~100% by design",
+   "rt_acc": 4.15
   },
   {
    "n": "Frontier + 4 tokenizer workers per engine (tok4)",
@@ -219,7 +228,8 @@
    "frontier": false,
    "acc": "accept 5.79 probe · 4.19 real traffic",
    "rt_closed": 1.74,
-   "rt_strict": 0.88
+   "rt_strict": 0.88,
+   "rt_acc": 4.19
   },
   {
    "n": "Frontier + 8 tokenizer workers + 64 per rank (t8r64)",
@@ -229,7 +239,8 @@
    "frontier": false,
    "acc": "accept 5.79 probe · 4.13 real traffic",
    "rt_closed": 1.73,
-   "rt_strict": 0.41
+   "rt_strict": 0.41,
+   "rt_acc": 4.13
   },
   {
    "n": "Frontier + 16 tokenizer workers per engine (tok16)",
@@ -239,7 +250,8 @@
    "frontier": false,
    "acc": "accept 5.79 probe · 4.09 real traffic",
    "rt_closed": 1.45,
-   "rt_strict": 0.92
+   "rt_strict": 0.92,
+   "rt_acc": 4.09
   }
  ],
  "pareto": {
@@ -976,7 +988,7 @@
    "Route B held at 1×, 2×, 4×, 6×, 8× of a node's share for 5 minutes each after warming the caches with the preceding 30 minutes; the level where TTFT or errors break is the node's real-traffic capacity."
   ]
  ],
- "chart_note": "<b>Read the two bars together.</b> The thick bar is the static frame, a synthetic best case: one 80k prefix that is always cached, 128 new tokens, random text, fixed concurrency. It rewards levers that real traffic barely feels (8 tokenizer workers took it from 5.10 to 7.82 M/GPU while real-traffic TTFT at 4× moved from 1.49 to 1.37 s). The thin blue bar is real traffic: the replayed 09-27 peak prompts with 128 always in flight (closed loop, TPM per GPU). The ▲ marks TPM per GPU at the highest staircase level whose every minute meets the strict prod-parity rule (TTFT p50 ≤ 1.6 s and p99 ≤ 22 s); it moves in steps of 0.41 / 0.92 / 1.46 / 2.80 M per GPU (1× / 2× / 4× / 6×) until finer levels land. The blue dashed line is production's 24-hour peak load (3.38 M/GPU on 24 nodes, not saturated). On real traffic we are below production's current load; the north star is only met on the synthetic frame.",
+ "chart_note": "<b>Read the two bars together.</b> The thick bar is the static frame, a synthetic best case: one 80k prefix that is always cached, 128 new tokens, random text, fixed concurrency. It rewards levers that real traffic barely feels (8 tokenizer workers took it from 5.10 to 7.82 M/GPU while real-traffic TTFT at 4× moved from 1.49 to 1.37 s). The thin blue bar is real traffic: the replayed 09-27 peak prompts with 128 always in flight (closed loop, TPM per GPU). The ▲ marks TPM per GPU at the highest staircase level whose every minute meets the strict prod-parity rule (TTFT p50 ≤ 1.6 s and p99 ≤ 22 s); it moves in steps of 0.41 / 0.92 / 1.46 / 2.80 M per GPU (1× / 2× / 4× / 6×) until finer levels land. The blue dashed line is production's 24-hour peak load (3.38 M/GPU on 24 nodes, not saturated). On real traffic we are below production's current load; the north star is only met on the synthetic frame. The blue label also gives mean DSpark acceptance on real traffic (tokens accepted per verify step, block 7 unless noted; bidirectional-draft configs read 5.79 on the 60–80k probe prompts). The static frame's random text accepts ~1 per step, so acceptance is only reported for real traffic.",
  "pareto_note": "Gains are measured at c128 on the static frame (plain 1 worker 0.91 → 8 workers 2.11 → DSpark graphs 3.20). Pending bars are drawn at an equal share of the remaining 3.80 M; their real sizes are unknown. The kernel patch removed 5-second stalls but adds no TPM on this frame; HiCache is not exercised by a single shared prefix.",
  "staircase": {
   "title": "Real traffic, longitudinal (node's share of the 09-27 peak hour, caches warmed): six layouts",

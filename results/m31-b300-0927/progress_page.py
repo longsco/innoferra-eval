@@ -224,7 +224,7 @@ JS = """
     if(typeof rs==='number'){const xs=x(Math.max(rs,0.02)); g+=`<path d="M${xs-6},${y+49} L${xs+6},${y+49} L${xs},${y+40} Z" fill="${star}"/>`;}
     const lab = (rc===undefined||rc===null)&&(rs===undefined||rs===null) ? 'real traffic: not run with the same procedure'
       : (rc==='running' ? 'real traffic: running'
-      : `real: ${typeof rc==='number'?rc.toFixed(2)+' M closed loop c128':'closed loop not run'} · ▲ strict ${typeof rs==='number'?(rs>0?rs.toFixed(2)+' M':'misses at 1×'):'n/a'}`);
+      : `real: ${typeof rc==='number'?rc.toFixed(2)+' M closed loop c128':'closed loop not run'} · ▲ strict ${typeof rs==='number'?(rs>0?rs.toFixed(2)+' M':'misses at 1×'):'n/a'}${typeof r.rt_acc==='number'?' · DSpark accept '+r.rt_acc.toFixed(2):''}`);
     const xl = (typeof rc==='number'? x(rc) : L) + 8;
     g+=`<text x="${xl}" y="${y+39}" font-size="10.5" fill="${prev}">${lab}</text>`;});
   const PROD=%(prod)s; g+=`<line x1="${x(PROD)}" y1="${top-26}" x2="${x(PROD)}" y2="${top+rows.length*rowH+4}" stroke="${prev}" stroke-width="2" stroke-dasharray="3 4"/><text x="${x(PROD)+6}" y="${top-28}" font-size="11.5" fill="${prev}">production 24 h peak ${PROD.toFixed(2)} M / GPU (24 nodes)</text>`;
