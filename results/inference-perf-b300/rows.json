@@ -1,0 +1,31 @@
+{
+ "rows": [
+  {
+   "name": "r1_nothink_t256_c32",
+   "scenario": "No thinking time",
+   "trace": "256 sampled from 1024",
+   "lanes": 32,
+   "status": "queued",
+   "accept": null
+  },
+  {
+   "name": "r2_think_t256_c32",
+   "scenario": "Thinking time",
+   "trace": "256 sampled from 1024",
+   "lanes": 32,
+   "status": "queued",
+   "accept": null
+  },
+  {
+   "name": "r3_think_t512_c64",
+   "scenario": "Thinking time",
+   "trace": "1024, 512 sampled",
+   "lanes": 64,
+   "status": "queued",
+   "accept": null
+  }
+ ],
+ "log_tail": [
+  "04:59:10 ===== inference-perf on B300 (M3.1 frontier + HiCache): launching engines + gateway"
+ ]
+}
