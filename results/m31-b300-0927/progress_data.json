@@ -217,8 +217,8 @@
    "k": "ok",
    "frontier": false,
    "acc": "accept 5.79 probe · 4.19 real traffic",
-   "rt_closed": 1.68,
-   "rt_strict": 0.92
+   "rt_closed": 1.74,
+   "rt_strict": 0.88
   },
   {
    "n": "Frontier + 8 tokenizer workers + 64 per rank (t8r64)",
@@ -410,6 +410,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 24 nodes (96 workers, probed Sep 29 01:00 PDT; 18 on Sep 27) and is not request-saturated, so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "18:17",
+   "Fine staircase (1×–4× in 0.5× steps, 180 s each) on the frontier with 4 tokenizer workers: TTFT p50 0.73 / 1.1 / 1.75 s at 1× / 2× / 4×, p99 at 4× 14 s; the strict rule passes at 1× and 2× (7.05 M node = 0.88 M/GPU) but fails at 1.5× on one minute and from 2.5× up; closed loop c128 1.74 M/GPU; accept 4.05; 0 errors. Offered TPM per level is not monotonic under time compression (3× offered less than 2.5×: different trace slices), which is why protocol v2 scales users at real time instead",
+   "real-traffic strict capacity ≈ 0.9 M/GPU; method limits confirmed"
+  ],
   [
    "18:25",
    "Replay protocol v2 defined (viewer request: define the simulation in principle): node unit = 1/24 of sessions with real timing; converged warm-up; cache-consistent replay (prime the logged answer); validity gate on per-request hit vs production; load scaled by merging session buckets at real time; per-minute SLA clamp from production's own peak (TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, errors < 0.1%); primary metric = SLA capacity as TPM per GPU. Waiting on M3.1 log access",
@@ -791,16 +796,20 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain20 fine4: fine staircase, 4 tokenizer workers",
-    "running (fine2 skipped: HiCache prioritised)"
+    "chain20 fine4 (fine staircase, 4 tokenizer workers)",
+    "done 18:17 PDT: strict rule passes at 1× and 2× (0.88 M/GPU), fails at 1.5× by one minute and from 2.5×; closed loop 1.74 M/GPU; 0 errors"
    ],
    [
-    "chain22 (next, priority): HiCache correctness check (HiCache engine + control), then HiCache ratio 3 vs none after a 2-hour warm-up, fine staircase",
-    "starts when fine4 ends (~18:40 PDT); ~3 h"
+    "chain22: HiCache correctness check, then HiCache ratio 3 vs none after a 2-hour warm-up (fine staircase)",
+    "running since 18:17 PDT; ~3 h"
    ],
    [
     "chain21: fair chunk share A/B",
     "after chain22"
+   ],
+   [
+    "Live M3.1 trace (protocol v2)",
+    "waiting for S3 credentials on node 0008 (profile m31logs); download script ready"
    ]
   ]
  },
