@@ -116,7 +116,7 @@ def versus_panel():
     for key, label in data["profile_rows"]:
         if key == "§": body.append(f'<tr><th colspan="3" class="grp" style="text-align:left">{label}</th></tr>'); continue
         body.append(f'<tr><td class="k">{label}</td><td>{prod.get(key, "–")}</td><td>{prof.get(key, "–") or "–"}</td></tr>')
-    table = (f'<div class="wrap"><table class="cmp"><tr><th></th><th>Team production (18 nodes)</th><th>Current winner: {name}</th></tr>'
+    table = (f'<div class="wrap"><table class="cmp"><tr><th></th><th>Team production (24 nodes)</th><th>Current winner: {name}</th></tr>'
              + "".join(body) + '</table></div>')
     lc = data.get("launch_cmd", {})
     cmds = (f'<div class="vs"><div><h3>Production engine launch</h3><pre class="cmd">{_h.escape(lc.get("production", ""))}</pre></div>'
@@ -192,7 +192,7 @@ def realtraffic_rank_panel():
     return (f'<div class="panel"><h2>Real traffic, ranked: TTFT p50 at 4× a node\'s share (lower is better)</h2><div class="wrap">{"".join(svg)}</div>'
             f'<p class="note">{data.get("realtraffic_rank_note","")}</p></div>')
 def charts():
-    return ('<div class="panel"><h2>TPM per GPU by configuration: static frame vs real traffic</h2><p class="sub" style="margin:0 0 8px"><span style="display:inline-block;width:14px;height:10px;background:var(--okfill);border-radius:2px"></span> static frame (synthetic best case) &nbsp; <span style="display:inline-block;width:14px;height:6px;background:var(--prev);border-radius:2px"></span> real traffic, 128 real prompts in flight &nbsp; <span style="color:var(--star)">▲</span> strict prod-parity limit &nbsp; <span style="color:var(--prev)">┆</span> production observed load &nbsp; <span style="color:var(--star)">┆</span> north star</p><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
+    return ('<div class="panel"><h2>TPM per GPU by configuration: static frame vs real traffic</h2><p class="sub" style="margin:0 0 8px"><span style="display:inline-block;width:14px;height:10px;background:var(--okfill);border-radius:2px"></span> static frame (synthetic best case) &nbsp; <span style="display:inline-block;width:14px;height:6px;background:var(--prev);border-radius:2px"></span> real traffic, 128 real prompts in flight &nbsp; <span style="color:var(--star)">▲</span> strict prod-parity limit &nbsp; <span style="color:var(--prev)">┆</span> production 24 h peak &nbsp; <span style="color:var(--star)">┆</span> north star</p><div class="wrap"><svg id="c1" viewBox="0 0 960 420"></svg></div>'
             '<div class="legend"><span style="--sw:var(--bad)">DSpark without CUDA graphs (vendor 09-27 build)</span><span style="--sw:var(--okfill)">decode on CUDA graphs</span><span style="--sw:var(--prev)">previous best, 09-26</span><span style="--sw:var(--star)">north star 7 M</span></div>'
             f'<p class="note">{data.get("chart_note","")}</p></div>'
             '<div class="panel"><h2>Pareto of levers: what each one bought, and what is left</h2><div class="wrap"><svg id="c2" viewBox="0 0 960 330"></svg></div>'
@@ -221,7 +221,7 @@ JS = """
       : `real: ${typeof rc==='number'?rc.toFixed(2)+' M closed loop c128':'closed loop not run'} · ▲ strict ${typeof rs==='number'?(rs>0?rs.toFixed(2)+' M':'misses at 1×'):'n/a'}`);
     const xl = (typeof rc==='number'? x(rc) : L) + 8;
     g+=`<text x="${xl}" y="${y+39}" font-size="10.5" fill="${prev}">${lab}</text>`;});
-  const PROD=%(prod)s; g+=`<line x1="${x(PROD)}" y1="${top-26}" x2="${x(PROD)}" y2="${top+rows.length*rowH+4}" stroke="${prev}" stroke-width="2" stroke-dasharray="3 4"/><text x="${x(PROD)+6}" y="${top-28}" font-size="11.5" fill="${prev}">production observed ${PROD.toFixed(2)} M / GPU (not saturated)</text>`;
+  const PROD=%(prod)s; g+=`<line x1="${x(PROD)}" y1="${top-26}" x2="${x(PROD)}" y2="${top+rows.length*rowH+4}" stroke="${prev}" stroke-width="2" stroke-dasharray="3 4"/><text x="${x(PROD)+6}" y="${top-28}" font-size="11.5" fill="${prev}">production 24 h peak ${PROD.toFixed(2)} M / GPU (24 nodes)</text>`;
   g+=`<line x1="${x(TARGET)}" y1="${top-12}" x2="${x(TARGET)}" y2="${top+rows.length*rowH+4}" stroke="${star}" stroke-width="2.5" stroke-dasharray="6 4"/><text x="${x(TARGET)-6}" y="${top-14}" font-size="12" fill="${star}" text-anchor="end" font-weight="500">north star ${TARGET.toFixed(2)} M / GPU</text>`;
   s1.innerHTML=g;
   const lev=%(lev)s; const base=%(base)s, measuredTop=%(top)s, remaining=Math.max(0,TARGET-measuredTop), pendN=lev.filter(d=>!d.m).length, pendEach=remaining/Math.max(1,pendN);

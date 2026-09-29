@@ -36,18 +36,18 @@
 | uncached prompt tokens per request at 1× (prefill work) | – | – | 6.4k | 26.7k | 7.8k | 11.0k | 7.5k | <b>7.2k</b> |
 | kept up with offered load | 9.75 M node avg (tp8 7.7) | – | no (1,574 s) | no (1,571 s) | yes (1,240 s, 0 errors) | no (1,398 s, 53 errors) | yes (1,239 s, 0 errors) | <b>yes (1,253 s, 0 errors)</b> |
 
-## Production reference (read at 13:31 PDT, Sep 28 (settled window 12:00–12:20 PDT; Kibana ES|QL; read-only; windows at least an hour old because the index back-fills). Also open in the browser: 'Innoferra Token Hub M31' dashboard on 10.1.101.32:5601 (view 69cfcea9-cc3c-420a-99bf-ef05080a58f5))
+## Production reference (read at 01:05 PDT Sep 29. Throughput: last-24-hour peak 10-minute window (09:10–09:20 PDT Sep 28), settled (Kibana ES|QL, read-only). Node count: probed 01:00 PDT from the Dynamo frontends' own metrics on production nodes b300-18 and b300-22 (read-only GETs): all four frontends list the same 96 decode workers (72 updated within 75 s) = 24 nodes × 4 TP2 workers; the team's 09-27 figure was 18)
 
-- hub TPM (tokens per minute, incl. cached): 407 M
-- requests: 136,664 in 20 min = 114 req/s
-- cache hit (cached ÷ prompt tokens): 95.9%
-- TTFT, streaming requests p50 / p90 / p99: 0.30 s / 1.8 s / 6.9 s
-- per-stream decode, streaming p10 / p50 / p90: 52 / 100 / 172 tok/s (126k requests)
-- output tokens per streaming request, p50: 346
-- 5xx: 43 of 136,664
-- nodes / GPUs behind the hub (team, Sep 27; not re-verified: the index shows only two load-balancer addresses): 18 / 144
-- per node: 22.6 M TPM, 6.3 req/s
-- per GPU (observed load, not capacity): 2.83 M TPM (04:10–04:30 PDT: 2.95 M)
+- nodes / GPUs behind the hub (probed now): <b>24 / 192</b> (96 workers × 2 GPUs; 18 on Sep 27 per the team; when the extra nodes joined is not known)
+- hub TPM, 24 h peak 10 minutes (09:10–09:20 PDT): <b>650 M</b> (peak single minute 669 M at 09:37 PDT)
+- requests at the peak: 84,155 in 10 min = 140 req/s
+- cache hit at the peak: 96.3%
+- TTFT, streaming, p50 / p90 / p99: 0.35 s / 4.4 s / 10.2 s
+- per-stream decode p10 / p50 / p90: 48 / 100 / 169 tok/s; output p50 303 tokens
+- 5xx at the peak: 49 of 84,155
+- per node at the peak (24 nodes): 27.1 M TPM, 5.8 req/s
+- per GPU at the peak: <b>3.38 M</b> with 192 GPUs (4.51 M if the peak still ran on 18 nodes)
+- frontend tokenizer: Dynamo frontend with DYN_TOKENIZER=fastokens (fast tokenizer; our Python tokenization was the static-frame ceiling)
 
 Frontier: **7.82 M/GPU** (112% of target) - Frontier + 8 tokenizer workers per engine (tok8) at c256, TTFT 2.1 s (p99 20 s); c128 5.67 M at 1.3 s; c384 8.46 M at 10.3 s.
 
