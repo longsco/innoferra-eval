@@ -37,6 +37,9 @@ except Exception as e: print("  no result.json:", e); sys.exit()
 a=r["all"]; print(f"  {sys.argv[1].split('/')[-2]}: req/s {r['request_throughput_per_s']:.3f} ok {r['successful_requests']} failed {r['failed_requests']} TTFT p50 {a['ttft_ms']['median']/1e3:.2f} p90 {a['ttft_ms']['p90']/1e3:.2f} TPOT p50 {a['tpot_ms']['median']:.1f} ms hit {a['cache_hit_rate']:.3f} valid {r['valid_for_performance_comparison']}")
 PY
 }
+flush(){ local t0=$(date +%s) busy n; while :; do busy=0; for i in 0 1 2 3; do n=$(curl -s -m 5 http://127.0.0.1:$((19191+100*i))/metrics | awk '/^sglang:num_running_reqs/{s+=$NF} END{print s+0}'); busy=$(python3 -c "print(int($busy + ${n:-0}))"); done
+  [ "$busy" = 0 ] && break; [ $(( $(date +%s)-t0 )) -gt 900 ] && break; sleep 10; done
+  log "flush (cold cache per run, like the repo's fresh-server runs): $(for i in 0 1 2 3; do curl -s -m 120 -X POST http://127.0.0.1:$((19191+100*i))/flush_cache | head -c 40; echo -n ' | '; done)"; }
 reqs(){ python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['request_throughput_per_s'])" $1/result.json 2>/dev/null || echo 0; }
 
 # A. one engine, target only: does the NVFP4 checkpoint load and answer correctly on this engine?
@@ -60,16 +63,16 @@ PY
 for BLK in 8 4; do
   SPEC=dspark DSPARK_BLOCK=$BLK BIDIR=$BIDIR HICACHE=1 engines 4 || fail C "4 engines block $BLK did not become healthy"
   gateway 4; canary "4x block $BLK" || fail C "wrong canary block $BLK"
-  ireplay c_blk$BLK $TUNE --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time --duration 600 --grace 60
+  flush; ireplay c_blk$BLK $TUNE --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time --duration 600 --grace 60
 done
 BEST=$(python3 -c "import sys; a=float(sys.argv[1]); b=float(sys.argv[2]); print(8 if a >= b else 4)" $(reqs $TUNE/c_blk8) $(reqs $TUNE/c_blk4))
 log "M3 tuned setup: 4 x TP2, DSpark block $BEST, bidir=$BIDIR, HiCache 3, chunk 32768, 64 running/engine, mem 0.72, 4 tokenizer workers"
 if [ "$BEST" != 4 ]; then SPEC=dspark DSPARK_BLOCK=$BEST BIDIR=$BIDIR HICACHE=1 engines 4 || fail D "relaunch of the tuned setup failed"; gateway 4; canary "tuned" || fail D "canary"; fi
 # D. the same four inference-perf runs as M3.1 (MI355X baseline scenarios, seed 42)
-ireplay r1_nothink_t256_c32 $OUT --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time
-ireplay r4_nothink_t256_c16 $OUT --trajectory 256 --active-trajectories 16 --max-in-flight 64 --no-sleep-thinking-time
-ireplay r2_think_t256_c32   $OUT --trajectory 256 --active-trajectories 32
-ireplay r3_think_t512_c64   $OUT --trajectory 512 --active-trajectories 64
+flush; ireplay r1_nothink_t256_c32 $OUT --trajectory 256 --active-trajectories 32 --no-sleep-thinking-time
+flush; ireplay r4_nothink_t256_c16 $OUT --trajectory 256 --active-trajectories 16 --max-in-flight 64 --no-sleep-thinking-time
+flush; ireplay r2_think_t256_c32   $OUT --trajectory 256 --active-trajectories 32
+flush; ireplay r3_think_t512_c64   $OUT --trajectory 512 --active-trajectories 64
 sudo -n docker rm -f m3-tp2-0 m3-tp2-1 m3-tp2-2 m3-tp2-3 m3-gateway >/dev/null 2>&1   # free GPUs and :8000 for the M3.1 queue
 log "===== M3 phase DONE (M3 engines + gateway removed; M3.1 queue resumes)"
 touch $M3/M3_DONE

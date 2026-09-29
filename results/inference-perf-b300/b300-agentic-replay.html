@@ -53,7 +53,7 @@ code { font-family: var(--mono); font-size: .92em; }
   <div class="eyebrow">inference-perf · real-world MiniMax agentic benchmark</div>
   <h1>B300 Agentic Replay</h1>
   <p>1 of 8 runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends. The replay client sends each trajectory's recorded turns closed loop (a turn waits for the turns it depends on), with outputs forced to the recorded length. These runs mirror the MI355X baseline table in the repo's <code>docs/benchmarking.md</code>.</p>
-  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 28, 22:51 PDT</span></div>
+  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 29, 0:45 PDT</span></div>
 </header>
 
 <section>
@@ -62,7 +62,7 @@ code { font-family: var(--mono); font-size: .92em; }
     <thead><tr><th>Status</th><th>Scenario</th><th>Trace</th><th>Lanes</th><th>Duration</th><th>Req/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th></tr></thead>
     <tbody>
       <tr class="sep"><td colspan="11">B300 · MiniMax-M3.1 (NVFP4) · 4 × TP2 engines, DSpark + gateway</td></tr>
-      <tr><td><span class="chip ok">Done</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">1839 s</td><td class="n">1.315</td><td class="n">1.14 / 3.95</td><td class="n">1.18 / 2.54</td><td class="n">12.3 ms</td><td class="n">0.921</td><td class="n">0</td></tr><tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">16¹</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip run">Running · 525 done</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">0.82</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">0</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+      <tr><td><span class="chip ok">Done</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">1839 s</td><td class="n">1.315</td><td class="n">1.14 / 3.95</td><td class="n">1.18 / 2.54</td><td class="n">12.3 ms</td><td class="n">0.921</td><td class="n">0</td></tr><tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">16¹</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip run">Running</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
       <tr class="sep"><td colspan="11">B300 · MiniMax-M3 (NVIDIA NVFP4) · 4 × TP2 engines, NVIDIA DSpark draft · runs after M3.1</td></tr>
       <tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">16¹</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
       <tr class="sep"><td colspan="11">MI355X · MiniMax-M3 · SGLang 1P1D, MXFP4 KV transport · reference from the repo docs</td></tr>
@@ -72,6 +72,7 @@ code { font-family: var(--mono); font-size: .92em; }
   <div class="foot">
     <span>Columns are exactly the baseline table in the repo's <code>docs/benchmarking.md</code>, computed with the repo's own summarize code from each run's <code>result.json</code>. TTFT is client-side over the whole run. Steady TTFT counts requests sent while every lane was busy, after the first 600 s; ours is client-side, while the MI355X steady TTFT in the doc was measured server-side, so the two are not identical measurements. While a run is in progress its row shows the requests completed and the running req/s.</span>
     <span>¹ Run with <code>--max-in-flight 64</code> (both platforms). ² The doc flags this MI355X run as not valid for performance comparison (one reader underrun, 0.11 s total wait). ³ Our run's <code>result.json</code> flags it not valid for performance comparison.</span>
+    <span>Every B300 run starts from an empty cache (all engines flushed, host cache included), like the repo's managed runs that start a fresh server per scenario. A first run 2 made right after run 1 hit 99.9% cache, because it replays the same 256 trajectories and the engines still held run 1's prefixes; it was set aside and run 2 is repeated cold after run 4.</span>
   </div>
 </section>
 
@@ -113,11 +114,11 @@ inference-replay benchmark --url http://127.0.0.1:8000 --benchmark-presets minim
 
 <section>
   <h2>Latest log lines</h2>
-<pre>    &quot;minimax-m3-agentic&quot;
-  ],
-  &quot;benchmark_plan_hash&quot;: &quot;de9feccda09af6906ccdae71bde76a4e8900c298e3bd6c887a452a5791420d29&quot;
-}
-r1_nothink_t256_c32: lanes=32 think=False full-lane window 600-754 s of 1839 s, n=449 req/s=2.917 TTFT p50 1.18 s p90 2.54 s p99 6.30 s failed=0
-05:39:42 ===== r2_think_t256_c32: inference-replay benchmark --trajectory 256 --active-trajectories 32</pre>
+<pre>07:45:04 flush before r3_think_t512_c64: e0 Cache flushed.
+Please check backend logs for more details. (  e1 Cache flushed.
+Please check backend logs for more details. (  e2 Cache flushed.
+Please check backend logs for more details. (  e3 Cache flushed.
+Please check backend logs for more details. (  
+07:45:04 ===== r3_think_t512_c64 (cold cache): inference-replay benchmark --trajectory 512 --active-trajectories 64</pre>
 </section>
 </div>
