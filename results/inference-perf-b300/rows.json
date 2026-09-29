@@ -138,7 +138,21 @@
    "scenario": "Thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 32,
-   "status": "running"
+   "status": "done",
+   "thinking": "on",
+   "duration_s": 7379.904881748022,
+   "requests": 2416,
+   "failed": 2,
+   "request_s": 0.32737549314155123,
+   "total_tok_s": 29106.03620333579,
+   "output_tok_s": 192.9480152951135,
+   "ttft_p50_s": 0.8434108319925144,
+   "ttft_p90_s": 2.5413909039925784,
+   "steady_ttft_p50_s": 0.8334656510269269,
+   "steady_ttft_p90_s": 2.787939330167138,
+   "tpot_p50_ms": 7.540786228951459,
+   "cache_hit": 0.9212081763114981,
+   "valid": true
   },
   {
    "model": "m3",
@@ -146,12 +160,12 @@
    "scenario": "Thinking time",
    "trace": "1024, 512 sampled",
    "lanes": 64,
-   "status": "queued"
+   "status": "running"
   }
  ],
  "log_tail": [
-  "  r4_nothink_t256_c16: req/s 1.355 ok 2418 failed 0 TTFT p50 0.91 p90 2.97 TPOT p50 10.4 ms hit 0.922 valid True",
-  "16:28:12 flush (cold cache per run, like the repo's fresh-server runs): Cache flushed.",
+  "  r2_think_t256_c32: req/s 0.327 ok 2416 failed 2 TTFT p50 0.84 p90 2.54 TPOT p50 7.5 ms hit 0.921 valid True",
+  "18:31:59 flush (cold cache per run, like the repo's fresh-server runs): Cache flushed.",
   "Please check backend logs | Cache flushed.",
   "Please check backend logs | Cache flushed.",
   "Please check backend logs | Cache flushed.",
