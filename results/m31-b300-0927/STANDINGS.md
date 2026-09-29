@@ -38,7 +38,7 @@
 
 ## Production reference (read at 01:05 PDT Sep 29. Throughput: last-24-hour peak 10-minute window (09:10–09:20 PDT Sep 28), settled (Kibana ES|QL, read-only). Node count: probed 01:00 PDT from the Dynamo frontends' own metrics on production nodes b300-18 and b300-22 (read-only GETs): all four frontends list the same 96 decode workers (72 updated within 75 s) = 24 nodes × 4 TP2 workers; the team's 09-27 figure was 18)
 
-- nodes / GPUs behind the hub (probed now): <b>24 / 192</b> (96 workers × 2 GPUs; 18 on Sep 27 per the team; when the extra nodes joined is not known)
+- nodes / GPUs behind the hub (probed Sep 29 01:05 PDT): <b>24 / 192</b> registered (96 workers × 2 GPUs); 92 workers (23 nodes' worth) served requests within 5 min; 18 on Sep 27 per the team
 - hub TPM, 24 h peak 10 minutes (09:10–09:20 PDT): <b>650 M</b> (peak single minute 669 M at 09:37 PDT)
 - requests at the peak: 84,155 in 10 min = 140 req/s
 - cache hit at the peak: 96.3%
