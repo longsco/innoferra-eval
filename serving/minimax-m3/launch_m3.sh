@@ -6,7 +6,8 @@
 NAME=${NAME:-m3-tp2-0}; PORT=${PORT:-19191}; GPUS=${GPUS:-0,1}; SPEC=${SPEC:-none}; DSPARK_BLOCK=${DSPARK_BLOCK:-8}; BIDIR=${BIDIR:-0}
 HICACHE=${HICACHE:-0}; CHUNK=${CHUNK:-32768}; MAXREQ=${MAXREQ:-64}; MEMFRAC=${MEMFRAC:-0.72}; TOKW=${TOKW:-4}
 IMAGE=${IMAGE:-minimax-m31-sglang:demo-bef87f4}; DEV_SRC=${DEV_SRC:-/data01/minimax31/src/0922-sglang-hicache/python}
-MODEL=/data01/minimax31/m3/MiniMax-M3-NVFP4; DRAFT=/data01/minimax31/m3/MiniMax-M3-DSpark; JIT=/data01/minimax31/jit-cache; LOGS=/data01/minimax31/logs
+MODEL=/data01/minimax31/m3/MiniMax-M3-NVFP4; DRAFT=${DRAFT:-/data01/minimax31/m3/MiniMax-M3-DSpark-sgl};   # 09-29: config copy with use_sliding_window=true (transformers Qwen3Config drops sliding_window otherwise); weights hard-linked
+ JIT=/data01/minimax31/jit-cache; LOGS=/data01/minimax31/logs
 DOCKER="sudo -n docker"
 ARGV=(python3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3 --trust-remote-code --host 0.0.0.0 --port "$PORT"
   --tp-size 2 --dtype bfloat16 --quantization modelopt_mixed --moe-runner-backend flashinfer_trtllm_routed --disable-shared-experts-fusion
