@@ -94,7 +94,21 @@
    "scenario": "No thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 32,
-   "status": "queued"
+   "status": "done",
+   "thinking": "off",
+   "duration_s": 1435.5629452209687,
+   "requests": 2415,
+   "failed": 3,
+   "request_s": 1.6822668821590903,
+   "total_tok_s": 150081.2990494905,
+   "output_tok_s": 991.9801878006843,
+   "ttft_p50_s": 1.0524797409307212,
+   "ttft_p90_s": 3.7010511764092358,
+   "steady_ttft_p50_s": 0.8954475439386442,
+   "steady_ttft_p90_s": 2.3941586796427146,
+   "tpot_p50_ms": 12.111453388510851,
+   "cache_hit": 0.9214822822203209,
+   "valid": true
   },
   {
    "model": "m3",
@@ -102,7 +116,7 @@
    "scenario": "No thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 16,
-   "status": "queued"
+   "status": "running"
   },
   {
    "model": "m3",
@@ -122,11 +136,11 @@
   }
  ],
  "log_tail": [
-  "Please check backend logs | ",
-  "15:18:31 c_blk4 exit 0; DSpark accept (metrics delta): e0 2.50  e1 2.61  e2 2.57  e3 2.53  | all 2.54 (verify steps 363128)",
-  "  c_blk4: req/s 2.456 ok 1621 failed 0 TTFT p50 1.04 p90 6.24 TPOT p50 13.3 ms hit 0.905 valid True",
-  "15:18:31 M3 tuned setup: 4 x TP2, DSpark block 8, bidir=1, HiCache 3, chunk 32768, 64 running/engine, mem 0.72, 4 tokenizer workers",
-  "15:19:08 launched m3-tp2-0 gpus=0,1 port=19191 spec=dspark block=8 bidir=1 hicache=1 chunk=32768 maxreq=64 mem=0.72 tokw=4",
-  "15:19:44 launched m3-tp2-1 gpus=2,3 port=19291 spec=dspark block=8 bidir=1 hicache=1 chunk=32768 maxreq=64 mem=0.72 tokw=4"
+  "  r1_nothink_t256_c32: req/s 1.682 ok 2415 failed 3 TTFT p50 1.05 p90 3.70 TPOT p50 12.1 ms hit 0.921 valid True",
+  "15:57:49 flush (cold cache per run, like the repo's fresh-server runs): Cache flushed.",
+  "Please check backend logs | Cache flushed.",
+  "Please check backend logs | Cache flushed.",
+  "Please check backend logs | Cache flushed.",
+  "Please check backend logs | "
  ]
 }
