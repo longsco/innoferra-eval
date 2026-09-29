@@ -229,6 +229,16 @@
    "acc": "accept 5.79 probe · 4.13 real traffic",
    "rt_closed": 1.73,
    "rt_strict": 0.41
+  },
+  {
+   "n": "Frontier + 16 tokenizer workers per engine (tok16)",
+   "v": 7.91,
+   "c": "c256, TTFT 2.0 s; c128 5.66 M at 1.3 s; c384 7.95 M at 6.4 s — static tie with 8 workers, worse on real traffic",
+   "k": "ok",
+   "frontier": false,
+   "acc": "accept 5.79 probe · 4.09 real traffic",
+   "rt_closed": 1.45,
+   "rt_strict": 0.92
   }
  ],
  "pareto": {
@@ -400,6 +410,11 @@
   "note": "Same TPM definition as ours. Production runs M3.1 on 18 nodes and is not request-saturated (user, 23:15 PDT), so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis."
  },
  "timeline": [
+  [
+   "17:21",
+   "tok16 (16 tokenizer workers per engine): static c256 7.91 M/GPU (tie with 8 workers), c384 7.95; real traffic TTFT p50 0.89 / 1.14 / 1.95 / 3.2 s, p99 at 4× 59 s, closed loop c128 1.45 M/GPU (4 workers: 1.68). Not adopted. chain19 done; chain20 (fine staircase) started",
+   "4 tokenizer workers stay the balanced setting"
+  ],
   [
    "16:35",
    "<b>Real-traffic tail explained.</b> In the tok4 staircase at 4×, 33 of the 60 slowest requests (TTFT > 12 s) needed fewer than 4k uncached tokens themselves: they waited behind other requests' giant prefills (up to 491k uncached tokens, one taking 46 s). At 2× the slow requests followed 449k uncached tokens sent in the previous 20 s vs 149k for fast ones. The scheduler lets an in-progress chunked prefill take the whole step budget. Fix built: a fair chunk share (default off, scheduling only) that leaves part of each step to waiting requests; chain21 A/Bs it with the fine staircase after chain20",
@@ -751,16 +766,16 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain19 tok16 (16 tokenizer workers)",
-    "running since 16:19 PDT"
+    "chain19 done (18:05 PDT)",
+    "t8r64 and tok16: static ties at ~7.5–7.9 M/GPU, real traffic no better; 4 tokenizer workers remain the balanced pick"
    ],
    [
     "chain20: fine staircase 1×–4× (0.5× steps) on the frontier with 4 and 2 tokenizer workers",
-    "next (~17:30–20:00 PDT)"
+    "running since 17:21 PDT"
    ],
    [
-    "chain21: fair chunk share A/B (share 0.5 with chunk 32768 and 16384), same fine staircase",
-    "armed after chain20 (~20:00–22:30 PDT)"
+    "chain21: fair chunk share A/B (share 0.5 with chunk 32768 and 16384)",
+    "armed after chain20"
    ]
   ]
  },
@@ -1882,6 +1897,22 @@
     "0.82 / 1.16 / 1.34 (6×: 4.8)",
     "152 / 108 / 70",
     "no gain on either test; decode-bound at high concurrency"
+   ],
+   [
+    "Frontier + 16 tokenizer workers per engine (tok16)",
+    "7.91 (c256, tie)",
+    "0.92 · 1.45 closed",
+    "64 × 4",
+    "7.91 M @c256 (5.66 @c128, 7.95 @c384)",
+    "2.0 s @c256",
+    "~100%",
+    "–",
+    "5.79 / 4.09",
+    "09-27 peak, warm",
+    "87–89%",
+    "0.89 / 1.14 / 1.95 (6×: 3.2)",
+    "143 / 103 / 68",
+    "worse at 4× (p99 59 s) and closed loop; not adopted"
    ],
    [
     "Team production (18 nodes, for reference)",

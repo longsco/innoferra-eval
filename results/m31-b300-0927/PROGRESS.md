@@ -132,5 +132,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 
 | 16:35 PDT (09-28) | Tail anatomy (`tail_anatomy.py`, tok4 staircase): 4x n=593, TTFT p50 1.48 / p90 12.4 / p99 33.9; slowest 10% uncached p50 3.2k (p90 167k) vs fastest 50% 1.0k; 33/60 slow requests had < 4k uncached (stalled by others); uncached tokens sent in the prior 20 s: slow 590k vs fast 408k (2x: 449k vs 149k); largest uncached prefills 491k (TTFT 46.6 s), 450k, 335k, 334k, 271k. PrefillAdder.add_chunked_req admits the chunked request with min(rem_chunk_tokens, rem_total_tokens) -> whole step budget. `patch_fair_chunk.py` (SGLANG_CHUNKED_REQ_SHARE, default 1.0) applied to both trees (compile ok); chain21 armed (fair4, fair4c16) | e7e2d96 | lever built |
 
+| 17:21 PDT (09-28) | chain19 tok16 (TOKW 16): static c128 45.31 M (5.66/GPU, 1.26 s), c256 63.29 (7.91, 2.00 s), c384 63.64 (7.95, 6.35 s; queue 1.59 s); staircase TTFT p50/p99 0.89/4.8, 1.14/13.1, 1.95/59.3, 3.17/28.9; decode 143/103/68/46; accept 4.09; strict 2x; closed loop c128 11.60 M node (1.45/GPU). CHAIN19 DONE; chain20 started | tpm-*-0927-tok16*.csv | not adopted |
+
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

@@ -2,6 +2,7 @@
 
 | config | per-GPU TPM | at | % of target |
 |---|---|---|---|
+| Frontier + 16 tokenizer workers per engine (tok16) | 7.91 M | c256, TTFT 2.0 s; c128 5.66 M at 1.3 s; c384 7.95 M at 6.4 s — static tie with 8 workers, worse on real traffic | 113% |
 | Frontier + 8 tokenizer workers per engine (tok8) | 7.82 M | c256, TTFT 2.1 s (p99 20 s); c128 5.67 M at 1.3 s; c384 8.46 M at 10.3 s | 112% |
 | Frontier + 4 tokenizer workers per engine (tok4) | 7.64 M | c256, TTFT 2.6 s; c128 5.62 M at 1.7 s; c384 8.16 M at 9.7 s | 109% |
 | Frontier + 8 tokenizer workers + 64 per rank (t8r64) | 7.48 M | c256, TTFT 1.7 s; c384 7.87 M at 3.6 s; c512 8.20 M at 11.4 s | 107% |
