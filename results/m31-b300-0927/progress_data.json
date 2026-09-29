@@ -440,6 +440,11 @@
  },
  "timeline": [
   [
+   "20:10",
+   "Testing method on the page updated: v2 (production-faithful replay of real M3.1 traffic with a per-minute SLA) is the reported method; the closed loop is secondary; the static frame moves to the appendix; the v1 staircase stays as a regression reference",
+   "dashboard method = report method"
+  ],
+  [
    "20:05",
    "S3 access to the M3.1 hub logs works (bucket per domain / load balancer / day, 5-minute gzip parts, same JSON schema as the api-v1 logs). Downloading 09-28 12:00–17:00 UTC (peak hour + 4 h warm-up, 194 GB). Replay failures explained: 41 × 400 = a client tool schema with \"maximum\": null that our engine's strict validation rejects (production accepts; gateway fix planned), 20 × 500 = logged images redacted to /base64/ (replay-tool fix). Eval protocol v2 refined for the report",
    "production-faithful eval unblocked"
@@ -1549,12 +1554,16 @@
  ],
  "metrics": [
   [
-   "Primary (production)",
-   "Real-traffic capacity at production-parity latency: the highest staircase level whose per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s, replaying a node's share of the real peak hour after a cache warm-up. Reported in req/s per node and TPM per GPU. This answers whether the node can take production traffic, and how much."
+   "Primary (report)",
+   "SLA capacity on the production-faithful replay (v2): the highest load k (merged session buckets of real M3.1 traffic) whose every minute meets TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, errors < 0.1%, reported as TPM per GPU next to production's 24 h peak. Until v2 lands, the interim number is the v1 staircase (strict rule p50 ≤ 1.6 s, p99 ≤ 22 s)."
   ],
   [
-   "Secondary (north star)",
-   "Static frame: 80k cached prefix / 128 new / 600 output, the M3 manual's TPM test and the kind of figure behind the 7 M/GPU claim. Random-token text, so spec decode gains do not show; one shared prefix, so affinity routing must not be used."
+   "Secondary",
+   "Closed-loop saturation on real prompts (c128 / c256 / c384), always on a trace window nothing else has replayed. A ceiling without an SLA."
+  ],
+  [
+   "Appendix (north star)",
+   "Static frame: 80k cached prefix / 128 new / 600 output, the M3 manual's TPM test behind the 7 M/GPU claim. Random text, so spec decode shows no gain; one shared prefix, so it rewards load balancing and tokenizer throughput, not cache affinity."
   ],
   [
    "Why they rank layouts differently",
@@ -1565,73 +1574,84 @@
   "title": "How the tests work, how fair they are, and how to read them",
   "columns": [
    "",
-   "Static frame (simulation)",
-   "Closed-loop replay (bridge)",
-   "Open-loop replay / staircase (production-like)"
+   "Static frame (appendix)",
+   "Closed-loop replay (secondary)",
+   "Staircase replay v1 (interim, regression reference)",
+   "<b>Production-faithful replay v2 (primary; building)</b>"
   ],
   "rows": [
    [
     "What is sent",
     "bench_serving: one 80k shared prefix + 128 random tokens, exactly 600 output tokens",
-    "real logged requests (prompts, sessions, tools, images), natural output lengths",
-    "same real requests"
+    "real logged requests (09-27, M3-era), natural outputs",
+    "same 09-27 M3-era requests, one node's share",
+    "<b>real M3.1 production requests</b> (09-28 hub logs), one node's share = 1/24 of sessions, whole sessions"
    ],
    [
     "How load is applied",
-    "closed loop: always exactly c requests in flight",
     "closed loop: always exactly c in flight",
-    "open loop: requests arrive at their real timestamps × a speed factor; a queue builds if the node falls behind"
+    "closed loop: always exactly c in flight, on a window nothing else has replayed",
+    "open loop at real timestamps × a speed factor (time compression)",
+    "open loop at real timestamps; <b>load scaled by merging k session buckets</b> (more users, real think time)"
    ],
    [
-    "Cache",
-    "~100% hit by construction (only 128 new tokens per request)",
-    "real session reuse (~88–91% after warm-up)",
-    "real session reuse (~88–91%; production 97.6% because its caches never go cold)"
+    "Cache state",
+    "~100% hit by construction",
+    "real reuse after warm-up (85–88%)",
+    "30-min or 2-hour warm-up; 88–91% hit (production 96%)",
+    "warm-up length chosen by convergence; HiCache on; <b>logged answer primed into the cache</b> so later turns hit as in production"
+   ],
+   [
+    "Validity check",
+    "none needed (synthetic)",
+    "none",
+    "none",
+    "<b>gate</b>: at 1×, per-request hit within ~2 points and TTFT within 2× of production's for the same requests"
+   ],
+   [
+    "SLA",
+    "none (reports TTFT at c)",
+    "none (saturation)",
+    "per minute: TTFT p50 ≤ 1.6 s, p99 ≤ 22 s",
+    "<b>per minute: TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, errors < 0.1%</b> (from production's peak)"
    ],
    [
     "Spec decode (DSpark)",
-    "accepts ~1 token: random text, no gain shows",
-    "real acceptance (~3–3.5)",
-    "real acceptance"
-   ],
-   [
-    "What TPM means",
-    "capacity at saturation at concurrency c",
-    "capacity at saturation with real prompts",
-    "offered load (TPM only rises with the speed factor until the knee)"
-   ],
-   [
-    "Latency meaning",
-    "bounded by c, never explodes",
-    "bounded by c",
-    "TTFT explodes past the knee: that is the signal"
+    "accepts ~1 token (random text)",
+    "real acceptance (~4.1)",
+    "real acceptance (~4.1)",
+    "real acceptance on M3.1 traffic"
    ],
    [
     "Fair for",
-    "north-star comparability (7 M claim), regressions, raw concurrency",
+    "north-star comparability, regressions, raw concurrency",
     "comparing layouts on real prompts at equal concurrency",
-    "production readiness: max load at production-parity latency"
+    "layout A/Bs on a fixed trace",
+    "<b>what one node can serve of production's traffic at production's latency</b>"
    ],
    [
     "Unfair to",
-    "spec decode, cache routing, prefill cost (≈0 uncached tokens)",
-    "arrival burstiness",
-    "nodes that start cold (our warm-up is 30 min, production is always warm); M3-era prompts replayed on M3.1; images replaced by a 1×1 PNG"
+    "spec decode, cache routing, prefill cost",
+    "arrival bursts",
+    "cold sessions (21% hit), answer divergence, time compression distorts load",
+    "remaining: images replayed as synthetic images of similar size (logs redact bytes)"
    ],
    [
-    "Our numbers today",
-    "tp8 lift 3.67 M/GPU at c256",
-    "running per chain14 variant (c64, c128)",
-    "4×tp2 + affinity ≈ 1.2 M/GPU average, ~2 req/s/node at prod-parity latency"
+    "Our numbers today (per GPU)",
+    "7.82 M at c256 (8 tokenizer workers)",
+    "1.74 M at c128 (1.91 with prefill-hold off)",
+    "0.88 M strict; 1.14 M with HiCache + 2-hour warm-up",
+    "building: 09-28 logs downloading (194 GB)"
    ],
    [
     "Read it as",
-    "TPM at the concurrency where TTFT p50 is still ≈ 2–3 s",
-    "TPM and per-stream tok/s at c; compare to the static number at the same c",
-    "the highest load level whose per-minute TTFT p50 ≤ 1.6 s and p99 ≤ 22 s, in req/s per node and TPM per GPU"
+    "TPM at the concurrency where TTFT p50 ≈ 2 s",
+    "saturation ceiling on real prompts (not an SLA number)",
+    "highest level whose every minute meets the rule",
+    "<b>headline</b>: highest k whose every minute passes, as TPM per GPU, next to production's 24 h peak (3.38 M/GPU)"
    ]
   ],
-  "note": "Yes, they differ a lot: the same node shows 3.2–3.7 M/GPU on the static frame and 1–1.5 M/GPU sustained on real traffic. The gap is not error: static requests are 100% cached and identical, while real requests carry 5–60k uncached tokens each (9–12% of 50–650k prompts), and that prefill is most of the GPU time. The static frame also hides spec decode and routing effects, and the replay can rank layouts in the opposite order (tp8 vs 4×tp2 are equal on static, but only 4×tp2 + affinity holds 4× load on real traffic). The closed-loop replay isolates the prompt-mix effect (same load control as static, real prompts), so the three together separate 'prompt mix' from 'arrival pattern'."
+  "note": "The methods differ a lot on the same node: 7.8 M/GPU static vs 1.7 M/GPU closed loop vs about 1 M/GPU at the strict SLA on real traffic. The gap is not error: static requests are fully cached and identical, while real requests carry 5–60k uncached tokens each. v2 is the method we will report; v1 stays only to compare against earlier runs."
  },
  "matrix": {
   "title": "Every configuration, synthetic vs real (one row each)",
