@@ -122,11 +122,11 @@
   }
  ],
  "log_tail": [
-  "  \"benchmark_presets\": [",
-  "    \"minimax-m3-agentic\"",
-  "  ],",
-  "  \"benchmark_plan_hash\": \"795686ec76f8be8f3da22c0085a021a5529db0f761b64869510818bd23f1c964\"",
-  "}",
-  "13:10:52 ===== inference-perf B300 run 4 DONE (all M3.1 runs cold-cache except r1, which ran on fresh engines)"
+  "Please check backend logs | ",
+  "15:18:31 c_blk4 exit 0; DSpark accept (metrics delta): e0 2.50  e1 2.61  e2 2.57  e3 2.53  | all 2.54 (verify steps 363128)",
+  "  c_blk4: req/s 2.456 ok 1621 failed 0 TTFT p50 1.04 p90 6.24 TPOT p50 13.3 ms hit 0.905 valid True",
+  "15:18:31 M3 tuned setup: 4 x TP2, DSpark block 8, bidir=1, HiCache 3, chunk 32768, 64 running/engine, mem 0.72, 4 tokenizer workers",
+  "15:19:08 launched m3-tp2-0 gpus=0,1 port=19191 spec=dspark block=8 bidir=1 hicache=1 chunk=32768 maxreq=64 mem=0.72 tokw=4",
+  "15:19:44 launched m3-tp2-1 gpus=2,3 port=19291 spec=dspark block=8 bidir=1 hicache=1 chunk=32768 maxreq=64 mem=0.72 tokw=4"
  ]
 }

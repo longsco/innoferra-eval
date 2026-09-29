@@ -136,7 +136,7 @@ code {{ font-family: var(--mono); font-size: .92em; }}
     <dt>Cache</dt><dd>radix prefix cache + HiCache ratio 3 (write-through, host memory)</dd>
     <dt>Frontend</dt><dd>4 tokenizer workers per engine; gateway on :8000 pins sessions by <code>prompt_cache_key</code></dd>
     <dt>Numerics</dt><dd>training-compatible Q8KV4 attention (vendor default), NVFP4 weights</dd>
-    <dt>M3 rows</dt><dd>nvidia/MiniMax-M3-NVFP4 (ModelOpt mixed: NVFP4 experts, MXFP8 attention) with the nvidia/MiniMax-M3-DSpark draft; 4 × plain TP2 engines (no DP attention) behind the same gateway; <code>trtllm_mha</code> attention, FP8 KV, page 128, <code>flashinfer_trtllm_routed</code> MoE, HiCache ratio 3, 4 tokenizer workers, chunk 32,768, 64 running per engine. The draft block (8 or 4) and in-block draft attention (causal or bidirectional, as the draft was trained) are picked by a short tune before the runs.</dd>
+    <dt>M3 rows</dt><dd>nvidia/MiniMax-M3-NVFP4 (ModelOpt mixed: NVFP4 experts, MXFP8 attention) with the nvidia/MiniMax-M3-DSpark draft at block 8, draft attention bidirectional in-block (as the draft was trained); 4 × plain TP2 engines (no DP attention) behind the same gateway; <code>trtllm_mha</code> attention, FP8 KV, page 128, <code>flashinfer_trtllm_routed</code> MoE, breakable prefill CUDA graph, HiCache ratio 3, 4 tokenizer workers, chunk 32,768, 64 running per engine. Picked by a short tune: bidirectional vs causal draft (1 engine, 5 min, 8 lanes) and block 8 vs 4 (4 engines, 10 min, 32 lanes, no thinking time), each from a cold cache.</dd>
   </dl>
 </section>
 </div>
