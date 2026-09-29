@@ -411,6 +411,11 @@
  },
  "timeline": [
   [
+   "18:15",
+   "Live M3.1 trace feasibility (read-only): the hub index stores every request (1.2 M docs / 3 h) with full bodies (60/60 sampled parse as JSON, 55/60 byte-exact) and session keys, but the peak 10 minutes hold 41 GB of request bodies and the indexed request.session_id is empty, so one node's share cannot be selected server-side or pulled through the browser. Asked for the hourly log export (like the M3 files) or a read-only ES key; chain22 continues on the current trace",
+   "better real-traffic setup: waiting on data access"
+  ],
+  [
    "18:05",
    "<b>Production now has 24 nodes</b> (probed read-only from the Dynamo frontends' metrics on b300-18 and b300-22: all four frontends list the same 96 decode workers, 72 updating within 75 s; 4 TP2 workers per node). Production KPI switched to the last-24-hour peak: 650 M TPM hub (09:10–09:20 PDT), 140 req/s, 96.3% hit, TTFT p50 0.35 s → 3.38 M/GPU on 192 GPUs (4.51 if that peak still ran on 18 nodes). Also seen: the production frontend tokenizes with fastokens",
    "production baseline corrected: 24 nodes, 24 h peak"
@@ -802,6 +807,15 @@
    "script": "to write",
    "commit": "3defa8c",
    "status": "armed in chain22 (check, then A/B with a 2-hour warm-up)"
+  },
+  {
+   "title": "Live M3.1 traffic trace from the production logs (better real-traffic proxy)",
+   "detail": "Rebuild the replay from M3.1 hub traffic: the 24 h peak (09-28 16:10–16:20 UTC, 140 req/s) plus 4 hours of warm-up, one node's share by session. The index logs every request with full bodies and session keys, but the peak 10 minutes hold 41 GB of bodies and request.session_id is empty, so the pull cannot go through the browser.",
+   "why": "Fixes the model-era mismatch (M3 prompts on M3.1), aligns 1× with production's peak load, and cuts cold first-in-replay sessions (21% hit today).",
+   "script": "traffic_extract.py (hourly .gz) or an ES point-in-time pull on node 0008",
+   "commit": "",
+   "status": "needs input: M3.1 hourly access-log export for 09-28 12:00–17:00 UTC, or a read-only ES key reachable from node 0008",
+   "needs_ok": true
   },
   {
    "title": "Real-traffic tail: isolate giant prefills (gateway lane for new sessions with huge prompts)",
