@@ -93,7 +93,7 @@ def metrics_panel():
     if not m: return ""
     rows = "".join(f"<dt>{a}</dt><dd>{b}</dd>\n" for a, b in m)
     return f'<div class="panel"><h2>Which number to trust</h2><dl>\n{rows}</dl></div>'
-def tests_panel() + protocol_panel():
+def tests_panel():
     t = data.get("tests")
     if not t: return ""
     head = "".join(f"<th>{h}</th>" for h in t["columns"])
@@ -257,7 +257,7 @@ JS = """
 
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
-overview = kpis() + metrics_panel() + tests_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
+overview = kpis() + metrics_panel() + tests_panel() + protocol_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
 results = charts() + realtraffic_rank_panel() + matrix_panel() + staircase() + routeb()
 setup = versus_panel() + kernel_gap_panel() + comparison() + winning() + launch_specs() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
