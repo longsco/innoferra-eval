@@ -12,7 +12,8 @@ ARGV=(python3 -m sglang.launch_server --model-path /models --served-model-name m
   --tp-size 2 --dtype bfloat16 --quantization modelopt_mixed --moe-runner-backend flashinfer_trtllm_routed --disable-shared-experts-fusion
   --attention-backend trtllm_mha --page-size 128 --kv-cache-dtype fp8_e4m3 --mem-fraction-static "$MEMFRAC" --chunked-prefill-size "$CHUNK"
   --max-running-requests "$MAXREQ" --tokenizer-worker-num "$TOKW" --reasoning-parser minimax-m3 --tool-call-parser minimax-m3
-  --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints ${XARGS:-})
+  --enable-metrics --enable-cache-report --weight-loader-prefetch-checkpoints --cuda-graph-backend-prefill ${PREFILL_GRAPH:-breakable} ${XARGS:-})
+# 09-29: the auto prefill graph (tc_piecewise, torch.compile) cannot trace the fork's training_rmsnorm autograd Function on M3 -> breakable (as on M3.1)
 ENV=(SGLANG_FORWARD_UNKNOWN_TOOLS=true SGLANG_ENABLE_METRICS_DEVICE_TIMER=true SGLANG_DISABLE_MSA=1 SGLANG_RAGGED_VERIFY_MODE=static SGLANG_DSPARK_BIDIR_SWA=$BIDIR)
 if [ "$SPEC" = dspark ]; then
   ARGV+=(--speculative-algorithm DSPARK --speculative-draft-model-path /draft --speculative-draft-model-quantization unquant
