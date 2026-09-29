@@ -40,7 +40,7 @@ variant(){
   log "===== variant $TAG done"
 }
 { log "===== chain21: fair chunk share A/B on the frontier with 4 tokenizer workers (fine staircase)"
-  while ! grep -q "===== CHAIN20 DONE" $L; do sleep 30; done
+  while ! grep -q "===== CHAIN22 DONE" $L; do sleep 30; done
   export ROUTE_BALANCE_SLACK=1 STAIRS="1:180,1.5:180,2:180,2.5:180,3:180,3.5:180,4:180"
   export EXTRA_ENV_BASE="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1" DRAFT_WINDOW=4095 DEV_SRC=/data01/minimax31/src/0922-sglang/python
   TOKW=4 GRID="128 256" MAXREQ=64 MEMFRAC=0.72 CHUNK=32768 EXTRA_ENV="$EXTRA_ENV_BASE SGLANG_CHUNKED_REQ_SHARE=0.5" XARGS= DSPARK_BLOCK= variant fair4

@@ -5,7 +5,7 @@
 #     PASS = HiCache serves A#3 mostly from cache with the same greedy output, the control shows the eviction
 #  2. lwhc: frontier + 4 tokenizer workers + HiCache ratio 3, long warm-up, fine staircase, closed loop   (only if PASS)
 #  3. lw:   frontier + 4 tokenizer workers, long warm-up, fine staircase, closed loop (baseline for the long warm-up)
-# Fair chunk share comes from serving/chain22.env (written after chain21's A/B; default 1.0). Ends with CHAIN22 DONE.
+# Runs right after chain20's fine4 (HiCache prioritised by the user; fine2 skipped, chain21 moved after this). Ends with CHAIN22 DONE.
 K=/data01/minimax31/serving; B=/data01/minimax31/bench; L=$B/stress2-0927.log; T=/data01/minimax31/traffic; cd $K
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*"; }; KEY=$(cat ~/.m31_apikey); WP=/data01/minimax31/warmup/longprompts.json
 export ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30 ROUTE_SESSION_KEY=prompt_cache_key TOKW=2
@@ -56,9 +56,8 @@ hc_one(){ # label DEV_SRC HICACHE(0/1)
   else log "hicache check $LB: engine not healthy after 1500 s: $(sudo -n docker logs m31-hc 2>&1 | grep -E "Error|error" | tail -2 | cut -c1-200)"; fi
   sudo -n docker logs m31-hc > /data01/minimax31/logs/hc-engine-$LB.log 2>&1; sudo -n docker rm -f m31-hc >/dev/null 2>&1; sleep 10; }
 { log "===== chain22: HiCache check + A/B with a 2-hour cache warm-up (fine staircase)"
-  while ! grep -q "===== CHAIN21 DONE" $L; do sleep 30; done
-  t0=$(date +%s); while [ ! -f $K/chain22.env ] && [ $(( $(date +%s)-t0 )) -lt 2700 ]; do sleep 30; done
-  SHARE=1.0; [ -f $K/chain22.env ] && . $K/chain22.env; log "fair chunk share for chain22: $SHARE"
+  while ! grep -q "===== CHAIN20 DONE" $L; do sleep 30; done
+  SHARE=1.0; [ -f $K/chain22.env ] && . $K/chain22.env; log "fair chunk share for chain22: $SHARE (HiCache prioritised ahead of the fair-chunk A/B)"; rm -f $K/HOLD
   for c in m31-tp2-0 m31-tp2-1 m31-tp2-2 m31-tp2-3; do sudo -n docker rm -f $c >/dev/null 2>&1; done; sleep 10
   hc_one hicache /data01/minimax31/src/0922-sglang-hicache/python 1
   hc_one control /data01/minimax31/src/0922-sglang/python 0
