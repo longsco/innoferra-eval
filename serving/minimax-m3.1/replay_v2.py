@@ -5,8 +5,9 @@ Usage: replay_v2.py --traces v2/b00.jsonl,v2/b01.jsonl --base-url http://127.0.0
          [--match-output] [--open-loop] [--img WxH]
 Load: k half-node buckets merged at their real timestamps = k/2 x one node's share (users scaled, never time-compressed).
 1. flush (optional): POST /flush_cache on each engine, so every run starts from the same empty cache.
-2. warm-up = cache-state reconstruction: for every session seen in [measure_from - warm_window, measure_from), its LAST turn in that
-   window is sent prefill-only (max_tokens=1) in timestamp order, then primed with the session's next message. A radix/LRU cache
+2. warm-up = cache-state reconstruction: for the most recent sessions seen in [measure_from - warm_window, measure_from) whose prompts
+   fit --warm-budget tokens (~1.2x the node's KV capacity), the LAST turn is sent prefill-only (max_tokens=1) in timestamp order,
+   then primed with the session's next message. A radix/LRU cache
    then holds each session's latest prefix in production's recency order (earlier turns are sub-prefixes of the last one).
 3. measured window at real time. A request that continues an earlier measured request of its session waits for that request (and its
    prime) to finish plus the client's logged think gap (causal; --open-loop sends at logged times). After each response the logged
@@ -20,6 +21,8 @@ ap.add_argument("--traces", required=True); ap.add_argument("--base-url", requir
 ap.add_argument("--key-file", default=os.path.expanduser("~/.m31_apikey")); ap.add_argument("--model", default=None)
 ap.add_argument("--measure-from", type=float, default=14400); ap.add_argument("--measure-to", type=float, default=16200)
 ap.add_argument("--warm-window", type=float, default=3600); ap.add_argument("--warm-inflight", type=int, default=32)
+ap.add_argument("--warm-budget", type=float, default=6e7, help="warm only the most recent sessions whose prompts sum to this many tokens "
+                "(~1.2x the node's GPU + host KV capacity; older prefixes would be evicted by LRU anyway)")
 ap.add_argument("--flush-urls", default=""); ap.add_argument("--match-output", action="store_true"); ap.add_argument("--open-loop", action="store_true")
 ap.add_argument("--img", default="1x1", help="WxH of the synthetic image replacing logged '/base64/' placeholders")
 ap.add_argument("--timeout", type=float, default=1800); ap.add_argument("--no-prime", action="store_true"); ap.add_argument("--dry-run", action="store_true")
@@ -64,7 +67,13 @@ def load():
         if r["t"] < T_W0: continue
         if r["t"] < T_M0: last_warm[r["key"]] = r
         else: meas.append(r)
-    warm = sorted(last_warm.values(), key=lambda r: r["t"])
+    warm = []; tok = 0
+    for r in sorted(last_warm.values(), key=lambda r: -r["t"]):          # newest first, up to the cache budget
+        tok += (r.get("prod_prompt_tokens") or 0)
+        if tok > a.warm_budget: break
+        warm.append(r)
+    warm.sort(key=lambda r: r["t"])
+    print(f"warm-up budget {a.warm_budget/1e6:.0f} M tokens: {len(warm)} of {len(last_warm)} sessions, last turns from t={warm[0]['t'] if warm else 0:.0f}s", flush=True)
     # causal links inside the measured window: successor = (key, t == predecessor's next_t)
     by = {(r["key"], r["t"]): i for i, r in enumerate(meas)}
     for i, r in enumerate(meas):
