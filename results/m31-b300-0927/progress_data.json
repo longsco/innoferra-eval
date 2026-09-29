@@ -15,9 +15,9 @@
   },
   {
    "label": "Real · 128 in flight",
-   "value": "1.74 M",
+   "value": "1.91 M",
    "cls": "",
-   "sub": "hit 88% · best 1.91"
+   "sub": "hit 87% · c384: 2.08 (saturated)"
   },
   {
    "label": "Prod · 24 h peak",
@@ -257,7 +257,19 @@
    "rt_closed": null,
    "rt_strict": 1.14,
    "rt_acc": 4.18,
-   "rt_sub": "HiCache + 2 h warm-up · 16% of 7 M"
+   "rt_sub": "HiCache + 2 h warm-up · ties lw"
+  },
+  {
+   "n": "Frontier (4 tok. workers), 2-hour warm-up, no HiCache (lw)",
+   "v": 5.51,
+   "c": "c128, TTFT 1.75 s (static grid ran c128 only)",
+   "k": "ok",
+   "frontier": false,
+   "acc": "accept 5.79 probe · 4.08 real traffic",
+   "rt_closed": 1.91,
+   "rt_strict": 1.14,
+   "rt_acc": 4.08,
+   "rt_sub": "2 h warm-up · HiCache adds 0 · 16% of 7 M"
   }
  ],
  "pareto": {
@@ -434,6 +446,26 @@
   ]
  },
  "timeline": [
+  [
+   "21:07",
+   "Protocol v2 data complete: 09-28 05:00–10:00 PDT M3.1 hub logs from both load balancers (5,984 parts, 181 GB). Extractor built (traffic_extract_v2.py): sessions hashed into 48 half-node buckets (two = one node), logged answers rebuilt from the SSE bodies, each turn linked to the session's next turn for cache priming. Test slice: 40–52% of turns link to a next turn.",
+   "real-traffic replay data in"
+  ],
+  [
+   "21:06",
+   "Closed-loop probe on the lw engines (real prompts, fixed in-flight count): c128 1.91, c256 1.98, c384 2.08 M/GPU while TTFT p50 goes 4.5 → 9.4 → 18.9 s. Tripling in-flight adds 9%: the engine is saturated near 2 M/GPU on this trace. Part of that is the test: 10–13% of prompt tokens miss cache here vs 4% in production (≈ 2.5× production's prefill per token); protocol v2's warm, primed replay removes that.",
+   "real-traffic ceiling ≈ 2.1 M/GPU (v1 trace)"
+  ],
+  [
+   "20:49",
+   "HiCache vs warm-up split: lw (same 2-hour warm-up, no HiCache) holds the strict rule to 2.5× = 1.14 M/GPU, identical to lwhc (hit 88.8% vs 90.8%, accept 4.08). The 0.88 → 1.14 step came from the longer warm-up, a measurement change, not HiCache. HiCache stays on for protocol v2, which runs production's longer history.",
+   "1.14 with or without HiCache"
+  ],
+  [
+   "20:50",
+   "Production decode-speed question (providers see 86 tok/s, engine ~130): in 75k streamed peak-hour requests from the hub logs, completion / (total − TTFT) averages 139 per request, median 106, 88 token-weighted. Most likely an averaging difference, not network: speed follows output kind (tool calls 101 vs reasoning prose 70 tok/s p50), not load or ingress IP.",
+   "aggregation, not network (formulas to confirm with the team)"
+  ],
   [
    "20:15",
    "Ranking switched to real traffic (user): the north star is 7 M per GPU on real traffic; the static frame is a secondary, synthetic ranking. Current real-traffic winner: HiCache + 2-hour warm-up at 1.14 M/GPU (16% of 7 M); static best 7.82 stays as reference",
@@ -842,7 +874,7 @@
  ],
  "timeline_note": "Pacific time (PDT), latest first. Entries from 00:00 on are Sep 28, 2026; earlier ones Sep 27.",
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
- "summary": "<b>The north star is 7 M TPM per GPU on real traffic.</b> Best so far on real production prompts: <b>1.14 M per GPU</b> at the strict per-minute SLA (4×tp2 DSpark engines, bidirectional draft, 4 tokenizer workers, HiCache, session-pinning gateway; 16% of 7 M), and 1.74 M per GPU with 128 real prompts always in flight. Production serves 3.38 M per GPU at its 24 h peak without saturating. The synthetic static frame (7.82 M per GPU) is kept as a secondary ranking only: it is fully cached random text and rewards levers real traffic barely feels. Next: the production-faithful replay of real M3.1 traffic (logs downloading) becomes the reported number.",
+ "summary": "<b>The north star is 7 M TPM per GPU on real traffic.</b> Best so far on real production prompts: <b>1.14 M per GPU</b> at the strict per-minute SLA (4×tp2 DSpark engines, bidirectional draft, 4 tokenizer workers, session-pinning gateway, after a 2-hour warm-up; HiCache measured the same; 16% of 7 M), and 1.91 M per GPU with 128 real prompts always in flight (2.08 at 384: the engine saturates near 2 M on these prompts). Production serves 3.38 M per GPU at its 24 h peak without saturating. The synthetic static frame (7.82 M per GPU) is kept as a secondary ranking only: it is fully cached random text and rewards levers real traffic barely feels. Next: the production-faithful replay of real M3.1 traffic (logs in, traces building) becomes the reported number.",
  "running": {
   "title": "Running now (chain18 → chain19 → chain20)",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
@@ -851,23 +883,23 @@
   "steps": [
    [
     "chain22 lwhc: HiCache ratio 3 + 2-hour warm-up",
-    "done 19:43 PDT: hit 90.8% (89.3% without), strict rule to 2.5× = 1.14 M/GPU (fine4: 2× = 0.88), 0 errors in the staircase"
+    "done 19:43 PDT: strict to 2.5× = 1.14 M/GPU, hit 90.8%"
    ],
    [
-    "chain22 lw: same 2-hour warm-up without HiCache (isolates HiCache from warm-up)",
-    "running since 19:43 PDT"
+    "chain22 lw: same 2-hour warm-up without HiCache",
+    "done 20:49 PDT: strict to 2.5× = 1.14 M/GPU (tie), hit 88.8%, accept 4.08 → the gain was the warm-up"
    ],
    [
-    "closed-loop probe at c256/c384 on the lw engines",
-    "after lw"
+    "closed-loop probe c128/c256/c384 on the lw engines",
+    "done 21:06 PDT: 1.91 / 1.98 / 2.08 M/GPU, TTFT p50 4.5 / 9.4 / 18.9 s → saturated near 2 M/GPU"
    ],
    [
     "chain21: fair chunk share A/B",
-    "after chain22"
+    "running since 21:06 PDT"
    ],
    [
-    "M3.1 production logs for protocol v2",
-    "downloading 09-28 12:00–17:00 UTC from S3 (5,984 parts, 194 GB, ~80 min)"
+    "Protocol v2: M3.1 production logs → per-node traces",
+    "logs complete 21:02 PDT (5,984 parts, 181 GB); extraction running (48 half-node session buckets, 16 kept)"
    ]
   ]
  },
@@ -878,7 +910,7 @@
    "why": "Production runs HiCache ratio 3 and holds 95–97% cache hit; ours is 87–90% on real traffic at 4×.",
    "script": "to write",
    "commit": "3defa8c",
-   "status": "check passed; first A/B in (strict 0.88 → 1.14 M/GPU); separating HiCache from the longer warm-up with the lw baseline"
+   "status": "done: works (check passed) but adds nothing on the v1 trace: lw without HiCache ties at 1.14 M/GPU strict. Stays on in protocol v2 (production runs it; 4-hour warm-up, larger working set)"
   },
   {
    "title": "Live M3.1 traffic trace from the production logs (better real-traffic proxy)",
@@ -1323,6 +1355,30 @@
      "real traffic (fine staircase after a 2-hour warm-up): strict per-minute SLA holds to 2.5× = 1.14 M/GPU; cache hit 90.8%; DSpark accept 4.18; static 5.46 M/GPU at c128"
     ]
    ]
+  },
+  "Frontier (4 tok. workers), 2-hour warm-up, no HiCache (lw)": {
+   "rows": [
+    [
+     "Engine",
+     "4 × tp2/ep2/dp2 DSpark on the 09-22 tree (our port + P1), bidirectional draft (window 4095), 64 per worker (32 per rank), mem 0.72, chunk 32768, sync-free verify graphs"
+    ],
+    [
+     "Cache",
+     "GPU radix cache only (no HiCache). HiCache ratio 3 (lwhc) measured the same strict capacity on this trace"
+    ],
+    [
+     "Frontend",
+     "4 tokenizer workers per engine"
+    ],
+    [
+     "Router",
+     "gateway: session pinning by prompt_cache_key; keyless requests balanced on in-flight count"
+    ],
+    [
+     "Measured",
+     "real traffic (fine staircase after a 2-hour warm-up): strict per-minute SLA holds to 2.5× = 1.14 M/GPU; closed loop 1.91 M/GPU at c128, 2.08 at c384 (saturated: TTFT p50 19 s); cache hit 88.8%; DSpark accept 4.08; static 5.51 M/GPU at c128"
+    ]
+   ]
   }
  },
  "realtraffic_best": "4×tp2 lift + P1 + bidirectional draft + session pinning (c13p1bd): TTFT p50 ≤ 1.5 s up to 4× a node's share (≈ 3.3 req/s), 3.1 s at 6×, 0 errors; strict per-minute prod-parity holds at 2× (≈ 2 req/s); 150 tok/s per stream at 1×; DSpark accept 4.07 on real traffic",
@@ -1664,7 +1720,7 @@
     "Our numbers today (per GPU)",
     "7.82 M at c256 (8 tokenizer workers)",
     "1.74 M at c128 (1.91 with prefill-hold off)",
-    "0.88 M strict; 1.14 M with HiCache + 2-hour warm-up",
+    "0.88 M strict (30-min warm-up); 1.14 M after a 2-hour warm-up, with or without HiCache",
     "building: 09-28 logs downloading (194 GB)"
    ],
    [
@@ -2068,7 +2124,23 @@
     "90.8%",
     "0.77 / 1.1 / 1.9 (1× / 2× / 4×)",
     "158 / 107 / 78",
-    "strict to 2.5× vs 2× without HiCache (30-min warm-up); *closed loop c128 replays prompts HiCache still holds (99.8% hit): not comparable"
+    "ties lw (same warm-up, no HiCache); *closed loop c128 replays prompts HiCache still holds (99.8% hit): not comparable"
+   ],
+   [
+    "Frontier (4 tok. workers), 2-hour warm-up, no HiCache (lw)",
+    "5.51 (c128)",
+    "<b>1.14</b> (strict to 2.5×) · closed loop 1.91 (c128), 2.08 (c384)",
+    "64 × 4",
+    "5.51 M @c128",
+    "1.75 s",
+    "~100%",
+    "–",
+    "5.79 / 4.08",
+    "09-27 peak, 2-hour warm-up, fine staircase",
+    "88.8%",
+    "0.74 / 1.1–1.4 / 1.3–1.8 (1× / 2× / 4×)",
+    "153 / 92–113 / 84–92",
+    "same strict capacity as lwhc: the 0.88 → 1.14 gain is the longer warm-up, not HiCache"
    ],
    [
     "Team production (24 nodes, 24 h peak)",
@@ -2348,6 +2420,25 @@
    "frontend": "4 SGLang HTTP servers, 4 tokenizer workers each",
    "routing": "gateway: session pinning by prompt_cache_key; keyless requests balanced on in-flight count (slack 1)",
    "env": "SGLANG_M3_TRAINING_COMPATIBLE=1, SGLANG_Q8KV4_SORT_MIN_LANES=1e12, SGLANG_DSPARK_M31_DRAFT_WINDOW=4096; NETNS=1 (own net + IPC namespace per engine), SGLANG_DSPARK_M31_BIDIR_DRAFT=1, SGLANG_DSPARK_M31_DRAFT_WINDOW=4095"
+  },
+  "Frontier (4 tok. workers), 2-hour warm-up, no HiCache (lw)": {
+   "static": "5.51 M at c128 (secondary)",
+   "real": "<b>1.14 M/GPU</b> at the strict per-minute SLA (2.5× a node's share); closed loop 1.91 at c128, 2.08 at c384",
+   "ttft": "real traffic 0.74 s p50 at 1×, 1.1–1.4 s at 2×, 1.3–1.8 s at 4×",
+   "decode": "153 tok/s per stream at 1×, 84–92 at 4×",
+   "hit": "88.8% (2-hour warm-up)",
+   "build": "MiniMax 0922-sglang@bef87f4 + our DSpark port + Triton runtime-N patch",
+   "shape": "4 × (tp2, ep2, dp2), attention TP1 (DP attention)",
+   "maxrun": "64 per worker (32 per rank; 256 per node)",
+   "mem": "0.72",
+   "chunk": "32768",
+   "dspark": "DSpark block 7, flashinfer draft, <b>bidirectional in-block attention</b>, window 4095",
+   "numerics": "training numerics on (Triton Q8KV4 path) + P1: eager extends on the sorted schedule (bitwise-equal)",
+   "graphs": "decode + draft + verify up to 32 per rank; breakable prefill",
+   "hicache": "off (GPU radix cache only; HiCache ties on this trace)",
+   "frontend": "4 SGLang HTTP servers, 4 tokenizer workers each",
+   "routing": "gateway: session pinning by prompt_cache_key; keyless requests balanced on in-flight count (slack 1)",
+   "env": "SGLANG_M3_TRAINING_COMPATIBLE=1, SGLANG_Q8KV4_SORT_MIN_LANES=1e12, SGLANG_DSPARK_M31_DRAFT_WINDOW=4096; NETNS=1 (own net + IPC namespace per engine), SGLANG_DSPARK_M31_BIDIR_DRAFT=1, SGLANG_DSPARK_M31_DRAFT_WINDOW=4095"
   }
  },
  "launch_cmd": {
@@ -2359,7 +2450,8 @@
   "4×tp2 lift + P1 + bidirectional DSpark draft (c13p1bd)": "# node 0008: serving/minimax-m3.1/launch_tp2x4_old.sh (4 engines + gateway), commit b0fc20b / b9fa07a\nexport NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30\nMAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=2 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\" DRAFT_WINDOW=4095 \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python bash launch_tp2x4_old.sh\n\n# each engine i = 0..3 (GPUs 2i,2i+1; port 19191+100i; own netns, --ipc private) resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 64 \\\n  --tokenizer-worker-num 2 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4095 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static\n\n# gateway :8000 (shim.py + patch_shim_slots.py; session pinning via patch_shim_session.py from 4faf003)\nSGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 \\\n  ROUTE_PREFIX_CHARS=2048 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SESSION_KEY=prompt_cache_key \\\n  MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key bash gateway.sh\n# P1 (patch_q8kv4_p1.py, 6f16e52) and the bidirectional draft gate (2e186e9) are applied in DEV_SRC",
   "4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway": "# node 0008: serving/minimax-m3.1/launch_tp2x4_old.sh (4 engines + gateway), commit b0fc20b / b9fa07a\nexport NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30\nMAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=2 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\" DRAFT_WINDOW=4095 \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python bash launch_tp2x4_old.sh\n\n# each engine i = 0..3 (GPUs 2i,2i+1; port 19191+100i; own netns, --ipc private) resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 64 \\\n  --tokenizer-worker-num 2 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4095 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static\n\n# gateway :8000 (shim.py + patch_shim_slots.py; session pinning via patch_shim_session.py from 4faf003)\nSGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 \\\n  ROUTE_PREFIX_CHARS=2048 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SESSION_KEY=prompt_cache_key ROUTE_BALANCE_SLACK=1 \\\n  MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key bash gateway.sh\n# P1 (patch_q8kv4_p1.py, 6f16e52) and the bidirectional draft gate (2e186e9) are applied in DEV_SRC\n# gateway in-flight balancing: patch_shim_balance.py (0d56e0e) on top of patch_shim_slots.py + patch_shim_session.py",
   "Frontier + 8 tokenizer workers per engine (tok8)": "# node 0008: serving/minimax-m3.1/launch_tp2x4_old.sh (4 engines + gateway), commit b0fc20b / b9fa07a\nexport NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30\nMAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=8 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\" DRAFT_WINDOW=4095 \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python bash launch_tp2x4_old.sh\n\n# each engine i = 0..3 (GPUs 2i,2i+1; port 19191+100i; own netns, --ipc private) resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 64 \\\n  --tokenizer-worker-num 8 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4095 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static\n\n# gateway :8000 (shim.py + patch_shim_slots.py; session pinning via patch_shim_session.py from 4faf003)\nSGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 \\\n  ROUTE_PREFIX_CHARS=2048 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SESSION_KEY=prompt_cache_key ROUTE_BALANCE_SLACK=1 \\\n  MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key bash gateway.sh\n# P1 (patch_q8kv4_p1.py, 6f16e52) and the bidirectional draft gate (2e186e9) are applied in DEV_SRC\n# gateway in-flight balancing: patch_shim_balance.py (0d56e0e) on top of patch_shim_slots.py + patch_shim_session.py",
-  "Frontier (4 tok. workers) + HiCache ratio 3, 2-hour warm-up (lwhc)": "# node 0008: serving/minimax-m3.1/launch_tp2x4_old.sh (4 engines + gateway), commit b0fc20b / b9fa07a\nexport NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30\nMAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=4 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\" DRAFT_WINDOW=4095 \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang-hicache/python bash launch_tp2x4_old.sh\n\n# each engine i = 0..3 (GPUs 2i,2i+1; port 19191+100i; own netns, --ipc private) resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 64 \\\n  --tokenizer-worker-num 4 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4095 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static\n\n# gateway :8000 (shim.py + patch_shim_slots.py; session pinning via patch_shim_session.py from 4faf003)\nSGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 \\\n  ROUTE_PREFIX_CHARS=2048 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SESSION_KEY=prompt_cache_key ROUTE_BALANCE_SLACK=1 \\\n  MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key bash gateway.sh\n# P1 (patch_q8kv4_p1.py, 6f16e52) and the bidirectional draft gate (2e186e9) are applied in DEV_SRC\n# gateway in-flight balancing: patch_shim_balance.py (0d56e0e) on top of patch_shim_slots.py + patch_shim_session.py\n# HiCache: XARGS=\"--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first\"\n# HiCache tree carries patch_hicache_nvfp4.py (3defa8c) on top of P1, the bidirectional draft gate and the tool-parser fix"
+  "Frontier (4 tok. workers) + HiCache ratio 3, 2-hour warm-up (lwhc)": "# node 0008: serving/minimax-m3.1/launch_tp2x4_old.sh (4 engines + gateway), commit b0fc20b / b9fa07a\nexport NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30\nMAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=4 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\" DRAFT_WINDOW=4095 \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang-hicache/python bash launch_tp2x4_old.sh\n\n# each engine i = 0..3 (GPUs 2i,2i+1; port 19191+100i; own netns, --ipc private) resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 64 \\\n  --tokenizer-worker-num 4 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4095 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static\n\n# gateway :8000 (shim.py + patch_shim_slots.py; session pinning via patch_shim_session.py from 4faf003)\nSGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 \\\n  ROUTE_PREFIX_CHARS=2048 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SESSION_KEY=prompt_cache_key ROUTE_BALANCE_SLACK=1 \\\n  MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key bash gateway.sh\n# P1 (patch_q8kv4_p1.py, 6f16e52) and the bidirectional draft gate (2e186e9) are applied in DEV_SRC\n# gateway in-flight balancing: patch_shim_balance.py (0d56e0e) on top of patch_shim_slots.py + patch_shim_session.py\n# HiCache: XARGS=\"--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first\"\n# HiCache tree carries patch_hicache_nvfp4.py (3defa8c) on top of P1, the bidirectional draft gate and the tool-parser fix",
+  "Frontier (4 tok. workers), 2-hour warm-up, no HiCache (lw)": "# node 0008: serving/minimax-m3.1/launch_tp2x4_old.sh (4 engines + gateway), commit b0fc20b / b9fa07a\nexport NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30\nMAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=4 EXTRA_ENV=\"SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\" DRAFT_WINDOW=4095 \\\n  DEV_SRC=/data01/minimax31/src/0922-sglang/python bash launch_tp2x4_old.sh\n\n# each engine i = 0..3 (GPUs 2i,2i+1; port 19191+100i; own netns, --ipc private) resolves to:\npython3 -m sglang.launch_server --model-path /models --served-model-name minimax-m3.1-nvfp4 --trust-remote-code \\\n  --tp-size 2 --ep-size 2 --dp-size 2 --moe-dense-tp-size 1 --enable-dp-attention \\\n  --quantization mxfp8 --disable-shared-experts-fusion --moe-a2a-backend megamoe --moe-runner-backend deep_gemm \\\n  --fp8-gemm-backend flashinfer_cutedsl --enable-tf32-matmul --kv-cache-dtype fp8_e4m3 \\\n  --chunked-prefill-size 32768 --cuda-graph-backend-prefill breakable --mem-fraction-static 0.72 --max-running-requests 64 \\\n  --tokenizer-worker-num 4 --reasoning-parser minimax-m3 --tool-call-parser minimax-m3 \\\n  --speculative-algorithm DSPARK --speculative-draft-model-path /models/dspark --speculative-draft-attention-backend flashinfer\n# env: SGLANG_M3_TRAINING_COMPATIBLE=1 SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_DRAFT_WINDOW=4095 SGLANG_DSPARK_M31_BIDIR_DRAFT=1\n#      SGLANG_DSPARK_ALLOW_A2A=1 SGLANG_M3_TRAINING_ALLOW_SPEC=1 SGLANG_DSPARK_NO_DP_LM_HEAD=1 SGLANG_RAGGED_VERIFY_MODE=static\n\n# gateway :8000 (shim.py + patch_shim_slots.py; session pinning via patch_shim_session.py from 4faf003)\nSGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 \\\n  ROUTE_PREFIX_CHARS=2048 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SESSION_KEY=prompt_cache_key ROUTE_BALANCE_SLACK=1 \\\n  MAX_INFLIGHT=4096 TPM_LIMIT=1e9 RPM_LIMIT=1e6 STRIP_PARAMS=prompt_cache_key bash gateway.sh\n# P1 (patch_q8kv4_p1.py, 6f16e52) and the bidirectional draft gate (2e186e9) are applied in DEV_SRC\n# gateway in-flight balancing: patch_shim_balance.py (0d56e0e) on top of patch_shim_slots.py + patch_shim_session.py"
  },
  "kernel_gap": {
   "title": "Kernel gap vs production (from production's live settings; no image used)",
@@ -2522,7 +2614,7 @@
    ],
    [
     "Unit = one production node",
-    "Sessions (prompt_cache_key) hashed into 24 buckets; one bucket = what one of the 24 nodes serves, whole sessions, real timestamps. Production's own per-request cached tokens and TTFT kept for comparison."
+    "Sessions (prompt_cache_key) hashed into 48 half-node buckets; two buckets = what one of the 24 nodes serves (whole sessions, real timestamps). Production's own per-request cached tokens and TTFT kept for comparison."
    ],
    [
     "Cache state = steady state",
@@ -2549,6 +2641,6 @@
     "Primary: SLA capacity = highest passing k, as TPM per GPU, next to production's 24 h peak (3.38 M/GPU). Secondary: closed-loop saturation on a disjoint window (never on prompts already replayed). Appendix: static frame. Each headline run twice to show noise."
    ]
   ],
-  "note": "Status 20:05 PDT: S3 access works; 09-28 12:00–17:00 UTC (5,984 parts, 194 GB) downloading to node 0008. Next: multi-part extractor → 24-bucket trace → gateway tool-schema fix + image placeholder fix + answer priming → calibration at 1× → ladder on the frontier (4 tokenizer workers + HiCache). Protocol v1 (09-27 M3-era trace, time-compressed staircase) stays as a regression reference."
+  "note": "Status 21:07 PDT: logs complete (09-28 05:00–10:00 PDT, 5,984 parts, 181 GB, both load balancers). Extractor built and running (16 half-node buckets kept = up to 8×; logged answers + next-turn priming links). Next: replay v2 (real-time bucket merge, priming, per-minute SLA), gateway null tool-schema fix, calibration at 1× → ladder. Protocol v1 (09-27 M3-era trace, time-compressed staircase) stays as a regression reference."
  }
 }

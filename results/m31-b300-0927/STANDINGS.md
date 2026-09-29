@@ -4,6 +4,7 @@
 
 | config | strict SLA TPM/GPU | closed loop c128 | DSpark accept | % of north star |
 |---|---|---|---|---|
+| Frontier (4 tok. workers), 2-hour warm-up, no HiCache (lw) | 1.14 M | 1.91 M | 4.08 | 16% |
 | Frontier (4 tok. workers) + HiCache ratio 3, 2-hour warm-up (lwhc) | 1.14 M | – | 4.18 | 16% |
 | 4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway | 0.92 M | 1.78 M | 4.21 | 13% |
 | Frontier base + DSpark block 4 (bblk4, production's block size) | 0.92 M | 1.67 M | 3.33 | 13% |
@@ -28,6 +29,7 @@
 | Frontier + 8 tokenizer workers per engine (tok8) | 7.82 M | c256, TTFT 2.1 s (p99 20 s); c128 5.67 M at 1.3 s; c384 8.46 M at 10.3 s |
 | Frontier + 4 tokenizer workers per engine (tok4) | 7.64 M | c256, TTFT 2.6 s; c128 5.62 M at 1.7 s; c384 8.16 M at 9.7 s |
 | Frontier + 8 tokenizer workers + 64 per rank (t8r64) | 7.48 M | c256, TTFT 1.7 s; c384 7.87 M at 3.6 s; c512 8.20 M at 11.4 s |
+| Frontier (4 tok. workers), 2-hour warm-up, no HiCache (lw) | 5.51 M | c128, TTFT 1.75 s (static grid ran c128 only) |
 | Frontier (4 tok. workers) + HiCache ratio 3, 2-hour warm-up (lwhc) | 5.46 M | c128, TTFT 1.9 s (static grid ran c128 only) |
 | 4×tp2 lift + P1 + bidirectional draft + in-flight balancing gateway | 5.10 M | c128, TTFT 3.7 s (repeat; first run 5.01 at 4.1 s); c64 3.46 M; c256 5.65 M — run-to-run noise ~2% |
 | Frontier base + production scheduling knobs (bprod: chunk 16384, overlap plan, streaming, queue cap) | 5.02 M | c128, TTFT 3.6 s; c64 3.40 M; c256 5.62 M — static tie, worse on real traffic |
@@ -72,6 +74,6 @@
 - per GPU at the peak: <b>3.38 M</b> with 192 GPUs (4.51 M if the peak still ran on 18 nodes)
 - frontend tokenizer: Dynamo frontend with DYN_TOKENIZER=fastokens (fast tokenizer; our Python tokenization was the static-frame ceiling)
 
-Frontier (real traffic): **1.14 M/GPU** (16% of the 7 M north star) - Frontier (4 tok. workers) + HiCache ratio 3, 2-hour warm-up (lwhc). Static best (synthetic): 7.82 M/GPU.
+Frontier (real traffic): **1.14 M/GPU** (16% of the 7 M north star) - Frontier (4 tok. workers), 2-hour warm-up, no HiCache (lw). Static best (synthetic): 7.82 M/GPU.
 
 Winning setup recipe: Setup tab of the progress page (derived from the same frontier).
