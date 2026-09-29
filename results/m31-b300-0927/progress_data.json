@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "21:25",
+   "Protocol v2 built. The 09-28 M3.1 logs reproduce the dashboard's 24 h peak exactly (650 M TPM = 3.38 M/GPU, 96.3% hit), so they are the complete production load. Traces: 48 half-node session buckets (one = 44,774 requests, 14,348 sessions over 5 h). New replayer: empty cache per level, cache-state rebuild from the prior hour, causal sessions at real time, answer priming, per-minute SLA. Gateway: null tool-schema keywords dropped (production accepts them). chain23 runs 1× calibration, then 2×–4×.",
+   "v2 armed (starts ≈ 22:00 PDT)"
+  ],
+  [
    "21:07",
    "Protocol v2 data complete: 09-28 05:00–10:00 PDT M3.1 hub logs from both load balancers (5,984 parts, 181 GB). Extractor built (traffic_extract_v2.py): sessions hashed into 48 half-node buckets (two = one node), logged answers rebuilt from the SSE bodies, each turn linked to the session's next turn for cache priming. Test slice: 40–52% of turns link to a next turn.",
    "real-traffic replay data in"
@@ -876,7 +881,7 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic.</b> Best so far on real production prompts: <b>1.14 M per GPU</b> at the strict per-minute SLA (4×tp2 DSpark engines, bidirectional draft, 4 tokenizer workers, session-pinning gateway, after a 2-hour warm-up; HiCache measured the same; 16% of 7 M), and 1.91 M per GPU with 128 real prompts always in flight (2.08 at 384: the engine saturates near 2 M on these prompts). Production serves 3.38 M per GPU at its 24 h peak without saturating. The synthetic static frame (7.82 M per GPU) is kept as a secondary ranking only: it is fully cached random text and rewards levers real traffic barely feels. Next: the production-faithful replay of real M3.1 traffic (logs in, traces building) becomes the reported number.",
  "running": {
-  "title": "Running now (chain18 → chain19 → chain20)",
+  "title": "Running now (chain21 fair4 → chain23 protocol v2)",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
@@ -894,12 +899,12 @@
     "done 21:06 PDT: 1.91 / 1.98 / 2.08 M/GPU, TTFT p50 4.5 / 9.4 / 18.9 s → saturated near 2 M/GPU"
    ],
    [
-    "chain21: fair chunk share A/B",
-    "running since 21:06 PDT"
+    "chain21: fair chunk share A/B (fair4 = share 0.5)",
+    "running since 21:06 PDT; fair4c16 arm deferred for protocol v2"
    ],
    [
-    "Protocol v2: M3.1 production logs → per-node traces",
-    "logs complete 21:02 PDT (5,984 parts, 181 GB); extraction running (48 half-node session buckets, 16 kept)"
+    "chain23: protocol v2 on real M3.1 traffic (frontier + HiCache)",
+    "armed: 1× calibration then 2×, 3×, 4× (≈ 1 h per level); traces built 21:20 PDT"
    ]
   ]
  },
@@ -2606,7 +2611,7 @@
  "realtraffic_rank_note": "Apples to apples: every bar replays the same 2,939 real requests (node share of the 09-27 peak hour) after the same cache warm-up, at 4× their original rate (≈ 3 req/s per node), and reports the stage's TTFT p50 over all 933 requests at that level (log scale). Excluded: chain14 v1 (its staircase ran after closed-loop replays of the same prompts, so caches were pre-filled). The static chart above ranks something different (one shared 80k prefix, fixed concurrency), and its bars sit at different concurrencies and routings; use the two together, and the table below for all numbers.",
  "prod_per_gpu": 3.38,
  "protocol_v2": {
-  "title": "Eval protocol v2: fair, production-faithful (data unblocked; building now)",
+  "title": "Eval protocol v2: fair, production-faithful (traces built; first run armed)",
   "items": [
    [
     "Workload = real M3.1 production traffic",
@@ -2618,7 +2623,7 @@
    ],
    [
     "Cache state = steady state",
-    "Warm-up length chosen by convergence (1 / 2 / 4 h). HiCache on, as in production. Cache-consistent replay: after each response, prime the cache with the logged answer (max_tokens=1), so later turns hit as they did in production."
+    "Every level starts from an empty cache (flush, host cache included) and rebuilds production's cache state: the last turn of every session active in the hour before the window is prefilled (max_tokens=1) in time order, then its logged next message is primed, so a radix/LRU cache holds each session's latest prefix in production's recency order. During the window each response is followed by priming with the logged next message (max_tokens=1), so later turns hit as they did in production; primes are excluded from TPM. HiCache on, as in production."
    ],
    [
     "Fidelity fixes",
@@ -2630,7 +2635,7 @@
    ],
    [
     "Load scaled by users, at real time",
-    "k× = k session buckets merged at their real timestamps, not time compression. Ladder 1× (one node's share of the peak, ≈ 5.8 req/s) to 4× in 0.5× steps."
+    "k× = 2k half-node session buckets merged at their real timestamps, never time compression. Sessions are causal: a turn waits for our answer to its previous turn plus the client's logged think time (a client cannot send turn n+1 before it has turn n). Ladder 1×, 2×, 3×, 4×; window 16:00–16:30 UTC (the peak), per-minute verdicts."
    ],
    [
     "SLA clamp, every minute",
@@ -2641,6 +2646,6 @@
     "Primary: SLA capacity = highest passing k, as TPM per GPU, next to production's 24 h peak (3.38 M/GPU). Secondary: closed-loop saturation on a disjoint window (never on prompts already replayed). Appendix: static frame. Each headline run twice to show noise."
    ]
   ],
-  "note": "Status 21:07 PDT: logs complete (09-28 05:00–10:00 PDT, 5,984 parts, 181 GB, both load balancers). Extractor built and running (16 half-node buckets kept = up to 8×; logged answers + next-turn priming links). Next: replay v2 (real-time bucket merge, priming, per-minute SLA), gateway null tool-schema fix, calibration at 1× → ladder. Protocol v1 (09-27 M3-era trace, time-compressed staircase) stays as a regression reference."
+  "note": "Status 21:25 PDT: traces built from 2.22 M production requests (5,984 parts, 181 GB); the logs reproduce the dashboard's 24 h peak exactly (09:10–09:20 PDT: 650 M TPM = 3.38 M/GPU, 96.3% hit). One half-node bucket = 44,774 requests / 14,348 sessions over 5 h; 59% of turns link to a next turn for priming. chain23 (armed, starts after chain21's fair4 arm, ≈ 22:00 PDT): frontier + HiCache, gateway null tool-schema fix, 1× calibration (validity gate) then 2×, 3×, 4×. Scripts: traffic_extract_v2.py, replay_v2.py, patch_shim_toolschema.py, chain23.sh (commit 104dd5c). Protocol v1 stays as a regression reference."
  }
 }
