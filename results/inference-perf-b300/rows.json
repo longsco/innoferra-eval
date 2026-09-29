@@ -28,12 +28,21 @@
    "scenario": "No thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 16,
-   "status": "running",
-   "progress": {
-    "completed": 50,
-    "errors": 0,
-    "request_s": 1.83
-   }
+   "status": "done",
+   "thinking": "off",
+   "duration_s": 2383.4388777889544,
+   "requests": 2417,
+   "failed": 1,
+   "request_s": 1.0140809661719454,
+   "total_tok_s": 90512.83598143027,
+   "output_tok_s": 598.0350548457458,
+   "ttft_p50_s": 0.9504647289868444,
+   "ttft_p90_s": 2.930850908765571,
+   "steady_ttft_p50_s": 0.9595324080437422,
+   "steady_ttft_p90_s": 2.2755548449931666,
+   "tpot_p50_ms": 10.708483173809153,
+   "cache_hit": 0.9211227086395085,
+   "valid": true
   },
   {
    "model": "m31",
@@ -41,7 +50,7 @@
    "scenario": "Thinking time",
    "trace": "256 sampled from 1024",
    "lanes": 32,
-   "status": "queued"
+   "status": "running"
   },
   {
    "model": "m31",
@@ -99,11 +108,11 @@
   }
  ],
  "log_tail": [
-  "10:26:45 flush before r4_nothink_t256_c16: e0 Cache flushed.",
+  "11:07:08 flush before r2_think_t256_c32: e0 Cache flushed.",
   "Please check backend logs for more details. (  e1 Cache flushed.",
   "Please check backend logs for more details. (  e2 Cache flushed.",
   "Please check backend logs for more details. (  e3 Cache flushed.",
   "Please check backend logs for more details. (  ",
-  "10:26:45 ===== r4_nothink_t256_c16 (cold cache): inference-replay benchmark --trajectory 256 --active-trajectories 16 --max-in-flight 64 --no-sleep-thinking-time"
+  "11:07:08 ===== r2_think_t256_c32 (cold cache): inference-replay benchmark --trajectory 256 --active-trajectories 32"
  ]
 }

@@ -52,8 +52,8 @@ code { font-family: var(--mono); font-size: .92em; }
 <header>
   <div class="eyebrow">inference-perf · real-world MiniMax agentic benchmark</div>
   <h1>B300 Agentic Replay</h1>
-  <p>2 of 8 runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends. The replay client sends each trajectory's recorded turns closed loop (a turn waits for the turns it depends on), with outputs forced to the recorded length. These runs mirror the MI355X baseline table in the repo's <code>docs/benchmarking.md</code>.</p>
-  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 29, 3:27 PDT</span></div>
+  <p>3 of 8 runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends. The replay client sends each trajectory's recorded turns closed loop (a turn waits for the turns it depends on), with outputs forced to the recorded length. These runs mirror the MI355X baseline table in the repo's <code>docs/benchmarking.md</code>.</p>
+  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 29, 4:07 PDT</span></div>
 </header>
 
 <section>
@@ -62,7 +62,7 @@ code { font-family: var(--mono); font-size: .92em; }
     <thead><tr><th>Status</th><th>Scenario</th><th>Trace</th><th>Lanes</th><th>Duration</th><th>Req/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th></tr></thead>
     <tbody>
       <tr class="sep"><td colspan="11">B300 · MiniMax-M3.1 (NVFP4) · 4 × TP2 engines, DSpark + gateway</td></tr>
-      <tr><td><span class="chip ok">Done</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">1839 s</td><td class="n">1.315</td><td class="n">1.14 / 3.95</td><td class="n">1.18 / 2.54</td><td class="n">12.3 ms</td><td class="n">0.921</td><td class="n">0</td></tr><tr><td><span class="chip run">Running · 50 done</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">16¹</td><td class="n">–</td><td class="n">1.83</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">0</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip ok">Done</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">9648 s</td><td class="n">0.579</td><td class="n">1.02 / 2.72</td><td class="n">0.96 / 2.88</td><td class="n">9.8 ms</td><td class="n">0.929</td><td class="n">1³</td></tr>
+      <tr><td><span class="chip ok">Done</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">1839 s</td><td class="n">1.315</td><td class="n">1.14 / 3.95</td><td class="n">1.18 / 2.54</td><td class="n">12.3 ms</td><td class="n">0.921</td><td class="n">0</td></tr><tr><td><span class="chip ok">Done</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">16¹</td><td class="n">2383 s</td><td class="n">1.014</td><td class="n">0.95 / 2.93</td><td class="n">0.96 / 2.28</td><td class="n">10.7 ms</td><td class="n">0.921</td><td class="n">1</td></tr><tr><td><span class="chip run">Running</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip ok">Done</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">9648 s</td><td class="n">0.579</td><td class="n">1.02 / 2.72</td><td class="n">0.96 / 2.88</td><td class="n">9.8 ms</td><td class="n">0.929</td><td class="n">1³</td></tr>
       <tr class="sep"><td colspan="11">B300 · MiniMax-M3 (NVIDIA NVFP4) · 4 × TP2 engines, NVIDIA DSpark draft · runs after M3.1</td></tr>
       <tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>No thinking time</td><td>256 sampled from 1024</td><td class="n">16¹</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>256 sampled from 1024</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>Thinking time</td><td>1024, 512 sampled</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
       <tr class="sep"><td colspan="11">MI355X · MiniMax-M3 · SGLang 1P1D, MXFP4 KV transport · reference from the repo docs</td></tr>
@@ -114,11 +114,11 @@ inference-replay benchmark --url http://127.0.0.1:8000 --benchmark-presets minim
 
 <section>
   <h2>Latest log lines</h2>
-<pre>10:26:45 flush before r4_nothink_t256_c16: e0 Cache flushed.
+<pre>11:07:08 flush before r2_think_t256_c32: e0 Cache flushed.
 Please check backend logs for more details. (  e1 Cache flushed.
 Please check backend logs for more details. (  e2 Cache flushed.
 Please check backend logs for more details. (  e3 Cache flushed.
 Please check backend logs for more details. (  
-10:26:45 ===== r4_nothink_t256_c16 (cold cache): inference-replay benchmark --trajectory 256 --active-trajectories 16 --max-in-flight 64 --no-sleep-thinking-time</pre>
+11:07:08 ===== r2_think_t256_c32 (cold cache): inference-replay benchmark --trajectory 256 --active-trajectories 32</pre>
 </section>
 </div>
