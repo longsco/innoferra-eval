@@ -5,43 +5,43 @@
    "label": "North star",
    "value": "7.00 M",
    "cls": "star",
-   "sub": "per GPU"
+   "sub": "TPM per GPU, target"
   },
   {
-   "label": "Production 24 h peak (M3.1 hub)",
+   "label": "Production · 24 h peak",
    "value": "3.38 M",
    "cls": "",
-   "sub": "650 M TPM ÷ 192 GPUs (24 nodes probed now), 5.8 req/s per node, TTFT p50 0.35 s, hit 96% (09:10–09:20 PDT); 4.51 M if still 18 nodes then"
+   "sub": "24 nodes · 5.8 req/s per node · TTFT p50 0.35 s · hit 96%"
   },
   {
-   "label": "Static frame best (synthetic best case)",
-   "value": "3.34 M",
-   "cls": "ok",
-   "sub": "4×tp2 under KV router, c128, TTFT 3.0 s (tp8: 3.20 M)"
-  },
-  {
-   "label": "Real traffic at prod-parity",
+   "label": "Real traffic · strict SLA",
    "value": "0.92 M",
    "cls": "ok",
-   "sub": "per GPU at the strict per-minute rule (2× a node's share, ≈ 2 req/s), warm caches (88–89% hit; production 96%)"
+   "sub": "frontier · 2× node share · every minute p50 ≤ 1.6 s, p99 ≤ 22 s"
   },
   {
-   "label": "Real traffic, 128 in flight",
-   "value": "1.70 M",
+   "label": "Real traffic · 128 in flight",
+   "value": "1.74 M",
    "cls": "",
-   "sub": "per GPU, warm (after a 30-min cache warm-up and the staircase): cache hit 85–87% (staircase 88–89%) vs production 96%; best 1.91 with prefill-hold off; production 24 h peak 3.38 M"
+   "sub": "frontier, 4 tokenizer workers · hit 88% · best 1.91 (prefill-hold off)"
   },
   {
-   "label": "Frontier at c64",
-   "value": "3.55 M",
+   "label": "Static frame best (synthetic)",
+   "value": "7.82 M",
    "cls": "ok",
-   "sub": "TTFT 2.1 s (balanced gateway)"
+   "sub": "c256 · TTFT 2.1 s · 8 tokenizer workers"
+  },
+  {
+   "label": "Static frame at c64 (synthetic)",
+   "value": "3.70 M",
+   "cls": "ok",
+   "sub": "TTFT 1.2 s · 8 tokenizer workers"
   },
   {
    "label": "Vendor demo as shipped",
    "value": "0.72 M",
    "cls": "bad",
-   "sub": "eager DSpark, 1 tokenizer worker"
+   "sub": "static · eager DSpark · 1 tokenizer worker"
   }
  ],
  "configs": [
@@ -208,7 +208,8 @@
    "k": "ok",
    "acc": "accept 5.79 probe · 4.15 real traffic",
    "rt_closed": 1.7,
-   "rt_strict": 0.41
+   "rt_strict": 0.41,
+   "kpi_sub": "c256 · TTFT 2.1 s · 8 tokenizer workers"
   },
   {
    "n": "Frontier + 4 tokenizer workers per engine (tok4)",
