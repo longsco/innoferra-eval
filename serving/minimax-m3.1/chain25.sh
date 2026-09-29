@@ -1,11 +1,16 @@
 #!/bin/bash
+# chain25 (09-29): real-traffic levers under protocol v2 at the loads that bracket 7 M/GPU (2x = 6.5, 3x = 9.8 M/GPU offered).
+#  fair2: fair chunk share 0.5 (patch_fair_chunk.py + patch_fair_chunk_v2.py crash fix): a giant prefill no longer takes the whole step
+#  hc4:   HiCache ratio 4 (host pool 4x the GPU pool, ~1.7 TB of 3 TB): more sessions stay cached as users scale
+# Baseline = chain23 (frontier + HiCache ratio 3, share 1.0) at the same levels. Starts after CHAIN23 DONE; ends with CHAIN25 DONE.
+# (chain24 text below kept for reference)
 # chain24 (09-29): the team's DSpark settings under protocol v2. Production runs DSpark with --speculative-draft-attention-backend
 # fa4 and block 4 (plus in-house fused verify/accept kernels we do not have). Our frontier drafts with flashinfer at block 7.
 #  dfa4:   frontier + HiCache, draft attention fa4 (block 7, bidirectional, window 4095)       -> is the team's draft backend cheaper?
 #  dfa4b4: frontier + HiCache, draft attention fa4 + block 4 (the team's DSpark shape)         -> does block 4 pay off on real traffic?
 # Per variant: boot, accept probe on 60-80k real prompts (a drop below ~5.8 means fa4 ignores the draft's 4095 window), single-stream
 # decode on an 80k prompt, then protocol v2 at 1x and 2x (same traces/windows as chain23, which is the flashinfer/block-7 baseline).
-# Starts after CHAIN25 DONE (re-queued 09-28 22:00 PDT: real-traffic capacity levers first). Ends with CHAIN24 DONE.
+# Starts after CHAIN23 DONE. Ends with CHAIN24 DONE.
 K=/data01/minimax31/serving; B=/data01/minimax31/bench; L=$B/stress2-0927.log; T=/data01/minimax31/traffic; cd $K
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*"; }; KEY=$(cat ~/.m31_apikey); WP=/data01/minimax31/warmup/longprompts.json
 ENG=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491
@@ -13,7 +18,7 @@ V2(){ sudo -n docker run --rm --network host -v $T:/tr -v /home/long/.m31_apikey
         python3 /k/replay_v2.py --key-file /key --base-url http://127.0.0.1:8000 --flush-urls $ENG "$@" 2>&1 | grep -vE "^\s*$"; }
 variant(){
   local TAG=$1
-  log "===== chain24 variant $TAG: DRAFT_ATTN=$DRAFT_ATTN DSPARK_BLOCK=${DSPARK_BLOCK:-7} (frontier + 4 tokenizer workers + HiCache ratio 3)"
+  log "===== chain25 variant $TAG: DRAFT_ATTN=${DRAFT_ATTN:-flashinfer} DSPARK_BLOCK=${DSPARK_BLOCK:-7} XARGS=$XARGS EXTRA_ENV=$EXTRA_ENV"
   bash launch_tp2x4_old.sh 2>&1 | tail -2
   up=0; for i in 0 1 2 3; do curl -sf -m 3 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done
   [ "$up" = 4 ] || { for i in 0 1 2 3; do sudo -n docker logs m31-tp2-$i > /data01/minimax31/logs/failed-$TAG-tp2-$i.log 2>&1; done
@@ -24,22 +29,23 @@ variant(){
   for i in 0 1; do p=$((19191+100*i)); NONCE=1 PROMPTS_JSON=$WP timeout 600 python3 $K/probe_long.py http://127.0.0.1:$p/v1/chat/completions minimax-m3.1-nvfp4 "$TAG tp2-$i" 1 2>&1 | tail -1 | cut -c1-140; done
   sudo -n docker run --rm --network host -v /data01/minimax31/MiniMax-M3.1-preview2-dspark-private:/models:ro -v /data01/minimax31/analysis:/a -v /data01/minimax31/warmup:/w minimax-m31-sglang:demo-024129f python3 /a/accept_probe.py http://127.0.0.1:19191 $TAG --reps 2 --conc 1 --thinking disabled >/dev/null 2>&1
   log "accept probe (3 real 60-80k prompts x 2, c1): $(python3 -c "import json,statistics as s; r=[json.loads(l) for l in open('/data01/minimax31/analysis/accept-$TAG.jsonl')]; a=[x['acc'] for x in r]; print(f'mean {s.mean(a):.2f} min {min(a):.2f} max {max(a):.2f} n {len(a)}')" 2>&1 | tail -1)"
-  for LV in "1x:0 1" "2x:0 1 2 3"; do
+  for LV in ${LEVELS:-"2x:0 1 2 3" "3x:0 1 2 3 4 5"}; do
     tag=${LV%%:*}; tr=$(for b in ${LV#*:}; do printf '/tr/v2/b%02d.jsonl,' $b; done); tr=${tr%,}
     log "===== v2 $TAG $tag: traces $tr, warm-up = recent sessions up to 60 M tokens, measured 16:00-16:30 UTC at real time"
     bash $K/accept_metrics.sh snap /tmp/am-v2-$TAG-$tag
     V2 --traces $tr --measure-from 14400 --measure-to 16200 --warm-window 3600 --warm-inflight 32 --out /tr/v2run-$TAG-$tag.jsonl
     log "accept during v2 $TAG $tag (metrics delta): $(bash $K/accept_metrics.sh diff /tmp/am-v2-$TAG-$tag)"
   done
-  log "===== chain24 variant $TAG done"
+  log "===== chain25 variant $TAG done"
 }
 {
-  until grep -q "===== CHAIN25 DONE" $L; do sleep 60; done
-  log "===== chain24: team DSpark settings (fa4 draft attention, block 4) under protocol v2"
+  until grep -q "===== CHAIN23 DONE" $L; do sleep 60; done
+  log "===== chain25: real-traffic levers under protocol v2 (2x, 3x)"
   export NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30 ROUTE_SESSION_KEY=prompt_cache_key ROUTE_BALANCE_SLACK=1 TOOL_SCHEMA_DROP_NULL=1
-  export MAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=4 DRAFT_WINDOW=4095 DEV_SRC=/data01/minimax31/src/0922-sglang-hicache/python
-  export EXTRA_ENV="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1 SGLANG_CHUNKED_REQ_SHARE=1.0"
-  export XARGS="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first"
-  DRAFT_ATTN=fa4 DSPARK_BLOCK= variant dfa4
-  DRAFT_ATTN=fa4 DSPARK_BLOCK=4 variant dfa4b4
-  echo "===== CHAIN24 DONE"; } >> $L 2>&1
+  export MAXREQ=64 MEMFRAC=0.72 CHUNK=32768 TOKW=4 DRAFT_WINDOW=4095 DEV_SRC=/data01/minimax31/src/0922-sglang-hicache/python DRAFT_ATTN=flashinfer DSPARK_BLOCK=
+  B_ENV="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1"
+  HC="--enable-hierarchical-cache --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first"
+  grep -q _fair_no_new_chunk $DEV_SRC/sglang/srt/managers/schedule_policy.py || log "WARN: fair chunk crash fix missing in $DEV_SRC"
+  EXTRA_ENV="$B_ENV SGLANG_CHUNKED_REQ_SHARE=0.5" XARGS="$HC --hicache-ratio 3.0" variant fair2
+  EXTRA_ENV="$B_ENV SGLANG_CHUNKED_REQ_SHARE=1.0" XARGS="$HC --hicache-ratio 4.0" variant hc4
+  echo "===== CHAIN25 DONE"; } >> $L 2>&1
