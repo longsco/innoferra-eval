@@ -182,13 +182,27 @@
    "model": "m31",
    "lanes": 32,
    "mode": "off",
-   "status": "queued"
+   "status": "done",
+   "thinking": "off",
+   "duration_s": 1830.0108668419998,
+   "requests": 5054,
+   "failed": 0,
+   "request_s": 2.7617322342580133,
+   "total_tok_s": 255953.27869494932,
+   "output_tok_s": 1499.3583096776763,
+   "ttft_p50_s": 1.1003809155663475,
+   "ttft_p90_s": 4.116557378997095,
+   "steady_ttft_p50_s": 1.076887977484148,
+   "steady_ttft_p90_s": 3.670445572875906,
+   "tpot_p50_ms": 13.50990064141078,
+   "cache_hit": 0.9192356437997129,
+   "valid": true
   },
   {
    "model": "m31",
    "lanes": 64,
    "mode": "off",
-   "status": "queued"
+   "status": "running"
   },
   {
    "model": "m31",
