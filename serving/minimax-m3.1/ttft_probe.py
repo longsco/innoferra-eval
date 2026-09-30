@@ -4,7 +4,7 @@ warm engine E with r (max_tokens=1) and r + its logged next message (max_tokens=
 token. A least-squares fit TTFT = a + b * new_tokens splits the fixed per-request overhead (a: tokenization, IPC, scheduling, first
 draft/verify step, streaming) from the per-token prefill cost (b). Requests go straight to one engine with the gateway's own request
 translation (shim.translate), so gateway effects are measured separately: tiny prompts via the gateway vs directly (stream).
-Usage: ttft_probe.py --engine http://127.0.0.1:19191 --gateway http://127.0.0.1:8000 --trace /tr/v2/b00.jsonl --n 40 --out F.jsonl"""
+Usage: ttft_probe.py --engine http://127.0.0.1:19191 --gateway http://127.0.0.1:8000|none --trace /tr/v2/b00.jsonl --n 40 --out F.jsonl"""
 import argparse, json, os, sys, time, statistics as st
 import httpx
 ap = argparse.ArgumentParser(); ap.add_argument("--engine", required=True); ap.add_argument("--gateway", required=True)
@@ -60,15 +60,17 @@ def post(client, url, body, headers=None):
 
 rows = []
 with httpx.Client(timeout=600) as c, open(a.out, "w") as fo:
-    # 1. gateway vs direct on a tiny prompt (streaming): the gateway's own share of TTFT
+    # 1. gateway vs direct on a tiny prompt (streaming): the gateway's own share of TTFT (--gateway none: direct only)
     tiny = {"model": "minimax-m3.1", "messages": [{"role": "user", "content": "Reply with the word ok."}], "max_tokens": 16, "stream": True, "thinking": {"type": "disabled"}}
     g, d = [], []
     for i in range(12):
-        s1, t1, _, _ = post(c, a.gateway, dict(tiny), {"Authorization": f"Bearer {KEY}"})
+        if a.gateway != "none":
+            s1, t1, _, _ = post(c, a.gateway, dict(tiny), {"Authorization": f"Bearer {KEY}"})
+            if t1: g.append(t1)
         s2, t2, _, _ = post(c, a.engine, body_for(tiny))
-        if t1: g.append(t1)
         if t2: d.append(t2)
-    print(f"[{a.tag}] tiny prompt TTFT median: via gateway {st.median(g)*1000:.0f} ms, direct {st.median(d)*1000:.0f} ms -> gateway share {1000*(st.median(g)-st.median(d)):.0f} ms", flush=True)
+    if g: print(f"[{a.tag}] tiny prompt TTFT median: via gateway {st.median(g)*1000:.0f} ms, direct {st.median(d)*1000:.0f} ms -> gateway share {1000*(st.median(g)-st.median(d)):.0f} ms", flush=True)
+    else: print(f"[{a.tag}] tiny prompt TTFT median, direct: {st.median(d)*1000:.0f} ms", flush=True)
     # 2. real session pairs, direct to one engine
     for r, n in pairs():
         post(c, a.engine, body_for(r["body"], max_tokens=1, stream=False))
