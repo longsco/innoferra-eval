@@ -25,4 +25,18 @@ for model, out in SETS:
         rows.append(r)
     if os.path.exists(f"{out}/run.log"):
         logs += open(f"{out}/run.log").read().splitlines()
-print(json.dumps({"rows": rows, "log_tail": logs[-6:]}, indent=1))
+sweep = []
+for model in ("m31", "m3"):
+    SW = f"{IP}/results/sweep-b300-{model}"
+    for c in (32, 64, 128):
+        d = f"{SW}/think-off/c{c}"; r = {"model": model, "lanes": c, "status": "queued"}
+        if os.path.exists(f"{d}/result.json"):
+            r.update(summarize("off", c, json.load(open(f"{d}/result.json")), 600.0)); r["status"] = "done"
+        elif os.path.exists(f"{d}/benchmark.log"):
+            r["status"] = "running"
+            prog = [l for l in open(f"{d}/benchmark.log") if l.startswith("requests=")]
+            if prog:
+                kv = dict(x.split("=", 1) for x in prog[-1].split())
+                r["progress"] = {"completed": int(kv.get("completed", 0)), "errors": int(kv.get("errors", 0)), "request_s": float(kv.get("request_s", 0))}
+        sweep.append(r)
+print(json.dumps({"rows": rows, "sweep": sweep, "log_tail": logs[-6:]}, indent=1))

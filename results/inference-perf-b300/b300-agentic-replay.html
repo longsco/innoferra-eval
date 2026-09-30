@@ -53,7 +53,7 @@ code { font-family: var(--mono); font-size: .92em; }
   <div class="eyebrow">inference-perf · real-world MiniMax agentic benchmark</div>
   <h1>B300 Agentic Replay</h1>
   <p>All 8 runs finished (Sep 29, 14:13 PDT). The replay client sends each trajectory's recorded turns closed loop (a turn waits for the turns it depends on), with outputs forced to the recorded length. These runs mirror the MI355X baseline table in the repo's <code>docs/benchmarking.md</code>.</p>
-  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 29, 14:16 PDT</span></div>
+  <div class="meta"><span>node 0008 · 8× B300</span><span>MiniMax-M3.1 (NVFP4)</span><span>started Sep 28, 21:59 PDT</span><span>updated Sep 29, 22:41 PDT</span></div>
 </header>
 
 <section>
@@ -76,6 +76,16 @@ code { font-family: var(--mono); font-size: .92em; }
   </div>
 </section>
 
+
+<section>
+  <h2>Concurrency sweep</h2>
+  <p class="muted" style="margin-bottom:10px">The repo's <code>scripts/concurrency_sweep.py</code>: no thinking time, lanes recycle trajectories for 30 minutes per point, <code>--max-in-flight</code> = max(128, 4 × lanes); columns are the script's <code>summary.md</code>. Each point starts from a flushed cache; same B300 setups as above.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Status</th><th>Model</th><th>Lanes</th><th>Duration</th><th>Requests</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
+    <tbody><tr><td><span class="chip wait">Queued</span></td><td>MiniMax-M3.1</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>MiniMax-M3.1</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>MiniMax-M3.1</td><td class="n">128</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>MiniMax-M3</td><td class="n">32</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>MiniMax-M3</td><td class="n">64</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr><tr><td><span class="chip wait">Queued</span></td><td>MiniMax-M3</td><td class="n">128</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr></tbody>
+  </table></div>
+  <div class="foot"><span>Total tok/s = (prompt + output tokens) ÷ run span for the 8-GPU node (the repo's AgentX "total" throughput; divide by 8 for per GPU). Steady TTFT counts requests sent while every lane was busy, after the first 600 s.</span></div>
+</section>
 <div class="cols">
 <section>
   <h2>Read before comparing</h2>

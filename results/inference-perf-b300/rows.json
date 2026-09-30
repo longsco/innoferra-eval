@@ -177,6 +177,38 @@
    "valid": false
   }
  ],
+ "sweep": [
+  {
+   "model": "m31",
+   "lanes": 32,
+   "status": "queued"
+  },
+  {
+   "model": "m31",
+   "lanes": 64,
+   "status": "queued"
+  },
+  {
+   "model": "m31",
+   "lanes": 128,
+   "status": "queued"
+  },
+  {
+   "model": "m3",
+   "lanes": 32,
+   "status": "queued"
+  },
+  {
+   "model": "m3",
+   "lanes": 64,
+   "status": "queued"
+  },
+  {
+   "model": "m3",
+   "lanes": 128,
+   "status": "queued"
+  }
+ ],
  "log_tail": [
   "Please check backend logs | Cache flushed.",
   "Please check backend logs | Cache flushed.",

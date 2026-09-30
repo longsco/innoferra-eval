@@ -37,6 +37,22 @@ mi_rows = []
 for i, (s_, tr, ln, dur, rps, ttft, st, tpot, hit, fail) in enumerate(MI):
     mi_rows.append(f'<tr class="mi"><td><span class="chip ref">MI355X</span></td><td>{s_}</td><td>{tr}</td><td class="n">{ln}</td><td class="n">{dur} s</td><td class="n">{rps:.3f}</td>'
                    f'<td class="n">{ttft[0]:.2f} / {ttft[1]:.1f}</td><td class="n">{st[0]:.2f} / {st[1]:.2f}</td><td class="n">{tpot} ms</td><td class="n">{hit:.3f}</td><td class="n">{fail}</td></tr>')
+def sweep_rows():
+    out = []
+    for r in data.get("sweep", []):
+        lab, cls = STATUS.get(r["status"], (r["status"], "wait"))
+        if r["status"] == "done":
+            cells = [f(r.get("duration_s"), 0, " s"), str(r.get("requests", "–")), f(r.get("request_s"), 3), f(r.get("total_tok_s"), 0), f(r.get("output_tok_s"), 0),
+                     pair(r.get("ttft_p50_s"), r.get("ttft_p90_s")), pair(r.get("steady_ttft_p50_s"), r.get("steady_ttft_p90_s")),
+                     f(r.get("tpot_p50_ms"), 1, " ms"), f(r.get("cache_hit"), 3), str(r.get("failed", "–")), "yes" if r.get("valid") else ("no" if r.get("valid") is False else "–")]
+        elif r.get("progress"):
+            pg = r["progress"]; lab = f'Running · {pg["completed"]} done'
+            cells = ["–", str(pg["completed"]), f(pg["request_s"], 2), "–", "–", "–", "–", "–", "–", str(pg["errors"]), "–"]
+        else:
+            cells = ["–"] * 11
+        name = "MiniMax-M3.1" if r["model"] == "m31" else "MiniMax-M3"
+        out.append(f'<tr><td><span class="chip {cls}">{lab}</span></td><td>{name}</td><td class="n">{r["lanes"]}</td>' + "".join(f'<td class="n">{E(c)}</td>' for c in cells) + "</tr>")
+    return "".join(out)
 done = sum(r["status"] == "done" for r in data["rows"]); n = len(data["rows"])
 lead = (f"All {n} runs finished (Sep 29, 14:13 PDT)." if done == n else f"{done} of {n} runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends.")
 log_tail = "\n".join(data.get("log_tail") or [])
@@ -118,6 +134,16 @@ code {{ font-family: var(--mono); font-size: .92em; }}
   </div>
 </section>
 
+
+<section>
+  <h2>Concurrency sweep</h2>
+  <p class="muted" style="margin-bottom:10px">The repo's <code>scripts/concurrency_sweep.py</code>: no thinking time, lanes recycle trajectories for 30 minutes per point, <code>--max-in-flight</code> = max(128, 4 × lanes); columns are the script's <code>summary.md</code>. Each point starts from a flushed cache; same B300 setups as above.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Status</th><th>Model</th><th>Lanes</th><th>Duration</th><th>Requests</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
+    <tbody>{sweep_rows()}</tbody>
+  </table></div>
+  <div class="foot"><span>Total tok/s = (prompt + output tokens) ÷ run span for the 8-GPU node (the repo's AgentX "total" throughput; divide by 8 for per GPU). Steady TTFT counts requests sent while every lane was busy, after the first 600 s.</span></div>
+</section>
 <div class="cols">
 <section>
   <h2>Read before comparing</h2>
