@@ -63,6 +63,13 @@
 
 ## Production reference (read at 01:05 PDT Sep 29. Throughput: last-24-hour peak 10-minute window (09:10–09:20 PDT Sep 28), settled (Kibana ES|QL, read-only). Node count: probed 01:00 PDT from the Dynamo frontends' own metrics on production nodes b300-18 and b300-22 (read-only GETs): all four frontends list the same 96 decode workers (72 updated within 75 s) = 24 nodes × 4 TP2 workers; the team's 09-27 figure was 18)
 
+- engine counters, b300-18 / b300-22 (13:29–13:34 PDT Sep 30): <b>50.1 / 53.1 M TPM per node = 6.27 / 6.64 M per GPU</b>; 436 / 476 req/min; engine TTFT p50 0.22 / 0.25 s; 128 running on b300-22 (32 per worker)
+- fleet estimate (× 24 nodes; all 96 workers took requests in 150 s): <b>≈ 1.2–1.3 B TPM</b>
+- hub logs (S3), same minutes (13:28–13:35 PDT): 836 M TPM = 4.35 M per GPU; 163 req/s; hit 96.7%; TTFT p50 / p90 / p99 0.31 / 2.06 / 10.37 s; decode p50 66
+- engines vs hub logs: 1.1× requests, 1.45× prompt tokens per request (110–114k vs 85k), 1.2× completion: the bucket misses part of the load (other entry point or uneven routing)
+- TTFT definition check: frontend first-token histogram (20:19–20:24 UTC) matches the hub's header_time distribution (p50 ≈ 0.3 s): hub TTFT is real first-token time
+- S3 coverage: no parts 09-29 10:00 → 20:00 PDT, so yesterday's ~1.5 B peak cannot be checked from S3 (Kibana needs the fleet VPN)
+- production engine config (serve.yaml, read-only): MXFP8 dense + NVFP4 routed experts + sparse Q8KV4; TP2/EP2, DP attention off, 4 workers per node; DFlash2 block 4 (fa4 draft attention, unquantized draft); chunk 16384; max running 128, queued 256; mem 0.8; HiCache 3.0 write-through, kernel IO, page_first; tc_piecewise prefill graphs; 1 tokenizer worker; ~18 in-house kernel toggles; SLO admission (cold requests rejected under prefill pressure, 429s 0.5–1%)
 - nodes / GPUs behind the hub (probed Sep 29 01:05 PDT): <b>24 / 192</b> registered (96 workers × 2 GPUs); 92 workers (23 nodes' worth) served requests within 5 min; 18 on Sep 27 per the team
 - hub TPM, 24 h peak 10 minutes (09:10–09:20 PDT): <b>650 M</b> (peak single minute 669 M at 09:37 PDT)
 - requests at the peak: 84,155 in 10 min = 140 req/s

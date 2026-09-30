@@ -8,34 +8,34 @@
    "sub": "per GPU, real traffic, strict SLA"
   },
   {
+   "label": "Prod · engine counters now",
+   "value": "6.3–6.6 M",
+   "cls": "",
+   "sub": "b300-18 + b300-22 workers, 13:29–13:34 PDT · engine TTFT p50 0.22–0.25 s · ×24 ≈ 1.2–1.3 B TPM"
+  },
+  {
+   "label": "Prod · hub logs, same minutes",
+   "value": "4.35 M",
+   "cls": "",
+   "sub": "836 M TPM, 163 req/s · TTFT p50 0.31 s · decode 66 · S3 misses part of the load"
+  },
+  {
    "label": "Ours · v2 strict SLA",
    "value": "≈1.3 M",
    "cls": "bad",
    "sub": "0.5× passes 10–12 of 15 min · TTFT p50 0.9 s"
   },
   {
+   "label": "Gap to production",
+   "value": "≈5×",
+   "cls": "bad",
+   "sub": "ours 1.3 vs prod 6.3–6.6 M per GPU at SLA"
+  },
+  {
    "label": "Ours · saturated",
    "value": "2.94 M",
    "cls": "",
    "sub": "inference-perf 128 lanes · TTFT p90 17 s"
-  },
-  {
-   "label": "Prod · SLA peak (Sep 28)",
-   "value": "3.38 M",
-   "cls": "",
-   "sub": "24 nodes · TTFT p50 0.35 s · decode 100"
-  },
-  {
-   "label": "Prod · now (saturated)",
-   "value": "3.3–3.8 M",
-   "cls": "",
-   "sub": "Sep 30 · peak min 4.7 · TTFT p50 7–9 s"
-  },
-  {
-   "label": "Ours · v1 strict (old test)",
-   "value": "1.14 M",
-   "cls": "",
-   "sub": "M3-era prompts, time-compressed"
   }
  ],
  "configs": [
@@ -398,6 +398,34 @@
   "read_at": "01:05 PDT Sep 29. Throughput: last-24-hour peak 10-minute window (09:10–09:20 PDT Sep 28), settled (Kibana ES|QL, read-only). Node count: probed 01:00 PDT from the Dynamo frontends' own metrics on production nodes b300-18 and b300-22 (read-only GETs): all four frontends list the same 96 decode workers (72 updated within 75 s) = 24 nodes × 4 TP2 workers; the team's 09-27 figure was 18",
   "rows": [
    [
+    "engine counters, b300-18 / b300-22 (13:29–13:34 PDT Sep 30)",
+    "<b>50.1 / 53.1 M TPM per node = 6.27 / 6.64 M per GPU</b>; 436 / 476 req/min; engine TTFT p50 0.22 / 0.25 s; 128 running on b300-22 (32 per worker)"
+   ],
+   [
+    "fleet estimate (× 24 nodes; all 96 workers took requests in 150 s)",
+    "<b>≈ 1.2–1.3 B TPM</b>"
+   ],
+   [
+    "hub logs (S3), same minutes (13:28–13:35 PDT)",
+    "836 M TPM = 4.35 M per GPU; 163 req/s; hit 96.7%; TTFT p50 / p90 / p99 0.31 / 2.06 / 10.37 s; decode p50 66"
+   ],
+   [
+    "engines vs hub logs",
+    "1.1× requests, 1.45× prompt tokens per request (110–114k vs 85k), 1.2× completion: the bucket misses part of the load (other entry point or uneven routing)"
+   ],
+   [
+    "TTFT definition check",
+    "frontend first-token histogram (20:19–20:24 UTC) matches the hub's header_time distribution (p50 ≈ 0.3 s): hub TTFT is real first-token time"
+   ],
+   [
+    "S3 coverage",
+    "no parts 09-29 10:00 → 20:00 PDT, so yesterday's ~1.5 B peak cannot be checked from S3 (Kibana needs the fleet VPN)"
+   ],
+   [
+    "production engine config (serve.yaml, read-only)",
+    "MXFP8 dense + NVFP4 routed experts + sparse Q8KV4; TP2/EP2, DP attention off, 4 workers per node; DFlash2 block 4 (fa4 draft attention, unquantized draft); chunk 16384; max running 128, queued 256; mem 0.8; HiCache 3.0 write-through, kernel IO, page_first; tc_piecewise prefill graphs; 1 tokenizer worker; ~18 in-house kernel toggles; SLO admission (cold requests rejected under prefill pressure, 429s 0.5–1%)"
+   ],
+   [
     "nodes / GPUs behind the hub (probed Sep 29 01:05 PDT)",
     "<b>24 / 192</b> registered (96 workers × 2 GPUs); 92 workers (23 nodes' worth) served requests within 5 min; 18 on Sep 27 per the team"
    ],
@@ -440,12 +468,23 @@
   ],
   "note": "Same TPM definition as ours. Production runs M3.1 on 24 nodes (96 workers, probed Sep 29 01:00 PDT; 18 on Sep 27) and is not request-saturated, so the observed per-GPU figure is its load, not its capacity (1.41 M at 23:07 PDT, 2.79 M at 02:09 PDT). Production method (read-only, knowledge/prod-m31-serving-method-2026-09-27.md): in-house SGLang build with custom KV4 kernels, TP2 attention with dp-size 1 (no DP lockstep), training numerics off with MSA disabled, DSpark block 4 + fa4 draft + fused verify, 256 running per worker, HiCache ratio 3, chunk 16384, and a Dynamo build with a strict-affinity router plugin plus session-pin Redis.",
   "read_lines": [
+   "<b>Re-measured</b> 13:20–13:40 PDT Sep 30 (read-only): engine counters (<code>:8081/metrics</code>) of the 4 workers on b300-18 and b300-22, the frontends' first-token histograms, S3 hub logs for the same minutes",
    "<b>Read</b> 01:05 PDT Sep 29 (read-only)",
    "<b>Throughput</b>: last-24-hour peak 10-minute window, 09:10–09:20 PDT Sep 28 (settled; the index back-fills for 30+ min)",
    "<b>Node count</b>: probed from the Dynamo frontends' metrics on b300-18 and b300-22 (all four list the same 96 workers)"
   ]
  },
  "timeline": [
+  [
+   "13:40 (09-30)",
+   "Production re-measured from its own engine counters (b300-18, b300-22; read-only): 50–53 M TPM per node at engine TTFT p50 0.22–0.25 s, all 96 workers active. The S3 hub logs show 836 M for the same minutes, so every S3-based production figure (3.38 M Sep 28, 3.3–3.8 M this morning) undercounts. Production's serve.yaml: TP2/EP2 with DP attention off, DFlash2 block 4, chunk 16384, 128 running, ~18 in-house kernels, SLO admission.",
+   "prod 6.3–6.6 M per GPU at SLA (hub 4.35); north star ≈ production parity"
+  ],
+  [
+   "12:26–13:09 (09-30)",
+   "chain30 tpcv (tokenization prefix cache, verify mode: every prompt also fully encoded and compared): 0 mismatches over 2,656 real requests; 7/15 minutes pass (verify runs both encodes, so it is slower by design). Speed run (tpc) started 13:09 PDT.",
+   "cache is exact on real traffic"
+  ],
   [
    "12:26 (09-30)",
    "Lever 8 tokenizer workers: 10/15 minutes at 0.5×, same median TTFT (0.90 s) but a lighter tail: p90 2.15 s (baseline 2.4–2.5), p99 9.6 s (12.7). Tokenization contributes to the tail; the prefix cache targets exactly that. chain29 done (only fair chunk and more tokenizer parallelism move anything); chain30 started with the cache's verify pass.",
@@ -939,9 +978,9 @@
  ],
  "timeline_note": "Pacific time (PDT), latest first. Entries from 00:00 on are Sep 28, 2026; earlier ones Sep 27.",
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
- "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA.</b> On the production-faithful test (v2: real M3.1 sessions at their logged times) our best setup holds the SLA just under <b>0.5× a node's share ≈ 1.3 M per GPU</b>; there the node is nearly idle and loses on the latency floor (TTFT p50 0.9 s vs production 0.31 s). Saturated, it pushes ≈ 2.9 M per GPU (inference-perf, 128 lanes). Production held 3.38 M per GPU at SLA on Sep 28 and is saturated today at 3.3–3.8 M per GPU (TTFT p50 7–9 s), so 7 M per GPU is about twice what the production stack delivers even saturated. Settings tuning is exhausted (only fair chunk and more tokenizer workers help); the path runs through engine work: tokenization cache (built, testing), scheduler/step overhead (profiling), then the structural items production has (attention without DP lockstep, graph-safe verify at high batch, faster prefill kernels).",
+ "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "Running now: chain28 (0.75×, 1×), then chain29 levers at 0.5×",
+  "title": "Running now: chain30 tokenization cache at 0.5×, then chain31 TTFT anatomy + profile",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
@@ -951,8 +990,8 @@
     "done: base 11, fair2 12, c16 6, nocoal 10, mem72 8, hc4 8, dfa4 9, tok8 10 (p99 9.6 s) of 15 min"
    ],
    [
-    "chain30: tokenization prefix cache (verify → speed → + no coalescing)",
-    "running since 12:26 PDT"
+    "chain30: tokenization prefix cache",
+    "verify: 0 mismatches (7/15, double encode); speed run tpc since 13:09 PDT, then tpc + no coalescing"
    ],
    [
     "chain31: idle TTFT probe + 40-step profile",
@@ -2669,7 +2708,7 @@
   }
  ],
  "realtraffic_rank_note": "Apples to apples: every bar replays the same 2,939 real requests (node share of the 09-27 peak hour) after the same cache warm-up, at 4× their original rate (≈ 3 req/s per node), and reports the stage's TTFT p50 over all 933 requests at that level (log scale). Excluded: chain14 v1 (its staircase ran after closed-loop replays of the same prompts, so caches were pre-filled). The static chart above ranks something different (one shared 80k prefix, fixed concurrency), and its bars sit at different concurrencies and routings; use the two together, and the table below for all numbers.",
- "prod_per_gpu": 3.38,
+ "prod_per_gpu": 6.3,
  "protocol_v2": {
   "title": "Eval protocol v2: fair, production-faithful (traces built; first run armed)",
   "items": [
@@ -2799,7 +2838,7 @@
     "",
     "",
     "",
-    "engine change: 116 → 25–39 ms per request offline, identical ids"
+    "engine change: identical ids on 2,656 live requests (verify pass); speed run in progress"
    ]
   ],
   "note": "Each row: fresh engines, cold cache, recent-session warm-up, 2,656 real M3.1 requests (half a node's share of the Sep 28 peak, 09:10–09:25 PDT) at their logged times with causal sessions; SLA per minute TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, 0 errors. At this load the engines are mostly idle (running per rank p50 1–3); minutes fail on the latency floor, not capacity — so settings barely move it and the work shifts to the engine (tokenization, scheduler/step overhead, prefill kernels)."
