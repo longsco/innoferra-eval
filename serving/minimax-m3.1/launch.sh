@@ -115,6 +115,8 @@ DOCKER_OPTS=(-d --restart unless-stopped --name "$NAME"
   -v "$MODEL_PATH:/models:ro" -v "$JIT:/root/.cache" -v "$LOGS:/logs")
 [ "$GPUS" = all ] || DOCKER_OPTS+=(-e "CUDA_VISIBLE_DEVICES=$GPUS")
 [ -z "$DEV_SRC" ] || DOCKER_OPTS+=(-v "$DEV_SRC:/opt/0922-sglang/python:ro")
+# CPUSET/MEMS (innoferra 09-30): pin the engine's processes and host memory (HiCache pool) to its GPUs' NUMA node
+[ -z "${CPUSET:-}" ] || DOCKER_OPTS+=(--cpuset-cpus "$CPUSET" --cpuset-mems "${MEMS:-0}")
 for e in ${EXTRA_ENV:-}; do ENV_VARS+=("$e"); done     # EXTRA_ENV="A=1 B=2" appends engine env vars (debug knobs)
 # CHAT_TEMPLATE_FILE=<jinja>: bind-mounted OVER /models/chat_template.jinja (the Dynamo frontend reads the template from the same model dir)
 [ -z "${CHAT_TEMPLATE_FILE:-}" ] || DOCKER_OPTS+=(-v "$CHAT_TEMPLATE_FILE:/models/chat_template.jinja:ro")
