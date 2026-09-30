@@ -155,6 +155,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 07:05 PDT (09-30) | chain29 base2 (repeat of chain28 0.5x): 11/15 min pass, TPM 1.36 M/GPU offered, hit 94.4% vs 96.1%, TTFT 0.90/2.42/12.67, decode 84.1, accept 3.40, 0 errors -> baseline reproducible (chain28: 10/15, 0.87/2.54/12.76, 82.8). Watchdog bug (restarted booting engines) fixed before the level. inference-perf sweep done 06:16 PDT |
 | 07:30 PDT (09-30) | load anatomy (metrics sampler, base2 window): per rank running p50 1-3, p90 6-19, max 32; queue p90 0; token usage p50 ~0.10 -> 0.5x is TTFT-floor bound. tok_cost: template 3 ms, tokenize 147 ms median (max 681) for 80k-token prompts. tok_prefix_cache offline: 2,579/2,579 identical, 116 -> 25 ms (1 cache) / 39 ms (4 caches). chain30 queued. |
 | 07:50 PDT (09-30) | chain29 fair2 (SGLANG_CHUNKED_REQ_SHARE=0.5 + v2 fix): 12/15 min pass, TTFT 0.86/2.10/12.14, decode 83.7, hit 94.5%, accept 3.30, 0 errors. Engine histogram medians (4 min of fair2): prefill_forward <=0.20 s (p90 0.33), queue <=0.01 s, engine TTFT <=1.0 s (coarse buckets); means over 11 min: TTFT 1.35, prefill_forward 0.40, queue 0.10, chunked_prefill 0.82 (13.5% of req) |
+| 08:33 PDT (09-30) | chain29 c16 (CHUNK=16384): 6/15 min pass, TTFT 0.95/2.91/11.66, decode 79.8, hit 94.1%, accept 3.30, 0 errors -> rejected |
 
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

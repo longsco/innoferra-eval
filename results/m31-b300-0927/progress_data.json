@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "08:33 (09-30)",
+   "Lever chunk 16384 (production M3.1's chunk): 6/15 minutes pass at 0.5× (baseline 10–11) — TTFT p50/p90/p99 0.95 / 2.91 / 11.7 s, decode 80 tok/s. Smaller chunks spread large prefills over more scheduler steps: slightly better p99, worse median. Rejected; chunk stays 32768.",
+   "chunk 16k rejected"
+  ],
+  [
    "07:50 (09-30)",
    "Lever fair chunk share 0.5 (crash fix in): 12/15 minutes pass at 0.5× (baseline 10 and 11), TTFT p50/p90/p99 0.86 / 2.10 / 12.1 s (baseline 0.87–0.90 / 2.42–2.54 / 12.7–12.8), decode 84, accept 3.30, 0 errors, no crash. Small tail gain, just past noise; kept for the combined setup. Engine-side medians during it: prefill forward 0.20 s (p90 0.33), queue ≈ 0.01 s; with ~0.15 s tokenization that leaves ≈ 0.5 s of the 0.9 s TTFT median in scheduler/IPC/gateway time — a latency probe is planned after chain30.",
    "fair chunk: +1–2 minutes, p90 −13%"
@@ -922,8 +927,8 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain29 base2 + fair2",
-    "done: base2 11/15; fair2 12/15 (p90 2.10 vs 2.42 s)"
+    "chain29 base2, fair2, c16",
+    "done: base2 11/15; fair2 12/15; c16 6/15 (rejected)"
    ],
    [
     "chain29 levers at 0.5×",
