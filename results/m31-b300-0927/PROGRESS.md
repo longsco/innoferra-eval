@@ -158,6 +158,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 08:33 PDT (09-30) | chain29 c16 (CHUNK=16384): 6/15 min pass, TTFT 0.95/2.91/11.66, decode 79.8, hit 94.1%, accept 3.30, 0 errors -> rejected |
 | 09:17 PDT (09-30) | chain29 nocoal (STREAM_COALESCE_CHARS=0): 10/15 min pass, TTFT 0.89/2.35/11.90, decode 84.5, hit 94.4%, accept 3.30 -> neutral |
 | 10:13 PDT (09-30) | chain29 mem72 (MEMFRAC 0.72): 8/15 min pass, TTFT 0.90/2.29/14.17, decode 83.9, hit 94.0%, completion/prod 1.095 -> no gain, keep 0.68. parse_cost: body 351 KB, json.loads 1.2 ms, pydantic 0.5 ms |
+| 11:44 PDT (09-30) | chain29 hc4: 8/15 (TTFT 0.95/2.56/12.95, hit 94.2%); dfa4 (DRAFT_ATTN=fa4): 9/15 (TTFT 0.90/2.37/15.65, decode 85.6, accept 3.30). Fleet (S3, fleet_window_stats.py): 16:40-16:50 UTC 726 M TPM = 3.78 M/GPU, 89 req/s, hit 94.9%, TTFT p50/p99 8.68/10.69, decode p50 40; 17:30-17:40 UTC 638 M = 3.33 M/GPU, TTFT p50 6.87 |
 
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).

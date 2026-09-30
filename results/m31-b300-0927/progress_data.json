@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "11:44 (09-30)",
+   "Levers at 0.5× so far (minutes passing of 15): base 10–11, fair chunk 0.5 12, chunk 16k 6, coalescing off 10, mem 0.72 8, HiCache 4 8, fa4 draft attention (production's) 9 (decode 85.6 vs 83–84, accept 3.30 unchanged). Only fair chunk helps; everything else is within noise or worse. Fleet read today (S3 logs): production saturated at 3.3–3.8 M/GPU (peak minute 4.7) with TTFT p50 7–9 s and decode ~40 tok/s. Next: 8 tokenizer workers, then the tokenization prefix cache (chain30) and the idle latency probe + step profile (chain31).",
+   "config levers exhausted; engine work next"
+  ],
+  [
    "10:13 (09-30)",
    "Lever mem fraction 0.72: 8/15 minutes pass at 0.5× (baseline 10–11), TTFT 0.90 / 2.29 / 14.2 s, hit 94.0% (no gain: KV use is ~10% at this load). Kept 0.68 (no OOM). Intake check: json + pydantic parsing of a real 351 KB request ≈ 2 ms, so the unexplained ~0.5 s of the TTFT floor is inside scheduling (lockstep / other prefills / first draft-verify step); the idle probe (chain31) will separate idle cost from interference.",
    "mem 0.72: no gain"
@@ -937,8 +942,8 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain29 base2, fair2, c16, nocoal, mem72",
-    "done: 11 / 12 / 6 / 10 / 8 of 15 minutes (fair2 best)"
+    "chain29 levers at 0.5×",
+    "done: base 11, fair2 12, c16 6, nocoal 10, mem72 8, hc4 8, dfa4 9 (of 15 min); tok8 running"
    ],
    [
     "chain29 levers at 0.5×",
