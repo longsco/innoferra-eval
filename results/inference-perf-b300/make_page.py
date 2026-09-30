@@ -51,7 +51,7 @@ def sweep_rows():
         else:
             cells = ["–"] * 11
         name = "MiniMax-M3.1" if r["model"] == "m31" else "MiniMax-M3"
-        out.append(f'<tr><td><span class="chip {cls}">{lab}</span></td><td>{name}</td><td class="n">{r["lanes"]}</td>' + "".join(f'<td class="n">{E(c)}</td>' for c in cells) + "</tr>")
+        out.append(f'<tr><td><span class="chip {cls}">{lab}</span></td><td>{name}</td><td>{"on" if r.get("mode") == "on" else "off"}</td><td class="n">{r["lanes"]}</td>' + "".join(f'<td class="n">{E(c)}</td>' for c in cells) + "</tr>")
     return "".join(out)
 done = sum(r["status"] == "done" for r in data["rows"]); n = len(data["rows"])
 lead = (f"All {n} runs finished (Sep 29, 14:13 PDT)." if done == n else f"{done} of {n} runs finished (MiniMax-M3.1 first, then MiniMax-M3); numbers fill in as each run ends.")
@@ -137,9 +137,9 @@ code {{ font-family: var(--mono); font-size: .92em; }}
 
 <section>
   <h2>Concurrency sweep</h2>
-  <p class="muted" style="margin-bottom:10px">The repo's <code>scripts/concurrency_sweep.py</code>: no thinking time, lanes recycle trajectories for 30 minutes per point, <code>--max-in-flight</code> = max(128, 4 × lanes); columns are the script's <code>summary.md</code>. Each point starts from a flushed cache; same B300 setups as above.</p>
+  <p class="muted" style="margin-bottom:10px">The repo's <code>scripts/concurrency_sweep.py</code> with its default points (lanes 32, 64, 128, 192, 256; thinking time off and on): lanes recycle trajectories for 30 minutes per point, <code>--max-in-flight</code> = max(128, 4 × lanes); columns are the script's <code>summary.md</code>. Each point starts from a flushed cache; same B300 setups as above.</p>
   <div class="tablebox"><table>
-    <thead><tr><th>Status</th><th>Model</th><th>Lanes</th><th>Duration</th><th>Requests</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
+    <thead><tr><th>Status</th><th>Model</th><th>Thinking</th><th>Lanes</th><th>Duration</th><th>Requests</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
     <tbody>{sweep_rows()}</tbody>
   </table></div>
   <div class="foot"><span>Total tok/s = (prompt + output tokens) ÷ run span for the 8-GPU node (the repo's AgentX "total" throughput; divide by 8 for per GPU). Steady TTFT counts requests sent while every lane was busy, after the first 600 s.</span></div>

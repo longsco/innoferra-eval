@@ -28,10 +28,11 @@ for model, out in SETS:
 sweep = []
 for model in ("m31", "m3"):
     SW = f"{IP}/results/sweep-b300-{model}"
-    for c in (32, 64, 128):
-        d = f"{SW}/think-off/c{c}"; r = {"model": model, "lanes": c, "status": "queued"}
+    for mode in ("off", "on"):
+      for c in (32, 64, 128, 192, 256):
+        d = f"{SW}/think-{mode}/c{c}"; r = {"model": model, "lanes": c, "mode": mode, "status": "queued"}
         if os.path.exists(f"{d}/result.json"):
-            r.update(summarize("off", c, json.load(open(f"{d}/result.json")), 600.0)); r["status"] = "done"
+            r.update(summarize(mode, c, json.load(open(f"{d}/result.json")), 600.0)); r["status"] = "done"
         elif os.path.exists(f"{d}/benchmark.log"):
             r["status"] = "running"
             prog = [l for l in open(f"{d}/benchmark.log") if l.startswith("requests=")]
