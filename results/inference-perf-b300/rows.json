@@ -422,7 +422,21 @@
    "model": "m3",
    "lanes": 256,
    "mode": "on",
-   "status": "queued"
+   "status": "done",
+   "thinking": "on",
+   "duration_s": 1830.0608998230891,
+   "requests": 4930,
+   "failed": 3,
+   "request_s": 2.693899421858901,
+   "total_tok_s": 201004.89517888284,
+   "output_tok_s": 1477.559572067463,
+   "ttft_p50_s": 8.216998882475309,
+   "ttft_p90_s": 115.33255278418092,
+   "steady_ttft_p50_s": 8.269474289030768,
+   "steady_ttft_p90_s": 155.736733164161,
+   "tpot_p50_ms": 22.90261272039018,
+   "cache_hit": 0.7915299698635007,
+   "valid": false
   }
  ],
  "log_tail": [
