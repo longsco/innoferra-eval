@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "10:13 (09-30)",
+   "Lever mem fraction 0.72: 8/15 minutes pass at 0.5× (baseline 10–11), TTFT 0.90 / 2.29 / 14.2 s, hit 94.0% (no gain: KV use is ~10% at this load). Kept 0.68 (no OOM). Intake check: json + pydantic parsing of a real 351 KB request ≈ 2 ms, so the unexplained ~0.5 s of the TTFT floor is inside scheduling (lockstep / other prefills / first draft-verify step); the idle probe (chain31) will separate idle cost from interference.",
+   "mem 0.72: no gain"
+  ],
+  [
    "09:17 (09-30)",
    "Lever gateway coalescing off: 10/15 minutes pass at 0.5× (baseline 10–11), TTFT 0.89 / 2.35 / 11.9 s, decode 84 — within noise. The gateway's packet coalescing is not part of the TTFT floor; default kept.",
    "coalescing: neutral"
@@ -932,8 +937,8 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain29 base2, fair2, c16, nocoal",
-    "done: base2 11/15; fair2 12/15; c16 6/15 (rejected); nocoal 10/15 (neutral)"
+    "chain29 base2, fair2, c16, nocoal, mem72",
+    "done: 11 / 12 / 6 / 10 / 8 of 15 minutes (fair2 best)"
    ],
    [
     "chain29 levers at 0.5×",
