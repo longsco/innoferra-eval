@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "07:50 (09-30)",
+   "Lever fair chunk share 0.5 (crash fix in): 12/15 minutes pass at 0.5× (baseline 10 and 11), TTFT p50/p90/p99 0.86 / 2.10 / 12.1 s (baseline 0.87–0.90 / 2.42–2.54 / 12.7–12.8), decode 84, accept 3.30, 0 errors, no crash. Small tail gain, just past noise; kept for the combined setup. Engine-side medians during it: prefill forward 0.20 s (p90 0.33), queue ≈ 0.01 s; with ~0.15 s tokenization that leaves ≈ 0.5 s of the 0.9 s TTFT median in scheduler/IPC/gateway time — a latency probe is planned after chain30.",
+   "fair chunk: +1–2 minutes, p90 −13%"
+  ],
+  [
    "07:30 (09-30)",
    "Why 0.5× fails: the engines are nearly idle there (running per rank p50 1–3, queue ≈ 0, KV ≈ 10%); the strict SLA is lost on the TTFT floor (p50 ≈ 0.9 s vs the 1.0 s limit; production 0.31 s). One measured piece of that floor: the engine re-tokenizes the whole ~80k-token prompt on every turn (116–150 ms median, up to ~700 ms). New: a prefix-aware encoder that splits at special-token boundaries and reuses the previous turn's tokens — identical token ids on 2,579 real requests, 116 → 25–39 ms per request. Queued as chain30 (verify pass, then speed, then with gateway coalescing off).",
    "TTFT floor is the binding constraint; tokenization cache built"
@@ -917,8 +922,8 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain29 base2 (repeat of the 0.5× baseline)",
-    "done 07:02 PDT: 11/15 minutes pass (first run 10/15) — noise ≈ ±1 minute"
+    "chain29 base2 + fair2",
+    "done: base2 11/15; fair2 12/15 (p90 2.10 vs 2.42 s)"
    ],
    [
     "chain29 levers at 0.5×",
