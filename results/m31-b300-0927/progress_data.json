@@ -480,6 +480,11 @@
  },
  "timeline": [
   [
+   "16:23 (09-30)",
+   "Production-style numerics under real traffic (training numerics off + fp8 KV, standard sparse path, with the tokenization cache): 7/15 minutes at 0.5×. Decode p50 109 tok/s (+29%, production 107) but TTFT p90 3.45 s, p99 24 s. Tail anatomy (both runs): even fully cached requests (<2k uncached tokens) see p99 31–33 s → they wait behind big cold prefills on the same engine (DP ranks step together; chunk share 1.0 lets one 50–200k cold prompt hold the whole 32k budget until done). chain34 queued: fair chunk share 0.5 / 0.25 on the frontier, and numerics + share 0.5.",
+   "decode +29%, tail = prefill interference"
+  ],
+  [
    "15:43 (09-30)",
    "chain32 A/B, idle, one request at a time: production-style numerics (training numerics off + fp8 KV on the standard sparse path) vs frontier: single-stream decode 162 vs 133 tok/s (+22%), cold long-prompt TTFT 1.43 vs 1.60 s, warm-session TTFT equal (0.49 vs 0.48 s), tiny prompt 70 vs 111 ms; greedy outputs differ (3/30 identical, common prefix median 72 chars) → quality check before adoption. Same frontier engine probed 0.48 s here vs 0.63–0.69 s in chain31 (2 vs 4 engines up, GPUs 2-3 vs 0-1) → NUMA pinning lever added.",
    "decode +22% per stream; chain33 tests both under v2"
@@ -1010,12 +1015,12 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain32: numerics A/B (idle)",
-    "done: decode +22%, cold TTFT −11%, warm TTFT equal; outputs differ"
+    "chain33: v2 0.5× levers",
+    "tc0kv8 done (7/15: decode 109 tok/s, p99 24 s); numa running; tc0kv8 + numa next"
    ],
    [
-    "chain33: v2 0.5× levers on the frontier (tokenization cache)",
-    "running since 15:43 PDT: tc0kv8 → numa → tc0kv8 + numa"
+    "chain34: prefill-interference levers",
+    "queued: frontier + fair share 0.5, + share 0.25, numerics + share 0.5"
    ]
   ]
  },
@@ -2868,6 +2873,15 @@
     "94.2%",
     "3.36",
     "neutral — keep coalescing on"
+   ],
+   [
+    "Production-style numerics (training off + fp8 KV) + cache",
+    "7",
+    "0.74 / 3.45 / <b>24.1</b>",
+    "<b>109</b>",
+    "94.1%",
+    "3.37",
+    "decode +29% (= production 107) but tail worse → retest with fair chunk share"
    ]
   ],
   "note": "Each row: fresh engines, cold cache, recent-session warm-up, 2,656 real M3.1 requests (half a node's share of the Sep 28 peak, 09:10–09:25 PDT) at their logged times with causal sessions; SLA per minute TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, 0 errors. At this load the engines are mostly idle (running per rank p50 1–3); minutes fail on the latency floor, not capacity — so settings barely move it and the work shifts to the engine (tokenization, scheduler/step overhead, prefill kernels)."
