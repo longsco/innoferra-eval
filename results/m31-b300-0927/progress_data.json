@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "07:05 (09-30)",
+   "Protocol v2 noise check: a repeat of the 0.5× baseline gave 11/15 passing minutes (first run 10/15), TTFT p50/p90/p99 0.90 / 2.42 / 12.7 s (0.87 / 2.54 / 12.8), decode 84 tok/s (83), hit 94.4% (94.2%), accept 3.40. A lever must beat ±1 minute and ±0.05 s p50 to count. Meanwhile the user's inference-perf concurrency sweep finished (B300 Agentic Replay page); chain29 levers continue: fair chunk 0.5, chunk 16k, no coalescing, mem 0.72, HiCache 4, fa4 draft, 8 tokenizer workers.",
+   "v2 baseline reproducible"
+  ],
+  [
    "22:10 (09-29)",
    "<b>First clean protocol v2 number (real M3.1 traffic, 0.5× = half a node's share of production's peak, 2,656 requests, frontier + HiCache, mem 0.68): 10 of 15 minutes pass the strict SLA → capacity just under 1.36 M TPM/GPU.</b> 0 errors; fidelity good (prompt 0.981×, output 0.987× production, cache hit 94.2% vs 96.1%). TTFT p50/p90/p99 0.87 / 2.54 / 12.8 s (production 0.31 / 3.49 / 10.1), decode 83 vs 107 tok/s, DSpark accept 3.31. Failing minutes: p50 creeping past 1.0 s or p99 15–20 s. Earlier chain26/27 attempts were invalid: replay containers I thought were stopped kept running (docker truncates the Command column the stop step matched on), overlapping load for hours; fixed (--no-trunc) plus an engine watchdog. chain29 queued: levers at 0.5× (base repeat, fair chunk 0.5, chunk 16k, no packet coalescing, mem 0.72, HiCache 4, fa4 draft, 8 tokenizer workers).",
    "real-traffic capacity ≈ 1.3 M/GPU (strict)"
@@ -907,16 +912,12 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain28 protocol v2 0.5× (clean)",
-    "done 22:09 PDT: 10/15 min pass, 1.36 M/GPU offered, TTFT p50 0.87 s p99 12.8 s"
+    "chain29 base2 (repeat of the 0.5× baseline)",
+    "done 07:02 PDT: 11/15 minutes pass (first run 10/15) — noise ≈ ±1 minute"
    ],
    [
-    "chain28 0.75× and 1×",
-    "running (slope of the failure)"
-   ],
-   [
-    "chain29: levers at 0.5× (8 variants incl. a base repeat for noise)",
-    "queued, ≈ 40 min each"
+    "chain29 levers at 0.5×",
+    "running: fair2 → c16 → nocoal → mem72 → hc4 → dfa4 → tok8 (≈ 40 min each)"
    ]
   ]
  },
