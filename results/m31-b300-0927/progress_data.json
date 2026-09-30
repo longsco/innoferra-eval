@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "07:30 (09-30)",
+   "Why 0.5× fails: the engines are nearly idle there (running per rank p50 1–3, queue ≈ 0, KV ≈ 10%); the strict SLA is lost on the TTFT floor (p50 ≈ 0.9 s vs the 1.0 s limit; production 0.31 s). One measured piece of that floor: the engine re-tokenizes the whole ~80k-token prompt on every turn (116–150 ms median, up to ~700 ms). New: a prefix-aware encoder that splits at special-token boundaries and reuses the previous turn's tokens — identical token ids on 2,579 real requests, 116 → 25–39 ms per request. Queued as chain30 (verify pass, then speed, then with gateway coalescing off).",
+   "TTFT floor is the binding constraint; tokenization cache built"
+  ],
+  [
    "07:05 (09-30)",
    "Protocol v2 noise check: a repeat of the 0.5× baseline gave 11/15 passing minutes (first run 10/15), TTFT p50/p90/p99 0.90 / 2.42 / 12.7 s (0.87 / 2.54 / 12.8), decode 84 tok/s (83), hit 94.4% (94.2%), accept 3.40. A lever must beat ±1 minute and ±0.05 s p50 to count. Meanwhile the user's inference-perf concurrency sweep finished (B300 Agentic Replay page); chain29 levers continue: fair chunk 0.5, chunk 16k, no coalescing, mem 0.72, HiCache 4, fa4 draft, 8 tokenizer workers.",
    "v2 baseline reproducible"
@@ -918,6 +923,10 @@
    [
     "chain29 levers at 0.5×",
     "running: fair2 → c16 → nocoal → mem72 → hc4 → dfa4 → tok8 (≈ 40 min each)"
+   ],
+   [
+    "chain30: tokenization prefix cache at 0.5× (verify, tpc, tpc + no coalescing)",
+    "queued after chain29"
    ]
   ]
  },
