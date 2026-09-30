@@ -322,12 +322,21 @@
    "model": "m31",
    "lanes": 256,
    "mode": "on",
-   "status": "running",
-   "progress": {
-    "completed": 1624,
-    "errors": 1,
-    "request_s": 4.08
-   }
+   "status": "done",
+   "thinking": "on",
+   "duration_s": 1830.0109616270056,
+   "requests": 7720,
+   "failed": 6,
+   "request_s": 4.218553966002689,
+   "total_tok_s": 304663.77189802553,
+   "output_tok_s": 2312.621120169331,
+   "ttft_p50_s": 1.7627437935443595,
+   "ttft_p90_s": 33.843204999296034,
+   "steady_ttft_p50_s": 1.5253313719877042,
+   "steady_ttft_p90_s": 16.51622167269234,
+   "tpot_p50_ms": 26.246426419557242,
+   "cache_hit": 0.8730217586981712,
+   "valid": false
   },
   {
    "model": "m3",
