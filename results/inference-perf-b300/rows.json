@@ -222,7 +222,21 @@
    "model": "m31",
    "lanes": 128,
    "mode": "off",
-   "status": "queued"
+   "status": "done",
+   "thinking": "off",
+   "duration_s": 1830.0289794800337,
+   "requests": 8664,
+   "failed": 1,
+   "request_s": 4.734351257356429,
+   "total_tok_s": 392001.27171532705,
+   "output_tok_s": 2481.83993309793,
+   "ttft_p50_s": 1.7803604979999363,
+   "ttft_p90_s": 17.296511042653584,
+   "steady_ttft_p50_s": 1.7757279840297997,
+   "steady_ttft_p90_s": 14.590984605392443,
+   "tpot_p50_ms": 27.25378769468683,
+   "cache_hit": 0.9068556997797828,
+   "valid": false
   },
   {
    "model": "m31",
