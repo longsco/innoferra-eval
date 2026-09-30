@@ -8,16 +8,16 @@
    "sub": "per GPU, real traffic, strict SLA"
   },
   {
-   "label": "Prod · engine counters now",
+   "label": "Prod · now",
    "value": "6.3–6.6 M",
    "cls": "",
-   "sub": "b300-18 + b300-22 workers, 13:29–13:34 PDT · engine TTFT p50 0.22–0.25 s · ×24 ≈ 1.2–1.3 B TPM"
+   "sub": "engine counters, 2 nodes, 13:29–13:34 PDT Sep 30 · TTFT p50 0.22–0.25 s · hub logs show 4.35"
   },
   {
-   "label": "Prod · hub logs, same minutes",
-   "value": "4.35 M",
+   "label": "Prod · all-time high",
+   "value": "≈7.8 M",
    "cls": "",
-   "sub": "836 M TPM, 163 req/s · TTFT p50 0.31 s · decode 66 · S3 misses part of the load"
+   "sub": "~1.5 B TPM Sep 29 (your dashboard read; S3 has no logs then) · highest we measured 6.64 M"
   },
   {
    "label": "Ours · v2 strict SLA",
