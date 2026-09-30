@@ -19,5 +19,10 @@ launch(){ export NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL
   until grep -q "===== CHAIN30 DONE" $L; do sleep 60; done
   log "===== chain31: TTFT-floor anatomy (idle node, one request at a time)"
   launch "";                                 log "probe, tokenization prefix cache OFF:"; probe --out /tr/ttft-probe-off.jsonl --tag tpc-off
-  launch "SGLANG_TOKENIZE_PREFIX_CACHE=1";   log "probe, tokenization prefix cache ON:";  probe --out /tr/ttft-probe-on.jsonl --tag tpc-on
+  launch "SGLANG_TOKENIZE_PREFIX_CACHE=1";   log "probe, tokenization prefix cache ON (+ torch profile of 40 steps on engine 0 while it runs):"
+  ( sleep 90; curl -s -m 30 -X POST http://127.0.0.1:19191/start_profile -H "Content-Type: application/json" \
+      -d '{"output_dir":"/logs/prof-idle-probe","num_steps":40,"activities":["CPU","GPU"]}' > /dev/null ) &
+  probe --out /tr/ttft-probe-on.jsonl --tag tpc-on
+  sleep 30; log "profile summary (engine 0, 40 scheduler steps during the one-at-a-time probe):"
+  sudo -n python3 $K/prof_summary.py /data01/minimax31/logs/prof-idle-probe 2>&1 | head -40
   echo "===== CHAIN31 DONE"; } >> $L 2>&1
