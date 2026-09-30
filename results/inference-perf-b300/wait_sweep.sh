@@ -1,7 +1,7 @@
 #!/bin/bash
 # Block until one more sweep point has a result.json, then refresh the page data.
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH; cd "$(dirname "$0")"
-cnt(){ ssh -o BatchMode=yes -o ConnectTimeout=10 0008 'ls /data01/minimax31/inference-perf/results/sweep-b300-*/think-off/c*/result.json 2>/dev/null | wc -l' 2>/dev/null; }
+cnt(){ ssh -o BatchMode=yes -o ConnectTimeout=10 0008 'ls /data01/minimax31/inference-perf/results/sweep-b300-*/think-*/c*/result.json 2>/dev/null | wc -l' 2>/dev/null; }
 n0=$(cnt); n0=${n0:-0}
 while :; do n=$(cnt); [ -n "$n" ] && [ "$n" -gt "$n0" ] && break; ssh -o BatchMode=yes 0008 'grep -q "sweep ABORT" /data01/minimax31/inference-perf/results/sweep.log 2>/dev/null' && break; sleep 60; done
 bash refresh.sh >/dev/null
