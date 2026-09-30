@@ -202,7 +202,21 @@
    "model": "m31",
    "lanes": 64,
    "mode": "off",
-   "status": "running"
+   "status": "done",
+   "thinking": "off",
+   "duration_s": 1830.0141679840162,
+   "requests": 7305,
+   "failed": 2,
+   "request_s": 3.991772374116288,
+   "total_tok_s": 347558.5414198647,
+   "output_tok_s": 2091.7149533420625,
+   "ttft_p50_s": 1.3160473129246384,
+   "ttft_p90_s": 4.653485791804272,
+   "steady_ttft_p50_s": 1.3405998380039819,
+   "steady_ttft_p90_s": 4.741767442866695,
+   "tpot_p50_ms": 19.03329355662295,
+   "cache_hit": 0.9164759227492363,
+   "valid": false
   },
   {
    "model": "m31",
