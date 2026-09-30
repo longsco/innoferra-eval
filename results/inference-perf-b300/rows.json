@@ -342,13 +342,27 @@
    "model": "m3",
    "lanes": 32,
    "mode": "on",
-   "status": "queued"
+   "status": "done",
+   "thinking": "on",
+   "duration_s": 1830.0065301079303,
+   "requests": 1295,
+   "failed": 2,
+   "request_s": 0.7076477480785948,
+   "total_tok_s": 69761.55921482046,
+   "output_tok_s": 481.0092125453151,
+   "ttft_p50_s": 0.7940924329450354,
+   "ttft_p90_s": 3.7966247758129597,
+   "steady_ttft_p50_s": 0.7081492334837094,
+   "steady_ttft_p90_s": 3.3088237189804204,
+   "tpot_p50_ms": 7.171702873600213,
+   "cache_hit": 0.8953681474984165,
+   "valid": true
   },
   {
    "model": "m3",
    "lanes": 64,
    "mode": "on",
-   "status": "queued"
+   "status": "running"
   },
   {
    "model": "m3",
