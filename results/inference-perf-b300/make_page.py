@@ -142,7 +142,7 @@ code {{ font-family: var(--mono); font-size: .92em; }}
     <thead><tr><th>Status</th><th>Model</th><th>Thinking</th><th>Lanes</th><th>Duration</th><th>Requests</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
     <tbody>{sweep_rows()}</tbody>
   </table></div>
-  <div class="foot"><span>Total tok/s = (prompt + output tokens) ÷ run span for the 8-GPU node (the repo's AgentX "total" throughput; divide by 8 for per GPU). Steady TTFT counts requests sent while every lane was busy, after the first 600 s.</span></div>
+  <div class="foot"><span>Total tok/s = (prompt + output tokens) ÷ run span for the 8-GPU node (the repo's AgentX "total" throughput; divide by 8 for per GPU). Steady TTFT counts requests sent while every lane was busy, after the first 600 s.</span><span>Valid = the repo's <code>valid_for_performance_comparison</code>: it turns false when the client's trace reader falls behind (queue underruns). The replay client is a single Python process; from 64 lanes up it runs at about one full CPU core and fills its 1 GiB prefetch budget, so higher-lane points can be flagged and may slightly under-drive the server (M3.1 at 64 lanes: 4 underruns, 7.1 s total wait over 30 min).</span></div>
 </section>
 <div class="cols">
 <section>
