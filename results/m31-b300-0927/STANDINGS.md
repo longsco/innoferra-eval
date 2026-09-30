@@ -70,6 +70,7 @@
 - TTFT definition check: frontend first-token histogram (20:19–20:24 UTC) matches the hub's header_time distribution (p50 ≈ 0.3 s): hub TTFT is real first-token time
 - S3 coverage: no parts 09-29 10:00 → 20:00 PDT, so yesterday's ~1.5 B peak cannot be checked from S3 (Kibana needs the fleet VPN)
 - production engine config (serve.yaml, read-only): MXFP8 dense + NVFP4 routed experts + sparse Q8KV4; TP2/EP2, DP attention off, 4 workers per node; DFlash2 block 4 (fa4 draft attention, unquantized draft); chunk 16384; max running 128, queued 256; mem 0.8; HiCache 3.0 write-through, kernel IO, page_first; tc_piecewise prefill graphs; 1 tokenizer worker; ~18 in-house kernel toggles; SLO admission (cold requests rejected under prefill pressure, 429s 0.5–1%)
+- production engine anatomy (b300-18, 4 workers, 2 min, read-only): forward occupancy 87% of rank time; per request: prefill_forward mean 0.19 s, queue mean 68 ms, request processing 5 ms; decode ≈ 25 verify steps/s per worker (≈ 40 ms per step at ~28 running, accept ≈ 2.9); HiCache load-back 0.10 s per load (≈ 100k tokens). Ours at 0.5×: prefill_forward median ≤ 0.20 s, but ~40 ms per step at only 1–3 running
 - nodes / GPUs behind the hub (probed Sep 29 01:05 PDT): <b>24 / 192</b> registered (96 workers × 2 GPUs); 92 workers (23 nodes' worth) served requests within 5 min; 18 on Sep 27 per the team
 - hub TPM, 24 h peak 10 minutes (09:10–09:20 PDT): <b>650 M</b> (peak single minute 669 M at 09:37 PDT)
 - requests at the peak: 84,155 in 10 min = 140 req/s

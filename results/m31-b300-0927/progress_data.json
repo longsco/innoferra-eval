@@ -426,6 +426,10 @@
     "MXFP8 dense + NVFP4 routed experts + sparse Q8KV4; TP2/EP2, DP attention off, 4 workers per node; DFlash2 block 4 (fa4 draft attention, unquantized draft); chunk 16384; max running 128, queued 256; mem 0.8; HiCache 3.0 write-through, kernel IO, page_first; tc_piecewise prefill graphs; 1 tokenizer worker; ~18 in-house kernel toggles; SLO admission (cold requests rejected under prefill pressure, 429s 0.5–1%)"
    ],
    [
+    "production engine anatomy (b300-18, 4 workers, 2 min, read-only)",
+    "forward occupancy 87% of rank time; per request: prefill_forward mean 0.19 s, queue mean 68 ms, request processing 5 ms; decode ≈ 25 verify steps/s per worker (≈ 40 ms per step at ~28 running, accept ≈ 2.9); HiCache load-back 0.10 s per load (≈ 100k tokens). Ours at 0.5×: prefill_forward median ≤ 0.20 s, but ~40 ms per step at only 1–3 running"
+   ],
+   [
     "nodes / GPUs behind the hub (probed Sep 29 01:05 PDT)",
     "<b>24 / 192</b> registered (96 workers × 2 GPUs); 92 workers (23 nodes' worth) served requests within 5 min; 18 on Sep 27 per the team"
    ],
@@ -475,6 +479,11 @@
   ]
  },
  "timeline": [
+  [
+   "14:42 (09-30)",
+   "Tokenization cache + gateway stream coalescing off: 12/15 minutes, TTFT p50 0.76 s, p99 14.4 s (cache alone 13/15, 0.74 / 10.6). Coalescing costs nothing measurable; keep it. chain30 done; chain31 (idle TTFT anatomy, cache off vs on, 40-step profile) started.",
+   "neutral"
+  ],
   [
    "13:54 (09-30)",
    "Tokenization prefix cache (engine change: reuse the ids of the conversation prefix, tokenize only the new tail): 13/15 minutes pass at 0.5× (baseline 10–11, fair chunk 12). TTFT p50 0.74 s (0.87–0.90), p90 1.91 s (2.4–2.5), p99 10.6 s (12.7); decode 85, hit 94.3%. The two failing minutes fail on p99 only.",
@@ -985,18 +994,18 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "Running now: chain30 tokenization cache at 0.5×, then chain31 TTFT anatomy + profile",
+  "title": "Running now: chain31 TTFT anatomy + profile, then chain32 numerics A/B",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
     "chain30: tokenization prefix cache",
-    "verify 0 mismatches; <b>tpc 13/15, TTFT p50 0.74 s</b>; tpc + no coalescing running"
+    "done: verify 0 mismatches; <b>tpc 13/15, TTFT p50 0.74 s</b> (kept); + coalescing off 12/15 (neutral)"
    ],
    [
-    "chain31: idle TTFT probe + 40-step profile",
-    "queued after chain30"
+    "chain31: idle TTFT probe (cache off / on) + 40-step profile",
+    "running since 14:42 PDT"
    ],
    [
     "chain32: production-style numerics A/B (TC0 + fp8 KV, standard sparse path) vs frontier",
@@ -2844,6 +2853,15 @@
     "94.3%",
     "3.30",
     "<b>keep</b> — median −0.15 s, tail −17% (0 mismatches in verify pass)"
+   ],
+   [
+    "Tokenization cache + coalescing off",
+    "12",
+    "0.76 / 2.32 / 14.4",
+    "81",
+    "94.2%",
+    "3.36",
+    "neutral — keep coalescing on"
    ]
   ],
   "note": "Each row: fresh engines, cold cache, recent-session warm-up, 2,656 real M3.1 requests (half a node's share of the Sep 28 peak, 09:10–09:25 PDT) at their logged times with causal sessions; SLA per minute TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, 0 errors. At this load the engines are mostly idle (running per rank p50 1–3); minutes fail on the latency floor, not capacity — so settings barely move it and the work shifts to the engine (tokenization, scheduler/step overhead, prefill kernels)."
