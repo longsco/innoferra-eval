@@ -30,6 +30,7 @@ for model in ("m31", "m3"):
     SW = f"{IP}/results/sweep-b300-{model}"
     for mode in ("off", "on"):
       for c in (32, 64, 128, 192, 256):
+        if mode == "off" and (model == "m3" or c > 128): continue   # user 09-30: thinking-off kept only where already measured
         d = f"{SW}/think-{mode}/c{c}"; r = {"model": model, "lanes": c, "mode": mode, "status": "queued"}
         if os.path.exists(f"{d}/result.json"):
             r.update(summarize(mode, c, json.load(open(f"{d}/result.json")), 600.0)); r["status"] = "done"

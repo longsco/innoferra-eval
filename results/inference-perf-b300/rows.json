@@ -240,18 +240,6 @@
   },
   {
    "model": "m31",
-   "lanes": 192,
-   "mode": "off",
-   "status": "queued"
-  },
-  {
-   "model": "m31",
-   "lanes": 256,
-   "mode": "off",
-   "status": "queued"
-  },
-  {
-   "model": "m31",
    "lanes": 32,
    "mode": "on",
    "status": "queued"
@@ -278,36 +266,6 @@
    "model": "m31",
    "lanes": 256,
    "mode": "on",
-   "status": "queued"
-  },
-  {
-   "model": "m3",
-   "lanes": 32,
-   "mode": "off",
-   "status": "queued"
-  },
-  {
-   "model": "m3",
-   "lanes": 64,
-   "mode": "off",
-   "status": "queued"
-  },
-  {
-   "model": "m3",
-   "lanes": 128,
-   "mode": "off",
-   "status": "queued"
-  },
-  {
-   "model": "m3",
-   "lanes": 192,
-   "mode": "off",
-   "status": "queued"
-  },
-  {
-   "model": "m3",
-   "lanes": 256,
-   "mode": "off",
    "status": "queued"
   },
   {

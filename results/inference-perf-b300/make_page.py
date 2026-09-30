@@ -137,7 +137,7 @@ code {{ font-family: var(--mono); font-size: .92em; }}
 
 <section>
   <h2>Concurrency sweep</h2>
-  <p class="muted" style="margin-bottom:10px">The repo's <code>scripts/concurrency_sweep.py</code> with its default points (lanes 32, 64, 128, 192, 256; thinking time off and on): lanes recycle trajectories for 30 minutes per point, <code>--max-in-flight</code> = max(128, 4 × lanes); columns are the script's <code>summary.md</code>. Each point starts from a flushed cache; same B300 setups as above.</p>
+  <p class="muted" style="margin-bottom:10px">The repo's <code>scripts/concurrency_sweep.py</code>: thinking time on at 32, 64, 128, 192 and 256 lanes for both models, plus the thinking-off points already measured for M3.1 (32, 64, 128); lanes recycle trajectories for 30 minutes per point, <code>--max-in-flight</code> = max(128, 4 × lanes); columns are the script's <code>summary.md</code>. Each point starts from a flushed cache; same B300 setups as above.</p>
   <div class="tablebox"><table>
     <thead><tr><th>Status</th><th>Model</th><th>Thinking</th><th>Lanes</th><th>Duration</th><th>Requests</th><th>Req/s</th><th>Total tok/s</th><th>Output tok/s</th><th>TTFT p50 / p90 (s)</th><th>Steady TTFT p50 / p90 (s)</th><th>TPOT p50</th><th>Cache hit</th><th>Failed</th><th>Valid</th></tr></thead>
     <tbody>{sweep_rows()}</tbody>
