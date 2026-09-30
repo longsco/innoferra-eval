@@ -447,6 +447,11 @@
  },
  "timeline": [
   [
+   "12:26 (09-30)",
+   "Lever 8 tokenizer workers: 10/15 minutes at 0.5×, same median TTFT (0.90 s) but a lighter tail: p90 2.15 s (baseline 2.4–2.5), p99 9.6 s (12.7). Tokenization contributes to the tail; the prefix cache targets exactly that. chain29 done (only fair chunk and more tokenizer parallelism move anything); chain30 started with the cache's verify pass.",
+   "tok8: tail −25%, median unchanged"
+  ],
+  [
    "11:44 (09-30)",
    "Levers at 0.5× so far (minutes passing of 15): base 10–11, fair chunk 0.5 12, chunk 16k 6, coalescing off 10, mem 0.72 8, HiCache 4 8, fa4 draft attention (production's) 9 (decode 85.6 vs 83–84, accept 3.30 unchanged). Only fair chunk helps; everything else is within noise or worse. Fleet read today (S3 logs): production saturated at 3.3–3.8 M/GPU (peak minute 4.7) with TTFT p50 7–9 s and decode ~40 tok/s. Next: 8 tokenizer workers, then the tokenization prefix cache (chain30) and the idle latency probe + step profile (chain31).",
    "config levers exhausted; engine work next"
@@ -943,15 +948,15 @@
   "steps": [
    [
     "chain29 levers at 0.5×",
-    "done: base 11, fair2 12, c16 6, nocoal 10, mem72 8, hc4 8, dfa4 9 (of 15 min); tok8 running"
+    "done: base 11, fair2 12, c16 6, nocoal 10, mem72 8, hc4 8, dfa4 9, tok8 10 (p99 9.6 s) of 15 min"
    ],
    [
-    "chain29 levers at 0.5×",
-    "running: fair2 → c16 → nocoal → mem72 → hc4 → dfa4 → tok8 (≈ 40 min each)"
+    "chain30: tokenization prefix cache (verify → speed → + no coalescing)",
+    "running since 12:26 PDT"
    ],
    [
-    "chain30: tokenization prefix cache at 0.5× (verify, tpc, tpc + no coalescing)",
-    "queued after chain29"
+    "chain31: idle TTFT probe + 40-step profile",
+    "queued after chain30"
    ]
   ]
  },
