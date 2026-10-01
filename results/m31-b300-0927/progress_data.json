@@ -1114,6 +1114,14 @@
  },
  "queued": [
   {
+   "title": "Faster KV4 prefill kernels (sparse attention + indexer = 51% of prefill)",
+   "detail": "Step 1 (cheap): autotune the fork's Triton kernels for B300 — _q8kv4_index_score (fixed num_warps 4, 3 stages, 8 blocks per program; ~14% of FP8 peak) and _q8kv4_sparse_partial/combine (num_warps 4) — with a microbenchmark on recorded prefill shapes, verified bitwise/allclose against the current kernels. Step 2 (larger): a TP-sharded or split-query prefill path so one giant prompt uses both GPUs of an engine, as production's kv4_index_tpshard does.",
+   "why": "Production's prefill per request is ~2–3× ours; every second of prefill on a rank pauses decode on both ranks of that engine, so prefill speed drives TTFT tails and decode speed together.",
+   "script": "to write (after the lever queue)",
+   "commit": "",
+   "status": "planned"
+  },
+  {
    "title": "Dynamo retest with per-DP-rank KV events",
    "detail": "Dynamo 1.5.0 routes by (worker, DP rank) and passes routed_dp_rank; our fork honours it. Check that each worker's KV event publisher covers both DP ranks' zmq endpoints (SGLang publishes per rank), then rerun v3 0.5× through Dynamo with strong affinity. Note: production runs DP attention off, which our fork refuses (attention must be TP1), so a Dynamo match to production needs per-rank routing.",
    "why": "Dynamo runs balanced (all 8 GPUs busy) but hit only 65–71% vs our gateway's 94%; if the cause is half-visible KV events, the production stack becomes usable on our layout.",
