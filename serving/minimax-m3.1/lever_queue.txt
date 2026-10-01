@@ -7,3 +7,5 @@ v3_lp_cap_blk4_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 DSPARK_BL
 v3_lp_cap_c16_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 CHUNK=16384
 v3_lp_cap_lpm_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 "XARGS=$HCX --schedule-policy lpm"
 v3_lp_cap_mr128_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 MAXREQ=128
+# fair share retry with the add_chunked_req OOM guard (patch_chunk_oom_guard.py, 06:30 PDT), on top of capacity
+v3_lp_cap_f2_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 "EXTRA_ENV=${BB/SGLANG_CHUNKED_REQ_SHARE=1.0/SGLANG_CHUNKED_REQ_SHARE=0.5}"
