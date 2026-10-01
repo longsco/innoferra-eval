@@ -1054,26 +1054,38 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "Running now: chain37 real traffic v3 → chain38 load-aware pinning (real + simulation)",
+  "title": "GPU queue (kept full, idle guard on): gap_bench → chain37 → chain38 → chain39",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain36: simulation round",
-    "done: synthetic c128 6,368 tok/s; ladder 2.57 M per GPU (TTFT p50 3.9 s); agentic c16 healthy, c64 decode collapse"
+    "gap_bench (21:33 PDT): simulation on idle GPUs while the v3 trace builds",
+    "running: agentic-quick with DP-rank pinning, then a valid ladder (300 s drain); chain37 held until done"
    ],
    [
-    "chain37: real-traffic round (protocol v3, Sep 30 13:10–13:25 PDT)",
-    "running since 21:28 PDT: building the trace (48 half-node buckets) → 0.5× → 1.0×"
+    "chain37: real traffic v3 (Sep 30 13:10–13:25 PDT) on the frontier",
+    "trace building (224 GB, 48 half-node buckets) → 0.5× → 1.0×"
    ],
    [
-    "chain38: load-aware + DP-rank pinning on v3 + simulation ladder + agentic",
-    "armed"
+    "chain38: load-aware + DP-rank pinning",
+    "v3 1.0× and 0.5× → simulation ladder → agentic-quick"
+   ],
+   [
+    "chain39: quality gate + numerics + 1.5×",
+    "GSM8K on the frontier → production-style numerics + load-aware pinning at v3 1.0× (+ GSM8K) and 0.5× → frontier + load-aware pinning at v3 1.5×"
    ]
   ]
  },
  "queued": [
+  {
+   "title": "Next after chain39 (decided from chain37–39 results)",
+   "detail": "If load-aware pinning fixes the 1.0× imbalance: climb v3 to 2.0× and 2.4× (≈ 7 M per GPU on the hub basis) with the best config, and revisit chunk size / fair share / the DP-attention prefill delayer at high load. If numerics pass the GSM8K gate and win at 1.0×, adopt them as the frontier. Measurement hardening from the benchmark review (fail-closed scoring, uncached ratio, served-in-window TPM) before the 2× runs.",
+   "why": "Keep the GPUs busy with the experiments that move the north star; every step is chained on the node with an idle guard.",
+   "script": "chain40+ (to write from results)",
+   "commit": "",
+   "status": "planned"
+  },
   {
    "title": "Simulation round: StandardKernel inference-benchmark on the current frontier (chain36)",
    "detail": "Teammates' benchmark (private repo StandardKernel/inference-benchmark, cloned with the longsco key). Drives SGLang via streaming /v1/completions with token-ID prompts, return_token_ids, ignore_eos, fixed output lengths, per-session cache_salt (our fork maps it to the radix key) and /flush_cache between phases; exact token accounting, event-loop-lag and GC controls on the client. Gateway patch (patch_shim_rawcomp.py): route sessions by cache_salt, raw /v1/completions passthrough, fan-out /flush_cache. First runs on the frontier: preflight + synthetic-quick, then the ladder preset shaped like production (64 sessions, 20k–260k starting context, 1,500 output, 97% cache hit), then agentic-quick.",
