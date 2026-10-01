@@ -1876,7 +1876,7 @@
  "metrics": [
   [
    "Primary (report)",
-   "SLA capacity on the production-faithful replay (v2): the highest load k (merged session buckets of real M3.1 traffic) whose every minute meets TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, errors < 0.1%, reported as TPM per GPU next to production's 24 h peak. Until v2 lands, the interim number is the v1 staircase (strict rule p50 ≤ 1.6 s, p99 ≤ 22 s)."
+   "SLA capacity on the production-faithful replay: the highest load (merged session buckets of real M3.1 traffic) whose every minute meets TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, errors < 0.1%, reported as TPM per GPU. Current test: <b>v3</b> (Sep 30 13:10–13:25 PDT, today's stable high traffic). Production reference: engine counters 6.3–6.6 M per GPU (hub logs show ≈ 4.2–4.35 M; they miss ≈ 1/3 of the load, so our 1.0× ≈ two thirds of a real production node; 7 M ≈ 2.4× on the hub basis). Secondary cross-check: the StandardKernel simulation (no SLA; production-shaped ladder ≈ 3.3 M per GPU saturated)."
   ],
   [
    "Secondary",
@@ -1898,7 +1898,7 @@
    "Static frame (appendix)",
    "Closed-loop replay (secondary)",
    "Staircase replay v1 (interim, regression reference)",
-   "<b>Production-faithful replay v2 (primary)</b>"
+   "<b>Production-faithful replay v2 → v3 (primary)</b>"
   ],
   "rows": [
    [
@@ -1906,7 +1906,7 @@
     "bench_serving: one 80k shared prefix + 128 random tokens, exactly 600 output tokens",
     "real logged requests (09-27, M3-era), natural outputs",
     "same 09-27 M3-era requests, one node's share",
-    "<b>real M3.1 production requests</b> (09-28 hub logs), one node's share = 1/24 of sessions, whole sessions"
+    "<b>real M3.1 production requests</b> (v2: Sep 28 hub logs; <b>v3: Sep 30 13:10–13:25 PDT</b>), one node's share = 2 of 48 half-node session buckets, whole sessions"
    ],
    [
     "How load is applied",
@@ -1955,14 +1955,14 @@
     "spec decode, cache routing, prefill cost",
     "arrival bursts",
     "cold sessions (21% hit), answer divergence, time compression distorts load",
-    "remaining: images replayed as synthetic images of similar size (logs redact bytes)"
+    "images replayed as 1×1 placeholders (logs redact bytes); later turns re-prefill logged answers (no reuse of our own output KV); hub logs miss ≈ 1/3 of production's load; our gateway's connection-burst limit"
    ],
    [
     "Our numbers today (per GPU)",
     "7.82 M at c256 (8 tokenizer workers)",
     "1.74 M at c128 (1.91 with prefill-hold off)",
     "0.88 M strict (30-min warm-up); 1.14 M after a 2-hour warm-up, with or without HiCache",
-    "building: 09-28 logs downloading (194 GB)"
+    "v2 0.5× (1.36 M): 13/15 minutes (tokenization cache); v3 0.5× (2.23 M): 2/15 (routing imbalance); 1.0× fails on both (routing); fixes under test"
    ],
    [
     "Read it as",
