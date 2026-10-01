@@ -480,6 +480,11 @@
  },
  "timeline": [
   [
+   "20:25 (09-30)",
+   "Found the 1.0× collapse: gateway session pinning, not engine capacity. Live sampler during the 1.0× run: in flight per slot 43/43/37/12 on engines 1 and 3 vs 0/0/1/0 on engines 0 and 2; engine 1 DP1 had 33 queued and 1.58 M pending cold prefill tokens while engines 0 and 2 idled; client CPU 15%, gateway 7% (not client-bound). Sessions are placed once by recent token arrivals and never move. Lever written: load-aware pinning (new sessions to the fewest in flight; move a session when its slot is > 16 in flight above the least-loaded) — chain38 tests it on v3 real traffic and the simulation ladder after the baseline rounds.",
+   "1.0× bottleneck = routing imbalance"
+  ],
+  [
    "19:50 (09-30)",
    "Frontier at 1.0× a node's share (v2): 0/15 minutes, 2.95 M/GPU offered, TTFT p50 1.30 s, p90 61 s, p99 380 s, decode 55 tok/s (below the 60 floor). A mid-run sample showed empty engine queues and 25–45% KV use, so the 1.0× run of production-style numerics carries a live sampler of engine queues, gateway in-flight and client CPU. Adopted the teammates' StandardKernel inference-benchmark as a second benchmark (gateway patch for its token-ID /v1/completions contract; chain36 armed).",
    "1.0×: 0/15; decode below floor"
@@ -1036,15 +1041,19 @@
   "steps": [
    [
     "chain35: 1.0× a node's share",
-    "frontier 0/15 (TTFT p90 61 s, decode 55); production-style numerics running + live queue sampler"
+    "frontier 0/15; production-style numerics running — live sampler shows routing imbalance (2 engines idle, 2 overloaded)"
    ],
    [
     "chain36: simulation round (StandardKernel harness)",
-    "armed: synthetic-quick → production-shaped ladder → agentic-quick"
+    "armed"
    ],
    [
     "chain37: real-traffic round (protocol v3, Sep 30 13:10–13:25 PDT)",
-    "armed: logs downloading (2,163 parts) → build → 0.5× and 1.0×"
+    "armed (logs downloading)"
+   ],
+   [
+    "chain38: load-aware session pinning on v3 + simulation ladder",
+    "armed"
    ]
   ]
  },
@@ -1064,6 +1073,14 @@
    "script": "serving/minimax-m3.1/chain37.sh (dl_v3.sh)",
    "commit": "see git log",
    "status": "armed: after chain36 and the download"
+  },
+  {
+   "title": "Load-aware session pinning (chain38)",
+   "detail": "patch_shim_loadpin.py: ROUTE_PIN_BY_INFLIGHT=1 places new sessions on the slot with the fewest requests in flight; ROUTE_REPIN_SLACK=16 moves a pinned session to the least-loaded slot when its own slot is more than 16 in flight above it (one cold prefill instead of queueing behind a backlog). Production's router weighs load on every request and its engines reject cold work under prefill pressure.",
+   "why": "At 1.0× two engines idled while two queued 1.58 M cold prefill tokens; this is the first lever aimed at the 1.0× collapse.",
+   "script": "serving/minimax-m3.1/chain38.sh, patch_shim_loadpin.py",
+   "commit": "see git log",
+   "status": "armed: after chain37"
   },
   {
    "title": "Production's DSpark settings under protocol v2 (chain24)",
