@@ -3159,6 +3159,12 @@
  },
  "reflections": [
   {
+   "at": "04:35 (10-01)",
+   "result": "Load-aware pinning at v3 0.5× (2.23 M per GPU): 7/15 minutes pass (baseline routing 2/15); TTFT 0.89 / 4.23 / 18.3 s vs production 0.34 / 2.96 / 10.4; decode 74 tok/s (production 65).",
+   "insight": "Median and decode are at or above production; the misses are tail spikes. Engine logs show the mechanism: a single 270–530k-token cold prompt is prefilled in 16k chunks for 20–35 s and every other request on that DP rank waits (the other rank of the engine slows too, because both step together in the MoE). Three of the five spike sources were requests production itself rejected with HTTP 429 (its admission sheds big cold prompts under pressure); our replay was serving them. Two failing minutes were only the six media-tag errors, now fixed.",
+   "next": "Protocol v3.1 for every queued run: requests production answered with 429 are not sent (4 per 15 min at 0.75×). Added a fair-chunk-share lever (waiting requests get half of each prefill step while a giant chunks) and a 0.5× v3.1 calibration run to the queue."
+  },
+  {
    "at": "03:55 (10-01)",
    "result": "Root cause of the recurring 6 HTTP 500s (and one HTTP 400) on real traffic v3: the engine's multimodal loader treats literal '<image>' / '<video>' in user text as media slots.",
    "insight": "One v3 session carries 6 literal '<image>' strings plus real images → 'More IMAGE tokens found than data provided' → 500; another has HTML '<video>' tags → 400. Production answers both with 200. M3.1's template only uses its own ']<]image[>[' token and the generic tags are not special tokens, so they are plain text. At ~210 requests per minute one error already breaks the 0.1% error SLA, so this bug alone failed 1–3 of the 15 minutes in every v3 run regardless of speed.",
@@ -3275,6 +3281,16 @@
     "<b>70.8%</b> (96.8%)",
     "0",
     "affinity barely recovers: each worker has 2 DP ranks with separate caches and Dynamo's pick does not pin the rank (our gateway does, 94.4%); production runs DP attention off"
+   ],
+   [
+    "Frontier + load-aware pinning (our gateway)",
+    "0.5× = 2.23 M (prod 2.23 M same requests)",
+    "<b>7</b>",
+    "0.89 / 4.23 / 18.3",
+    "<b>74</b>",
+    "94.6% (96.7%)",
+    "6 (0.19%): the literal-&lt;image&gt; HTTP 500s (fixed after this run)",
+    "routing fixed (baseline 2/15); decode above production (74 vs 65 tok/s); 6 of 8 failing minutes are p99 spikes where one 270–530k-token cold prompt holds a DP rank for 20–35 s; 3 of those giants were requests production rejected with 429 (not sent from protocol v3.1 on); 2 minutes fail only on the 6 media-tag errors"
    ],
    [
     "Frontier + load-aware pinning (our gateway)",
