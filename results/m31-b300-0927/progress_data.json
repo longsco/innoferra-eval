@@ -3201,6 +3201,12 @@
  },
  "reflections": [
   {
+   "at": "07:58 (10-01)",
+   "result": "DSpark block 4 on top of capacity at 0.75×: 0/15; decode 46 tok/s (capacity alone 55); TTFT 0.97 / 4.48 / 16.2 s.",
+   "insight": "Shorter verify blocks lose more acceptance (3.66 → 3.06 tokens per step) than they save per step, so per-stream decode drops 16%. Our DSpark draft was trained for block 7; production's block 4 belongs to a different draft (DFlash2). Decode remains the binding axis at 0.75×, so block 7 stays.",
+   "next": "Queue: 16k chunk, longest-prefix-first, 128 running, fair share with the OOM guard (all on top of capacity). MSA dev-image kernel test running in this pause."
+  },
+  {
    "at": "07:05 (10-01)",
    "result": "0.5× under protocol v3.1 (2.23 M per GPU): 9/15 minutes, TTFT 0.89 / 3.69 / 14.3 s, decode 77 tok/s (production 65.5), 0 errors.",
    "insight": "Median TTFT and decode beat the SLA in every minute but one; the misses are five p99 spikes in minutes that contain 300k+-token cold prompts. Those prompts need ≥ 15 s of prefill on one GPU at ~20k tok/s (production ~10 s for the same ones) and stall their whole engine meanwhile. The 0.5× knee is set by single-request prefill speed, the same bottleneck the 0.75× runs point to.",
@@ -3419,6 +3425,16 @@
     "95.0% (96.8%)",
     "0",
     "calibration of the protocol change (v3: 7/15 with the production-shed giants replayed and 6 media-tag errors). Failing minutes: 5 × p99 15.2–24 s (300k+ cold prompts take ≥ 15 s at ~20k tok/s and stall their rank), 1 × p50 1.08 s"
+   ],
+   [
+    "capacity + DSpark block 4 (draft default 7) · v3.1",
+    "0.75× = 3.34 M",
+    "<b>0</b>",
+    "0.97 / 4.48 / 16.2",
+    "<b>46</b>",
+    "95.2% (97.0%)",
+    "0",
+    "rejected: acceptance 3.66 → 3.06 tokens per verify (−16%), verify steps +27%, decode 55 → 46 tok/s; cheaper verify steps do not compensate at this load (production's block 4 is with its own DFlash2 draft)"
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple. Load multiples: production traffic is split by session into 48 half-node buckets; 1.0× = 2 buckets ≈ one node's share of the hub logs, 0.5× = 1 bucket, 2× = 4 buckets — load is raised by adding users, not by speeding up time. On v3, 0.5× = 2.23 M, 1.0× = 4.20 M per GPU offered; matching a real production node (engine counters 6.3–6.6 M) ≈ 1.5×; 7 M ≈ 1.7×."
