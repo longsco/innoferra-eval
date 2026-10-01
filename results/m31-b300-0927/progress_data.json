@@ -3161,6 +3161,16 @@
     "–",
     "0.90",
     "valid; hit 98.1%; +28% vs the run without rank pinning; engines saturated ≈ our ceiling on production-shaped sessions"
+   ],
+   [
+    "Frontier + load-aware pinning · ladder (64 sessions, 20k–260k start, 1,500 out, 97% cache)",
+    "64",
+    "3,429 · <b>26.7 M TPM/node = 3.34 M per GPU</b>",
+    "4.71 / 20.2 (p95 16.6)",
+    "<b>99</b>",
+    "23.6",
+    "0.99",
+    "valid, 0 errors, cached 98.1%; +28% output vs the earlier frontier ladder (2,684, invalid run); client lag > 100 ms noted by the harness"
    ]
   ],
   "note": "The teammates' harness (private repo StandardKernel/inference-benchmark, commit 8ae8f6d): streaming /v1/completions with token-ID prompts, exact token accounting against server usage, per-session cache_salt, fan-out /flush_cache between phases, GC freeze and an event-loop-lag check on the client. Marked as simulation: synthetic or recorded agent trajectories, not our production sessions. Real-traffic results are in the protocol v2/v3 tables. Ladder read: our production-shaped simulation lands at ≈ 2.6 M per GPU with TTFT p50 3.9 s, the same place as real traffic at 1.0× (2.9 M offered, TTFT p90 61 s): two independent benchmarks agree on the gap to production (6.3–6.6 M at TTFT ≈ 0.25 s)."
