@@ -1029,29 +1029,41 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "Running now: chain35 (1.0×), then chain36 (second benchmark)",
+  "title": "Running now: chain35 (1.0×) → chain36 simulation → chain37 real traffic v3",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
     "chain35: 1.0× a node's share",
-    "frontier done: 0/15 (TTFT p90 61 s, decode 55); production-style numerics running + live queue sampler"
+    "frontier 0/15 (TTFT p90 61 s, decode 55); production-style numerics running + live queue sampler"
    ],
    [
-    "chain36: StandardKernel inference-benchmark on the frontier",
-    "armed: synthetic-quick → production-shaped ladder → agentic-quick, through the gateway"
+    "chain36: simulation round (StandardKernel harness)",
+    "armed: synthetic-quick → production-shaped ladder → agentic-quick"
+   ],
+   [
+    "chain37: real-traffic round (protocol v3, Sep 30 13:10–13:25 PDT)",
+    "armed: logs downloading (2,163 parts) → build → 0.5× and 1.0×"
    ]
   ]
  },
  "queued": [
   {
-   "title": "Second benchmark: StandardKernel inference-benchmark (synthetic, agentic, ladder presets)",
+   "title": "Simulation round: StandardKernel inference-benchmark on the current frontier (chain36)",
    "detail": "Teammates' benchmark (private repo StandardKernel/inference-benchmark, cloned with the longsco key). Drives SGLang via streaming /v1/completions with token-ID prompts, return_token_ids, ignore_eos, fixed output lengths, per-session cache_salt (our fork maps it to the radix key) and /flush_cache between phases; exact token accounting, event-loop-lag and GC controls on the client. Gateway patch (patch_shim_rawcomp.py): route sessions by cache_salt, raw /v1/completions passthrough, fan-out /flush_cache. First runs on the frontier: preflight + synthetic-quick, then the ladder preset shaped like production (64 sessions, 20k–260k starting context, 1,500 output, 97% cache hit), then agentic-quick.",
    "why": "An independent load generator with strict client-side checks cross-validates protocol v2 (our 1.0× TTFT tail with empty engine queues may be a client artifact) and gives a fast, reproducible lever-ranking test.",
    "script": "serving/minimax-m3.1/chain36.sh, patch_shim_rawcomp.py",
    "commit": "see git log",
    "status": "armed on 0008: chain36 starts after chain35 (≈ 20:35 PDT)"
+  },
+  {
+   "title": "Real-traffic round: protocol v3 from today's stable high traffic (chain37)",
+   "detail": "Production log volume is flat all day (42–54 GB/h); the busiest hour is Sep 30 13:00–14:00 PDT, where production measured in SLA (hub TTFT p50 0.31–0.33 s, 824–836 M hub TPM; engine counters 6.3–6.6 M per GPU). v3 = the v2 builder over 09:00–14:00 PDT (2,163 log parts, ~240 GB, downloading), measured window 13:10–13:25 PDT with the 4 hours before it for cache state. Frontier (tokenization cache) at 0.5× and 1.0× a node's share, plus production's own numbers for the same window.",
+   "why": "Sep 28's window predates today's traffic and the S3 undercount finding; the user asked for a fresh real-traffic section from current stable high traffic, tested alongside the simulation.",
+   "script": "serving/minimax-m3.1/chain37.sh (dl_v3.sh)",
+   "commit": "see git log",
+   "status": "armed: after chain36 and the download"
   },
   {
    "title": "Production's DSpark settings under protocol v2 (chain24)",
