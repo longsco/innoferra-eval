@@ -207,6 +207,12 @@ def v2_levers_panel():
     head = "".join(f"<th>{h}</th>" for h in t["columns"])
     body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f"<td>{x}</td>" for x in r[1:]) + "</tr>" for r in t["rows"])
     return f'<div class="panel"><h2>{t["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div><p class="note">{t["note"]}</p></div>'
+def v3_levers_panel():
+    t = data.get("v3_levers")
+    if not t: return ""
+    head = "".join(f"<th>{h}</th>" for h in t["columns"])
+    body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f"<td>{x}</td>" for x in r[1:]) + "</tr>" for r in t["rows"])
+    return f'<div class="panel"><h2>{t["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div><p class="note">{t["note"]}</p></div>'
 def reflect_panel():
     """Reflection & next (innoferra 09-30, user rule): after every result — what moved and why, what it rules out, the next lever."""
     rows = data.get("reflections") or []
@@ -289,7 +295,7 @@ JS = """
 
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
-overview = kpis() + reflect_panel() + v2_levers_panel() + sim_panel() + metrics_panel() + tests_panel() + protocol_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
+overview = kpis() + reflect_panel() + v3_levers_panel() + v2_levers_panel() + sim_panel() + metrics_panel() + tests_panel() + protocol_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
 results = charts() + realtraffic_rank_panel() + matrix_panel() + staircase() + routeb()
 setup = versus_panel() + kernel_gap_panel() + comparison() + winning() + launch_specs() + glossary() + tools()
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
