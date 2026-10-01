@@ -480,6 +480,11 @@
  },
  "timeline": [
   [
+   "21:20 (09-30)",
+   "Simulation ladder (production-shaped: 64 growing sessions, 20k–260k start, 1,500 out, 97% cache): 20.5 M TPM per node = 2.57 M per GPU, TTFT p50 3.9 s / p90 19.7 / p99 34, per-request speed p50 50 tok/s — agrees with real traffic at 1.0×. Phase marked invalid (reset failed while engines were still busy; harness client lag 0.86 s from serializing ~300k-token prompts on its event loop). Fixes: gateway fan-out flush waits up to 600 s (patch_shim_flushwait.py, gateway rebuilt in place), engines report cached tokens, ladder drain 300 s.",
+   "sim ≈ real: 2.6 M per GPU"
+  ],
+  [
    "20:43 (09-30)",
    "Production-style numerics at 1.0×: 0/15 minutes, TTFT p50 5.3 s, p90 224 s, p99 419 s; decode 76 tok/s (frontier 55); cache hit 90.7% vs frontier 94.0% (fp8 KV halves capacity) → 200 cold 32k+ prefills vs 90, landing on the two overloaded engines: 2,237 streaming requests over 10 s vs 1,100. Both 1.0× runs are dominated by the routing imbalance; retest after load-aware pinning. Simulation round started (benchmark installed in its own venv; gateway patched for its token-ID completions).",
    "1.0×: 0/15 (routing-bound)"
@@ -3021,14 +3026,14 @@
    [
     "Frontier · ladder (64 sessions, 20k–260k start, 1,500 out, 97% cache)",
     "64",
-    "running",
-    "",
-    "",
-    "",
-    "",
-    "production-shaped growing sessions, 10 min"
+    "2,684 · <b>20.5 M TPM/node = 2.57 M per GPU</b>",
+    "3.86 / 34.1 (p90 19.7)",
+    "50",
+    "30.1",
+    "<b>0.86</b>",
+    "marked invalid: reset after the phase failed (engines still busy; fixed: gateway flush now waits) and client lag > 100 ms; cached tokens not reported (engines now start with --enable-cache-report)"
    ]
   ],
-  "note": "The teammates' harness (private repo StandardKernel/inference-benchmark, commit 8ae8f6d): streaming /v1/completions with token-ID prompts, exact token accounting against server usage, per-session cache_salt, fan-out /flush_cache between phases, GC freeze and an event-loop-lag check on the client. Marked as simulation: synthetic or recorded agent trajectories, not our production sessions. Real-traffic results are in the protocol v2/v3 tables."
+  "note": "The teammates' harness (private repo StandardKernel/inference-benchmark, commit 8ae8f6d): streaming /v1/completions with token-ID prompts, exact token accounting against server usage, per-session cache_salt, fan-out /flush_cache between phases, GC freeze and an event-loop-lag check on the client. Marked as simulation: synthetic or recorded agent trajectories, not our production sessions. Real-traffic results are in the protocol v2/v3 tables. Ladder read: our production-shaped simulation lands at ≈ 2.6 M per GPU with TTFT p50 3.9 s, the same place as real traffic at 1.0× (2.9 M offered, TTFT p90 61 s): two independent benchmarks agree on the gap to production (6.3–6.6 M at TTFT ≈ 0.25 s)."
  }
 }
