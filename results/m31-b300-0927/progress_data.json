@@ -1069,26 +1069,34 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8). Code, configs, history and this page: github.com/longsco/alphabeta-m31 (private).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "GPU queue: chain37 → chainD (Dynamo) → chain38 → chain39",
+  "title": "GPU queue: chain37 0.5× → chainN numerics quick test → chainD Dynamo → chain38 → chain39 → chainB",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain37: real traffic v3 (Sep 30 13:10–13:25 PDT), our gateway (baseline)",
-    "running: 0.5× → 1.0×"
+    "chain37: real traffic v3 0.5×, frontier, our gateway (baseline)",
+    "finishing ≈ 23:05 PDT; its 1.0× lever is held and deferred to chainB"
    ],
    [
-    "chainD: Dynamo KV router with production's rule approximated + frontier engines",
-    "next: v3 1.0× (production: kv router, strict affinity > 50% overlap else load, 600k cold-prefill cap, migration 3)"
+    "chainN: production-style numerics quick test (user request)",
+    "GSM8K on the frontier (training numerics + 4-bit KV) → relaunch with training numerics off + FP8 KV → GSM8K → v3 0.5×"
+   ],
+   [
+    "chainD: Dynamo KV router (production rule approximated) + frontier engines",
+    "v3 1.0×"
    ],
    [
     "chain38: our gateway + load-aware + DP-rank pinning",
     "v3 1.0× and 0.5× → simulation ladder → agentic"
    ],
    [
-    "chain39: quality gate + numerics + 1.5×",
+    "chain39: quality gate + numerics with load-aware + 1.5×",
     "armed"
+   ],
+   [
+    "chainB: deferred v3 1.0× baseline",
+    "armed (last)"
    ]
   ]
  },
