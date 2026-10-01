@@ -198,6 +198,15 @@
    "change": "tokenisation",
    "verdict": "no clear change",
    "why": "13/15 again: misses are minutes 0 and 1 (median first token 1.02 and 1.11 s). Across four 1.79 M runs the misses sit in the first two minutes and are 0.02–0.19 s over the limit."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8par_05x",
+   "at": "2026-10-01 16:55",
+   "protocol": "v3.1",
+   "name": "+ parallel tokenisation (16 pieces, 16 threads per tokenizer process)",
+   "change": "tokenisation",
+   "verdict": "rejected",
+   "why": "Aborted after 8 of 15 minutes: slowest-1% first tokens 25–60 s per minute (6–15 s without) and decode 54–67 tok/s; the extra tokenizer threads most likely starve the GPU scheduler processes. Retesting with 4 pieces."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

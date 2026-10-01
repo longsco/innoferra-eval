@@ -1,13 +1,10 @@
-# read_utc 2026-10-01T23:25:31Z
+# read_utc 2026-10-01T23:56:56Z
 ## queue
-v3_lp_cap_lpm_tok8par_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PARALLEL_CHUNKS=16 RAYON_NUM_THREADS=16"
 ## done
-22:45:02 v3_lp_cap_lpm_tok1_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=1 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_ENTRIES=4096"
 22:48:16 v3_lp_cap_lpm_tok8_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm"
 23:24:32 v3_lp_cap_lpm_tok8par_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PARALLEL_CHUNKS=16 RAYON_NUM_THREADS=16"
+23:55:03 v3_lp_cap_lpm_tok8par4_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PARALLEL_CHUNKS=4"
 ## markers
-20:30:50 ===== lever v3_lp_cap_lpm_0375x done
-20:30:50 ===== lever v3_lp_cap_lpm_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-pol
 21:12:55 ===== lever v3_lp_cap_lpm_05x done
 21:12:55 ===== lever v3_lp_cap_lpm_tok8_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hicac
 22:00:40 ===== lever v3_lp_cap_lpm_tok8_05x done
@@ -18,3 +15,5 @@ v3_lp_cap_lpm_tok8par_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HC
 22:48:16 ===== lever v3_lp_cap_lpm_tok8_0375x: traces /tr/v3/b00.jsonl frac 0.75; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hi
 23:24:32 ===== lever v3_lp_cap_lpm_tok8_0375x done
 23:24:32 ===== lever v3_lp_cap_lpm_tok8par_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hi
+23:55:03 ===== lever v3_lp_cap_lpm_tok8par_05x done
+23:55:03 ===== lever v3_lp_cap_lpm_tok8par4_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --h
