@@ -8,9 +8,11 @@ Reports ms per call (MSA with and without its CSR build) and output agreement. R
     -v <cache>:/root/.cache <image> python3 /b/bench_msa_vs_triton.py [--ctx 32768,131072,524288] [--t 16384]"""
 import argparse, sys, traceback
 import torch, triton
-sys.path.insert(0, "/opt/0922-sglang/python"); sys.path.insert(0, "/msa/python/fmha_sm100/cute")
+import os
+sys.path.insert(0, "/opt/0922-sglang/python"); sys.path.insert(0, os.environ.get("MSA_ROOT", "/msa") + "/python/fmha_sm100/cute")
 from sglang.kernels.ops.attention.minimax_sparse.q8kv4_msa import q8kv4_sparse_attention
 ap = argparse.ArgumentParser(); ap.add_argument("--ctx", default="32768,131072,524288"); ap.add_argument("--t", type=int, default=16384)
+ap.add_argument("--pattern", default="local", choices=["local", "random"], help="local: block 0 + the 4 newest visible blocks + 11 from 32 candidates shared by each 64-token group (decoder-like reuse); random: 16 random visible blocks")
 ap.add_argument("--layout", default="tok_head", choices=["tok_head", "head_tok"], help="scale row order assumed for MSA (token*H+head or head*T+token)")
 a = ap.parse_args()
 dev = "cuda"; HQ, HKV, D, BLK, TOPK = 64, 4, 128, 128, 16
@@ -25,8 +27,18 @@ def make(T, L):
     vs = torch.randint(0x30, 0x3c, (slots, HKV, D // 16), dtype=torch.uint8, device=dev)
     pos = pre + torch.arange(T, device=dev)
     nvis = pos // BLK + 1
-    r = torch.rand(HKV, T, pages, device=dev)
-    r = torch.where(torch.arange(pages, device=dev)[None, None, :] < nvis[None, :, None], r, -1.0)
+    blk = torch.arange(pages, device=dev)
+    if a.pattern == "random":
+        r = torch.rand(HKV, T, pages, device=dev)
+    else:
+        G = 64; ng = (T + G - 1) // G
+        cand = torch.rand(HKV, ng, pages, device=dev).topk(min(32, pages), dim=-1).indices      # 32 candidates per 64-token group
+        r = torch.zeros(HKV, T, pages, device=dev)
+        r.scatter_(2, cand.repeat_interleave(G, dim=1)[:, :T], 1.0 + torch.rand(HKV, T, cand.shape[-1], device=dev))
+        r = r + 0.01 * torch.rand_like(r)
+        r[:, :, 0] = 10.0                                                                    # block 0 always
+        r = torch.where((blk[None, None, :] > nvis[None, :, None] - 5), 20.0 + blk[None, None, :].float() / pages, r)   # 4 newest + current
+    r = torch.where(blk[None, None, :] < nvis[None, :, None], r, -1.0)
     val, idx = torch.topk(r, TOPK, dim=-1)
     q2k = torch.where(val >= 0, idx, -1).to(torch.int32).contiguous()           # [HKV, T, 16] batch-local blocks, -1 padded
     cu_q = torch.tensor([0, T], dtype=torch.int32, device=dev); cu_k = torch.tensor([0, L], dtype=torch.int32, device=dev)
