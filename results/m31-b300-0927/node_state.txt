@@ -1,4 +1,4 @@
-# read_utc 2026-10-01T21:20:24Z
+# read_utc 2026-10-01T21:21:45Z
 ## queue
 v3_lp_cap_lpm_tok1_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=1 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_ENTRIES=4096"
 v3_lp_cap_lpm_tok1_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=1 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_ENTRIES=4096"

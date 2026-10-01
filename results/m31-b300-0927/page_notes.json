@@ -121,6 +121,12 @@
    "name": "8 tokenizer workers per engine (was 4)",
    "base": "more KV-cache memory + cache-first scheduling",
    "short": "8 tokenizer workers"
+  },
+  "v3_lp_cap_lpm_tok1_05x": {
+   "name": "+ 1 tokenizer process, larger tokenisation cache"
+  },
+  "v3_lp_cap_lpm_tok1_0375x": {
+   "name": "+ 1 tokenizer process, larger tokenisation cache"
   }
  },
  "plain_words": [
