@@ -214,6 +214,37 @@ def frontier_panel():
     body = "\n".join(f'<tr><td class="k">{a}</td><td>{b}</td><td>{c}</td></tr>' for a, b, c in f["rows"])
     return (f'<div class="panel"><h2>{f["title"]}</h2><div class="wrap"><table class="cmp">\n<tr><th>Setting</th><th>Production (24 nodes)</th><th>Ours (node 0008, current frontier)</th></tr>\n'
             + body + f'\n</table></div><p class="note">{f["note"]}</p></div>')
+def v3_chart_panel():
+    """innoferra 10-01 (user: 'where was the previous chart'): real-traffic pass-count vs offered load, static SVG with theme tokens."""
+    c = data.get("v3_chart")
+    if not c: return ""
+    W, H, l, r, t, b = 960, 330, 56, 24, 18, 52; XM, YM = 8.0, 15
+    X = lambda v: l + (W - l - r) * v / XM; Y = lambda v: t + (H - t - b) * (1 - v / YM)
+    col = {"ink": "var(--ink)", "muted": "var(--muted)", "prev": "var(--prev)", "ok": "var(--ok)", "bad": "var(--bad)", "star": "var(--star)"}
+    g = [f'<svg viewBox="0 0 {W} {H}" width="100%" role="img" aria-label="{c["title"]}" style="max-width:{W}px;display:block">']
+    for v in range(0, 9):
+        g.append(f'<line x1="{X(v):.1f}" y1="{t}" x2="{X(v):.1f}" y2="{H-b}" style="stroke:var(--grid)"/><text x="{X(v):.1f}" y="{H-b+18}" font-size="12" text-anchor="middle" style="fill:var(--muted)">{v}</text>')
+    for v in (0, 5, 10, 15):
+        g.append(f'<line x1="{l}" y1="{Y(v):.1f}" x2="{W-r}" y2="{Y(v):.1f}" style="stroke:var(--grid)"/><text x="{l-8}" y="{Y(v)+4:.1f}" font-size="12" text-anchor="end" style="fill:var(--muted)">{v}</text>')
+    g.append(f'<text x="{(l+W-r)/2:.0f}" y="{H-12}" font-size="12" text-anchor="middle" style="fill:var(--muted)">load offered — M tokens per minute per GPU</text>')
+    g.append(f'<text x="14" y="{(t+H-b)/2:.0f}" font-size="12" text-anchor="middle" transform="rotate(-90 14 {(t+H-b)/2:.0f})" style="fill:var(--muted)">SLA minutes passed (of 15)</text>')
+    tx = X(c["target"]); g.append(f'<line x1="{tx:.1f}" y1="{t}" x2="{tx:.1f}" y2="{H-b}" style="stroke:var(--star);stroke-width:2.5;stroke-dasharray:6 4"/><text x="{tx-6:.1f}" y="{t+14}" font-size="12" text-anchor="end" style="fill:var(--star);font-weight:600">north star {c["target"]:.0f} M</text>')
+    pr = c.get("prod")
+    if pr:
+        px, py = X(pr["x"]), Y(pr["y"])
+        g.append(f'<path d="M{px:.1f},{py-9:.1f} L{px+3:.1f},{py-3:.1f} L{px+9:.1f},{py-3:.1f} L{px+4:.1f},{py+1:.1f} L{px+6:.1f},{py+8:.1f} L{px:.1f},{py+4:.1f} L{px-6:.1f},{py+8:.1f} L{px-4:.1f},{py+1:.1f} L{px-9:.1f},{py-3:.1f} L{px-3:.1f},{py-3:.1f} Z" style="fill:var(--star)"/><text x="{px+12:.1f}" y="{py+4:.1f}" font-size="12" style="fill:var(--ink)">{pr["label"]}</text>')
+    leg = []
+    for i, sr in enumerate(c["series"]):
+        cc = col.get(sr["cls"], "var(--ink)"); pts = sorted(sr["pts"])
+        if len(pts) > 1:
+            g.append('<polyline points="' + " ".join(f"{X(x):.1f},{Y(y):.1f}" for x, y in pts) + f'" style="fill:none;stroke:{cc};stroke-width:2"/>')
+        for x, y in pts:
+            g.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="5.5" style="fill:{cc};stroke:var(--panel);stroke-width:1.5"><title>{sr["name"]}: {y}/15 at {x:.2f} M</title></circle>')
+        leg.append(f'<span style="display:inline-flex;align-items:center;gap:6px;margin:0 14px 4px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:{cc}"></span>{sr["name"]}</span>')
+    g.append("</svg>")
+    return (f'<div class="panel"><h2>{c["title"]}</h2>' + "".join(g) +
+            f'<div style="font-size:.85rem;margin-top:6px">{"".join(leg)}</div><p class="note">{c["note"]}</p></div>')
+
 def v3_levers_panel():
     t = data.get("v3_levers")
     if not t: return ""
@@ -303,8 +334,8 @@ JS = """
 
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
-overview = kpis() + reflect_panel() + v3_levers_panel() + metrics_panel() + tests_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
-results = v3_levers_panel() + v2_levers_panel() + sim_panel()   # innoferra 10-01: v1 / M3-era content removed (user)
+overview = kpis() + v3_chart_panel() + reflect_panel() + v3_levers_panel() + metrics_panel() + tests_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
+results = v3_chart_panel() + v3_levers_panel() + v2_levers_panel() + sim_panel()   # innoferra 10-01: v1 / M3-era content removed (user)
 setup = frontier_panel() + kernel_gap_panel() + launch_specs() + glossary() + tools()   # innoferra 10-01: v1-derived winner/comparison removed (user)
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
         f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'

@@ -3500,5 +3500,85 @@
    ]
   ],
   "note": "Only real-traffic M3.1 results are shown; the v1 (Sep 27, M3-era requests, time compression, looser SLA) and static-frame rankings were removed from the page because they can rank levers wrongly. History stays in PROGRESS.md and the repo."
+ },
+ "v3_chart": {
+  "title": "Real traffic: minutes passing the SLA (of 15) vs load offered — where the knee is and how far from 7 M",
+  "note": "Each point is one 15-minute real-traffic replay (Sep 30 13:10–13:25 PDT). Load = tokens per minute per GPU offered by the replayed requests; SLA per minute = TTFT p50 ≤ 1 s, p99 ≤ 15 s, decode ≥ 60 tok/s, errors ≤ 0.1%. v3 = before Oct 1 04:30 PDT (replays the 4–5 requests production itself rejected with 429, plus a media-tag bug); v3.1 = current protocol.",
+  "series": [
+   {
+    "name": "Old routing (session pinning by arrival), v3",
+    "cls": "prev",
+    "pts": [
+     [
+      2.23,
+      2
+     ]
+    ]
+   },
+   {
+    "name": "Load-aware pinning, v3",
+    "cls": "muted",
+    "pts": [
+     [
+      2.23,
+      7
+     ],
+     [
+      4.42,
+      0
+     ]
+    ]
+   },
+   {
+    "name": "Load-aware pinning, v3.1",
+    "cls": "ink",
+    "pts": [
+     [
+      2.23,
+      9
+     ],
+     [
+      3.34,
+      1
+     ]
+    ]
+   },
+   {
+    "name": "+ capacity (mem 0.76), v3.1",
+    "cls": "ok",
+    "pts": [
+     [
+      3.34,
+      1
+     ]
+    ]
+   },
+   {
+    "name": "+ capacity + DSpark block 4 (rejected)",
+    "cls": "bad",
+    "pts": [
+     [
+      3.34,
+      0
+     ]
+    ]
+   },
+   {
+    "name": "Dynamo KV router / production numerics (FP8 KV), v3",
+    "cls": "bad",
+    "pts": [
+     [
+      2.23,
+      0
+     ]
+    ]
+   }
+  ],
+  "prod": {
+   "x": 4.44,
+   "y": 15,
+   "label": "production, same requests (in SLA)"
+  },
+  "target": 7.0
  }
 }
