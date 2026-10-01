@@ -8,5 +8,5 @@ MOUNTS=$(sudo -n docker inspect "$N" --format '{{range .Mounts}}-v {{.Source}}:{
 cd "$GW" && sudo -n docker build -q -t glm52-gateway:local . > /dev/null
 sudo -n docker rm -f "$N" > /dev/null
 sudo -n docker run -d --restart unless-stopped --name "$N" --log-driver json-file --log-opt max-size=20m --log-opt max-file=3 \
-  --network host --env-file "$ENVF" $MOUNTS glm52-gateway:local
+  --network host --ulimit nofile=65536:524288 --env-file "$ENVF" $MOUNTS glm52-gateway:local
 rm -f "$ENVF"
