@@ -1069,25 +1069,21 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8). Code, configs, history and this page: github.com/longsco/alphabeta-m31 (private).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "GPU queue: chain37 0.5× → chainN numerics quick test → chainD Dynamo → chain38 → chain39 → chainB",
+  "title": "GPU queue: chainD2 → chain38 → chain39 → chainB",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chainN: production-style numerics quick test",
-    "v3 0.5× replay on training-off + FP8 KV running (GSM8K moved to chainD, bounded)"
-   ],
-   [
-    "chainD: GSM8K A/B (bounded) + Dynamo KV router",
-    "GSM8K training-off + FP8 → Dynamo up → GSM8K frontier numerics → v3 0.5× → v3 1.0×"
+    "chainD2: Dynamo with strong affinity at v3 0.5×",
+    "workers relaunching; frontend restart with credit 3.0 / no decay / no threshold"
    ],
    [
     "chain38: our gateway + load-aware + DP-rank pinning",
     "v3 1.0× and 0.5× → simulation ladder → agentic"
    ],
    [
-    "chain39: quality gates (bounded) + numerics with load-aware + 1.5×",
+    "chain39: engine sizing (mem 0.74, 128 running), DSpark block 4, 1.5× — all with load-aware pinning",
     "armed"
    ],
    [
@@ -3143,6 +3139,12 @@
  },
  "reflections": [
   {
+   "at": "01:31 (10-01)",
+   "result": "Dynamo at v3 0.5× (my approximation of production's rule): 0/15, cache hit 65.2% vs 94.4% on our gateway, TTFT p50 8.8 s, decode 45 tok/s; 0 errors.",
+   "insight": "Balanced load is not enough: the router traded cache affinity for balance (overlap credit decayed as load rose, busy threshold pushed sessions off their KV holder), so 9× more requests prefilled 32k+ tokens cold. Production keeps 96.8% hit with strict affinity (holder wins when overlap > 50%). Workers do publish KV events.",
+   "next": "chainD2: same Dynamo stack with strong affinity (overlap credit 3.0, no decay, no busy threshold) at v3 0.5×. If hit recovers to ~94%, run 1.0×; if not, routing stays in our gateway (load-aware pinning, chain38)."
+  },
+  {
    "at": "00:48 (10-01)",
    "result": "Production-style numerics at v3 0.5×: 0/15, cache hit 83.5% (baseline 94.4%), TTFT p99 497 s, decode 86 tok/s; GSM8K 96.74% vs 96.21% for the frontier numerics.",
    "insight": "Quality is not the blocker for training-off numerics; capacity is: FP8 doubles KV bytes per token, so on today's heavier traffic the cache misses explode (3.6× more cold 32k+ prefills). Production gets the speed from training-off numerics *with* 4-bit KV — that needs their kernels or MSA, not this switch.",
@@ -3209,6 +3211,16 @@
     "<b>83.5%</b> (96.8%)",
     "8 (0.25%)",
     "FP8 halves KV capacity → 284 cold 32k+ prefills (baseline 79); 58-min run; GSM8K 96.74% (frontier 96.21%) — quality fine, capacity not"
+   ],
+   [
+    "Dynamo KV router (credit 1.0, decay 0.5, 600k busy threshold) + frontier engines",
+    "0.5× = 2.23 M",
+    "<b>0</b>",
+    "8.79 / 38.7 / 90.1",
+    "45",
+    "<b>65.2%</b> (96.8%)",
+    "0",
+    "load spread over all 8 GPUs but cache affinity collapsed: 679 cold 32k+ prefills (our gateway 79); the 6 HTTP 500s do not occur through Dynamo"
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple. Load multiples: production traffic is split by session into 48 half-node buckets; 1.0× = 2 buckets ≈ one node's share of the hub logs, 0.5× = 1 bucket, 2× = 4 buckets — load is raised by adding users, not by speeding up time. On v3, 0.5× = 2.23 M, 1.0× = 4.20 M per GPU offered; matching a real production node (engine counters 6.3–6.6 M) ≈ 1.5×; 7 M ≈ 1.7×."
