@@ -6,6 +6,8 @@
 STOP=${1:-/data01/minimax31/serving/STOP_WATCHDOG}; L=/data01/minimax31/bench/stress2-0927.log; declare -A bad seen cid
 log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" >> $L; }
 while [ ! -f "$STOP" ]; do
+  # innoferra 10-01: a chain is relaunching the engines (teardown takes ~2 min with the old container still present): stand down
+  if pgrep -f "bash launch_tp2x4_old.sh" > /dev/null; then for i in 0 1 2 3; do bad[$i]=0; seen[$i]=0; done; sleep 60; continue; fi
   for i in 0 1 2 3; do
     id=$(sudo -n docker inspect -f '{{.Id}}' m31-tp2-$i 2>/dev/null)
     if [ "$id" != "${cid[$i]:-}" ]; then cid[$i]=$id; seen[$i]=0; bad[$i]=0; fi   # a chain relaunched the engine: treat as a fresh boot

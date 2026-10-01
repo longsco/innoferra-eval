@@ -8,6 +8,8 @@ export NETNS=${NETNS:-1}
 export IMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private DEV_SRC=${DEV_SRC:-/data01/minimax31/src/0922-sglang/python}
 export TP_SIZE=2 EP_SIZE=2 DP_SIZE=2 DP_ATTN=1 SPEC=dspark DRAFT_WINDOW=${DRAFT_WINDOW:-4096} TRAINING_COMPAT=${TRAINING_COMPAT:-1} CHUNK=${CHUNK:-32768} MAXREQ=${MAXREQ:-32} MEMFRAC=${MEMFRAC:-0.80} FOLLOW=0
 export EXTRA_ARGS="--tokenizer-worker-num ${TOKW:-2} ${XARGS:-}" DSPARK_BLOCK=${DSPARK_BLOCK:-}
+# innoferra 10-01: keep the outgoing engines' runtime logs (time stats, crashes) before removing them
+for i in 0 1 2 3; do sudo -n docker inspect m31-tp2-$i >/dev/null 2>&1 && sudo -n docker logs --tail 300000 m31-tp2-$i > /data01/minimax31/logs/engine-$(date -u +%Y%m%dT%H%M%SZ)-tp2-$i.log 2>&1; done
 sudo -n docker rm -f m31-0927 dyn-w0 dyn-w1 dyn-w2 dyn-w3 dyn-frontend m31-tp2-0 m31-tp2-1 m31-tp2-2 m31-tp2-3 >/dev/null 2>&1; sleep 5
 # NUMA=1 (innoferra 09-30): engine i (GPUs 2i, 2i+1) is pinned to NUMA node i (CPUs 32i..32i+31 and their HT siblings, memory node i)
 for i in 0 1 2 3; do CS=; MS=; [ "${NUMA:-0}" = 1 ] && { CS="$((32*i))-$((32*i+31)),$((128+32*i))-$((128+32*i+31))"; MS=$i; }
