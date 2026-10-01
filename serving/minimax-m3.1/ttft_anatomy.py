@@ -54,19 +54,38 @@ def ttft_stream(c, url, payload):
 rows = []
 with httpx.Client() as c:
     for pv, tg in pairs:
-        c.post(U + "/v1/chat/completions", json=body(pv, False, 1), headers=H, timeout=900).raise_for_status()
+        try:
+            c.post(U + "/v1/chat/completions", json=body(pv, False, 1), headers=H, timeout=900).raise_for_status()
+        except Exception as e:
+            print(f"  warm request failed: {type(e).__name__}", flush=True); continue
         t_chat, u = ttft_stream(c, U + "/v1/chat/completions", body(tg, True, 4))
         t_chat2, u2 = ttft_stream(c, U + "/v1/chat/completions", body(tg, True, 4))
-        t0 = time.perf_counter(); msgs = tg["body"]["messages"]; tools = tg["body"].get("tools")
+        msgs = json.loads(json.dumps(tg["body"]["messages"])); tools = json.loads(json.dumps(tg["body"].get("tools") or [])) or None
+        for m in msgs:   # like sglang's chat serving: tool-call arguments / tool parameters as dicts for the template
+            for tc in m.get("tool_calls") or []:
+                f = tc.get("function") or {}
+                if isinstance(f.get("arguments"), str):
+                    try: f["arguments"] = json.loads(f["arguments"])
+                    except Exception: pass
+        for tl in tools or []:
+            f = tl.get("function") or {}
+            if isinstance(f.get("parameters"), str):
+                try: f["parameters"] = json.loads(f["parameters"])
+                except Exception: pass
+        t0 = time.perf_counter()
         kw = {k: tg["body"][k] for k in ("reasoning_effort",) if tg["body"].get(k) is not None}
-        ids = tok.apply_chat_template(msgs, tools=tools, tokenize=True, add_generation_prompt=True, **kw)
-        t_tok = time.perf_counter() - t0
-        ids = list(ids["input_ids"] if isinstance(ids, dict) else ids)
-        t_ids, ui = ttft_stream(c, U + "/generate", {"input_ids": ids, "sampling_params": {"max_new_tokens": 4, "temperature": 0}, "stream": True})
+        try:
+            ids = tok.apply_chat_template(msgs, tools=tools, tokenize=True, add_generation_prompt=True, **kw)
+            t_tok = time.perf_counter() - t0
+            ids = list(ids["input_ids"] if isinstance(ids, dict) else ids)
+            t_ids, ui = ttft_stream(c, U + "/generate", {"input_ids": ids, "sampling_params": {"max_new_tokens": 4, "temperature": 0}, "stream": True})
+        except Exception as e:
+            print(f"  local template failed ({type(e).__name__}: {str(e)[:80]}); chat timings only", flush=True)
+            t_tok, t_ids, ui, ids = float("nan"), float("nan"), None, []
         pt = (u or {}).get("prompt_tokens"); ct = ((u or {}).get("prompt_tokens_details") or {}).get("cached_tokens")
         ci = ((ui or {}).get("prompt_tokens_details") or {}).get("cached_tokens")
         rows.append((pt or len(ids), ct, t_chat, t_chat2, t_ids, t_tok, len(ids)))
         print(f"prompt {pt or len(ids):7d} cached {ct} | chat {t_chat:.3f}  chat-repeat {t_chat2:.3f}  ids {t_ids:.3f}  local template+tokenize {t_tok:.3f}  (local ids {len(ids)}, ids cached {ci})", flush=True)
 for lo, hi in [(0, 120000), (120000, 200000), (200000, 10**7)]:
     s = [r for r in rows if lo <= r[0] < hi]
-    if s: print(f"== prompt {lo}-{hi}: n {len(s)} medians: chat {st.median(r[2] for r in s):.3f}  chat-repeat {st.median(r[3] for r in s):.3f}  ids {st.median(r[4] for r in s):.3f}  local template+tokenize {st.median(r[5] for r in s):.3f}")
+    if s: print(f"== prompt {lo}-{hi}: n {len(s)} medians: chat {st.median(r[2] for r in s):.3f}  chat-repeat {st.median(r[3] for r in s):.3f}  ids {st.median(r[4] for r in s if r[4] == r[4]) if any(r[4] == r[4] for r in s) else float('nan'):.3f}  local template+tokenize {st.median(r[5] for r in s if r[5] == r[5]) if any(r[5] == r[5] for r in s) else float('nan'):.3f}")
