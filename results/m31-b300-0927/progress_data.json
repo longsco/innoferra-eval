@@ -3143,6 +3143,12 @@
  },
  "reflections": [
   {
+   "at": "03:45 (10-01)",
+   "result": "Cache-hit gap anatomy of v3_lp_1x (hit_gap.py, same 6,335 requests): our hit 91.2% vs production 96.6% → we prefill 48.3 M uncached tokens where production prefilled 17.5 M (2.75×).",
+   "insight": "84% of the extra prefill comes from sessions whose previous request we had just served — their prefix was evicted, mostly after 2–10 min idle (13.3 of 30.8 M tokens). Only 15% is replay warm-up coverage. Our device KV pool holds 1.31 M tokens per DP rank (≈13 long sessions) while 62 GB of GPU memory sits unused at mem 0.68; production runs mem 0.80 with ~250 GB host cache per GPU (ours ~177 GB).",
+   "next": "chain39/chainB replaced by a lever queue (chainQ) at 0.75×: baseline, then capacity (mem 0.76 → device and host cache +37%), DSpark block 4, cache-aware scheduling (LPM), 16k prefill chunk, capacity + 128 running."
+  },
+  {
    "at": "03:20 (10-01)",
    "result": "Load-aware pinning at v3 1.0× (4.42 M per GPU offered; production served 4.44 M for the same requests at TTFT 0.35 s): 0/15; TTFT p50 9.0 s, decode 38 tok/s; 33 errors (27 instant connection resets).",
    "insight": "Routing is fixed (all four engines evenly loaded, 26–35 in flight per slot) and that exposes the real limit: our engines cannot serve today's full-node load at SLA — every engine queues 17–37 requests at 70–97% KV and decode falls to 38 tok/s. This is the ≥ 2× engine-efficiency gap to production. The connection resets come from the gateway's 1,024 open-file limit (engines have 65,535).",
