@@ -180,6 +180,15 @@
    "change": "tokenisation",
    "verdict": "no clear change",
    "why": "10/15 vs 9/15 with 4 processes: median first token 0.94 → 0.90 s and median misses 6 → 3 minutes, but 2 slow-tail minutes came back. Within run-to-run noise."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok1_05x",
+   "at": "2026-10-01 15:45",
+   "protocol": "v3.1",
+   "name": "+ 1 tokenizer process with a larger tokenisation cache",
+   "change": "tokenisation",
+   "verdict": "rejected",
+   "why": "1/15: median first token 1.26 s (0.90–0.94 with 4–8 processes). One process also carries all HTTP and streaming work, which outweighs its cache hits."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

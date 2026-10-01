@@ -127,6 +127,15 @@
   },
   "v3_lp_cap_lpm_tok1_0375x": {
    "name": "+ 1 tokenizer process, larger tokenisation cache"
+  },
+  "v3_lp_cap_lpm_tok8_0375x": {
+   "name": "+ 8 tokenizer processes"
+  },
+  "v3_lp_cap_lpm_tok8par_05x": {
+   "name": "+ 8 tokenizer processes, parallel tokenisation"
+  },
+  "v3_lp_cap_lpm_tok8par_0375x": {
+   "name": "+ 8 tokenizer processes, parallel tokenisation"
   }
  },
  "plain_words": [
