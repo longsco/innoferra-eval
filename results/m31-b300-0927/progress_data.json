@@ -1090,6 +1090,14 @@
  },
  "queued": [
   {
+   "title": "Dynamo retest with per-DP-rank KV events",
+   "detail": "Dynamo 1.5.0 routes by (worker, DP rank) and passes routed_dp_rank; our fork honours it. Check that each worker's KV event publisher covers both DP ranks' zmq endpoints (SGLang publishes per rank), then rerun v3 0.5× through Dynamo with strong affinity.",
+   "why": "Dynamo runs balanced (all 8 GPUs busy) but hit only 65–71% vs our gateway's 94%; if the cause is half-visible KV events, the production stack becomes usable on our layout.",
+   "script": "to write (after chain39)",
+   "commit": "",
+   "status": "planned"
+  },
+  {
    "title": "Next after chain39 (decided from chain37–39 results)",
    "detail": "If load-aware pinning fixes the 1.0× imbalance: climb v3 to 2.0× and 2.4× (≈ 7 M per GPU on the hub basis) with the best config, and revisit chunk size / fair share / the DP-attention prefill delayer at high load. If numerics pass the GSM8K gate and win at 1.0×, adopt them as the frontier. Measurement hardening from the benchmark review (fail-closed scoring, uncached ratio, served-in-window TPM) before the 2× runs.",
    "why": "Keep the GPUs busy with the experiments that move the north star; every step is chained on the node with an idle guard.",
@@ -3137,8 +3145,8 @@
   {
    "at": "02:21 (10-01)",
    "result": "Dynamo with strong affinity at v3 0.5×: 0/15, cache hit 70.8% (was 65.2%; our gateway 94.4%), TTFT p50 6.4 s, 575 cold 32k+ prefills; 0 errors.",
-   "insight": "The router choice is not the problem; the DP-attention layout is. Each of our workers has two DP ranks with separate radix caches; our gateway pins sessions to (engine, rank), Dynamo pins at most the worker and the engine spreads requests over its ranks, so about half the 'affine' requests land on the wrong cache. Production avoids this by running one attention group per worker (TP2, DP off), which our fork does not support.",
-   "next": "Routing stays in our gateway: load-aware pinning at v3 1.0× now (chain38), then sizing, DSpark block 4 and 1.5× (chain39). Dynamo revisited only if dynamo.sglang can pass the DP rank or the fork gains attention TP2."
+   "insight": "The router choice is not the problem; the DP-attention layout is. Each of our workers has two DP ranks with separate radix caches; our gateway pins sessions to (engine, rank), Dynamo pins at most the worker and the engine spreads requests over its ranks, so about half the 'affine' requests land on the wrong cache. Production avoids this by running one attention group per worker (TP2, DP off), which our fork does not support. Follow-up check (code): Dynamo 1.5.0 does pass routed_dp_rank and our fork's DP controller honours it, so the loss is likely in KV events per DP rank (if only rank 0's zmq endpoint is subscribed, the router sees half the cache).",
+   "next": "Routing stays in our gateway: load-aware pinning at v3 1.0× now (chain38), then sizing, DSpark block 4 and 1.5× (chain39). Dynamo revisited only if dynamo.sglang can pass the DP rank or the fork gains attention TP2. Queued after chain39: verify per-rank KV event endpoints for Dynamo workers and retest (could make the production stack usable here)."
   },
   {
    "at": "01:31 (10-01)",
