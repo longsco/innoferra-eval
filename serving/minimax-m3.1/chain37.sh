@@ -20,6 +20,7 @@ lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do e
   bash launch_tp2x4_old.sh 2>&1 | tail -1
   t0=$(date +%s); while :; do up=0; for i in 0 1 2 3; do curl -sf -m 30 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done; [ $up = 4 ] && break; [ $(( $(date +%s)-t0 )) -gt 1800 ] && break; sleep 30; done
   [ "$up" = 4 ] || { log "lever $tag FAILED to boot ($up/4)"; return 1; }
+  (nohup setsid bash $K/diag_1x.sh 4200 $tag > /dev/null 2>&1 < /dev/null &)
   bash $K/accept_metrics.sh snap /tmp/am-L-$tag
   V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --out /tr/v3L-$tag.jsonl
   log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag)"
@@ -31,7 +32,7 @@ lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do e
   log "download: $(tail -1 $T/dl_v3.log); failures: $(grep -c FAIL $T/dl_v3.log)"
   if [ ! -s $T/v3/b01.jsonl ]; then
     (cd $T && python3 traffic_extract_v2.py --glob 'm31-log-2026-09-30/lb0*/*.gz' --t0 2026-09-30T16:00:00 --t1 2026-09-30T21:00:00 \
-        --nodes 24 --buckets 0-7 --out-dir v3 --procs 48 2>&1 | tail -6)
+        --nodes 48 --buckets 0-7 --out-dir v3 --procs 48 2>&1 | tail -6)
   fi
   log "v3 buckets: $(ls $T/v3/b0*.jsonl 2>/dev/null | wc -l); b00 $(wc -l < $T/v3/b00.jsonl 2>/dev/null) req, b01 $(wc -l < $T/v3/b01.jsonl 2>/dev/null) req"
   log "production (hub) in the measured window:"; (cd $T && python3 fleet_window_stats.py 'm31-log-2026-09-30/lb0*/*_20260930_20[0-3]*.gz' 2026-09-30T20:10:00 15 | tail -2)

@@ -20,6 +20,7 @@ up4(){ t0=$(date +%s); while :; do up=0; for i in 0 1 2 3; do curl -sf -m 30 htt
 lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do export "$kv"; done
   log "===== lever $tag: traces $traces frac $frac; $* (ROUTE_PIN_BY_INFLIGHT=$ROUTE_PIN_BY_INFLIGHT ROUTE_REPIN_SLACK=$ROUTE_REPIN_SLACK EXTRA_ENV=$EXTRA_ENV)"
   bash launch_tp2x4_old.sh 2>&1 | tail -1; up4 || { log "lever $tag FAILED to boot"; return 1; }
+  (nohup setsid bash $K/diag_1x.sh 4200 $tag > /dev/null 2>&1 < /dev/null &)
   bash $K/accept_metrics.sh snap /tmp/am-L-$tag
   V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --out /tr/v3L-$tag.jsonl
   log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag); gateway route: $(curl -s -m 5 http://127.0.0.1:8000/health | cut -c1-300)"
