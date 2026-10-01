@@ -3201,6 +3201,12 @@
  },
  "reflections": [
   {
+   "at": "07:05 (10-01)",
+   "result": "0.5× under protocol v3.1 (2.23 M per GPU): 9/15 minutes, TTFT 0.89 / 3.69 / 14.3 s, decode 77 tok/s (production 65.5), 0 errors.",
+   "insight": "Median TTFT and decode beat the SLA in every minute but one; the misses are five p99 spikes in minutes that contain 300k+-token cold prompts. Those prompts need ≥ 15 s of prefill on one GPU at ~20k tok/s (production ~10 s for the same ones) and stall their whole engine meanwhile. The 0.5× knee is set by single-request prefill speed, the same bottleneck the 0.75× runs point to.",
+   "next": "Queue runs on top of capacity (DSpark block 4 now, then 16k chunk, longest-prefix-first, 128 running, fair share with the OOM guard). The prefill-speed track (our KV4 sparse-attention/indexer kernels; giant prompts split over both GPUs of an engine) is the lever that moves the knee."
+  },
+  {
    "at": "06:25 (10-01)",
    "result": "Fair chunk share at 0.75× crashed an engine (prefill out of memory); the public MiniMax MSA CuTe kernel does not compile on B300 (NVVM backend failure for sm_103a and for the sm_100f family target).",
    "insight": "The crash exposes a stock-scheduler hazard: when no KV is free, add_chunked_req falls back to a full 16k chunk (to avoid leaking the chunked request) and allocation fails hard instead of retracting. Fair share raises resident KV, so it hits the hazard at 0.75×. MSA is not a quick prefill win on this hardware: its kernels target SM100 and the bundled CuTe-DSL 4.6.2 NVVM rejects the generated IR for SM103.",
@@ -3403,6 +3409,16 @@
     "–",
     "engine crash",
     "engine 0 scheduler: 'Prefill out of memory — allocate 16,384 tokens, 8,320 available, 0 evictable' at 13:17 UTC → watchdog stopped the replay. With KV exhausted, the stock chunked-request fallback still takes a full chunk; fair share keeps more requests resident, so KV runs out first. Needs a scheduler fix before a retry"
+   ],
+   [
+    "Frontier + load-aware pinning · <b>protocol v3.1</b> (+ media-tag fix)",
+    "0.5× = 2.23 M (prod 2.24 M)",
+    "<b>9</b>",
+    "0.89 / 3.69 / <b>14.3</b>",
+    "<b>77</b>",
+    "95.0% (96.8%)",
+    "0",
+    "calibration of the protocol change (v3: 7/15 with the production-shed giants replayed and 6 media-tag errors). Failing minutes: 5 × p99 15.2–24 s (300k+ cold prompts take ≥ 15 s at ~20k tok/s and stall their rank), 1 × p50 1.08 s"
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple. Load multiples: production traffic is split by session into 48 half-node buckets; 1.0× = 2 buckets ≈ one node's share of the hub logs, 0.5× = 1 bucket, 2× = 4 buckets — load is raised by adding users, not by speeding up time. On v3, 0.5× = 2.23 M, 1.0× = 4.20 M per GPU offered; matching a real production node (engine counters 6.3–6.6 M) ≈ 1.5×; 7 M ≈ 1.7×."
