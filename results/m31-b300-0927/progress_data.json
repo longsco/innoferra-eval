@@ -2835,7 +2835,7 @@
   "note": "Status 16:15 PDT (09-29): first 1× run FAILED (offered 2.78 M/GPU; TTFT p90 343 s; 97 min to serve 30 min) with good fidelity (prompt 0.977×, output 0.990×, hit 93.8% vs 96.2%). Fixes: gateway validator off for primes (VALIDATE_TOOL_HISTORY=0), synthetic image 1064×1024 (+1,350 tokens), fractional load (--last-frac). chain26 now finds the passing level below 1×."
  },
  "v2_levers": {
-  "title": "Real-traffic tuning at 0.5× on the production-faithful test (v2)",
+  "title": "Real traffic (protocol v2, Sep 28 peak window): levers at 0.5× and 1.0× a node's share",
   "columns": [
    "Change",
    "Minutes passing (of 15)",
@@ -2974,5 +2974,61 @@
    ]
   ],
   "note": "Each row: fresh engines, cold cache, recent-session warm-up, 2,656 real M3.1 requests (half a node's share of the Sep 28 peak, 09:10–09:25 PDT) at their logged times with causal sessions; SLA per minute TTFT p50 ≤ 1.0 s, p99 ≤ 15 s, decode ≥ 60 tok/s, 0 errors. At this load the engines are mostly idle (running per rank p50 1–3); minutes fail on the latency floor, not capacity — so settings barely move it and the work shifts to the engine (tokenization, scheduler/step overhead, prefill kernels)."
+ },
+ "sim_runs": {
+  "title": "Simulation (StandardKernel inference-benchmark, through our gateway)",
+  "columns": [
+   "Configuration · preset",
+   "Concurrency",
+   "Output tok/s (node)",
+   "TTFT p50 / p99 (s)",
+   "Per-request speed p50 (tok/s)",
+   "E2E p50 (s)",
+   "Client lag max (s)",
+   "Note"
+  ],
+  "rows": [
+   [
+    "Frontier (tokenization cache) · synthetic-quick 1k/1k, cache 0",
+    "1",
+    "124",
+    "–",
+    "–",
+    "–",
+    "–",
+    "6 samples (provisional)"
+   ],
+   [
+    "Frontier · synthetic-quick 1k/1k, cache 0",
+    "64",
+    "4,276",
+    "–",
+    "–",
+    "–",
+    "–",
+    "190 samples"
+   ],
+   [
+    "Frontier · synthetic-quick 1k/1k, cache 0",
+    "128",
+    "<b>6,368</b> (796 per GPU)",
+    "0.26 / 0.42",
+    "59",
+    "17.1",
+    "0.06",
+    "249 samples, valid"
+   ],
+   [
+    "Frontier · ladder (64 sessions, 20k–260k start, 1,500 out, 97% cache)",
+    "64",
+    "running",
+    "",
+    "",
+    "",
+    "",
+    "production-shaped growing sessions, 10 min"
+   ]
+  ],
+  "note": "The teammates' harness (private repo StandardKernel/inference-benchmark, commit 8ae8f6d): streaming /v1/completions with token-ID prompts, exact token accounting against server usage, per-session cache_salt, fan-out /flush_cache between phases, GC freeze and an event-loop-lag check on the client. Marked as simulation: synthetic or recorded agent trajectories, not our production sessions. Real-traffic results are in the protocol v2/v3 tables."
  }
 }
