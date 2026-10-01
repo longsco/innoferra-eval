@@ -42,5 +42,9 @@ lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do e
   INFERENCE_API_KEY=$KEY $V/bin/inference-bench run --backend sglang --endpoint http://127.0.0.1:8000/v1 --model minimax-m3.1-nvfp4 --tokenizer $MD \
      --preset ladder --concurrency 64 --min-input-len 20000 --max-input-len 260000 --avg-output-len 1500 --cache-hit-rate 0.97 --drain 300 \
      --server-metadata $R/lp/server-metadata.json --output $R/lp/ladder-c64 2>&1 | tail -30
+  log "== simulation agentic-quick with load-aware pinning + DP-rank pinning (chain36 baseline: c16 1,052 out tok/s, c64 692 with speed p50 13 tok/s)"
+  INFERENCE_API_KEY=$KEY $V/bin/inference-bench run --backend sglang --endpoint http://127.0.0.1:8000/v1 --model minimax-m3.1-nvfp4 --tokenizer $MD \
+     --preset agentic-quick --prepared /data01/minimax31/ib-data/prepared --server-metadata $R/lp/server-metadata.json --output $R/lp/agentic-quick 2>&1 | tail -12
   $V/bin/inference-bench report $R/tpc/ladder-c64 $R/lp/ladder-c64 --output $R/lp/compare-ladder > /dev/null 2>&1
+  $V/bin/inference-bench report $R/tpc/agentic-quick $R/lp/agentic-quick --output $R/lp/compare-agentic > /dev/null 2>&1
   echo "===== CHAIN38 DONE"; } >> $L 2>&1
