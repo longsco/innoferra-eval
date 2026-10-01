@@ -3144,5 +3144,13 @@
    ]
   ],
   "note": "The teammates' harness (private repo StandardKernel/inference-benchmark, commit 8ae8f6d): streaming /v1/completions with token-ID prompts, exact token accounting against server usage, per-session cache_salt, fan-out /flush_cache between phases, GC freeze and an event-loop-lag check on the client. Marked as simulation: synthetic or recorded agent trajectories, not our production sessions. Real-traffic results are in the protocol v2/v3 tables. Ladder read: our production-shaped simulation lands at ≈ 2.6 M per GPU with TTFT p50 3.9 s, the same place as real traffic at 1.0× (2.9 M offered, TTFT p90 61 s): two independent benchmarks agree on the gap to production (6.3–6.6 M at TTFT ≈ 0.25 s)."
- }
+ },
+ "reflections": [
+  {
+   "at": "23:00 (09-30)",
+   "result": "Simulation ceiling ≈ 3.3 M per GPU (ladder, saturated); real traffic 1.0× collapses; production 6.3–6.6 M per GPU at TTFT ≈ 0.25 s.",
+   "insight": "Two gaps: ~2× engine efficiency (kernels; production runs ~18 in-house kernels) and ~2.5× SLA handling (our routing piled sessions on 2 of 4 engines; no cold-prefill cap). Settings alone are exhausted at 0.5×.",
+   "next": "Routing first: Dynamo KV router with production's rule (chainD) vs load-aware gateway (chain38); numerics quick test with GSM8K (chainN); then engine sizing (mem 0.8, 128 running) and DSpark block 4 at 1.0×."
+  }
+ ]
 }
