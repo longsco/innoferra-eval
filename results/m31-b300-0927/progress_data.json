@@ -1103,7 +1103,7 @@
     "running since 06:21 PDT"
    ],
    [
-    "chainQ next (on top of mem 0.76): DSpark block 4 → 16k chunk → longest-prefix-first → 128 running",
+    "chainQ next (on top of mem 0.76 + OOM guard): DSpark block 4 → 16k chunk → longest-prefix-first → 128 running → fair share retry",
     "queued"
    ]
   ]
@@ -3204,7 +3204,7 @@
    "at": "06:25 (10-01)",
    "result": "Fair chunk share at 0.75× crashed an engine (prefill out of memory); the public MiniMax MSA CuTe kernel does not compile on B300 (NVVM backend failure for sm_103a and for the sm_100f family target).",
    "insight": "The crash exposes a stock-scheduler hazard: when no KV is free, add_chunked_req falls back to a full 16k chunk (to avoid leaking the chunked request) and allocation fails hard instead of retracting. Fair share raises resident KV, so it hits the hazard at 0.75×. MSA is not a quick prefill win on this hardware: its kernels target SM100 and the bundled CuTe-DSL 4.6.2 NVVM rejects the generated IR for SM103.",
-   "next": "Capacity (mem 0.76) is adopted; the remaining levers now run on top of it: DSpark block 4, 16k chunk, longest-prefix-first, 128 running. Fair share returns only with a fallback fix (cap the chunk at the free KV, or retract). MSA parked (retry option: CuTe-DSL 4.4.x overlay); the prefill-speed track continues with our own Triton kernels."
+   "next": "Capacity (mem 0.76) is adopted; the remaining levers now run on top of it: DSpark block 4, 16k chunk, longest-prefix-first, 128 running. Fair share returns only with a fallback fix (cap the chunk at the free KV, or retract). MSA parked (retry option: CuTe-DSL 4.4.x overlay); the prefill-speed track continues with our own Triton kernels. Done 06:30: OOM guard patched into both engine trees (fallback capped at the free KV); fair share re-queued on top of capacity."
   },
   {
    "at": "05:55 (10-01)",
