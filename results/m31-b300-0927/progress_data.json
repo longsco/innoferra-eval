@@ -3201,6 +3201,12 @@
  },
  "reflections": [
   {
+   "at": "08:02 (10-01)",
+   "result": "MiniMax's public MSA NVFP4 sparse-attention kernel runs on B300 inside the SGLang M3 dev image (fmha_sm100 0.1.1, CuTe-DSL 4.5.2): 1.9–2.5× faster than our Triton kernel on a 16k-token prefill chunk at 32k–524k context, and bitwise identical output.",
+   "insight": "Our Triton kernel is a bit-exact reproduction of this MSA kernel, so swapping it in keeps numerics unchanged while halving the time of the step that is ~30% of prefill. The earlier failures were toolchain-specific (newer MSA commit and/or CuTe-DSL 4.6.2 in our engine image), not a hardware limit. Integration needs an adapter in the training-compatible attention path: gather each request's KV pages into the flat layout MSA expects, swizzle the scales to 128×4 tiles, build the block CSR, and keep the Triton path for verify-sized batches and graph capture.",
+   "next": "Next pause: run MSA inside our engine image (dev-image MSA source with our CuTe-DSL 4.6.2, then with a 4.5.2 overlay); then write and A/B the adapter (greedy bitwise check, GSM8K, v3.1 0.75×)."
+  },
+  {
    "at": "07:58 (10-01)",
    "result": "DSpark block 4 on top of capacity at 0.75×: 0/15; decode 46 tok/s (capacity alone 55); TTFT 0.97 / 4.48 / 16.2 s.",
    "insight": "Shorter verify blocks lose more acceptance (3.66 → 3.06 tokens per step) than they save per step, so per-stream decode drops 16%. Our DSpark draft was trained for block 7; production's block 4 belongs to a different draft (DFlash2). Decode remains the binding axis at 0.75×, so block 7 stays.",
