@@ -250,6 +250,7 @@ def charts():
 JS = """
 (function(){
   function draw(){
+  if(!document.getElementById('c1')||!document.getElementById('c2')) return;   // innoferra 10-01: v1 charts removed from the page
   const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),star=css('--star'),ok=css('--okfill'),bad=css('--bad'),pend=css('--pend'),prev=css('--prev');
   const KC={bad:bad,ok:ok,prev:prev}; const TARGET=%(target)s;
@@ -289,9 +290,9 @@ JS = """
   let c=base; lev.filter(d=>d.m).forEach((d,i)=>{c+=d.v; const p=mp[i]; h+=`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${ink}"/><text x="${p[0]+8}" y="${p[1]-8}" font-size="11" fill="${ink}">${(c/TARGET*100).toFixed(0)}%%</text>`;});
   s2.innerHTML=h;
   }
-  draw();
-  try{new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','class','style']});}catch(e){}
-  try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>draw());}catch(e){}
+  try{draw();}catch(e){}
+  try{new MutationObserver(()=>{try{draw()}catch(e){}}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','class','style']});}catch(e){}
+  try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{try{draw()}catch(e){}});}catch(e){}
   const tabs=[...document.querySelectorAll('.tabs button')], panels=[...document.querySelectorAll('.tabpanel')];
   function show(id){tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id?'true':'false'));panels.forEach(p=>p.hidden=(p.id!==id));try{localStorage.setItem('m31tab',id)}catch(e){}}
   tabs.forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab);try{history.replaceState(null,'','#'+b.dataset.tab)}catch(e){}}));
