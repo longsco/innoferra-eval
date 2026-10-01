@@ -480,6 +480,11 @@
  },
  "timeline": [
   [
+   "22:05 (09-30)",
+   "Gap-fill simulation (GPUs busy while v3 builds), gateway with DP-rank pinning: production-shaped ladder valid at 3.28 M TPM per GPU (+28% vs 2.57 without rank pinning), hit 98.1%, TTFT p50 8.2 s → saturated ceiling ≈ 3.3 M per GPU vs production 6.3–6.6; agentic c16 1,088 tok/s (TTFT p99 0.60 s), c64 827 tok/s (TTFT p50 3.3 s). The v3 trace build failed in pass 2 (Too many open files; 1,024 limit) — chain37's 0.5× lever failed on the missing trace; pass 2 rebuilt with ulimit 65,536 while the GSM8K quality gate runs on the GPUs; chain37 re-arms itself when the trace exists. Production for the v3 window (hub): 806 M TPM = 4.20 M per GPU, TTFT p50 0.32 s, p99 10.4 s.",
+   "sim ceiling ≈ 3.3 M per GPU"
+  ],
+  [
    "21:28 (09-30)",
    "Simulation round done (StandardKernel harness, valid after the flush fix): agentic-quick c16 1,052 output tok/s, TTFT p50 0.25 s, per-request speed 99.5 tok/s; c64 692 tok/s with speed p50 13.4 tok/s (decode collapse) — that gateway still scattered token-ID sessions over DP ranks; chain38 reruns it with rank pinning + load-aware pinning. Agent trajectories average ~28k tokens per request (production 85–110k), so their TPM (0.8–0.95 M per GPU) is not comparable to production. Real-traffic round (v3) started: building the trace with 48 half-node buckets.",
    "sim: agentic c64 decode collapse"
@@ -1060,12 +1065,12 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "gap_bench (21:33 PDT): simulation on idle GPUs while the v3 trace builds",
-    "running: agentic-quick with DP-rank pinning, then a valid ladder (300 s drain); chain37 held until done"
+    "fix_v3 (22:05 PDT)",
+    "v3 pass 2 rebuilding (ulimit 65,536) + GSM8K quality gate on the frontier; re-arms chain37 when the trace exists"
    ],
    [
-    "chain37: real traffic v3 (Sep 30 13:10–13:25 PDT) on the frontier",
-    "trace building (224 GB, 48 half-node buckets) → 0.5× → 1.0×"
+    "chain37: real traffic v3 (Sep 30 13:10–13:25 PDT)",
+    "0.5× → 1.0× (production for this window: 4.20 M per GPU hub, TTFT p50 0.32 s)"
    ],
    [
     "chain38: load-aware + DP-rank pinning",
@@ -1073,7 +1078,7 @@
    ],
    [
     "chain39: quality gate + numerics + 1.5×",
-    "GSM8K on the frontier → production-style numerics + load-aware pinning at v3 1.0× (+ GSM8K) and 0.5× → frontier + load-aware pinning at v3 1.5×"
+    "armed"
    ]
   ]
  },
@@ -3088,6 +3093,36 @@
     "–",
     "0.017",
     "valid; decode collapses: token-ID sessions scattered over DP ranks (gateway fix landed after this run) → rerun in chain38"
+   ],
+   [
+    "Frontier + DP-rank pinning · agentic-quick",
+    "16",
+    "1,088 · 0.98 M TPM per GPU",
+    "0.23 / 0.60",
+    "104.6",
+    "–",
+    "0.023",
+    "valid; better tail than without rank pinning (p99 0.92)"
+   ],
+   [
+    "Frontier + DP-rank pinning · agentic-quick",
+    "64",
+    "827 · 0.93 M TPM per GPU",
+    "3.31 / 5.81",
+    "13.4",
+    "–",
+    "0.030",
+    "valid; hit 93.9%; saturation shows as TTFT (speed is end-to-end, short agent turns)"
+   ],
+   [
+    "Frontier + DP-rank pinning · ladder (production-shaped)",
+    "64",
+    "3,237 · <b>3.28 M TPM per GPU</b>",
+    "8.24 / 24.5 (p90 16.4)",
+    "58.3",
+    "–",
+    "0.90",
+    "valid; hit 98.1%; +28% vs the run without rank pinning; engines saturated ≈ our ceiling on production-shaped sessions"
    ]
   ],
   "note": "The teammates' harness (private repo StandardKernel/inference-benchmark, commit 8ae8f6d): streaming /v1/completions with token-ID prompts, exact token accounting against server usage, per-session cache_salt, fan-out /flush_cache between phases, GC freeze and an event-loop-lag check on the client. Marked as simulation: synthetic or recorded agent trajectories, not our production sessions. Real-traffic results are in the protocol v2/v3 tables. Ladder read: our production-shaped simulation lands at ≈ 2.6 M per GPU with TTFT p50 3.9 s, the same place as real traffic at 1.0× (2.9 M offered, TTFT p90 61 s): two independent benchmarks agree on the gap to production (6.3–6.6 M at TTFT ≈ 0.25 s)."
