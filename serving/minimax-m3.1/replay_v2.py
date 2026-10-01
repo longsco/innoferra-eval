@@ -183,6 +183,12 @@ async def measured(client, meas, out):
     await asyncio.gather(*tasks)
     return time.perf_counter() - t_start
 
+class LiveList(list):
+    """innoferra 10-01: every record is also appended to <out>.partial as it completes, so a stopped run keeps its data."""
+    def __init__(self, path): super().__init__(); self.f = open(path, "w")
+    def append(self, x):
+        super().append(x); self.f.write(json.dumps(x) + "\n"); self.f.flush()
+
 def q(v, p):
     v = sorted(x for x in v if x is not None); return v[min(len(v) - 1, int(p * len(v)))] if v else None
 def f2(x): return "-" if x is None else f"{x:.2f}"
@@ -236,12 +242,13 @@ async def main():
     print(f"traces {nb} half-buckets; warm-up: {len(warm)} sessions' last turns from t={T_W0:.0f}..{T_M0:.0f}s; measured: {len(meas)} requests "
           f"t={T_M0:.0f}..{T_M1:.0f}s ({sum(1 for r in meas if r.get('_pred') is not None)} wait for an earlier turn; {sum(1 for r in meas if r.get('prime_msg') is not None)} primed)", flush=True)
     if a.dry_run: return
-    await flush(); recs = []
+    await flush(); recs = LiveList(a.out + ".partial")
     lim = httpx.Limits(max_connections=4096, max_keepalive_connections=512)
     async with httpx.AsyncClient(timeout=httpx.Timeout(a.timeout, connect=30), limits=lim) as client:
         if a.warm_window > 0: await warmup(client, warm, recs)
         wall = await measured(client, meas, recs)
     with open(a.out, "w") as f:
         for r in recs: f.write(json.dumps(r) + "\n")
+    recs.f.close(); os.remove(a.out + ".partial")
     report(recs, wall, nb)
 asyncio.run(main())
