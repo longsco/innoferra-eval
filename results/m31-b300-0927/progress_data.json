@@ -3197,6 +3197,12 @@
  },
  "reflections": [
   {
+   "at": "05:25 (10-01)",
+   "result": "Kernel profile of the frontier engine (torch profiler, between levers): a cold 131k-token prefill takes 6.7 s on one DP rank (19.5k tok/s); decode with 32 streams keeps the GPU busy only 67–71% of the time.",
+   "insight": "Prefill time on the busy rank: sparse attention 30% (_q8kv4_sparse_partial + combine), indexer 21% (_q8kv4_index_score + top-k), MoE 20%, dense MXFP8 GEMMs 13%. These Q8KV4 Triton kernels run at roughly 12–14% of tensor-core peak; production replaces exactly them with in-house kernels (kv4_prefill_attn_v3, kv4_prefill_index_v3, kv4_index_tpshard) and splits each prompt over 2 GPUs (attention TP2), so its per-request prefill is ~2–3× ours. The scheduler confirms the coupling: with speculative decoding + DP attention, prefill always runs first and the two ranks cannot mix prefill and decode, so any prefill chunk on either rank pauses decoding on both. At 0.75× each rank prefills ~15% of the time → decode paused ~28% → 74 × 0.72 ≈ 53 tok/s, which is what we measured.",
+   "next": "Levers that cut prefill volume or per-step prefill time (capacity, 16k chunk) or decode step cost (DSpark block 4) stay first in the queue. Interleaving decode between prefill chunks was considered and dropped: it smooths token gaps but cannot raise the per-request decode rate because the prefill work is unchanged. The structural lever is faster KV4 prefill kernels (attention + indexer) — candidate engineering project after the queue."
+  },
+  {
    "at": "05:05 (10-01)",
    "result": "Baseline at v3.1 0.75× (3.34 M per GPU; production 3.37 M on the same requests): 1/15 minutes; TTFT 1.19 / 6.53 / 18.2 s; decode 53 tok/s; 0 errors.",
    "insight": "Between 0.5× and 0.75× both SLA axes break together: median TTFT moves just above 1 s and per-stream decode falls from 74 to 53 tok/s. The engines are not queueing (10–15 running per rank, KV 30–78%), so the loss is per-step speed: every scheduler step that carries a prefill chunk (up to 16k tokens per rank, ~0.75 s) also stalls all decoding streams on both DP ranks of that engine. Load grows prefill volume, so more steps are long ones.",
