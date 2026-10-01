@@ -1,17 +1,9 @@
 # chainQ lever queue: tag traces frac [VAR=value ...] (bash words; $HCX = the HiCache flags). 0.75x = b00 + half the sessions of b01.
 # All chainQ runs use protocol v3.1 (--skip-prod-shed: requests production answered with 429 are not sent).
-# Order = expected value. Single-factor levers on top of the load-aware frontier (MAXREQ 64, mem 0.68, chunk 32768, DSpark block 7).
-# cap first: hit_gap.py on v3_lp_1x -> we prefill 2.75x production's uncached tokens; 84% of the extra is sessions whose previous
-# request we served (13.3 of 30.8 M tokens after a 2-10 min gap = evicted); device pool is only 1.31 M tokens per rank with
-# 62 GB GPU memory left unused at mem 0.68; mem 0.76 -> device +37% and (ratio 3.0) host +37% (~243 GB per rank, ~1.9 TB of 3 TB).
-v3_lp_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5
-v3_lp_cap_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76
-# f2 (added 04:20 PDT): v3_lp_05x stalls = one 270-530k-token cold prefill per rank chunking for 20-35 s while every other request
-# on that rank waits (engine log 10:46:56 e0 DP0 pending 526k); fair share gives waiting requests half of each step's chunk budget.
-v3_lp_f2_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 "EXTRA_ENV=${BB/SGLANG_CHUNKED_REQ_SHARE=1.0/SGLANG_CHUNKED_REQ_SHARE=0.5}"
-# 0.5x under protocol v3.1 (calibration against v3_lp_05x = 7/15 with production-shed giants replayed)
-v3_lp_05x_v31 /tr/v3/b00.jsonl 1.0
-v3_lp_blk4_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 DSPARK_BLOCK=4
-v3_lp_lpm_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 "XARGS=$HCX --schedule-policy lpm"
-v3_lp_c16_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 CHUNK=16384
+# 06:25 PDT: capacity (MEMFRAC 0.76) adopted -> remaining single-factor levers run ON TOP of it ("cap" = mem 0.76).
+# Done: v3_lp_075x 1/15; v3_lp_cap_075x 1/15 (TTFT p50 1.19 -> 1.01, slow first tokens -42%); v3_lp_f2_075x CRASHED (prefill OOM:
+# with KV exhausted the stock add_chunked_req fallback allocates a full chunk; fair share fills KV faster) -> needs a fix first.
+v3_lp_cap_blk4_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 DSPARK_BLOCK=4
+v3_lp_cap_c16_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 CHUNK=16384
+v3_lp_cap_lpm_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 "XARGS=$HCX --schedule-policy lpm"
 v3_lp_cap_mr128_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 MAXREQ=128
