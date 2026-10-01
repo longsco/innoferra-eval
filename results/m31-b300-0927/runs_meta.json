@@ -203,7 +203,7 @@
    "tag": "v3_lp_cap_lpm_tok8par_05x",
    "at": "2026-10-01 16:55",
    "protocol": "v3.1",
-   "name": "+ parallel tokenisation (16 pieces, 16 threads per tokenizer process)",
+   "name": "+ parallel tokenising (16 pieces)",
    "change": "tokenisation",
    "verdict": "rejected",
    "why": "Aborted after 8 of 15 minutes: slowest-1% first tokens 25–60 s per minute (6–15 s without) and decode 54–67 tok/s; the extra tokenizer threads most likely starve the GPU scheduler processes. Retesting with 4 pieces."

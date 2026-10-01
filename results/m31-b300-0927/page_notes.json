@@ -132,10 +132,16 @@
    "name": "+ 8 tokenizer processes"
   },
   "v3_lp_cap_lpm_tok8par_05x": {
-   "name": "+ 8 tokenizer processes, parallel tokenisation"
+   "name": "+ parallel tokenising (16 pieces)",
+   "short": "parallel tokenising"
   },
   "v3_lp_cap_lpm_tok8par_0375x": {
-   "name": "+ 8 tokenizer processes, parallel tokenisation"
+   "name": "+ parallel tokenising (16 pieces)",
+   "short": "parallel tokenising"
+  },
+  "v3_lp_cap_lpm_tok8par4_05x": {
+   "name": "+ parallel tokenising (4 pieces)",
+   "short": "parallel tokenising"
   }
  },
  "plain_words": [

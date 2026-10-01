@@ -1,4 +1,4 @@
-# read_utc 2026-10-01T23:57:39Z
+# read_utc 2026-10-01T23:58:25Z
 ## queue
 ## done
 22:48:16 v3_lp_cap_lpm_tok8_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm"
