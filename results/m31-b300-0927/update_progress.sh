@@ -5,3 +5,9 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH; cd "$(dirname "$0")"
 scp -q '0008:/data01/minimax31/bench/tpm-*0927*.csv' tpm/ 2>/dev/null
 python3 progress_page.py --out progress-page.html || { echo "RENDER FAILED: not committing"; exit 1; }
 cd ../..; git add -f results/m31-b300-0927 >/dev/null; git -c user.name='long sha' -c user.email='thelightbleu@gmail.com' commit -q -m "progress page refresh: $(date -u +%H:%MZ)" 2>/dev/null && git push -q origin HEAD 2>&1 | tail -1; git log --oneline -1
+# alphabeta-m31 mirror (user 2026-09-30): the dashboard goes to the private repo with every refresh (code syncs on milestones: scripts/sync.sh)
+AB=/Users/longsmini/Vialabs/alphabeta-m31
+if [ -d "$AB/.git" ]; then
+  rsync -a --exclude __pycache__ --exclude quality-runner.out /Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/ "$AB/dashboard/"
+  (cd "$AB" && git add dashboard && { git diff --cached --quiet || { git -c user.name='long sha' -c user.email='thelightbleu@gmail.com' commit -q -m "dashboard refresh: $(date -u +%H:%MZ)" && git push -q origin main 2>&1 | tail -1; }; })
+fi
