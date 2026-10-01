@@ -28,6 +28,11 @@ ap.add_argument("--img", default="1064x1024", help="WxH of the synthetic image r
 ap.add_argument("--last-frac", type=float, default=1.0, help="keep only this fraction of the sessions of the LAST trace file (hash of the session key), for load levels between whole half-buckets")
 ap.add_argument("--timeout", type=float, default=1800); ap.add_argument("--no-prime", action="store_true"); ap.add_argument("--dry-run", action="store_true")
 ap.add_argument("--sla", default="1.0,15,60,0.001", help="per-minute SLA: TTFT p50 s, TTFT p99 s, decode p50 tok/s, error rate")
+ap.add_argument("--skip-prod-shed", action="store_true", help="innoferra 10-01 (protocol v3.1): do not send requests production answered with HTTP 429 (its admission shed them; v3 0.5x: 4 such requests, 3 of them 350-420k-token cold prefills = 8%% of our uncached prefill and the worst 20-35 s stalls). Their logged retries stay in the trace")
+ap.add_argument("--warm-relevant", type=float, default=0.0, help="innoferra 10-01 (v3.1): also warm, AFTER the recency warm-up, the last earlier "
+                "turn (any age) of every measured-window session whose first measured request production served with cached >= this share "
+                "of its prompt (e.g. 0.5) and that the recency warm-up missed; reproduces production's observed cache state for the "
+                "measured sessions (v3 at 0.5x left 5 production-cached 160-420k-token sessions cold: idle > 1 h)")
 a = ap.parse_args()
 KEY = open(a.key_file).read().strip() if os.path.exists(a.key_file) else ""
 SLA_P50, SLA_P99, SLA_DEC, SLA_ERR = [float(x) for x in a.sla.split(",")]
@@ -56,23 +61,31 @@ def fix_images(body):
                 elif isinstance(iu, str) and not iu.startswith("data:"): part["image_url"] = {"url": IMG}; n += 1
     return n
 
-def iter_file(fn, frac=1.0):
+def iter_file(fn, frac=1.0, fi=None):
     import hashlib
-    with open(fn) as f:
-        for l in f:
+    with open(fn, "rb") as f:
+        while True:
+            off = f.tell(); l = f.readline()
+            if not l: break
             r = json.loads(l)
             if frac < 1.0 and int(hashlib.md5(r["key"].encode()).hexdigest()[:8], 16) / 0xFFFFFFFF >= frac: continue
+            if fi is not None: r["_src"] = (fi, off)
             yield r
 
 def load():
     """Merge buckets by t; keep each session's last warm-window turn and every measured-window request."""
-    last_warm = {}; meas = []
-    fns = a.traces.split(",")
-    for r in heapq.merge(*(iter_file(fn, a.last_frac if i == len(fns) - 1 else 1.0) for i, fn in enumerate(fns)), key=lambda r: r["t"]):
+    last_warm = {}; meas = []; last_any = {}; shed = [0, 0]
+    fns = a.traces.split(","); rel = a.warm_relevant > 0
+    for r in heapq.merge(*(iter_file(fn, a.last_frac if i == len(fns) - 1 else 1.0, i if rel else None) for i, fn in enumerate(fns)), key=lambda r: r["t"]):
         if r["t"] >= T_M1: break
+        if a.skip_prod_shed and r.get("prod_status") == 429:
+            shed[r["t"] >= T_M0] += 1; continue
+        if rel and r["t"] < T_M0: last_any[r["key"]] = (r["t"], r["_src"])
         if r["t"] < T_W0: continue
         if r["t"] < T_M0: last_warm[r["key"]] = r
         else: meas.append(r)
+    for r in meas: r.pop("_src", None)
+    if a.skip_prod_shed: print(f"skip-prod-shed (v3.1): not sending {shed[1]} measured-window and {shed[0]} earlier requests production answered with 429", flush=True)
     warm = []; tok = 0
     for r in sorted(last_warm.values(), key=lambda r: -r["t"]):          # newest first, up to the cache budget
         tok += (r.get("prod_prompt_tokens") or 0)
@@ -80,6 +93,21 @@ def load():
         warm.append(r)
     warm.sort(key=lambda r: r["t"])
     print(f"warm-up budget {a.warm_budget/1e6:.0f} M tokens: {len(warm)} of {len(last_warm)} sessions, last turns from t={warm[0]['t'] if warm else 0:.0f}s", flush=True)
+    if rel:   # v3.1: production-cached measured sessions the recency warm-up missed, warmed last (any age)
+        have = {r["key"] for r in warm}; first = {}
+        for r in meas: first.setdefault(r["key"], r)
+        need = [k for k, r in first.items() if k not in have and k in last_any and (r.get("prod_prompt_tokens") or 0) > 0
+                and (r.get("prod_cached_tokens") or 0) >= a.warm_relevant * r["prod_prompt_tokens"]]
+        fhs = [open(fn, "rb") for fn in fns]; extra = []
+        for k in need:
+            fi, off = last_any[k][1]; fhs[fi].seek(off); r = json.loads(fhs[fi].readline()); r.pop("_src", None); extra.append(r)
+        for fh in fhs: fh.close()
+        extra.sort(key=lambda r: r["t"]); ages = sorted(T_M0 - r["t"] for r in extra)
+        print(f"warm-relevant (>= {a.warm_relevant:g} cached in production at the first measured request): +{len(extra)} sessions, "
+              f"{sum(r.get('prod_prompt_tokens') or 0 for r in extra)/1e6:.1f} M tokens, idle before the window p50 "
+              f"{(ages[len(ages)//2] if ages else 0)/60:.0f} min (max {(ages[-1] if ages else 0)/60:.0f} min); warmed after the recency set", flush=True)
+        warm += extra
+    for r in warm: r.pop("_src", None)
     # causal links inside the measured window: successor = (key, t == predecessor's next_t)
     by = {(r["key"], r["t"]): i for i, r in enumerate(meas)}
     for i, r in enumerate(meas):

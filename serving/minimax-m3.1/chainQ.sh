@@ -6,6 +6,7 @@
 # tag traces frac [VAR=value ...]; frac = share of the LAST trace's sessions, so b00,b01 at 0.5 = 1.5 half-node buckets = 0.75x)
 # and runs it with lever(). Lines can be appended or reordered at any time; popped lines go to lever_queue.done.
 # Exits when the queue is empty (the GPU idle guard then alerts). Ends with CHAINQ DONE.
+# Protocol v3.1 (10-01 04:30 PDT): replay with --skip-prod-shed (requests production answered with 429 are not sent).
 K=/data01/minimax31/serving; L=/data01/minimax31/bench/stress2-0927.log; T=/data01/minimax31/traffic; cd $K
 IB=/data01/minimax31/inference-benchmark; V=/data01/minimax31/ib-venv; R=/data01/minimax31/ib-results
 MD=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private; KEY=$(cat /home/long/.m31_apikey)
@@ -24,7 +25,7 @@ lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do e
   bash launch_tp2x4_old.sh 2>&1 | tail -1; up4 || { log "lever $tag FAILED to boot"; return 1; }
   (nohup setsid bash $K/diag_1x.sh 4200 $tag > /dev/null 2>&1 < /dev/null &)
   bash $K/accept_metrics.sh snap /tmp/am-L-$tag
-  V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --out /tr/v3L-$tag.jsonl
+  V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed --out /tr/v3L-$tag.jsonl
   log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag); gateway route: $(curl -s -m 5 http://127.0.0.1:8000/health | cut -c1-300)"
   log "TTFT by uncached size ($tag):"; (cd $T && python3 ttft_buckets_v3.py $tag)
   log "===== lever $tag done"; }
