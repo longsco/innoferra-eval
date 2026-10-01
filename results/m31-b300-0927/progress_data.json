@@ -3205,6 +3205,12 @@
  },
  "reflections": [
   {
+   "at": "05:55 (10-01)",
+   "result": "Capacity (mem 0.76) at v3.1 0.75×: 1/15 again, but TTFT 1.01 / 4.84 / 18.3 s (baseline 1.19 / 6.53 / 18.2), slow first tokens −42%, extra re-prefill vs production −11%; decode 55 tok/s (baseline 53).",
+   "insight": "Capacity does what the cache analysis predicted (fewer evicted sessions, lower TTFT median and p90) and stays in the config. What now fails almost every minute is decode below 60 tok/s. Both DP ranks of an engine step in lockstep through every MoE layer, so a 0.75 s prefill chunk on either rank also stalls the other rank's decode; mixing prefill and decode across ranks (speculative_skip_dp_mlp_sync) cannot help for the same reason, and overlap scheduling is already on. Decode speed at load is therefore set by how much prefill time there is.",
+   "next": "Queue continues (fair share, 0.5× calibration, DSpark block 4, LPM, 16k chunk, capacity + 128 running). In the pause before the next lever: the public MiniMax MSA CuTe-DSL NVFP4 sparse-attention kernel vs our Triton reproduction on identical inputs — if it is clearly faster and bit-identical, swapping it in is the first prefill-speed lever."
+  },
+  {
    "at": "05:25 (10-01)",
    "result": "Kernel profile of the frontier engine (torch profiler, between levers): a cold 131k-token prefill takes 6.7 s on one DP rank (19.5k tok/s); decode with 32 streams keeps the GPU busy only 67–71% of the time.",
    "insight": "Prefill time on the busy rank: sparse attention 30% (_q8kv4_sparse_partial + combine), indexer 21% (_q8kv4_index_score + top-k), MoE 20%, dense MXFP8 GEMMs 13%. These Q8KV4 Triton kernels run at roughly 12–14% of tensor-core peak; production replaces exactly them with in-house kernels (kv4_prefill_attn_v3, kv4_prefill_index_v3, kv4_index_tpshard) and splits each prompt over 2 GPUs (attention TP2), so its per-request prefill is ~2–3× ours. The scheduler confirms the coupling: with speculative decoding + DP attention, prefill always runs first and the two ranks cannot mix prefill and decode, so any prefill chunk on either rank pauses decoding on both. At 0.75× each rank prefills ~15% of the time → decode paused ~28% → 74 × 0.72 ≈ 53 tok/s, which is what we measured.",
@@ -3375,6 +3381,16 @@
     "94.6% (97.0%)",
     "0",
     "no scheduler queue (10–15 running per DP rank, KV 30–78%) yet median TTFT 1.0–1.5 s and decode 41–66 tok/s: steps are slowed by prefill work mixed into them, not by admission; media-tag session now 200"
+   ],
+   [
+    "+ capacity: mem 0.68 → 0.76 (device KV 1.31 → 1.85 M tokens per rank, host cache +41%) · v3.1",
+    "0.75× = 3.34 M",
+    "<b>1</b>",
+    "<b>1.01</b> / 4.84 / 18.3",
+    "55",
+    "95.0% (97.0%)",
+    "0",
+    "TTFT p50 ≤ 1 s in 7 of 15 minutes (baseline 2); >10 s first tokens 140 (baseline 243); extra uncached vs production 8.9 M (baseline 10.1 M; 2–10 min misses −24%, >10 min −54%). Decode 46–60 tok/s per minute is now the binding SLA axis"
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple. Load multiples: production traffic is split by session into 48 half-node buckets; 1.0× = 2 buckets ≈ one node's share of the hub logs, 0.5× = 1 bucket, 2× = 4 buckets — load is raised by adding users, not by speeding up time. On v3, 0.5× = 2.23 M, 1.0× = 4.20 M per GPU offered; matching a real production node (engine counters 6.3–6.6 M) ≈ 1.5×; 7 M ≈ 1.7×."
