@@ -6,6 +6,10 @@ cache layout [slots, H, 64] is MSA's flat varlen layout; scales are swizzled to 
 Reports ms per call (MSA with and without its CSR build) and output agreement. Run inside the engine image:
   docker run --rm --gpus device=N -v <dev tree>:/opt/0922-sglang/python:ro -v /data01/minimax31/src/msa:/msa:ro -v <this dir>:/b:ro \
     -v <cache>:/root/.cache <image> python3 /b/bench_msa_vs_triton.py [--ctx 32768,131072,524288] [--t 16384]"""
+import os as _os, sys as _sys
+_ov = _os.environ.get("CUTEDSL_OVERLAY_FIRST")
+if _ov: _sys.path.insert(0, _ov)   # innoferra: our image injects its CuTe-DSL path ahead of PYTHONPATH
+
 import argparse, sys, traceback
 import torch, triton
 import os

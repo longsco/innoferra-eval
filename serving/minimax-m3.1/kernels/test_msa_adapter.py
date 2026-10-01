@@ -3,6 +3,10 @@
 on an engine-like MIXED prefill batch: requests with q_lens [12000, 3000, 384, 128, 7, 1] over long prefixes, KV pages scattered
 through a shared pool, decoder-like top-16 blocks (block 0, newest blocks, 11 of 32 shared candidates per 64-token group).
 Run inside an image where MSA compiles, with the dev tree at /opt/0922-sglang/python, MSA at /msa and this dir at /b."""
+import os as _os, sys as _sys
+_ov = _os.environ.get("CUTEDSL_OVERLAY_FIRST")
+if _ov: _sys.path.insert(0, _ov)   # innoferra: our image injects its CuTe-DSL path ahead of PYTHONPATH
+
 import os, sys, torch, triton
 sys.path.insert(0, "/opt/0922-sglang/python"); sys.path.insert(0, "/b")
 os.environ["SGLANG_Q8KV4_MSA_SPARSE"] = "1"
@@ -49,3 +53,18 @@ meta = {}; A.msa_sparse_attention(*args, seq_lens_cpu=seq, meta=meta)
 t_m2 = triton.testing.do_bench(lambda: A.msa_sparse_attention(*args, seq_lens_cpu=seq, meta=meta), warmup=30, rep=200)
 print(f"mixed batch q_lens {q_lens} (T {T}), ctx up to {max(seq)}: bitwise equal {same} per request {per_req}, max|diff| {diff.max().item():.3g} | "
       f"triton {t_t:.3f} ms, MSA adapter {t_m:.3f} ms ({t_t/t_m:.2f}x), with cached gather index {t_m2:.3f} ms ({t_t/t_m2:.2f}x)", flush=True)
+
+# component timing of the adapter (where does the overhead over the bare kernel go?)
+attn, build = A._load()
+slot, cu_k, rows_pad = A._gather_meta(pt, seq_t, sum(seq), BLK, {})
+total_k = sum(seq); maxk = max(seq); total_rows = sum((x + BLK - 1) // BLK for x in seq)
+def g_kv(): return kp.index_select(0, slot), vp.index_select(0, slot)
+def g_sc():
+    ks2 = torch.zeros(rows_pad, 8, dtype=torch.uint8, device=dev); ks2[: total_k * HKV] = ks.index_select(0, slot).view(total_k * HKV, 8)
+    return A._swizzle_128x4(ks2)
+def g_csr(): return build(topk.contiguous(), cu, cu_k, BLK, total_k=total_k, max_seqlen_k=maxk, max_seqlen_q=max(q_lens), total_rows=total_rows, qhead_per_kv=HQ // HKV, return_schedule=True)
+k_, v_ = g_kv(); s_ = g_sc(); rp, qi, sch = g_csr()
+def g_kernel(): return attn(q, k_, v_, s_, s_, None, None, rp, qi, TOPK, cu_seqlens_q=cu, cu_seqlens_k=cu_k, max_seqlen_q=max(q_lens), max_seqlen_k=maxk, blk_kv=BLK, causal=True, softmax_scale=D ** -0.5, partial_dtype=torch.bfloat16, return_softmax_lse=False, schedule=sch)
+g_kernel(); torch.cuda.synchronize()
+tm = {n: triton.testing.do_bench(f, warmup=20, rep=150) for n, f in [("gather K+V", g_kv), ("scales x1 (zero+gather+swizzle)", g_sc), ("CSR build", g_csr), ("MSA kernel", g_kernel)]}
+print("adapter components (ms): " + ", ".join(f"{n} {v:.3f}" for n, v in tm.items()) + f"; scales x2 total {2*tm['scales x1 (zero+gather+swizzle)']:.3f}", flush=True)
