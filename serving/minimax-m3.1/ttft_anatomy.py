@@ -74,14 +74,19 @@ with httpx.Client() as c:
                 except Exception: pass
         t0 = time.perf_counter()
         kw = {k: tg["body"][k] for k in ("reasoning_effort",) if tg["body"].get(k) is not None}
+        t_ids, ui, ids = float("nan"), None, []
         try:
             ids = tok.apply_chat_template(msgs, tools=tools, tokenize=True, add_generation_prompt=True, **kw)
             t_tok = time.perf_counter() - t0
             ids = list(ids["input_ids"] if isinstance(ids, dict) else ids)
-            t_ids, ui = ttft_stream(c, U + "/generate", {"input_ids": ids, "sampling_params": {"max_new_tokens": 4, "temperature": 0}, "stream": True})
         except Exception as e:
-            print(f"  local template failed ({type(e).__name__}: {str(e)[:80]}); chat timings only", flush=True)
-            t_tok, t_ids, ui, ids = float("nan"), float("nan"), None, []
+            print(f"  local template failed ({type(e).__name__}: {str(e)[:80]})", flush=True); t_tok = float("nan")
+        if ids:
+            try:
+                t_ids, ui = ttft_stream(c, U + "/generate", {"input_ids": ids, "routed_dp_rank": a.rank,
+                                        "sampling_params": {"max_new_tokens": 4, "temperature": 0}, "stream": True})
+            except Exception as e:
+                print(f"  /generate failed ({type(e).__name__}: {str(e)[:120]})", flush=True)
         pt = (u or {}).get("prompt_tokens"); ct = ((u or {}).get("prompt_tokens_details") or {}).get("cached_tokens")
         ci = ((ui or {}).get("prompt_tokens_details") or {}).get("cached_tokens")
         rows.append((pt or len(ids), ct, t_chat, t_chat2, t_ids, t_tok, len(ids)))
