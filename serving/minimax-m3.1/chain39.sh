@@ -26,17 +26,17 @@ lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do e
   log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag); gateway route: $(curl -s -m 5 http://127.0.0.1:8000/health | cut -c1-300)"
   log "TTFT by uncached size ($tag):"; (cd $T && python3 ttft_buckets_v3.py $tag)
   log "===== lever $tag done"; }
-IBEVAL(){ INFERENCE_API_KEY=$KEY $V/bin/inference-bench evaluate --backend sglang --preset quality-quick --endpoint http://127.0.0.1:8000/v1 --model minimax-m3.1-nvfp4 "$@" 2>&1 | grep -vE "PyTorch was not found" | tail -8; }
+IBEVAL(){ INFERENCE_API_KEY=$KEY $V/bin/python $K/gsm8k_bounded.py --concurrency 128 "$@" 2>&1 | grep -vE "PyTorch was not found" | tail -4; }   # bounded: the stock evaluate bursts 1,319 requests at once
 {
   until grep -q "===== CHAIN38 DONE" $L; do sleep 60; done
   log "===== chain39: quality gate + load-aware pinning with production-style numerics + 1.5x on real traffic v3"
   mkdir -p $R/lp $R/lpnum
   log "== quality-quick (GSM8K 1,319) on the frontier + load-aware pinning (engines left by chain38)"
-  IBEVAL --output $R/lp/quality-quick
+  IBEVAL --output $R/lp/quality-gsm8k-c128
   rm -f $K/STOP_WATCHDOG; (nohup setsid bash $K/engine_watchdog.sh $K/STOP_WATCHDOG > /dev/null 2>&1 < /dev/null &)
   lever v3_lpnum_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 TRAINING_COMPAT=0 "EXTRA_ENV=$BB SGLANG_MINIMAX_SPARSE_KV4=0"
   log "== quality-quick on production-style numerics (training off + fp8 KV) + load-aware pinning"
-  IBEVAL --output $R/lpnum/quality-quick
+  IBEVAL --output $R/lpnum/quality-gsm8k-c128
   lever v3_lpnum_05x /tr/v3/b00.jsonl 1.0 TRAINING_COMPAT=0 "EXTRA_ENV=$BB SGLANG_MINIMAX_SPARSE_KV4=0"
   lever v3_lp_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0
   touch $K/STOP_WATCHDOG
