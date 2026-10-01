@@ -25,6 +25,8 @@ gw(){ sudo -n docker rm -f m31-gateway > /dev/null 2>&1
 {
   until grep -q "===== CHAIN37 DONE" $L; do sleep 60; done
   log "===== chainD: Dynamo KV router (production-like rule) + frontier engines on real traffic v3 1.0x"
+  log "== GSM8K (1,319, concurrency 128) on training-off + fp8 KV (engines left by chainN)"
+  INFERENCE_API_KEY=$(cat /home/long/.m31_apikey) /data01/minimax31/ib-venv/bin/python $K/gsm8k_bounded.py --output /data01/minimax31/ib-results/tc0kv8/quality-gsm8k-c128 2>&1 | grep -vE "PyTorch was not found" | tail -3
   touch $K/STOP_WATCHDOG; sudo -n docker rm -f m31-gateway m31-tp2-0 m31-tp2-1 m31-tp2-2 m31-tp2-3 > /dev/null 2>&1; sleep 15
   TREE_SRC=/data01/minimax31/src/0922-sglang-hicache/python; TREE_ARGS="$HC --enable-cache-report"
   up $TREE_SRC "$TREE_ARGS"; TREE=hicache
@@ -37,9 +39,8 @@ gw(){ sudo -n docker rm -f m31-gateway > /dev/null 2>&1
   if curl -sf -m 5 http://127.0.0.1:8001/v1/models | grep -q minimax; then
     log "Dynamo up (tree $TREE): $(sudo -n docker ps --format '{{.Names}}' | grep -E 'dyn-' | tr '\n' ' ')"
     log "gateway -> frontend :8001 smoke: $(gw)"
-    log "== GSM8K (1,319) on the frontier numerics (training numerics + KV4) through Dynamo"
-    INFERENCE_API_KEY=$(cat /home/long/.m31_apikey) /data01/minimax31/ib-venv/bin/inference-bench evaluate --backend sglang --preset quality-quick \
-        --endpoint http://127.0.0.1:8000/v1 --model minimax-m3.1-nvfp4 --output /data01/minimax31/ib-results/tpc_dyn/quality-quick 2>&1 | grep -vE "PyTorch was not found" | tail -4
+    log "== GSM8K (1,319, concurrency 128) on the frontier numerics (training numerics + KV4) through Dynamo"
+    INFERENCE_API_KEY=$(cat /home/long/.m31_apikey) /data01/minimax31/ib-venv/bin/python $K/gsm8k_bounded.py --output /data01/minimax31/ib-results/tpc_dyn/quality-gsm8k-c128 2>&1 | grep -vE "PyTorch was not found" | tail -3
     log "===== lever v3_dyn_05x: real traffic v3 0.5x through Dynamo"
     V2 --traces /tr/v3/b00.jsonl --last-frac 1.0 --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --out /tr/v3L-dyn_05x.jsonl
     log "TTFT by uncached size (dyn_05x):"; (cd $T && python3 ttft_buckets_v3.py dyn_05x)
