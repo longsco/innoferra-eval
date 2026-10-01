@@ -27,7 +27,7 @@ lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do e
   log "TTFT by uncached size ($tag):"; (cd $T && python3 ttft_buckets_v3.py $tag)
   log "===== lever $tag done"; }
 {
-  until grep -q "===== CHAIN37 DONE" $L; do sleep 60; done
+  until grep -q "===== CHAIND DONE" $L; do sleep 60; done
   log "===== chain38: load-aware session pinning (real traffic v3 1.0x / 0.5x, simulation ladder)"
   python3 $K/patch_shim_loadpin.py /data01/minimax31/gateway/shim.py
   G=/data01/minimax31/gateway/run_gateway.sh
