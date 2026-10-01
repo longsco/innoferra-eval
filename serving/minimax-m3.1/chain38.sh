@@ -15,7 +15,7 @@ BB="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1 SG
 base_env(){ export NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30 ROUTE_SESSION_KEY=prompt_cache_key,cache_salt ROUTE_BALANCE_SLACK=1 TOOL_SCHEMA_DROP_NULL=1 VALIDATE_TOOL_HISTORY=0
   export MAXREQ=64 MEMFRAC=0.68 CHUNK=32768 TOKW=4 DRAFT_WINDOW=4095 DEV_SRC=/data01/minimax31/src/0922-sglang-hicache/python DRAFT_ATTN=flashinfer DSPARK_BLOCK= STREAM_COALESCE_CHARS=12
   export TRAINING_COMPAT=1 NUMA=0 EXTRA_ENV="$BB" RAW_COMPLETIONS=1 ROUTE_PIN_BY_INFLIGHT=1 ROUTE_REPIN_SLACK=16
-  export XARGS="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first"; }
+  export XARGS="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report"; }
 up4(){ t0=$(date +%s); while :; do up=0; for i in 0 1 2 3; do curl -sf -m 30 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done; [ $up = 4 ] && return 0; [ $(( $(date +%s)-t0 )) -gt 1800 ] && return 1; sleep 30; done; }
 lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do export "$kv"; done
   log "===== lever $tag: traces $traces frac $frac; $* (ROUTE_PIN_BY_INFLIGHT=$ROUTE_PIN_BY_INFLIGHT ROUTE_REPIN_SLACK=$ROUTE_REPIN_SLACK EXTRA_ENV=$EXTRA_ENV)"
@@ -39,7 +39,7 @@ lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do e
   log "== simulation ladder with load-aware pinning (engines from v3_lp_05x)"
   mkdir -p $R/lp; cp $R/tpc/server-metadata.json $R/lp/ 2>/dev/null
   INFERENCE_API_KEY=$KEY $V/bin/inference-bench run --backend sglang --endpoint http://127.0.0.1:8000/v1 --model minimax-m3.1-nvfp4 --tokenizer $MD \
-     --preset ladder --concurrency 64 --min-input-len 20000 --max-input-len 260000 --avg-output-len 1500 --cache-hit-rate 0.97 \
+     --preset ladder --concurrency 64 --min-input-len 20000 --max-input-len 260000 --avg-output-len 1500 --cache-hit-rate 0.97 --drain 300 \
      --server-metadata $R/lp/server-metadata.json --output $R/lp/ladder-c64 2>&1 | tail -30
   $V/bin/inference-bench report $R/tpc/ladder-c64 $R/lp/ladder-c64 --output $R/lp/compare-ladder > /dev/null 2>&1
   echo "===== CHAIN38 DONE"; } >> $L 2>&1
