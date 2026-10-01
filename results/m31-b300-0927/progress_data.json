@@ -1087,27 +1087,23 @@
     "queued"
    ],
    [
-    "chainQ 3: v3_lp_f2_075x — fair chunk share 0.5 (waiting requests keep half of each prefill step)",
-    "queued"
-   ],
-   [
     "chainQ 4: v3_lp_05x_v31 — 0.5× calibration under v3.1",
     "queued"
    ],
    [
-    "chainQ 5: v3_lp_blk4_075x — DSpark block 4",
-    "queued"
+    "chainQ: v3_lp_cap_075x — mem 0.76",
+    "done: 1/15, TTFT p50 1.01, slow first tokens −42% → adopted"
    ],
    [
-    "chainQ 6: v3_lp_lpm_075x — longest-prefix-first scheduling",
-    "queued"
+    "chainQ: v3_lp_f2_075x — fair share 0.5",
+    "crashed (prefill OOM) → needs a scheduler fix"
    ],
    [
-    "chainQ 7: v3_lp_c16_075x — 16k prefill chunk",
-    "queued"
+    "chainQ: v3_lp_05x_v31 — 0.5× calibration",
+    "running since 06:21 PDT"
    ],
    [
-    "chainQ 8: v3_lp_cap_mr128_075x — mem 0.76 + 128 running",
+    "chainQ next (on top of mem 0.76): DSpark block 4 → 16k chunk → longest-prefix-first → 128 running",
     "queued"
    ]
   ]
@@ -1115,7 +1111,7 @@
  "queued": [
   {
    "title": "Faster KV4 prefill kernels (sparse attention + indexer = 51% of prefill)",
-   "detail": "Step 1 (cheap): autotune the fork's Triton kernels for B300 — _q8kv4_index_score (fixed num_warps 4, 3 stages, 8 blocks per program; ~14% of FP8 peak) and _q8kv4_sparse_partial/combine (num_warps 4) — with a microbenchmark on recorded prefill shapes, verified bitwise/allclose against the current kernels. Step 2 (larger): a TP-sharded or split-query prefill path so one giant prompt uses both GPUs of an engine, as production's kv4_index_tpshard does.",
+   "detail": "Step 1 (cheap): autotune the fork's Triton kernels for B300 — _q8kv4_index_score (fixed num_warps 4, 3 stages, 8 blocks per program; ~14% of FP8 peak) and _q8kv4_sparse_partial/combine (num_warps 4) — with a microbenchmark on recorded prefill shapes, verified bitwise/allclose against the current kernels. Step 2 (larger): a TP-sharded or split-query prefill path so one giant prompt uses both GPUs of an engine, as production's kv4_index_tpshard does. Checked 10-01: the public MiniMax MSA (CuTe-DSL NVFP4 sparse attention, MIT) fails NVVM compilation on B300 (sm_103a, sm_100f) with CuTe-DSL 4.6.2 — parked.",
    "why": "Production's prefill per request is ~2–3× ours; every second of prefill on a rank pauses decode on both ranks of that engine, so prefill speed drives TTFT tails and decode speed together.",
    "script": "to write (after the lever queue)",
    "commit": "",
@@ -3205,6 +3201,12 @@
  },
  "reflections": [
   {
+   "at": "06:25 (10-01)",
+   "result": "Fair chunk share at 0.75× crashed an engine (prefill out of memory); the public MiniMax MSA CuTe kernel does not compile on B300 (NVVM backend failure for sm_103a and for the sm_100f family target).",
+   "insight": "The crash exposes a stock-scheduler hazard: when no KV is free, add_chunked_req falls back to a full 16k chunk (to avoid leaking the chunked request) and allocation fails hard instead of retracting. Fair share raises resident KV, so it hits the hazard at 0.75×. MSA is not a quick prefill win on this hardware: its kernels target SM100 and the bundled CuTe-DSL 4.6.2 NVVM rejects the generated IR for SM103.",
+   "next": "Capacity (mem 0.76) is adopted; the remaining levers now run on top of it: DSpark block 4, 16k chunk, longest-prefix-first, 128 running. Fair share returns only with a fallback fix (cap the chunk at the free KV, or retract). MSA parked (retry option: CuTe-DSL 4.4.x overlay); the prefill-speed track continues with our own Triton kernels."
+  },
+  {
    "at": "05:55 (10-01)",
    "result": "Capacity (mem 0.76) at v3.1 0.75×: 1/15 again, but TTFT 1.01 / 4.84 / 18.3 s (baseline 1.19 / 6.53 / 18.2), slow first tokens −42%, extra re-prefill vs production −11%; decode 55 tok/s (baseline 53).",
    "insight": "Capacity does what the cache analysis predicted (fewer evicted sessions, lower TTFT median and p90) and stays in the config. What now fails almost every minute is decode below 60 tok/s. Both DP ranks of an engine step in lockstep through every MoE layer, so a 0.75 s prefill chunk on either rank also stalls the other rank's decode; mixing prefill and decode across ranks (speculative_skip_dp_mlp_sync) cannot help for the same reason, and overlap scheduling is already on. Decode speed at load is therefore set by how much prefill time there is.",
@@ -3391,6 +3393,16 @@
     "95.0% (97.0%)",
     "0",
     "TTFT p50 ≤ 1 s in 7 of 15 minutes (baseline 2); >10 s first tokens 140 (baseline 243); extra uncached vs production 8.9 M (baseline 10.1 M; 2–10 min misses −24%, >10 min −54%). Decode 46–60 tok/s per minute is now the binding SLA axis"
+   ],
+   [
+    "+ fair chunk share 0.5 (waiting requests keep half of each prefill step) · v3.1",
+    "0.75× = 3.34 M",
+    "<b>invalid</b>",
+    "–",
+    "–",
+    "–",
+    "engine crash",
+    "engine 0 scheduler: 'Prefill out of memory — allocate 16,384 tokens, 8,320 available, 0 evictable' at 13:17 UTC → watchdog stopped the replay. With KV exhausted, the stock chunked-request fallback still takes a full chunk; fair share keeps more requests resident, so KV runs out first. Needs a scheduler fix before a retry"
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple. Load multiples: production traffic is split by session into 48 half-node buckets; 1.0× = 2 buckets ≈ one node's share of the hub logs, 0.5× = 1 bucket, 2× = 4 buckets — load is raised by adding users, not by speeding up time. On v3, 0.5× = 2.23 M, 1.0× = 4.20 M per GPU offered; matching a real production node (engine counters 6.3–6.6 M) ≈ 1.5×; 7 M ≈ 1.7×."
