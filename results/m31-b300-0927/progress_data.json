@@ -21,9 +21,9 @@
   },
   {
    "label": "Ours · real traffic (v3.1) best",
-   "value": "≈2.2 M",
+   "value": "≈1.8 M",
    "cls": "bad",
-   "sub": "per GPU offered at 0.5× · 9 of 15 minutes pass the SLA · TTFT p50 0.89 s, decode 77 tok/s · no load level passes all 15 yet"
+   "sub": "per GPU at 13 of 15 minutes in SLA (2 misses: median TTFT 1.02 / 1.05 s) · 2.23 M: 9/15 · no load passes all 15 yet"
   },
   {
    "label": "Gap to production",
@@ -3201,6 +3201,12 @@
  },
  "reflections": [
   {
+   "at": "09:35 (10-01)",
+   "result": "Adopted config at 1.79 M per GPU (0.375×): 13/15 minutes; TTFT 0.85 / 2.75 / 6.79 s (production on the same requests 0.34 / 2.95 / 10.4 s); decode 92 tok/s (production 67); 0 errors.",
+   "insight": "At this load the tail and decode are already better than production; what fails is the median TTFT, by 20–50 ms in 2 minutes. Warm requests (< 1k new tokens) show a TTFT floor that grows with the total prompt length — 0.39 s under 20k tokens, 0.87 s at 60–120k, 1.34 s at 120–250k, 2.0 s above 250k — about 5 µs per cached token. That is not GPU math (the new tokens are few): candidates are chat-template rendering and tokenisation of the whole prompt in Python on every turn (production tokenises in Rust in its Dynamo frontend) and re-loading evicted prefixes from the host cache.",
+   "next": "TTFT-floor anatomy at idle on the next pause: the same warm 100–250k-token requests via the gateway, direct to the engine, and as pre-tokenised input ids, to split template + tokenisation, gateway and engine time. Then 2.23 M with the adopted config."
+  },
+  {
    "at": "08:50 (10-01)",
    "result": "16k prefill chunk on top of capacity at 0.75×: 1/15; TTFT 1.05 / 5.22 / 18.9 s, decode 53 tok/s (capacity alone 1.01 / 4.84 / 18.3, 55).",
    "insight": "Same verdict as on Sep 30: halving the chunk does not reduce the total prefill time that stalls decoding, it only spreads it over more steps, and median TTFT gets worse. Failing-minute breakdown so far: at 2.23 M only TTFT fails (p99 in 5 minutes, median in 1); at 3.34 M decode < 60 tok/s fails in 13–14 of 15 minutes. Both trace back to slow prefill.",
@@ -3457,6 +3463,16 @@
     "95.2% (97.0%)",
     "0",
     "rejected: slightly worse than capacity alone on TTFT and decode (same as the Sep 30 v2 test, 6/15 vs 10–11); smaller chunks add steps without cutting total prefill time"
+   ],
+   [
+    "Adopted config (load-aware pinning + capacity) · v3.1",
+    "0.375× = 1.79 M (prod 1.79 M)",
+    "<b>13</b>",
+    "0.85 / 2.75 / <b>6.79</b>",
+    "<b>92</b>",
+    "96.0% (97.0%)",
+    "0",
+    "closest to a full pass: only 2 minutes miss, both on median TTFT (1.02 s, 1.05 s); p99 TTFT and decode beat production on the same requests (production 0.34 / 2.95 / 10.4 s, 67 tok/s). Warm-request TTFT grows with total prompt length: 0.39 s (<20k tokens) → 2.01 s (250k+) vs production 0.23 → 0.83 s"
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple. Load multiples: production traffic is split by session into 48 half-node buckets; 1.0× = 2 buckets ≈ one node's share of the hub logs, 0.5× = 1 bucket, 2× = 4 buckets — load is raised by adding users, not by speeding up time. On v3, 0.5× = 2.23 M, 1.0× = 4.20 M per GPU offered; matching a real production node (engine counters 6.3–6.6 M) ≈ 1.5×; 7 M ≈ 1.7×."
@@ -3563,6 +3579,10 @@
     "name": "+ capacity (mem 0.76), v3.1",
     "cls": "ok",
     "pts": [
+     [
+      1.79,
+      13
+     ],
      [
       3.34,
       1
