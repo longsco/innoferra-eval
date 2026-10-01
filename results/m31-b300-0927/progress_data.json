@@ -1075,23 +1075,19 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain37: real traffic v3 0.5×, frontier, our gateway (baseline)",
-    "finishing ≈ 23:05 PDT; its 1.0× lever is held and deferred to chainB"
+    "chainN: production-style numerics quick test",
+    "v3 0.5× replay on training-off + FP8 KV running (GSM8K moved to chainD, bounded)"
    ],
    [
-    "chainN: production-style numerics quick test (user request)",
-    "GSM8K on the frontier (training numerics + 4-bit KV) → relaunch with training numerics off + FP8 KV → GSM8K → v3 0.5×"
-   ],
-   [
-    "chainD: Dynamo KV router (production rule approximated) + frontier engines",
-    "v3 1.0×"
+    "chainD: GSM8K A/B (bounded) + Dynamo KV router",
+    "GSM8K training-off + FP8 → Dynamo up → GSM8K frontier numerics → v3 0.5× → v3 1.0×"
    ],
    [
     "chain38: our gateway + load-aware + DP-rank pinning",
     "v3 1.0× and 0.5× → simulation ladder → agentic"
    ],
    [
-    "chain39: quality gate + numerics with load-aware + 1.5×",
+    "chain39: quality gates (bounded) + numerics with load-aware + 1.5×",
     "armed"
    ],
    [
@@ -3146,6 +3142,12 @@
   "note": "The teammates' harness (private repo StandardKernel/inference-benchmark, commit 8ae8f6d): streaming /v1/completions with token-ID prompts, exact token accounting against server usage, per-session cache_salt, fan-out /flush_cache between phases, GC freeze and an event-loop-lag check on the client. Marked as simulation: synthetic or recorded agent trajectories, not our production sessions. Real-traffic results are in the protocol v2/v3 tables. Ladder read: our production-shaped simulation lands at ≈ 2.6 M per GPU with TTFT p50 3.9 s, the same place as real traffic at 1.0× (2.9 M offered, TTFT p90 61 s): two independent benchmarks agree on the gap to production (6.3–6.6 M at TTFT ≈ 0.25 s)."
  },
  "reflections": [
+  {
+   "at": "23:18 (09-30)",
+   "result": "Both GSM8K runs failed on infrastructure, not quality: the harness fires all 1,319 questions at once; our gateway → docker-proxy → engine path refused the burst (1,008 × 502 upstream unavailable, 304 connect errors).",
+   "insight": "Real traffic never opens 1,300 connections at once, so this is a test artefact; it does show our serving path has a connection-burst limit production's Rust frontend does not.",
+   "next": "gsm8k_bounded.py (same examples, payloads and scoring, 128 concurrent): numerics A/B runs first in chainD (training-off + FP8 on chainN's engines, then the frontier numerics through Dynamo); chain39's gates switched too."
+  },
   {
    "at": "23:08 (09-30)",
    "result": "v3 0.5× baseline: 2/15 minutes at 2.23 M per GPU (production 2.23 M for the same requests); TTFT p50 1.22 s, p99 88 s; decode 72 (production 66); 6 HTTP 500s.",
