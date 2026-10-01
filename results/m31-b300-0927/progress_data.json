@@ -480,6 +480,11 @@
  },
  "timeline": [
   [
+   "22:15 (09-30)",
+   "v3 trace built after the pass-2 fix (543 s): 8 half-node buckets, b00 50,420 and b01 48,472 requests, 72–74% linked to a next turn; chain37 restarted 22:14 PDT (0.5× then 1.0×). The GSM8K gate in the gap was invalid (all 1,319 requests failed to connect: the gateway was being rebuilt by the interrupted launch) — chain39 runs it on a fully started frontier and on the numerics config.",
+   "v3 ready; quality gate rerun in chain39"
+  ],
+  [
    "22:05 (09-30)",
    "Gap-fill simulation (GPUs busy while v3 builds), gateway with DP-rank pinning: production-shaped ladder valid at 3.28 M TPM per GPU (+28% vs 2.57 without rank pinning), hit 98.1%, TTFT p50 8.2 s → saturated ceiling ≈ 3.3 M per GPU vs production 6.3–6.6; agentic c16 1,088 tok/s (TTFT p99 0.60 s), c64 827 tok/s (TTFT p50 3.3 s). The v3 trace build failed in pass 2 (Too many open files; 1,024 limit) — chain37's 0.5× lever failed on the missing trace; pass 2 rebuilt with ulimit 65,536 while the GSM8K quality gate runs on the GPUs; chain37 re-arms itself when the trace exists. Production for the v3 window (hub): 806 M TPM = 4.20 M per GPU, TTFT p50 0.32 s, p99 10.4 s.",
    "sim ceiling ≈ 3.3 M per GPU"
@@ -1065,12 +1070,8 @@
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "fix_v3 (22:05 PDT)",
-    "v3 pass 2 rebuilding (ulimit 65,536) + GSM8K quality gate on the frontier; re-arms chain37 when the trace exists"
-   ],
-   [
-    "chain37: real traffic v3 (Sep 30 13:10–13:25 PDT)",
-    "0.5× → 1.0× (production for this window: 4.20 M per GPU hub, TTFT p50 0.32 s)"
+    "chain37: real traffic v3 (Sep 30 13:10–13:25 PDT) on the frontier",
+    "running since 22:14 PDT: 0.5× → 1.0× (production for this window: 4.20 M per GPU hub, TTFT p50 0.32 s)"
    ],
    [
     "chain38: load-aware + DP-rank pinning",
@@ -1078,7 +1079,7 @@
    ],
    [
     "chain39: quality gate + numerics + 1.5×",
-    "armed"
+    "GSM8K on the frontier → numerics + load-aware at v3 1.0× (+ GSM8K) and 0.5× → frontier + load-aware at 1.5×"
    ]
   ]
  },
