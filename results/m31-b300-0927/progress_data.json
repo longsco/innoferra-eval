@@ -32,10 +32,10 @@
    "sub": "ours 1.3 vs prod 6.3–6.6 M per GPU at SLA"
   },
   {
-   "label": "Ours · saturated",
-   "value": "2.94 M",
-   "cls": "",
-   "sub": "inference-perf 128 lanes · TTFT p90 17 s"
+   "label": "Ours · v3 0.5× (today)",
+   "value": "2/15 min",
+   "cls": "bad",
+   "sub": "2.23 M per GPU offered · TTFT p50 1.22 s · routing imbalance"
   }
  ],
  "configs": [
@@ -3196,5 +3196,61 @@
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple."
+ },
+ "frontier_rt": {
+  "title": "Production vs our current frontier — settings and real-traffic results",
+  "rows": [
+   [
+    "Layout",
+    "4 workers × TP2/EP2 per node, DP attention off (96 workers)",
+    "4 engines × TP2/EP2/DP2 (DP attention on; the fork requires attention TP1)"
+   ],
+   [
+    "Engine build / numerics",
+    "in-house SGLang; training numerics off; MXFP8 dense + NVFP4 experts + sparse Q8KV4",
+    "vendor 0922 fork + our patches; training-compatible numerics; same weight formats"
+   ],
+   [
+    "Attention kernels",
+    "~18 in-house kernels (KV4 attention v2, prefill attention v3, fused verify, fused router, fast TP2 comm)",
+    "vendor Triton training path (30–41% of GPU time in our profile); no MSA"
+   ],
+   [
+    "Speculative decoding",
+    "DFlash2 block 4, fa4 draft attention (accept ≈ 2.8–3.0)",
+    "DSpark bidirectional draft, window 4095, flashinfer (accept ≈ 3.3–3.7)"
+   ],
+   [
+    "Prefill chunk / running / memory",
+    "16384 / 128 per worker / mem 0.80",
+    "32768 / 64 per engine / mem 0.68"
+   ],
+   [
+    "HiCache",
+    "ratio 3.0, write-through, kernel IO, page_first",
+    "same"
+   ],
+   [
+    "Tokenization",
+    "Dynamo Rust frontend (fastokens), workers skip tokenization",
+    "4 tokenizer workers per engine + tokenization prefix cache (−0.15 s TTFT)"
+   ],
+   [
+    "Routing",
+    "Dynamo KV router + strict affinity (prefix holder if overlap > 50%, else load), migration 3",
+    "our gateway, session pinning (load-aware pinning and Dynamo KV router under test)"
+   ],
+   [
+    "Admission",
+    "cold (< 90% cached) capped at 600k uncached prefill tokens per worker, 1 retry (≈ 0.1% rejected)",
+    "none (Dynamo 600k busy threshold under test)"
+   ],
+   [
+    "Real traffic, strict per-minute SLA",
+    "6.3–6.6 M per GPU engine-side (4.2 hub) at TTFT p50 0.25–0.32 s",
+    "v2 0.5× (1.36 M): 13/15 minutes; v3 0.5× (2.23 M): 2/15; 1.0×: 0/15 on both (routing imbalance)"
+   ]
+  ],
+  "note": "Only real-traffic M3.1 results are shown; the v1 (Sep 27, M3-era requests, time compression, looser SLA) and static-frame rankings were removed from the page because they can rank levers wrongly. History stays in PROGRESS.md and the repo."
  }
 }

@@ -207,6 +207,13 @@ def v2_levers_panel():
     head = "".join(f"<th>{h}</th>" for h in t["columns"])
     body = "\n".join("<tr>" + f'<td class="k">{r[0]}</td>' + "".join(f"<td>{x}</td>" for x in r[1:]) + "</tr>" for r in t["rows"])
     return f'<div class="panel"><h2>{t["title"]}</h2><div class="wrap"><table class="cmp">\n<tr>{head}</tr>\n{body}\n</table></div><p class="note">{t["note"]}</p></div>'
+def frontier_panel():
+    """Setup tab (innoferra 10-01, user: real-traffic results only): production vs our current real-traffic frontier, setting by setting."""
+    f = data.get("frontier_rt")
+    if not f: return ""
+    body = "\n".join(f'<tr><td class="k">{a}</td><td>{b}</td><td>{c}</td></tr>' for a, b, c in f["rows"])
+    return (f'<div class="panel"><h2>{f["title"]}</h2><div class="wrap"><table class="cmp">\n<tr><th>Setting</th><th>Production (24 nodes)</th><th>Ours (node 0008, current frontier)</th></tr>\n'
+            + body + f'\n</table></div><p class="note">{f["note"]}</p></div>')
 def v3_levers_panel():
     t = data.get("v3_levers")
     if not t: return ""
@@ -295,9 +302,9 @@ JS = """
 
 tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup"), ("production", "Production"), ("timeline", "Timeline")]
 tabbar = '<div class="tabs" role="tablist">' + "".join(f'<button role="tab" data-tab="{i}" aria-selected="false">{n}</button>' for i, n in tabs) + '</div>'
-overview = kpis() + reflect_panel() + v3_levers_panel() + v2_levers_panel() + sim_panel() + metrics_panel() + tests_panel() + protocol_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
-results = charts() + realtraffic_rank_panel() + matrix_panel() + staircase() + routeb()
-setup = versus_panel() + kernel_gap_panel() + comparison() + winning() + launch_specs() + glossary() + tools()
+overview = kpis() + reflect_panel() + v3_levers_panel() + metrics_panel() + tests_panel() + f'<div class="panel"><h2>Where we are</h2><p class="summary" style="margin:0">{data.get("summary","")}</p></div>' + running() + queued()
+results = v3_levers_panel() + v2_levers_panel() + sim_panel()   # innoferra 10-01: v1 / M3-era content removed (user)
+setup = frontier_panel() + kernel_gap_panel() + launch_specs() + glossary() + tools()   # innoferra 10-01: v1-derived winner/comparison removed (user)
 page = (f'<title>M3.1 Node 0008 Progress</title>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">\n<style>{CSS}</style>\n'
         f'<h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1>\n<p class="sub">{data.get("subtitle","")}</p>\n{tabbar}\n'
         f'<section class="tabpanel" id="overview">{overview}</section>\n<section class="tabpanel" id="results" hidden>{results}</section>\n'
