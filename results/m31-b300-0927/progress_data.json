@@ -480,6 +480,11 @@
  },
  "timeline": [
   [
+   "21:30 (09-30)",
+   "Review of the teammates' benchmark (79 agents: 4 readers, 2 skeptics per lesson; 12 lessons kept, 25 dropped). Fixed before the next rounds: (1) the v3 trace would have used 24 full-node buckets instead of v2's 48 half-node buckets, doubling every v3 load level; (2) gateway upstream pools were capped at 100 connections per engine by httpx defaults (hidden queue; 86 in flight at 1.0×) → unbounded; (3) token-ID sessions were pinned to an engine but not its DP rank → session key now pins the rank; (4) every lever now runs the live queue sampler. Queued: fail-closed replay scoring (error frames after a 200 count as errors), uncached-token ratio and served-in-window TPM next to offered TPM, gateway SSE splitting on CR/LF only, a quality gate before promoting numerics levers. Where we are ahead: open-loop real arrivals with causal turns, cache-state warm-up, per-request comparison with production, strict per-minute SLA, natural output lengths.",
+   "measurement hardening"
+  ],
+  [
    "21:20 (09-30)",
    "Simulation ladder (production-shaped: 64 growing sessions, 20k–260k start, 1,500 out, 97% cache): 20.5 M TPM per node = 2.57 M per GPU, TTFT p50 3.9 s / p90 19.7 / p99 34, per-request speed p50 50 tok/s — agrees with real traffic at 1.0×. Phase marked invalid (reset failed while engines were still busy; harness client lag 0.86 s from serializing ~300k-token prompts on its event loop). Fixes: gateway fan-out flush waits up to 600 s (patch_shim_flushwait.py, gateway rebuilt in place), engines report cached tokens, ladder drain 300 s.",
    "sim ≈ real: 2.6 M per GPU"
@@ -1180,6 +1185,14 @@
    "script": "vendor",
    "commit": "",
    "status": "asked"
+  },
+  {
+   "title": "Measurement hardening from the benchmark review",
+   "detail": "Fail-closed replay scoring (a stream counts as ok only with [DONE], finish_reason, usage and no error frame; abort on a failed flush); per-request routing slot and per-chunk timing; uncached-token ratio ours/production per minute instead of hit %; served-in-window TPM and send slip next to offered TPM; gateway SSE splitting on CR/LF only; a quality gate (quality_0927.sh) before promoting numerics or verify-kernel levers.",
+   "why": "Current scoring can hide failed streams, extra prefill and backlog; the road to 7 M per GPU runs through levers that change outputs.",
+   "script": "replay_v2.py, shim.py, progress_page.py",
+   "commit": "to write",
+   "status": "queued (after chain38)"
   }
  ],
  "tools": [
