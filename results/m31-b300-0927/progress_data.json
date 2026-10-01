@@ -480,6 +480,11 @@
  },
  "timeline": [
   [
+   "20:43 (09-30)",
+   "Production-style numerics at 1.0×: 0/15 minutes, TTFT p50 5.3 s, p90 224 s, p99 419 s; decode 76 tok/s (frontier 55); cache hit 90.7% vs frontier 94.0% (fp8 KV halves capacity) → 200 cold 32k+ prefills vs 90, landing on the two overloaded engines: 2,237 streaming requests over 10 s vs 1,100. Both 1.0× runs are dominated by the routing imbalance; retest after load-aware pinning. Simulation round started (benchmark installed in its own venv; gateway patched for its token-ID completions).",
+   "1.0×: 0/15 (routing-bound)"
+  ],
+  [
    "20:25 (09-30)",
    "Found the 1.0× collapse: gateway session pinning, not engine capacity. Live sampler during the 1.0× run: in flight per slot 43/43/37/12 on engines 1 and 3 vs 0/0/1/0 on engines 0 and 2; engine 1 DP1 had 33 queued and 1.58 M pending cold prefill tokens while engines 0 and 2 idled; client CPU 15%, gateway 7% (not client-bound). Sessions are placed once by recent token arrivals and never move. Lever written: load-aware pinning (new sessions to the fewest in flight; move a session when its slot is > 16 in flight above the least-loaded) — chain38 tests it on v3 real traffic and the simulation ladder after the baseline rounds.",
    "1.0× bottleneck = routing imbalance"
@@ -1034,22 +1039,22 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "Running now: chain35 (1.0×) → chain36 simulation → chain37 real traffic v3",
+  "title": "Running now: chain36 simulation → chain37 real traffic v3 → chain38 load-aware pinning",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain35: 1.0× a node's share",
-    "frontier 0/15; production-style numerics running — live sampler shows routing imbalance (2 engines idle, 2 overloaded)"
+    "chain35: 1.0×",
+    "done: frontier 0/15 (TTFT p50 1.3 s, decode 55); numerics 0/15 (p50 5.3 s, decode 76); cause = routing imbalance"
    ],
    [
     "chain36: simulation round (StandardKernel harness)",
-    "armed"
+    "running since 20:43 PDT: synthetic-quick → ladder → agentic-quick"
    ],
    [
-    "chain37: real-traffic round (protocol v3, Sep 30 13:10–13:25 PDT)",
-    "armed (logs downloading)"
+    "chain37: real-traffic round (protocol v3)",
+    "armed (logs downloaded: 2,163 parts, 224 GB)"
    ],
    [
     "chain38: load-aware session pinning on v3 + simulation ladder",
