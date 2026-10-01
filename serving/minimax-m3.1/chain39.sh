@@ -1,5 +1,5 @@
 #!/bin/bash
-# chain39 (09-30 PDT) [helpers copied from chain38]: load-aware session pinning (patch_shim_loadpin.py) on both benchmarks, after the baseline rounds.
+# chain39 (10-01 PDT, revised after chainN) [helpers copied from chain38]: load-aware session pinning (patch_shim_loadpin.py) on both benchmarks, after the baseline rounds.
 # chain35 1.0x anatomy: sessions pinned once by recent token arrivals never move -> active sessions piled onto engines 1 and 3
 # (in flight 43/43/37/12 vs 0/0/1/0 per slot; engine 1 DP1: 33 queued, 1.58 M pending cold prefill tokens) while 0 and 2 idled.
 # Lever lp: ROUTE_PIN_BY_INFLIGHT=1 (new sessions -> fewest in flight) + ROUTE_REPIN_SLACK=16 (move a session when its slot has
@@ -29,15 +29,12 @@ lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do e
 IBEVAL(){ INFERENCE_API_KEY=$KEY $V/bin/python $K/gsm8k_bounded.py --concurrency 128 "$@" 2>&1 | grep -vE "PyTorch was not found" | tail -4; }   # bounded: the stock evaluate bursts 1,319 requests at once
 {
   until grep -q "===== CHAIN38 DONE" $L; do sleep 60; done
-  log "===== chain39: quality gate + load-aware pinning with production-style numerics + 1.5x on real traffic v3"
-  mkdir -p $R/lp $R/lpnum
-  log "== quality-quick (GSM8K 1,319) on the frontier + load-aware pinning (engines left by chain38)"
-  IBEVAL --output $R/lp/quality-gsm8k-c128
+  log "===== chain39: engine sizing and DSpark block 4 with load-aware pinning on real traffic v3 (numerics dropped: FP8 KV fails on capacity; GSM8K equal)"
   rm -f $K/STOP_WATCHDOG; (nohup setsid bash $K/engine_watchdog.sh $K/STOP_WATCHDOG > /dev/null 2>&1 < /dev/null &)
-  lever v3_lpnum_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 TRAINING_COMPAT=0 "EXTRA_ENV=$BB SGLANG_MINIMAX_SPARSE_KV4=0"
-  log "== quality-quick on production-style numerics (training off + fp8 KV) + load-aware pinning"
-  IBEVAL --output $R/lpnum/quality-gsm8k-c128
-  lever v3_lpnum_05x /tr/v3/b00.jsonl 1.0 TRAINING_COMPAT=0 "EXTRA_ENV=$BB SGLANG_MINIMAX_SPARSE_KV4=0"
+  # production sizing direction (mem 0.80, 128 running per worker); step to 0.74 first because mem 0.80 once OOMed engine 2 on this fork
+  lever v3_lp_size_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 MEMFRAC=0.74 MAXREQ=128
+  # production's spec shape at high concurrency: block 4 (our DSpark default is the draft config's block)
+  lever v3_lp_blk4_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 DSPARK_BLOCK=4
   lever v3_lp_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0
   touch $K/STOP_WATCHDOG
   echo "===== CHAIN39 DONE"; } >> $L 2>&1
