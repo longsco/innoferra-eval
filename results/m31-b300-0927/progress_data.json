@@ -3143,6 +3143,12 @@
  },
  "reflections": [
   {
+   "at": "03:20 (10-01)",
+   "result": "Load-aware pinning at v3 1.0× (4.42 M per GPU offered; production served 4.44 M for the same requests at TTFT 0.35 s): 0/15; TTFT p50 9.0 s, decode 38 tok/s; 33 errors (27 instant connection resets).",
+   "insight": "Routing is fixed (all four engines evenly loaded, 26–35 in flight per slot) and that exposes the real limit: our engines cannot serve today's full-node load at SLA — every engine queues 17–37 requests at 70–97% KV and decode falls to 38 tok/s. This is the ≥ 2× engine-efficiency gap to production. The connection resets come from the gateway's 1,024 open-file limit (engines have 65,535).",
+   "next": "Gateway nofile raised to 65,536 (next launches). chain38 continues with load-aware pinning at 0.5×; chain39 reworked to find the capacity knee at 0.75× (load-aware baseline, sizing mem 0.74 + 128 running, DSpark block 4) instead of 1.5×."
+  },
+  {
    "at": "02:21 (10-01)",
    "result": "Dynamo with strong affinity at v3 0.5×: 0/15, cache hit 70.8% (was 65.2%; our gateway 94.4%), TTFT p50 6.4 s, 575 cold 32k+ prefills; 0 errors.",
    "insight": "The router choice is not the problem; the DP-attention layout is. Each of our workers has two DP ranks with separate radix caches; our gateway pins sessions to (engine, rank), Dynamo pins at most the worker and the engine spreads requests over its ranks, so about half the 'affine' requests land on the wrong cache. Production avoids this by running one attention group per worker (TP2, DP off), which our fork does not support. Follow-up check (code): Dynamo 1.5.0 does pass routed_dp_rank and our fork's DP controller honours it, so the loss is likely in KV events per DP rank (if only rank 0's zmq endpoint is subscribed, the router sees half the cache).",
@@ -3241,6 +3247,16 @@
     "<b>70.8%</b> (96.8%)",
     "0",
     "affinity barely recovers: each worker has 2 DP ranks with separate caches and Dynamo's pick does not pin the rank (our gateway does, 94.4%); production runs DP attention off"
+   ],
+   [
+    "Frontier + load-aware pinning (our gateway)",
+    "1.0× = 4.42 M (prod 4.44 M same requests)",
+    "<b>0</b>",
+    "8.99 / 62.2 / 132.5",
+    "<b>38</b>",
+    "90.9% (97.1%)",
+    "33 (0.52%): 27 instant connection resets + 6 HTTP 500",
+    "load balanced (26–35 in flight per slot, 22 session moves) but all engines saturated: 17–37 queued each, KV 70–97% → engine capacity is now the limit"
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple. Load multiples: production traffic is split by session into 48 half-node buckets; 1.0× = 2 buckets ≈ one node's share of the hub logs, 0.5× = 1 bucket, 2× = 4 buckets — load is raised by adding users, not by speeding up time. On v3, 0.5× = 2.23 M, 1.0× = 4.20 M per GPU offered; matching a real production node (engine counters 6.3–6.6 M) ≈ 1.5×; 7 M ≈ 1.7×."
