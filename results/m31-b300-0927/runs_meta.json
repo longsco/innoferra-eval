@@ -153,6 +153,15 @@
    "change": "scheduling",
    "verdict": "rejected",
    "why": "No crash this time (fix works), but worse: slow-tail TTFT 13.4 → 18.5 s, median 0.98 → 1.03 s, decode 57 → 55 tok/s."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_0375x",
+   "at": "2026-10-01 13:30",
+   "protocol": "v3.1",
+   "name": "Adopted settings + longest-cached-prompt-first scheduling",
+   "change": "find the passing load",
+   "verdict": "baseline",
+   "why": "13/15 again: the two misses moved (median first token 1.19 s in minute 1, 1.02 s in minute 10). Our per-minute medians swing 0.63–1.19 s around the 1 s line, so the first-token floor itself must come down."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
