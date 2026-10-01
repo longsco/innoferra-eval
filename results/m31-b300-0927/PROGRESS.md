@@ -170,6 +170,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 17:08 PDT (09-30) | chain33 numa (tpc frontier + NUMA=1: engine 0 cpuset 0-31,128-159 mems 0, etc.): 11/15, TTFT 0.69/2.13/16.06, decode 86.7, hit 94.3%, accept 3.33 -> neutral; NUMA_DEFAULT=0 for chain34 |
 | 17:51 PDT (09-30) | chain33 tc0kv8_numa: 4/15, TTFT 0.67/3.48/28.25, decode 111.9, hit 93.8%, accept 3.30. Streaming-only stalls >10 s: tpc 26, numa 52, tc0kv8 79, tc0kv8_numa 108 (non-streaming requests with TTFT=total 5-30k output tokens are the >60 s ones; replay SLA already excludes them). CHAIN33 DONE 00:51 UTC; chain34 started |
 | 18:39 PDT (09-30) | chain34 tpcf2 (tpc + SGLANG_CHUNKED_REQ_SHARE=0.5): 13/15, TTFT 0.73/1.92/11.23, decode 81.3, hit 94.2%, accept 3.33; streaming >10 s 29 (tpc 26) -> tie. chain34 stopped (remaining tpcf4, tc0kv8f2 dropped); chain35 started 01:39 UTC: tpc_1x and tc0kv8_1x (b00+b01, 16:10-16:25 UTC) |
+| 19:50 PDT (09-30) | chain35 tpc_1x (b00+b01, 16:10-16:25 UTC): 0/15, TPM offered 2.95 M/GPU (prod 3.01), hit 94.0%, TTFT 1.30/60.87/380.50, decode 55.5, accept 3.29, 0 errors, wall 2307 s, lateness p99 1350 s; streaming >10 s 1,100. diag_1x.sh sampler started for tc0kv8_1x. StandardKernel inference-benchmark adopted: patch_shim_rawcomp.py + chain36.sh armed |
 
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
