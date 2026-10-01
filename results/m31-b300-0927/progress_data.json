@@ -480,6 +480,11 @@
  },
  "timeline": [
   [
+   "21:28 (09-30)",
+   "Simulation round done (StandardKernel harness, valid after the flush fix): agentic-quick c16 1,052 output tok/s, TTFT p50 0.25 s, per-request speed 99.5 tok/s; c64 692 tok/s with speed p50 13.4 tok/s (decode collapse) — that gateway still scattered token-ID sessions over DP ranks; chain38 reruns it with rank pinning + load-aware pinning. Agent trajectories average ~28k tokens per request (production 85–110k), so their TPM (0.8–0.95 M per GPU) is not comparable to production. Real-traffic round (v3) started: building the trace with 48 half-node buckets.",
+   "sim: agentic c64 decode collapse"
+  ],
+  [
    "21:30 (09-30)",
    "Review of the teammates' benchmark (79 agents: 4 readers, 2 skeptics per lesson; 12 lessons kept, 25 dropped). Fixed before the next rounds: (1) the v3 trace would have used 24 full-node buckets instead of v2's 48 half-node buckets, doubling every v3 load level; (2) gateway upstream pools were capped at 100 connections per engine by httpx defaults (hidden queue; 86 in flight at 1.0×) → unbounded; (3) token-ID sessions were pinned to an engine but not its DP rank → session key now pins the rank; (4) every lever now runs the live queue sampler. Queued: fail-closed replay scoring (error frames after a 200 count as errors), uncached-token ratio and served-in-window TPM next to offered TPM, gateway SSE splitting on CR/LF only, a quality gate before promoting numerics levers. Where we are ahead: open-loop real arrivals with causal turns, cache-state warm-up, per-request comparison with production, strict per-minute SLA, natural output lengths.",
    "measurement hardening"
@@ -1049,25 +1054,21 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "Running now: chain36 simulation → chain37 real traffic v3 → chain38 load-aware pinning",
+  "title": "Running now: chain37 real traffic v3 → chain38 load-aware pinning (real + simulation)",
   "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
   "commit": "6dd7a86, 7c0dcee, d14e9ab",
   "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
   "steps": [
    [
-    "chain35: 1.0×",
-    "done: frontier 0/15 (TTFT p50 1.3 s, decode 55); numerics 0/15 (p50 5.3 s, decode 76); cause = routing imbalance"
+    "chain36: simulation round",
+    "done: synthetic c128 6,368 tok/s; ladder 2.57 M per GPU (TTFT p50 3.9 s); agentic c16 healthy, c64 decode collapse"
    ],
    [
-    "chain36: simulation round (StandardKernel harness)",
-    "running since 20:43 PDT: synthetic-quick → ladder → agentic-quick"
+    "chain37: real-traffic round (protocol v3, Sep 30 13:10–13:25 PDT)",
+    "running since 21:28 PDT: building the trace (48 half-node buckets) → 0.5× → 1.0×"
    ],
    [
-    "chain37: real-traffic round (protocol v3)",
-    "armed (logs downloaded: 2,163 parts, 224 GB)"
-   ],
-   [
-    "chain38: load-aware session pinning on v3 + simulation ladder",
+    "chain38: load-aware + DP-rank pinning on v3 + simulation ladder + agentic",
     "armed"
    ]
   ]
@@ -3045,6 +3046,36 @@
     "30.1",
     "<b>0.86</b>",
     "marked invalid: reset after the phase failed (engines still busy; fixed: gateway flush now waits) and client lag > 100 ms; cached tokens not reported (engines now start with --enable-cache-report)"
+   ],
+   [
+    "Frontier · agentic-quick (500 Nebius/TraceLab trajectories, ~28k tokens per request)",
+    "1",
+    "89",
+    "–",
+    "–",
+    "–",
+    "–",
+    "25 samples (provisional); hit 95%"
+   ],
+   [
+    "Frontier · agentic-quick",
+    "16",
+    "1,052 · 0.95 M TPM per GPU",
+    "0.25 / 0.92",
+    "<b>99.5</b>",
+    "–",
+    "0.016",
+    "530 samples, valid"
+   ],
+   [
+    "Frontier · agentic-quick",
+    "64",
+    "692 · 0.82 M TPM per GPU",
+    "0.68 / 1.89",
+    "<b>13.4</b>",
+    "–",
+    "0.017",
+    "valid; decode collapses: token-ID sessions scattered over DP ranks (gateway fix landed after this run) → rerun in chain38"
    ]
   ],
   "note": "The teammates' harness (private repo StandardKernel/inference-benchmark, commit 8ae8f6d): streaming /v1/completions with token-ID prompts, exact token accounting against server usage, per-session cache_salt, fan-out /flush_cache between phases, GC freeze and an event-loop-lag check on the client. Marked as simulation: synthetic or recorded agent trajectories, not our production sessions. Real-traffic results are in the protocol v2/v3 tables. Ladder read: our production-shaped simulation lands at ≈ 2.6 M per GPU with TTFT p50 3.9 s, the same place as real traffic at 1.0× (2.9 M offered, TTFT p90 61 s): two independent benchmarks agree on the gap to production (6.3–6.6 M at TTFT ≈ 0.25 s)."
