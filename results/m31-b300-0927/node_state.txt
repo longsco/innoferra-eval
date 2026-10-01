@@ -1,0 +1,21 @@
+# read_utc 2026-10-01T20:12:24Z
+## queue
+v3_lp_cap_lpm_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging"
+v3_lp_cap_lpm_tok8_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm"
+## done
+18:05:29 v3_lp_cap_mr128_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 MAXREQ=128
+19:05:55 v3_lp_cap_lpm_f2_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=${BB/SGLANG_CHUNKED_REQ_SHARE=1.0/SG
+19:51:27 v3_lp_cap_lpm_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 "XARGS=$HCX --schedule-policy lpm"
+## markers
+14:54:31 ===== lever v3_lp_cap_c16_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 CHUNK=16384 (ROUTE_PIN_BY_INFLIGHT=1 ROUTE_REPIN_SLACK=
+15:49:10 ===== lever v3_lp_cap_c16_075x done
+15:49:10 ===== lever v3_lp_cap_0375x: traces /tr/v3/b00.jsonl frac 0.75; MEMFRAC=0.76 (ROUTE_PIN_BY_INFLIGHT=1 ROUTE_REPIN_SLACK=16 EXTRA_ENV=SGLANG_Q8KV4_SORT_
+16:30:58 ===== lever v3_lp_cap_0375x done
+16:30:58 ===== lever v3_lp_cap_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 (ROUTE_PIN_BY_INFLIGHT=1 ROUTE_REPIN_SLACK=16 EXTRA_ENV=SGLANG_Q8KV4_SORT_MIN
+17:16:41 ===== lever v3_lp_cap_05x done
+17:16:41 ===== lever v3_lp_cap_lpm_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 -
+18:05:29 ===== lever v3_lp_cap_lpm_075x done
+18:05:29 ===== lever v3_lp_cap_mr128_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 MAXREQ=128 (ROUTE_PIN_BY_INFLIGHT=1 ROUTE_REPIN_SLACK
+19:05:55 ===== lever v3_lp_cap_lpm_f2_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 XARGS=--enable-hierarchical-cache --hicache-ratio 3.
+19:51:27 ===== lever v3_lp_cap_lpm_f2_075x done
+19:51:27 ===== lever v3_lp_cap_lpm_0375x: traces /tr/v3/b00.jsonl frac 0.75; MEMFRAC=0.76 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-

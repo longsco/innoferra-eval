@@ -1,19 +1,159 @@
 {
  "_note": "innoferra 10-01: plain-language metadata for every real-traffic replay in runs_v3.json (numbers come from runs_v3.json, produced on node 0008 by serving/minimax-m3.1/extract_runs.py). at = PDT time the run finished. protocol v3 = before Oct 1 04:30 PDT (replayed the requests production rejected with 429 + media-tag bug); v3.1 = current.",
  "runs": [
-  {"tag": "v3_tpc_05x", "at": "2026-09-30 23:02", "protocol": "v3", "name": "Starting setup (old routing: sessions pinned by arrival)", "change": "baseline", "verdict": "baseline", "why": "Traffic piled onto 2 of the 4 engines while the other 2 sat idle."},
-  {"tag": "v3_tc0kv8_05x", "at": "2026-10-01 00:25", "protocol": "v3", "name": "Production-style numerics (FP8 KV cache, training-compatible mode off)", "change": "numerics", "verdict": "rejected", "why": "FP8 cache holds half as many tokens, so cache hits fell to 83.5% and prompts had to be reprocessed. Quality was fine (GSM8K 96.7%)."},
-  {"tag": "dyn_05x", "at": "2026-10-01 01:25", "protocol": "v3", "name": "Dynamo KV-aware router (production's router), default affinity", "change": "router", "verdict": "rejected", "why": "Load spread evenly but cache reuse collapsed to 65% (ours 94%): each engine has two separate caches and Dynamo did not pin the right one."},
-  {"tag": "dyn2_05x", "at": "2026-10-01 02:15", "protocol": "v3", "name": "Dynamo KV-aware router, strong affinity", "change": "router", "verdict": "rejected", "why": "Cache reuse only recovered to 71%."},
-  {"tag": "v3_lp_1x", "at": "2026-10-01 03:15", "protocol": "v3", "name": "Load-aware routing (new sessions to the least-busy engine, move overloaded sessions)", "change": "routing", "verdict": "engines saturated", "why": "Routing balanced all 4 engines, which exposed the real limit: every engine queued requests and decode fell to 38 tok/s."},
-  {"tag": "v3_lp_05x", "at": "2026-10-01 03:56", "protocol": "v3", "name": "Load-aware routing", "change": "routing", "verdict": "kept", "why": "Routing fixed the pile-up (2/15 → 7/15). Misses came from huge cold prompts and from 6 errors caused by a media-tag bug (fixed later)."},
-  {"tag": "v3_lp_075x", "at": "2026-10-01 05:03", "protocol": "v3.1", "name": "Load-aware routing", "change": "baseline for the 3.34 M levers", "verdict": "baseline", "why": "Median TTFT just above 1 s and decode 53 tok/s: prompt processing pauses token generation on both GPUs of an engine."},
-  {"tag": "v3_lp_cap_075x", "at": "2026-10-01 05:52", "protocol": "v3.1", "name": "+ more GPU memory for the cache (0.68 → 0.76)", "change": "capacity", "verdict": "kept", "why": "Fewer evicted sessions: median TTFT 1.19 → 1.01 s, 42% fewer first tokens over 10 s. Decode still below 60."},
-  {"tag": "v3_lp_f2_075x", "at": "2026-10-01 06:21", "protocol": "v3.1", "name": "+ fair-share prefill (waiting requests get half of each prefill step)", "change": "scheduling", "verdict": "invalid (engine crash)", "why": "An engine ran out of cache memory mid-prefill and crashed. Root cause patched; the test is queued again."},
-  {"tag": "v3_lp_05x_v31", "at": "2026-10-01 07:02", "protocol": "v3.1", "name": "Load-aware routing (re-run on the current test)", "change": "calibration", "verdict": "calibration", "why": "Same settings as 03:56 on the corrected test: 7/15 → 9/15. The 6 misses are slow-tail TTFT from 300k+-token prompts and one median miss."},
-  {"tag": "v3_lp_cap_blk4_075x", "at": "2026-10-01 07:54", "protocol": "v3.1", "name": "+ shorter speculative-decoding blocks (DSpark block 7 → 4)", "change": "speculative decoding", "verdict": "rejected", "why": "The draft model's acceptance fell 3.66 → 3.06 tokens per step, so decode dropped 55 → 46 tok/s."},
-  {"tag": "v3_lp_cap_c16_075x", "at": "2026-10-01 08:49", "protocol": "v3.1", "name": "+ smaller prompt-processing chunks (32k → 16k)", "change": "chunking", "verdict": "rejected", "why": "Slightly worse on TTFT and decode: smaller chunks add steps without cutting total prefill time."},
-  {"tag": "v3_lp_cap_0375x", "at": "2026-10-01 09:31", "protocol": "v3.1", "name": "Adopted settings (load-aware routing + 0.76 cache memory)", "change": "find the passing load", "verdict": "closest", "why": "13/15: both misses are median TTFT 1.02 and 1.05 s. Slow tail and decode beat production on the same requests."}
+  {
+   "tag": "v3_tpc_05x",
+   "at": "2026-09-30 23:02",
+   "protocol": "v3",
+   "name": "Starting setup (old routing: sessions pinned by arrival)",
+   "change": "baseline",
+   "verdict": "baseline",
+   "why": "Traffic piled onto 2 of the 4 engines while the other 2 sat idle."
+  },
+  {
+   "tag": "v3_tc0kv8_05x",
+   "at": "2026-10-01 00:25",
+   "protocol": "v3",
+   "name": "Production-style numerics (FP8 KV cache, training-compatible mode off)",
+   "change": "numerics",
+   "verdict": "rejected",
+   "why": "FP8 cache holds half as many tokens, so cache hits fell to 83.5% and prompts had to be reprocessed. Quality was fine (GSM8K 96.7%)."
+  },
+  {
+   "tag": "dyn_05x",
+   "at": "2026-10-01 01:25",
+   "protocol": "v3",
+   "name": "Dynamo KV-aware router (production's router), default affinity",
+   "change": "router",
+   "verdict": "rejected",
+   "why": "Load spread evenly but cache reuse collapsed to 65% (ours 94%): each engine has two separate caches and Dynamo did not pin the right one."
+  },
+  {
+   "tag": "dyn2_05x",
+   "at": "2026-10-01 02:15",
+   "protocol": "v3",
+   "name": "Dynamo KV-aware router, strong affinity",
+   "change": "router",
+   "verdict": "rejected",
+   "why": "Cache reuse only recovered to 71%."
+  },
+  {
+   "tag": "v3_lp_1x",
+   "at": "2026-10-01 03:15",
+   "protocol": "v3",
+   "name": "Load-aware routing (new sessions to the least-busy engine, move overloaded sessions)",
+   "change": "routing",
+   "verdict": "engines saturated",
+   "why": "Routing balanced all 4 engines, which exposed the real limit: every engine queued requests and decode fell to 38 tok/s."
+  },
+  {
+   "tag": "v3_lp_05x",
+   "at": "2026-10-01 03:56",
+   "protocol": "v3",
+   "name": "Load-aware routing",
+   "change": "routing",
+   "verdict": "kept",
+   "why": "Routing fixed the pile-up (2/15 → 7/15). Misses came from huge cold prompts and from 6 errors caused by a media-tag bug (fixed later)."
+  },
+  {
+   "tag": "v3_lp_075x",
+   "at": "2026-10-01 05:03",
+   "protocol": "v3.1",
+   "name": "Load-aware routing",
+   "change": "baseline for the 3.34 M levers",
+   "verdict": "baseline",
+   "why": "Median TTFT just above 1 s and decode 53 tok/s: prompt processing pauses token generation on both GPUs of an engine."
+  },
+  {
+   "tag": "v3_lp_cap_075x",
+   "at": "2026-10-01 05:52",
+   "protocol": "v3.1",
+   "name": "+ more GPU memory for the cache (0.68 → 0.76)",
+   "change": "capacity",
+   "verdict": "kept",
+   "why": "Fewer evicted sessions: median TTFT 1.19 → 1.01 s, 42% fewer first tokens over 10 s. Decode still below 60."
+  },
+  {
+   "tag": "v3_lp_f2_075x",
+   "at": "2026-10-01 06:21",
+   "protocol": "v3.1",
+   "name": "+ fair-share prefill (waiting requests get half of each prefill step)",
+   "change": "scheduling",
+   "verdict": "invalid (engine crash)",
+   "why": "An engine ran out of cache memory mid-prefill and crashed. Root cause patched; the test is queued again."
+  },
+  {
+   "tag": "v3_lp_05x_v31",
+   "at": "2026-10-01 07:02",
+   "protocol": "v3.1",
+   "name": "Load-aware routing (re-run on the current test)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Same settings as 03:56 on the corrected test: 7/15 → 9/15. The 6 misses are slow-tail TTFT from 300k+-token prompts and one median miss."
+  },
+  {
+   "tag": "v3_lp_cap_blk4_075x",
+   "at": "2026-10-01 07:54",
+   "protocol": "v3.1",
+   "name": "+ shorter speculative-decoding blocks (DSpark block 7 → 4)",
+   "change": "speculative decoding",
+   "verdict": "rejected",
+   "why": "The draft model's acceptance fell 3.66 → 3.06 tokens per step, so decode dropped 55 → 46 tok/s."
+  },
+  {
+   "tag": "v3_lp_cap_c16_075x",
+   "at": "2026-10-01 08:49",
+   "protocol": "v3.1",
+   "name": "+ smaller prompt-processing chunks (32k → 16k)",
+   "change": "chunking",
+   "verdict": "rejected",
+   "why": "Slightly worse on TTFT and decode: smaller chunks add steps without cutting total prefill time."
+  },
+  {
+   "tag": "v3_lp_cap_0375x",
+   "at": "2026-10-01 09:31",
+   "protocol": "v3.1",
+   "name": "Adopted settings (load-aware routing + 0.76 cache memory)",
+   "change": "find the passing load",
+   "verdict": "closest",
+   "why": "13/15: both misses are median TTFT 1.02 and 1.05 s. Slow tail and decode beat production on the same requests."
+  },
+  {
+   "tag": "v3_lp_cap_05x",
+   "at": "2026-10-01 10:16",
+   "protocol": "v3.1",
+   "name": "Adopted settings (load-aware routing + 0.76 cache memory)",
+   "change": "find the passing load",
+   "verdict": "kept",
+   "why": "10/15 (9/15 with the old memory setting): slow-tail TTFT improved 14.3 → 11.7 s; misses are 3 median-TTFT minutes just over 1 s and 3 slow-tail minutes."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_075x",
+   "at": "2026-10-01 11:05",
+   "protocol": "v3.1",
+   "name": "+ longest-cached-prompt-first scheduling (on top of 0.76 cache memory)",
+   "change": "scheduling",
+   "verdict": "kept",
+   "why": "Same 1/15, but every rule improved: slow-tail TTFT 18.3 → 13.4 s, decode 55 → 57 tok/s, fewer failing minutes on each rule. Decode below 60 is still the main miss at this load."
+  },
+  {
+   "tag": "v3_lp_cap_mr128_075x",
+   "at": "2026-10-01 12:04",
+   "protocol": "v3.1",
+   "name": "+ 128 running requests per engine (64 per GPU)",
+   "change": "batch size",
+   "verdict": "failed to boot",
+   "why": "Both GPUs' schedulers died while capturing the CUDA graphs for 64 running requests each; the engines crash-looped and the run never started."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_f2_075x",
+   "at": "2026-10-01 12:51",
+   "protocol": "v3.1",
+   "name": "+ fair-share prefill, retried with the out-of-memory fix (on top of capacity + longest-prefix-first)",
+   "change": "scheduling",
+   "verdict": "rejected",
+   "why": "No crash this time (fix works), but worse: slow-tail TTFT 13.4 → 18.5 s, median 0.98 → 1.03 s, decode 57 → 55 tok/s."
+  }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
  "simulation_note": "StandardKernel inference-benchmark runs (synthetic sessions) are a cross-check only, never used to rank settings."

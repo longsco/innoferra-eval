@@ -1,0 +1,1374 @@
+{
+ "_note": "Hand-written plain-language notes for progress_page.py: run labels, the findings/test log, why-we-miss text, setup comparison, glossary. Run numbers are NEVER typed here: {field:tag} placeholders (load, pass, prod_pass, hit, phit, dec, pdec, at, p50, p99) are filled from runs_v3.json at render, {name} placeholders from derived values. Other numbers quote the PROGRESS.md / progress_data.json row named in src. Times are PDT. Spec resolution: the setup-comparison table keeps the anchor #compare (the spec's #setup is the tab id); links meant for the table use #compare.",
+ "current_test": "v3.1",
+ "target": 7.0,
+ "goal": {
+  "value": 7.0,
+  "basis": null,
+  "basis_note": "Sep 30 notes tie it to production parity on production's engine counters ('north star ≈ production parity', timeline Sep 30 13:40; progress_data.json summary).",
+  "src": "progress_data.json timeline Sep 30 13:40 and summary"
+ },
+ "sla": {
+  "ttft_p50": 1.0,
+  "ttft_p99": 15,
+  "decode": 60,
+  "errors_pct": 0.1,
+  "minutes": 15
+ },
+ "layout_notice": {
+  "text": "Page reorganised Oct 1: Timeline → Results › Run log · Production → Setup & production.",
+  "until": "2026-10-02 10:30"
+ },
+ "test_versions": {
+  "v3.1": {
+   "start": "2026-10-01 04:30",
+   "recorded": "Sep 30 13:10–13:25 PDT",
+   "divider": "Test v3.1 starts here (Oct 1 04:30): requests production refused (HTTP 429) are no longer sent and the literal-<image> bug is fixed. Rows below are test v3; compare within one test only.",
+   "prod_errors": "504 timeouts",
+   "prod_errors_src": "runs_meta.json production_scoring_note: on v3.1 the requests production refused (429) are not replayed"
+  },
+  "v3": {
+   "start": "2026-09-30 22:15",
+   "recorded": "Sep 30 13:10–13:25 PDT",
+   "divider": "Test v3 starts here (Sep 30 22:15): production traffic recorded Sep 30 13:10–13:25 PDT, heavier than v2. Rows below are test v2.",
+   "prod_errors": "HTTP 429 load-shedding and 504 timeouts"
+  },
+  "v2": {
+   "start": "2026-09-29 16:15",
+   "recorded": "Sep 28 09:10–09:25 PDT",
+   "divider": "Test v2 starts here (Sep 29 16:15): the first replays of real M3.1 traffic (Sep 28 peak window)."
+  }
+ },
+ "share_names": {
+  "0.375": "⅜",
+  "0.5": "half",
+  "0.75": "¾",
+  "1.0": "full"
+ },
+ "labels": {
+  "_note": "Plain names (8 words or fewer) for every run tag and queued tag; 'short' (5 words or fewer) is used in the header pill and the chart callout. 'base' = the changes it sat on top of. 'why' overrides runs_meta.json's reason when that reason is wrong (cite the source).",
+  "v3_tpc_05x": {
+   "name": "Half load, old routing (pinned on arrival)",
+   "why": "One engine took the busy conversations (49–56 running, 43–66 waiting) while the other three ran 2–13 each: routing, not engine speed, was the limit.",
+   "why_src": "PROGRESS.md Sep 30 23:08 (engine diag e0 vs e1–e3); runs_meta.json said '2 of the 4 engines'"
+  },
+  "v3_tc0kv8_05x": {
+   "name": "Production-style numerics (8-bit KV cache)"
+  },
+  "dyn_05x": {
+   "name": "Production's router (Dynamo)"
+  },
+  "dyn2_05x": {
+   "name": "Production's router (Dynamo), strong affinity"
+  },
+  "v3_lp_1x": {
+   "name": "Load-aware session routing at full load"
+  },
+  "v3_lp_05x": {
+   "name": "Load-aware session routing"
+  },
+  "v3_lp_075x": {
+   "name": "¾ load on test v3.1, before changes"
+  },
+  "v3_lp_cap_075x": {
+   "name": "More KV-cache memory (0.68 → 0.76)"
+  },
+  "v3_lp_f2_075x": {
+   "name": "Fair prompt sharing"
+  },
+  "v3_lp_05x_v31": {
+   "name": "Half load on test v3.1"
+  },
+  "v3_lp_cap_blk4_075x": {
+   "name": "Shorter draft block (4 instead of 7)",
+   "base": "more KV-cache memory"
+  },
+  "v3_lp_cap_c16_075x": {
+   "name": "Smaller prompt chunks (16k)",
+   "base": "more KV-cache memory"
+  },
+  "v3_lp_cap_0375x": {
+   "name": "Adopted settings, looking for a passing load",
+   "short": "Adopted settings at ⅜ load"
+  },
+  "v3_lp_cap_05x": {
+   "name": "Adopted settings, re-check at half load",
+   "short": "Adopted settings at half load"
+  },
+  "v3_lp_cap_lpm_075x": {
+   "name": "Cache-first scheduling",
+   "base": "more KV-cache memory"
+  },
+  "v3_lp_cap_mr128_075x": {
+   "name": "128 requests per engine (was 64)",
+   "base": "more KV-cache memory",
+   "short": "128 requests per engine"
+  },
+  "v3_lp_cap_lpm_f2_075x": {
+   "name": "Fair prompt sharing, with the out-of-memory guard",
+   "short": "Fair prompt sharing, retry",
+   "base": "more KV-cache memory + cache-first scheduling"
+  },
+  "v3_lp_cap_lpm_0375x": {
+   "name": "Adopted settings with cache-first scheduling",
+   "short": "Cache-first at the closest load"
+  },
+  "v3_lp_cap_lpm_05x": {
+   "name": "Adopted settings with cache-first scheduling",
+   "short": "Cache-first at half load"
+  },
+  "v3_lp_cap_lpm_tok8_05x": {
+   "name": "8 tokenizer workers per engine (was 4)",
+   "base": "more KV-cache memory + cache-first scheduling",
+   "short": "8 tokenizer workers"
+  }
+ },
+ "plain_words": [
+  [
+   "\\bslow-tail TTFT\\b",
+   "slowest-1% first token"
+  ],
+  [
+   "\\bmedian-TTFT\\b",
+   "median-first-token"
+  ],
+  [
+   "\\bmedian TTFT\\b",
+   "median first token"
+  ],
+  [
+   "\\bTTFT\\b",
+   "first-token time"
+  ],
+  [
+   "\\bDecode\\b",
+   "Generation speed"
+  ],
+  [
+   "\\bdecode\\b",
+   "generation speed"
+  ],
+  [
+   "\\bmid-prefill\\b",
+   "while processing a prompt"
+  ],
+  [
+   "\\bprefill\\b",
+   "prompt processing"
+  ],
+  [
+   "\\bFP8 cache\\b",
+   "8-bit KV cache"
+  ],
+  [
+   "\\bmedia-tag bug\\b",
+   "literal-<image> bug"
+  ],
+  [
+   "\\bevicted sessions\\b",
+   "evicted conversations"
+  ],
+  [
+   "\\bcold prompts\\b",
+   "uncached prompts"
+  ],
+  [
+   "\\bsessions\\b",
+   "conversations"
+  ]
+ ],
+ "verdicts": {
+  "baseline": "Baseline",
+  "calibration": "Baseline",
+  "closest": "Baseline",
+  "engines saturated": "Baseline",
+  "reference": "Baseline",
+  "kept": "Adopted",
+  "keep": "Adopted",
+  "adopted": "Adopted",
+  "rejected": "Rejected",
+  "invalid": "Invalid",
+  "invalid (engine crash)": "Invalid",
+  "failed to boot": "Invalid"
+ },
+ "baseline_changes": [
+  "baseline",
+  "calibration",
+  "find the passing load",
+  "baseline for the 3.34 M levers"
+ ],
+ "why_we_miss": {
+  "at": "2026-10-01 13:15",
+  "items": [
+   {
+    "rule": "ttft_p50",
+    "title": "Median first token over 1 s: time outside the GPU",
+    "text": "A warm request (prompt already cached) waits longer the longer its conversation, and longer than production at every length: {warm_gap}. An idle test shows the same growth (Oct 1 11:15), so the extra time is outside prompt processing; templating and tokenisation are the first suspects.",
+    "src": "PROGRESS.md Oct 1 09:35 and 11:15"
+   },
+   {
+    "rule": "decode",
+    "title": "Generation speed under 60 tokens/s",
+    "text": "Each engine's two GPUs step together, so prompt processing on either GPU pauses generation on both. More load means more prompt processing, so median generation speed falls: {decode_series}.",
+    "src": "kernel profile, PROGRESS.md Oct 1 05:25"
+   },
+   {
+    "rule": "ttft_p99",
+    "title": "Slowest 1% of first tokens over 15 s",
+    "text": "An uncached prompt of 300k+ tokens takes 15–35 s to process and holds up its GPU pair; first tokens queued behind it miss the 15 s limit.",
+    "src": "PROGRESS.md Oct 1 04:35 and 07:05"
+   },
+   {
+    "rule": "cache",
+    "title": "Prompts processed again at full load",
+    "text": "At 4.42 M we re-process 2.75× as many uncached prompt tokens as production: 84% of the extra comes from conversations whose cached prompt was evicted between turns (the largest share after 2–10 minutes idle). More cache memory (0.76, adopted Oct 1 05:52) cut those evictions.",
+    "src": "PROGRESS.md Oct 1 03:45 and 05:55"
+   },
+   {
+    "rule": "errors",
+    "title": "Errors at full load (older test v3)",
+    "text": "The 10 error minutes at 4.42 M came from 27 instant connection resets (the gateway's open-file limit, raised since) and 6 HTTP 500s from literal '<image>' text in prompts (fixed Oct 1 03:55).",
+    "src": "PROGRESS.md Oct 1 03:20 and 03:55"
+   }
+  ],
+  "cause_lead": "Per-request time outside the GPU",
+  "cause_src": "PROGRESS.md Oct 1 09:35 and 11:15"
+ },
+ "log": [
+  {
+   "at": "2026-10-01 11:15",
+   "kind": "test",
+   "label": "First-token anatomy at idle, first pass",
+   "result": "overhead sits outside prompt processing, even at idle",
+   "verdict": "Finding",
+   "src": [
+    "progress:11:15 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 10:00",
+   "kind": "prod",
+   "label": "Production scored minute by minute on our requests",
+   "result": "misses minutes only on its own errors",
+   "verdict": "Production",
+   "src": [
+    "progress:10:00 (10-01)"
+   ],
+   "caveat": "'Every minute of every run' covers valid runs only: in the crashed 06:21 run production's generation speed fell below 60 tok/s in 2 minutes."
+  },
+  {
+   "at": "2026-10-01 09:45",
+   "kind": "test",
+   "label": "MiniMax's prompt kernel inside our engine: parked",
+   "result": "toolchain clashes with our engine image",
+   "verdict": "Finding",
+   "src": [
+    "progress:09:45 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 09:00",
+   "kind": "test",
+   "label": "MiniMax's kernel through our adapter",
+   "result": "identical output, 1.24× faster end to end",
+   "verdict": "Finding",
+   "superseded_by": "2026-10-01 09:45",
+   "src": [
+    "progress:09:00 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 08:02",
+   "kind": "test",
+   "label": "MiniMax's prompt-attention kernel, tested alone",
+   "result": "1.9–2.5× faster than ours, identical output",
+   "verdict": "Finding",
+   "src": [
+    "reflection:08:02 (10-01)",
+    "progress:08:02 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 07:15",
+   "kind": "finding",
+   "label": "MiniMax's kernel located in a development image",
+   "result": "image pulled on 0008 to extract it",
+   "verdict": "Finding",
+   "src": [
+    "progress:07:15 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 06:30",
+   "kind": "milestone",
+   "label": "Out-of-memory guard patched into both engines",
+   "result": "fair prompt sharing can be retried",
+   "verdict": "Finding",
+   "src": [
+    "progress:06:30 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 05:25",
+   "kind": "finding",
+   "label": "Kernel profile of one engine",
+   "result": "131k-token prompt takes 6.7 s; attention is half",
+   "verdict": "Finding",
+   "src": [
+    "reflection:05:25 (10-01)",
+    "progress:05:25 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 04:50",
+   "kind": "sim",
+   "label": "Simulation: agent sessions, load-aware routing",
+   "result": "SIM 2.46 M at 64 sessions (no SLA)",
+   "verdict": "SIM",
+   "src": [
+    "reflection:04:50 (10-01)",
+    "progress:04:50 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 04:45",
+   "kind": "sim",
+   "label": "Simulation: production-shaped ladder, load-aware routing",
+   "result": "SIM 3.34 M, cache hit 98.1% (no SLA)",
+   "verdict": "SIM",
+   "src": [
+    "progress:04:45 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 03:55",
+   "kind": "finding",
+   "label": "HTTP 500s traced to literal '<image>' text",
+   "result": "fixed in both engine trees",
+   "verdict": "Finding",
+   "src": [
+    "reflection:03:55 (10-01)",
+    "progress:03:55 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 03:45",
+   "kind": "finding",
+   "label": "Why we process more prompt than production",
+   "result": "2.75× its uncached prompt tokens at 4.42 M",
+   "verdict": "Finding",
+   "src": [
+    "reflection:03:45 (10-01)",
+    "progress:03:45 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 01:31",
+   "kind": "test",
+   "label": "Quality check: production-style numerics (GSM8K)",
+   "result": "96.74% vs 96.21%: same quality",
+   "verdict": "Finding",
+   "src": [
+    "progress:01:31 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-09-30 23:18",
+   "kind": "test",
+   "label": "Quality check (GSM8K) broke on a connection burst",
+   "result": "test artefact; rerun with bounded concurrency",
+   "verdict": "Invalid",
+   "superseded_by": "2026-10-01 01:31",
+   "src": [
+    "reflection:23:18 (09-30)",
+    "progress:23:18 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 23:00",
+   "kind": "finding",
+   "label": "Gap analysis: simulation, real traffic, production",
+   "result": "two gaps: engine speed and routing",
+   "verdict": "Finding",
+   "src": [
+    "reflection:23:00 (09-30)"
+   ],
+   "caveat": "Wording of the time: SIM figures are not comparable with production's engine counters."
+  },
+  {
+   "at": "2026-09-30 22:50",
+   "kind": "prod",
+   "label": "Production's routing and admission rules read",
+   "result": "strict cache affinity; 600k cap on uncached prompts",
+   "verdict": "Production",
+   "src": [
+    "timeline:22:50 (09-30)",
+    "progress:22:50 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 22:15",
+   "kind": "milestone",
+   "label": "Test v3 built from Sep 30 traffic",
+   "result": "half-node request sets ready",
+   "verdict": "Finding",
+   "src": [
+    "timeline:22:15 (09-30)",
+    "progress:22:15 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 22:05",
+   "kind": "sim",
+   "label": "Simulation with GPU-half pinning",
+   "result": "SIM 3.28 M, engines saturated (no SLA)",
+   "verdict": "SIM",
+   "src": [
+    "timeline:22:05 (09-30)",
+    "progress:22:05 (09-30)"
+   ],
+   "caveat": "Wording of the time: SIM figures are not comparable with production's engine counters, and a simulation 'ceiling' is not a capacity."
+  },
+  {
+   "at": "2026-09-30 21:30",
+   "kind": "finding",
+   "label": "Review of the teammates' benchmark",
+   "result": "4 measurement fixes before test v3",
+   "verdict": "Finding",
+   "src": [
+    "timeline:21:30 (09-30)",
+    "progress:21:30 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 21:28",
+   "kind": "sim",
+   "label": "Simulation: agent sessions",
+   "result": "SIM 0.95 M at 16 sessions (no SLA)",
+   "verdict": "SIM",
+   "src": [
+    "timeline:21:28 (09-30)",
+    "progress:21:28 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 21:20",
+   "kind": "sim",
+   "label": "Simulation: production-shaped ladder",
+   "result": "SIM 2.57 M; run invalid",
+   "verdict": "SIM",
+   "src": [
+    "timeline:21:20 (09-30)",
+    "progress:21:20 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 20:43",
+   "kind": "run",
+   "test": "v2",
+   "label": "Production-style numerics at full load",
+   "load": 2.94,
+   "pass": 0,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:20:43 (09-30)",
+    "progress:20:43 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 20:25",
+   "kind": "finding",
+   "label": "Full-load collapse traced to session pinning",
+   "result": "routing imbalance, not engine capacity",
+   "verdict": "Finding",
+   "src": [
+    "timeline:20:25 (09-30)",
+    "progress:20:25 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 19:50",
+   "kind": "run",
+   "test": "v2",
+   "label": "Settings of the day at full load",
+   "load": 2.95,
+   "pass": 0,
+   "verdict": "Baseline",
+   "src": [
+    "timeline:19:50 (09-30)",
+    "progress:19:50 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 18:39",
+   "kind": "run",
+   "test": "v2",
+   "label": "Fair prompt sharing + tokenization cache",
+   "load": 1.36,
+   "pass": 13,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:18:39 (09-30)",
+    "progress:18:39 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 17:51",
+   "kind": "run",
+   "test": "v2",
+   "label": "Production-style numerics + NUMA pinning",
+   "load": 1.36,
+   "pass": 4,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:17:51 (09-30)",
+    "progress:17:51 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 17:08",
+   "kind": "run",
+   "test": "v2",
+   "label": "NUMA pinning (engine CPUs next to their GPUs)",
+   "load": 1.36,
+   "pass": 11,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:17:08 (09-30)",
+    "progress:17:08 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 16:23",
+   "kind": "run",
+   "test": "v2",
+   "label": "Production-style numerics (8-bit KV cache)",
+   "load": 1.36,
+   "pass": 7,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:16:23 (09-30)",
+    "progress:16:23 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 15:43",
+   "kind": "test",
+   "label": "Production-style numerics, idle A/B",
+   "result": "generation +22% per stream",
+   "verdict": "Finding",
+   "src": [
+    "timeline:15:43 (09-30)",
+    "progress:15:43 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 15:16",
+   "kind": "finding",
+   "label": "First-token anatomy at idle (60 real turns)",
+   "result": "the attention path sets the floor",
+   "verdict": "Finding",
+   "src": [
+    "timeline:15:16 (09-30)",
+    "progress:15:16 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 14:42",
+   "kind": "run",
+   "test": "v2",
+   "label": "Tokenization cache + stream coalescing off",
+   "load": 1.36,
+   "pass": 12,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:14:42 (09-30)",
+    "progress:14:42 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 13:54",
+   "kind": "run",
+   "test": "v2",
+   "label": "Tokenization prefix cache",
+   "load": 1.36,
+   "pass": 13,
+   "verdict": "Adopted",
+   "src": [
+    "timeline:13:54 (09-30)",
+    "progress:13:54 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 13:40",
+   "kind": "prod",
+   "label": "Production re-measured from its engine counters",
+   "result": "6.27–6.64 M per GPU on its own counters",
+   "verdict": "Production",
+   "src": [
+    "timeline:13:40 (09-30)",
+    "progress:13:40 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 13:09",
+   "kind": "test",
+   "label": "Tokenization prefix cache, verify mode",
+   "result": "0 mismatches in 2,656 requests",
+   "verdict": "Finding",
+   "src": [
+    "timeline:12:26–13:09 (09-30)",
+    "progress:13:09 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 12:26",
+   "kind": "run",
+   "test": "v2",
+   "label": "8 tokenizer workers per engine (was 4)",
+   "load": 1.36,
+   "pass": 10,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:12:26 (09-30)",
+    "progress:12:26 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 11:44",
+   "kind": "run",
+   "test": "v2",
+   "label": "Larger host cache; production's draft attention",
+   "result": "8/15 and 9/15 at 1.36 M",
+   "verdict": "Rejected",
+   "src": [
+    "timeline:11:44 (09-30)",
+    "progress:11:44 (09-30)"
+   ],
+   "caveat": "Wording of the time: the 'saturated at 3.3–3.8 M' production reading is superseded (Setup & production › Earlier readings)."
+  },
+  {
+   "at": "2026-09-30 10:13",
+   "kind": "run",
+   "test": "v2",
+   "label": "More KV-cache memory (0.68 → 0.72)",
+   "load": 1.36,
+   "pass": 8,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:10:13 (09-30)",
+    "progress:10:13 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 09:17",
+   "kind": "run",
+   "test": "v2",
+   "label": "Gateway stream coalescing off",
+   "load": 1.36,
+   "pass": 10,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:09:17 (09-30)",
+    "progress:09:17 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 08:33",
+   "kind": "run",
+   "test": "v2",
+   "label": "Smaller prompt chunks (16k)",
+   "load": 1.36,
+   "pass": 6,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:08:33 (09-30)",
+    "progress:08:33 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 07:50",
+   "kind": "run",
+   "test": "v2",
+   "label": "Fair prompt sharing",
+   "load": 1.36,
+   "pass": 12,
+   "verdict": "Rejected",
+   "src": [
+    "timeline:07:50 (09-30)",
+    "progress:07:50 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 07:30",
+   "kind": "finding",
+   "label": "Why half load fails: engines nearly idle",
+   "result": "the first-token floor is the limit",
+   "verdict": "Finding",
+   "src": [
+    "timeline:07:30 (09-30)",
+    "progress:07:30 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-30 07:05",
+   "kind": "run",
+   "test": "v2",
+   "label": "Half load repeated (noise check)",
+   "load": 1.36,
+   "pass": 11,
+   "verdict": "Baseline",
+   "src": [
+    "timeline:07:05 (09-30)",
+    "progress:07:05 (09-30)"
+   ]
+  },
+  {
+   "at": "2026-09-29 22:10",
+   "kind": "run",
+   "test": "v2",
+   "label": "Half load on test v2",
+   "load": 1.36,
+   "pass": 10,
+   "verdict": "Baseline",
+   "src": [
+    "timeline:22:10 (09-29)",
+    "progress:22:10 (09-29)"
+   ],
+   "caveat": "Wording of the time: a failing load (10/15) is not capacity."
+  },
+  {
+   "at": "2026-09-29 16:15",
+   "kind": "run",
+   "test": "v2",
+   "label": "First replay of real M3.1 traffic, full load",
+   "result": "0/30 minutes at 2.78 M: the node fell behind",
+   "verdict": "Baseline",
+   "src": [
+    "timeline:16:15 (09-29)",
+    "progress:16:15 (09-29)"
+   ]
+  }
+ ],
+ "v2": {
+  "title": "Test v2: lighter Sep 28 traffic · half load = 1.36 M, full load = 2.95 M · runs Sep 29 22:10 – Sep 30 20:43",
+  "groups": [
+   {
+    "share": 0.5,
+    "load": "1.36 M",
+    "label": "1.36 M · half load (v2)",
+    "prod": "production on these requests 1.38 M · TTFT 0.31 / 10.1 s · decode 107 tok/s · cache hit 96.1% · minutes not scored for v2",
+    "prod_hit": "96.1%",
+    "src": "PROGRESS.md Sep 29 22:10"
+   },
+   {
+    "share": 1.0,
+    "load": "2.95 M",
+    "label": "2.95 M · full load (v2)",
+    "prod": "production on these requests 3.01 M · cache hit 96.1% · minutes not scored for v2",
+    "src": "PROGRESS.md Sep 30 19:50 and 20:43"
+   }
+  ],
+  "rows": {
+   "Baseline (frontier, mem 0.68)": {
+    "at": [
+     "2026-09-29 22:10",
+     "2026-09-30 07:05"
+    ],
+    "name": "Half load, settings of Sep 29 (two runs)",
+    "verdict": "Baseline",
+    "note": "the same settings twice: 10/15 then 11/15, so one run varies by about ±1 minute"
+   },
+   "Fair chunk share 0.5": {
+    "at": [
+     "2026-09-30 07:50"
+    ],
+    "name": "Fair prompt sharing",
+    "verdict": "Rejected",
+    "note": "was 'keep, tail gain'; it later tied the tokenization cache at 13/15 (Sep 30 18:39) and is off in the Oct 1 adopted settings"
+   },
+   "8 tokenizer workers": {
+    "at": [
+     "2026-09-30 12:26"
+    ],
+    "name": "8 tokenizer workers per engine (was 4)",
+    "verdict": "Rejected",
+    "note": "slow tail −25%, median unchanged; 4 workers stay"
+   },
+   "fa4 draft attention (production's)": {
+    "at": [
+     "2026-09-30 11:44"
+    ],
+    "name": "Production's draft attention kernel (fa4)",
+    "verdict": "Rejected",
+    "note": "neutral"
+   },
+   "Gateway coalescing off": {
+    "at": [
+     "2026-09-30 09:17"
+    ],
+    "name": "Gateway stream coalescing off",
+    "verdict": "Rejected",
+    "note": "neutral"
+   },
+   "Mem fraction 0.72": {
+    "at": [
+     "2026-09-30 10:13"
+    ],
+    "name": "More KV-cache memory (0.68 → 0.72)",
+    "verdict": "Rejected",
+    "note": "no gain at this load (KV use about 10%); 0.76 was adopted later on test v3.1 (Oct 1 05:52)"
+   },
+   "HiCache ratio 4": {
+    "at": [
+     "2026-09-30 11:44"
+    ],
+    "name": "Larger host cache (HiCache ratio 4)",
+    "verdict": "Rejected",
+    "note": "no gain"
+   },
+   "Chunk 16384": {
+    "at": [
+     "2026-09-30 08:33"
+    ],
+    "name": "Smaller prompt chunks (16k)",
+    "verdict": "Rejected",
+    "note": "worse"
+   },
+   "Tokenization prefix cache": {
+    "at": [
+     "2026-09-30 13:54"
+    ],
+    "name": "Tokenization prefix cache",
+    "verdict": "Adopted",
+    "note": "median −0.15 s, slow tail −17%; 0 mismatches in a verify pass; in the adopted settings"
+   },
+   "Tokenization cache + coalescing off": {
+    "at": [
+     "2026-09-30 14:42"
+    ],
+    "name": "Tokenization cache + stream coalescing off",
+    "verdict": "Rejected",
+    "note": "neutral; coalescing stays on"
+   },
+   "Fair chunk share 0.5 + cache": {
+    "at": [
+     "2026-09-30 18:39"
+    ],
+    "name": "Fair prompt sharing + tokenization cache",
+    "verdict": "Rejected",
+    "note": "tied the tokenization cache alone (13/15); off in the Oct 1 adopted settings"
+   },
+   "Production-style numerics (training off + fp8 KV) + cache": {
+    "at": [
+     "2026-09-30 16:23"
+    ],
+    "name": "Production-style numerics (8-bit KV cache)",
+    "verdict": "Rejected",
+    "note": "generation +29%, but the slow tail got worse"
+   },
+   "NUMA pinning (engine i on node i) + cache": {
+    "at": [
+     "2026-09-30 17:08"
+    ],
+    "name": "NUMA pinning (engine CPUs next to their GPUs)",
+    "verdict": "Rejected",
+    "note": "neutral"
+   },
+   "Numerics + NUMA pinning + cache": {
+    "at": [
+     "2026-09-30 17:51"
+    ],
+    "name": "Production-style numerics + NUMA pinning",
+    "verdict": "Rejected",
+    "note": "best median and generation speed, worst slow tail"
+   }
+  },
+  "full_rows": [
+   {
+    "at": "2026-09-30 19:50",
+    "name": "Settings of the day at full load",
+    "load": "2.95 M",
+    "pass": 0,
+    "ttft": "1.30 / 380.5",
+    "decode": "56",
+    "hit": "94.0% (96.1%)",
+    "verdict": "Baseline",
+    "note": "two engines took most sessions while two idled: routing, not engine capacity (Sep 30 20:25)",
+    "src": "PROGRESS.md Sep 30 19:50"
+   },
+   {
+    "at": "2026-09-30 20:43",
+    "name": "Production-style numerics (8-bit KV cache)",
+    "load": "2.94 M",
+    "pass": 0,
+    "ttft": "5.27 / 419.4",
+    "decode": "76",
+    "hit": "90.7% (96.1%)",
+    "verdict": "Rejected",
+    "note": "8-bit KV halves cache capacity; both full-load runs were dominated by the routing imbalance",
+    "src": "PROGRESS.md Sep 30 20:43"
+   }
+  ]
+ },
+ "sim_dates": [
+  "2026-09-30 21:20",
+  "2026-09-30 21:20",
+  "2026-09-30 21:20",
+  "2026-09-30 21:20",
+  "2026-09-30 21:28",
+  "2026-09-30 21:28",
+  "2026-09-30 21:28",
+  "2026-09-30 22:05",
+  "2026-09-30 22:05",
+  "2026-09-30 22:05",
+  "2026-10-01 04:45",
+  "2026-10-01 04:50",
+  "2026-10-01 04:50"
+ ],
+ "engineering": [
+  {
+   "name": "Per-request timing breakdown under load",
+   "state": "planned",
+   "at": "2026-10-01 12:58",
+   "text": "the 12:06 run's timing logs were lost when its engines were torn down; the launcher now keeps engine logs, and the 2.23 M cache-first run logs per-request tokenise, queue and prompt-processing time again",
+   "ref": "PROGRESS.md Oct 1 11:15, 12:05 and 13:05 (--enable-request-time-stats-logging)"
+  },
+  {
+   "name": "MiniMax's prompt-attention kernel inside our engine",
+   "state": "parked",
+   "at": "2026-10-01 09:45",
+   "text": "identical output and 2.16 ms per call vs our 4.81 ms; the gather and scale steps add 1.5 ms (a fused gather could reach about 1.85×). Its toolchain (CuTe-DSL 4.5) and our engine image (4.6) cannot share one process",
+   "ref": "PROGRESS.md Oct 1 09:00 and 09:45"
+  },
+  {
+   "name": "Faster prompt kernels of our own",
+   "state": "planned",
+   "text": "autotune our Triton attention and indexer kernels on recorded prompt shapes, checked bit for bit against the current ones",
+   "ref": "progress_data.json queued[0]"
+  },
+  {
+   "name": "Dynamo retest with per-GPU-half cache events",
+   "state": "planned",
+   "text": "check that both GPUs' cache events reach the router, then rerun at half load",
+   "ref": "progress_data.json queued[1]"
+  },
+  {
+   "name": "Measurement hardening",
+   "state": "planned",
+   "text": "fail-closed scoring, uncached-token ratio per minute, served-in-window TPM next to load sent",
+   "ref": "progress_data.json queued[17]"
+  },
+  {
+   "name": "Score production minute by minute on the same requests",
+   "state": "done",
+   "at": "2026-10-01 10:00",
+   "text": "same rule, from its request logs; it loses minutes only to its own errors",
+   "ref": "extract_runs.py · PROGRESS.md Oct 1 10:00"
+  },
+  {
+   "name": "Asks to MiniMax",
+   "state": "asked",
+   "text": "graph-safe verify kernel, NextN/MTP for M3.1, validation of the host cache with 4-bit KV",
+   "ref": "progress_data.json queued[16]"
+  }
+ ],
+ "done": [
+  "Load-aware session routing: adopted Oct 1 03:56 ({pass:v3_lp_05x}/15 vs {pass:v3_tpc_05x}/15 at 2.23 M on test v3)",
+  "More cache memory (0.68 → 0.76): adopted Oct 1 05:52",
+  "Cache-first scheduling (longest prefix first): adopted Oct 1 {at:v3_lp_cap_lpm_075x} ({pass:v3_lp_cap_lpm_075x}/15 at {load:v3_lp_cap_lpm_075x} M, fewer failing minutes on every rule)",
+  "128 requests per engine: failed to boot Oct 1 {at:v3_lp_cap_mr128_075x} (the engines died capturing their GPU graphs); about 55 GPU-minutes lost",
+  "Fair prompt sharing, with the out-of-memory guard: rejected Oct 1 {at:v3_lp_cap_lpm_f2_075x} (no crash, but {pass:v3_lp_cap_lpm_f2_075x}/15 with a slower tail: slowest-1% first token {p99:v3_lp_cap_lpm_f2_075x} s vs {p99:v3_lp_cap_lpm_075x} s)",
+  "Test v3.1 (skip the requests production refused; literal-<image> fix): Oct 1 04:30",
+  "Test v3 built from Sep 30 traffic: Sep 30 22:15",
+  "Simulation round (StandardKernel benchmark): done Sep 30 21:28",
+  "Tokenization prefix cache: adopted Sep 30 13:54",
+  "Production's draft attention (fa4): tested Sep 30 11:44, 9/15, no gain",
+  "Host cache (HiCache) for our 4-bit KV: done Sep 28 20:49, kept on",
+  "16 tokenizer workers: tested Sep 28 17:21, no gain",
+  "Bidirectional DSpark draft: adopted Sep 28 04:42",
+  "Live M3.1 trace: done Sep 28 21:25, became test v2",
+  "MiniMax's prompt-attention kernel inside our engine: parked Oct 1 09:45",
+  "Giant-prompt lane, routing attribution, prefill trims and Dynamo router port: parked (they waited on the retired chains 14, 15 and 21)"
+ ],
+ "production": {
+  "same_source": "production's request logs for exactly the replayed requests (scored by extract_runs.py with the same per-minute rule), traffic recorded Sep 30 13:10–13:25 PDT",
+  "engine_source": "engine counters :8081 on b300-18 / b300-22, Sep 30 13:29–13:34 PDT, read-only",
+  "engine_gap": "The engines count {ec_req}× the requests and about {ec_ppr}× the prompt tokens per request ({ec_tok}) that the request logs record, so about {ec_hub_ratio}× the tokens in total: the logs, and our replay built from them, miss part of production's load; the cause is not established.",
+  "fleet": "24 nodes · 192 GPUs (Dynamo frontends, probed Sep 29 01:05) · ≈1.2–1.3 B TPM (engine counters × 24, Sep 30)",
+  "highest": "Highest reported: ≈7.8 M per GPU (~1.5 B TPM fleet), Sep 29, from the owner's dashboard read. S3 has no logs for Sep 29 10:00–20:00 PDT, so it cannot be re-checked.",
+  "superseded": [
+   {
+    "at": "Sep 27 23:07",
+    "value": "1.41 M per GPU",
+    "reason": "hub logs, assuming 18 nodes; production had 24 (found Sep 28 18:05)"
+   },
+   {
+    "at": "Sep 28 02:20",
+    "value": "2.79 M per GPU",
+    "reason": "hub logs, assuming 18 nodes"
+   },
+   {
+    "at": "Sep 28 05:25",
+    "value": "2.95 M per GPU",
+    "reason": "hub logs, assuming 18 nodes"
+   },
+   {
+    "at": "Sep 28 13:31",
+    "value": "2.83 M per GPU",
+    "reason": "hub logs, assuming 18 nodes"
+   },
+   {
+    "at": "Sep 29 01:05",
+    "value": "24 h peak 3.38 M per GPU (Sep 28 09:10–09:20, 192 GPUs), 'not request-saturated'",
+    "reason": "hub logs, which undercount the engines; replaced by the Sep 30 13:29–13:34 engine-counter read"
+   },
+   {
+    "at": "Sep 30 11:44",
+    "value": "'saturated at 3.3–3.8 M, first token 7–9 s'",
+    "reason": "S3 hub logs, which undercount the engines; replaced by the Sep 30 13:29–13:34 engine-counter read"
+   }
+  ]
+ },
+ "setup_compare": [
+  {
+   "setting": "Layout",
+   "prod": "4 workers × 2 GPUs per node, one attention group per worker (DP attention off)",
+   "ours": "4 engines × 2 GPUs whose attention halves step together (DP attention on; our engine build requires it)",
+   "matters": "Big: prompt processing on one GPU pauses generation on both (profile Oct 1 05:25)"
+  },
+  {
+   "setting": "Prompt-attention kernels",
+   "prod": "~18 in-house kernels, including faster 4-bit-KV prompt attention and a fused verify",
+   "ours": "vendor Triton kernels at ~12–14% of tensor-core peak; MiniMax's kernel was 1.9–2.5× faster with identical output in a standalone test (Oct 1 08:02) but is parked: its toolchain clashes with our engine image (09:45)",
+   "matters": "Big: prompt processing an estimated 2–3× slower per request (profile Oct 1 05:25)"
+  },
+  {
+   "setting": "Prompt templating and tokenisation",
+   "prod": "Rust frontend renders and tokenises; workers skip tokenisation",
+   "ours": "Python chat template + 4 tokenizer workers per engine + tokenization prefix cache (adopted Sep 30 13:54)",
+   "matters": "Under test: warm first token 0.87 s vs production 0.31 s at 60–120k-token prompts (Oct 1 09:35); the idle pass (Oct 1 11:15) puts the extra time outside prompt processing; per-request timing logs and 8 tokenizer workers are queued (Oct 1 13:05)"
+  },
+  {
+   "setting": "Speculative decoding",
+   "prod": "DFlash2 draft, block 4 (accepts ≈2.8–3.0 tokens per check)",
+   "ours": "DSpark draft, block 7 (accepts 3.66 at 3.34 M); block 4 tested Oct 1 07:54, rejected",
+   "matters": "Not the gap (Oct 1): our generation is faster at {load:best_0.5} M ({dec:best_0.5} vs {pdec:best_0.5} tok/s, Oct 1 {at:best_0.5})"
+  },
+  {
+   "setting": "Memory · requests at once · prompt chunk",
+   "prod": "mem 0.80 · 128 per worker · 16k",
+   "ours": "mem 0.76 (adopted Oct 1 05:52) · 64 per engine · 32k (16k tested Oct 1 08:49, rejected)",
+   "matters": "Small so far; 128 per engine failed to boot (Oct 1 {at:v3_lp_cap_mr128_075x}, graph capture)"
+  },
+  {
+   "setting": "Scheduling order",
+   "prod": "no --schedule-policy in the argv we read (Sep 27), so the engine default",
+   "ours": "cache-first: the request with the longest cached prompt goes first (adopted Oct 1 {at:v3_lp_cap_lpm_075x})",
+   "matters": "Small: still {pass:v3_lp_cap_lpm_075x}/15 at {load:v3_lp_cap_lpm_075x} M, but fewer failing minutes on every rule (Oct 1 11:10)"
+  },
+  {
+   "setting": "Host cache (HiCache)",
+   "prod": "ratio 3, write-through, kernel IO, page_first",
+   "ours": "same",
+   "matters": "Same"
+  },
+  {
+   "setting": "Routing",
+   "prod": "Dynamo router with strict cache affinity + session pinning",
+   "ours": "our gateway: session pinning with load-aware placement (adopted Oct 1 03:56); production's router (Dynamo) tested Oct 1 01:25 and 02:15 at cache hit {hit:dyn_05x} and {hit:dyn2_05x} vs our gateway's {hit:v3_tpc_05x}, rejected",
+   "matters": "Solved at {load:best_0.5} M (hit {hit:best_0.5} vs production {phit:best_0.5}, Oct 1 {at:best_0.5})"
+  },
+  {
+   "setting": "Admission",
+   "prod": "cold prompts capped at 600k uncached tokens per worker; ≈0.1% refused with HTTP 429 (b300-18 worker 0: 43 of 41,156, Sep 30 22:50)",
+   "ours": "none; test v3.1 does not send the requests production refused",
+   "matters": "Small"
+  },
+  {
+   "setting": "Numerics",
+   "prod": "training numerics off, with its own 4-bit KV kernels",
+   "ours": "training-compatible; production-style numerics (8-bit KV) tested Oct 1 00:25: same quality (GSM8K 96.74% vs 96.21%) but half the cache capacity, so rejected",
+   "matters": "Needs their 4-bit KV kernels first"
+  }
+ ],
+ "setup_conflicts": [
+  "max running 128 per worker (serve.yaml, Sep 30); the Sep 27 argv read showed 256",
+  "draft: DFlash2 block 4 (serve.yaml); Sep 27 notes called it DSpark block 4",
+  "429 rate: the serve.yaml note says 0.5–1% under prefill pressure; the worker counter on Sep 30 22:50 shows 0.10% (43 of 41,156)"
+ ],
+ "setup_footnote": "DFlash2 = production's block-4 draft; ours is DSpark block 7.",
+ "gap": {
+  "rows": [
+   {
+    "prod": "Rust frontend renders and tokenises prompts (fastokens); workers skip it",
+    "ours": "Python chat template + 4 tokenizer workers per engine + tokenization prefix cache (adopted Sep 30 13:54)",
+    "status": "Under test (Oct 1 09:35): warm first token grows with prompt length; the idle pass (Oct 1 11:15) puts the extra time outside prompt processing; templating and tokenisation are the first suspects; per-request timing logs and 8 tokenizer workers are queued (Oct 1 13:05)"
+   },
+   {
+    "prod": "fused, graph-safe verify and accept kernels",
+    "status": "write (the biggest change) or ask MiniMax"
+   },
+   {
+    "prod": "attention split over both GPUs of a worker, no lockstep (DP attention off)",
+    "status": "write, plus an accuracy check of non-training numerics; the profile (Oct 1 05:25) confirms the lockstep cost"
+   },
+   {
+    "prod": "in-house 4-bit-KV prompt attention and indexer kernels, prompt CUDA graphs, 16k chunks",
+    "ours": "attention + indexer ≈ half of prompt time (profile Oct 1 05:25); our Triton kernels run at ~12–14% of tensor-core peak",
+    "status": "MiniMax's kernel 1.9–2.5× faster with identical output in a standalone test (Oct 1 08:02); parked Oct 1 09:45 (its toolchain clashes with our engine image); Triton autotune planned",
+    "buys": "faster processing of the 5–60k uncached prompt tokens of a typical request (sets where passing collapses)"
+   },
+   {
+    "prod": "fused router, norm + quant, shared-expert overlap, tuned GEMMs, fast all-reduce",
+    "status": "write or ask; low risk each"
+   },
+   {
+    "prod": "DFlash2 draft, block 4, fa4 draft attention, bounded draft window",
+    "ours": "DSpark block 7, flashinfer draft, window 4095, bidirectional inside the block (accepts 3.66 at 3.34 M)",
+    "status": "block 4 tested on v3.1 Oct 1 07:54: rejected (acceptance 3.66 → 3.06); fa4 draft attention tested Sep 30 11:44 on v2: no gain"
+   },
+   {
+    "prod": "overlap scheduling, spec-decode radix cache, host cache write-through, queue cap",
+    "ours": "overlap scheduling on; host cache ratio 3 as production",
+    "status": "spec-decode radix cache not in our tree; cache-first scheduling adopted Oct 1 {at:v3_lp_cap_lpm_075x}"
+   },
+   {
+    "prod": "Dynamo KV router with a strict-affinity plugin + session pinning",
+    "ours": "our gateway: session pinning with load-aware placement",
+    "status": "done: load-aware routing adopted Oct 1 03:56; Dynamo tested Oct 1 01:25 and 02:15 (cache hit {hit:dyn_05x}–{hit:dyn2_05x}), rejected"
+   }
+  ],
+  "note": "On v3.1 requests our generation speed already beats production's at {load:best_0.5} M ({dec:best_0.5} vs {pdec:best_0.5} tok/s, Oct 1 {at:best_0.5}). The gap is prompt-processing speed, the two-GPU lockstep and per-request time outside GPU math. (This retires the older '75 vs 212 tok/s per stream' note, which current data contradicts.)"
+ },
+ "howto": [
+  "TPM per GPU = tokens processed per minute (prompt including cached, plus output) ÷ 8 GPUs: the same formula as production's dashboard. Our loads come from production's request logs, which read about {ec_hub_ratio}× lower than production's engine counters.",
+  "{sla_sentence}",
+  "Load we sent = the TPM per GPU that the replayed production requests ask for, not what we served. It rises by adding conversations, never by speeding up time.",
+  "Production has two numbers. {prod_full} M = production on exactly the requests our full-load replay sends; compare our runs with this. {ec_range} M = production's full load per GPU on its own engine counters (Sep 30 13:29–13:34). The engines count {ec_req}× the requests and about {ec_ppr}× the prompt tokens per request that the request logs record, so about {ec_hub_ratio}× the tokens in total, for reasons not yet established. The {hub_avg} M in older notes is the whole hub's average per GPU over the same 15 minutes.",
+  "Production on the same requests is scored minute by minute with the same rule, from its own request logs. {prod_rule_note}",
+  "The {target} M goal's basis is not confirmed. Sep 30 notes tie it to production parity on its engine counters ('north star ≈ production parity', Sep 30 13:40); counted that way it sits at about {goal_eng} M on this page's request-log axis ({target} ÷ {ec_hub_ratio}). The chart draws both readings until the owner confirms one.",
+  "Test versions: v3.1 (current, first result {v31_first}) = production traffic recorded Sep 30 13:10–13:25 PDT, minus the requests production itself refused (HTTP 429), with the literal-<image> bug fixed. v3 = the same traffic before those fixes. v2 = lighter Sep 28 traffic. Compare runs only within one version.",
+  "SIM = the teammates' synthetic benchmark (StandardKernel): a cross-check, never a ranking.",
+  "A single run varies by about ±1 minute from run to run (v2 repeat, Sep 30: 10 vs 11). All times Pacific (PDT)."
+ ],
+ "glossary": [
+  [
+   "Measuring",
+   "TPM per GPU (M)",
+   "million tokens processed per minute (prompt including cached, plus output) divided by the node's 8 GPUs: the same formula as production's dashboard. Our loads come from the request logs, which read about {ec_hub_ratio}× lower than production's engine counters."
+  ],
+  [
+   "Measuring",
+   "Load we sent",
+   "the TPM per GPU that the replayed production requests ask for. It is what we sent, not what we served within the SLA."
+  ],
+  [
+   "Measuring",
+   "⅜ / half / ¾ / full load",
+   "{share_loads}: that share of one production node's logged traffic. Load is raised by adding conversations, never by speeding up time."
+  ],
+  [
+   "Measuring",
+   "Minute in SLA",
+   "a minute where the median first token arrives within 1 s, the slowest 1 in 100 within 15 s, median generation speed is at least 60 tokens/s and errors are at most 0.1%."
+  ],
+  [
+   "Measuring",
+   "Passes (15/15)",
+   "all 15 measured minutes are in SLA. 14/15 is a fail."
+  ],
+  [
+   "Measuring",
+   "Closest",
+   "the run with the most minutes in SLA on the current test ({closest_text}). It is still a fail."
+  ],
+  [
+   "Measuring",
+   "First token (TTFT), p50 / p99",
+   "seconds until the first output token, for the median request and for the slowest 1 in 100."
+  ],
+  [
+   "Measuring",
+   "Generation speed (decode)",
+   "output tokens per second for one request while it streams."
+  ],
+  [
+   "Measuring",
+   "Prompt processing (prefill)",
+   "reading the prompt before the first token. An uncached ('cold') prompt has to be processed in full; one of 300k tokens takes 15 s or more on our engine."
+  ],
+  [
+   "Measuring",
+   "Cache hit",
+   "the share of prompt tokens already held from earlier turns of the same conversation. Production's figure for the same requests is shown in brackets."
+  ],
+  [
+   "Measuring",
+   "Production, same requests",
+   "how production served exactly the requests we replay, according to its request logs ({prod_full} M at full load). {prod_rule_note}"
+  ],
+  [
+   "Measuring",
+   "Production's engine counters",
+   "the token counters on production's own engines, {ec_range} M per GPU on Sep 30. They count about {ec_hub_ratio}× the prompt tokens the request logs record; the cause is not established."
+  ],
+  [
+   "Measuring",
+   "Request logs (hub logs)",
+   "production's per-request logs, which our replay is built from. They show less load than the engines count."
+  ],
+  [
+   "Measuring",
+   "Goal (7.00 M)",
+   "the owner's target per GPU. Whether it counts like the request logs or like production's engine counters is not confirmed; on the request-log axis the second reading is about {goal_eng} M."
+  ],
+  [
+   "Measuring",
+   "Test v3.1 / v3 / v2",
+   "v3.1 (current) replays production traffic recorded Sep 30 13:10–13:25 PDT, minus the requests production itself refused, with the literal-<image> bug fixed. v3 is the same traffic before those fixes. v2 is lighter Sep 28 traffic. Compare runs only within one version."
+  ],
+  [
+   "Measuring",
+   "SIM (simulation)",
+   "the teammates' StandardKernel benchmark on synthetic or recorded agent sessions. It is a cross-check and never ranks changes."
+  ],
+  [
+   "Changes",
+   "Adopted settings (formerly 'frontier')",
+   "the setup every change is tested on top of: 4 engines × 2 GPUs, 32k prompt chunks, 64 requests per engine and draft block 7, plus {adopted_list}."
+  ],
+  [
+   "Changes",
+   "Change (formerly 'lever')",
+   "one setting or code change, tested on top of the adopted settings at one load."
+  ],
+  [
+   "Changes",
+   "Verdicts",
+   "Adopted = in the adopted settings now. Rejected = tried and dropped; the reason is in the row. Baseline = a reference run with nothing changed. Invalid = the run broke and its result does not count. Finding = an analysis, kernel test or quality test with no SLA run. SIM = a simulation."
+  ],
+  [
+   "Changes",
+   "KV-cache memory (0.68 → 0.76)",
+   "the share of GPU memory kept for processed prompts. More of it means fewer conversations get evicted and processed again."
+  ],
+  [
+   "Changes",
+   "GPU pair (DP ranks)",
+   "each of our 4 engines uses 2 GPUs whose attention halves step together, so a long prompt on one pauses generation on both. Production's layout avoids this."
+  ],
+  [
+   "Changes",
+   "Load-aware session routing",
+   "our gateway keeps each conversation on the same GPU pair so its cache is reused, and sends new conversations to the least-busy pair."
+  ],
+  [
+   "Changes",
+   "Production's router (Dynamo)",
+   "the cache-aware router production uses. On our layout it lost cache hits ({hit:dyn_05x}–{hit:dyn2_05x} vs our gateway's {hit:v3_tpc_05x}), so we route with our own gateway."
+  ],
+  [
+   "Changes",
+   "Draft block (DSpark)",
+   "our speculative decoding: a small draft model proposes 7 tokens and the main model checks them in one step. Production uses a different draft (DFlash2) with block 4."
+  ],
+  [
+   "Changes",
+   "MiniMax's prompt-attention kernel (MSA)",
+   "MiniMax's sparse-attention kernel for prompt processing. In a standalone test (Oct 1 08:02) it was 1.9–2.5× faster than ours with identical output. It does not run inside our engine yet: its toolchain clashes with our engine image (parked Oct 1 09:45)."
+  ],
+  [
+   "Changes",
+   "Where passing collapses (formerly 'knee')",
+   "the load between a run with most of its minutes in SLA and one with few. On test v3.1 it lies between {knee}."
+  ]
+ ],
+ "tools": [
+  [
+   "serving/minimax-m3.1/replay_v2.py",
+   "replay of production requests and our per-minute scoring"
+  ],
+  [
+   "serving/minimax-m3.1/extract_runs.py",
+   "per-minute SLA records, ours and production's on the same requests (runs_v3.json)"
+  ],
+  [
+   "serving/minimax-m3.1/chainQ.sh",
+   "GPU queue runner (pops lever_queue.txt)"
+  ],
+  [
+   "serving/minimax-m3.1/lever_queue.txt",
+   "GPU queue (the node copy is authoritative)"
+  ],
+  [
+   "serving/minimax-m3.1/launch_tp2x4_old.sh",
+   "engine launcher: 4 engines × 2 GPUs + our gateway"
+  ],
+  [
+   "serving/minimax-m3.1/patch_shim_loadpin.py",
+   "load-aware session routing (gateway)"
+  ],
+  [
+   "serving/minimax-m3.1/patch_chunk_oom_guard.py",
+   "out-of-memory guard for chunked prompts"
+  ],
+  [
+   "serving/minimax-m3.1/patch_mm_literal_tags.py",
+   "literal '<image>' / '<video>' text fix"
+  ],
+  [
+   "serving/minimax-m3.1/patch_tok_prefix_cache.py",
+   "tokenization prefix cache"
+  ],
+  [
+   "serving/minimax-m3.1/hit_gap.py",
+   "cache-miss analysis against production"
+  ],
+  [
+   "serving/minimax-m3.1/diag_1x.sh",
+   "engine queue sampler during a run"
+  ],
+  [
+   "serving/minimax-m3.1/ttft_anatomy.py",
+   "first-token anatomy at idle"
+  ],
+  [
+   "serving/minimax-m3.1/gsm8k_bounded.py",
+   "quality check (GSM8K, bounded concurrency)"
+  ]
+ ],
+ "setup_current": [
+  {
+   "name": "load-aware session routing",
+   "adopted_at": "2026-10-01 03:56",
+   "run": "v3_lp_05x",
+   "note": "ROUTE_PIN_BY_INFLIGHT=1, ROUTE_REPIN_SLACK=16 (already in chainQ.sh base_env)"
+  },
+  {
+   "name": "more cache memory, 0.68 → 0.76",
+   "adopted_at": "2026-10-01 05:52",
+   "run": "v3_lp_cap_075x",
+   "override": {
+    "MEMFRAC": "0.76"
+   }
+  },
+  {
+   "name": "cache-first scheduling, longest prefix first",
+   "adopted_at": "2026-10-01 11:05",
+   "run": "v3_lp_cap_lpm_075x",
+   "append": {
+    "XARGS": " --schedule-policy lpm"
+   }
+  }
+ ],
+ "sim": {
+  "note": "SIM throughputs use the harness's own token accounting. They are not comparable with the replay's load sent or with production's engine counters, and they never rank changes or size the gap. Real-traffic results: the test v3.1 tables above.",
+  "lag_limit_s": 0.1,
+  "lag_rule": "the harness's own validity check: client event-loop lag at most 100 ms",
+  "row_notes": {
+   "9": "hit 98.1%; +28% output vs the ladder without rank pinning; engines saturated",
+   "10": "0 errors, cached 98.1%; +28% output vs the earlier ladder (2,684, invalid run)"
+  }
+ }
+}

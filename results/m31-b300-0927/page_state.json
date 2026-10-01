@@ -1,0 +1,43 @@
+{
+ "_note": "Hand-written GPU-queue context for progress_page.py. The live state (what runs, since when, the queue order) comes from node_state.txt, which pull_node_state.sh writes from node 0008 (UTC, converted to PDT at render); the fields read_at / state / running / queue below are only a fallback when node_state.txt is missing. reasons: one reason per run tag, 15 words or fewer, shown as a hover / tap. needs_ok: tags that wait for the owner's OK. between_runs: engineering done on the node between GPU runs. parked: work set aside, dated.",
+ "read_at": "2026-10-01 13:00",
+ "source": "node 0008 read Oct 1 20:00 UTC (pull_node_state.sh) and PROGRESS.md Oct 1 13:05 (fair-prompt-sharing retry rejected; running: cache-first at 1.79 M; queued: cache-first at 2.23 M with timing logs, then 8 tokenizer workers)",
+ "state": "running",
+ "running": {
+  "tag": "v3_lp_cap_lpm_0375x",
+  "share": 0.375,
+  "since": "2026-10-01 12:51"
+ },
+ "queue": [
+  {
+   "tag": "v3_lp_cap_lpm_05x",
+   "share": 0.5
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8_05x",
+   "share": 0.5
+  }
+ ],
+ "reasons": {
+  "v3_lp_cap_lpm_0375x": "re-check the closest load (13/15) with cache-first scheduling",
+  "v3_lp_cap_lpm_05x": "re-check half load (10/15) with cache-first; logs per-request timing",
+  "v3_lp_cap_lpm_tok8_05x": "is tokenisation the time outside the GPU? 8 workers instead of 4",
+  "v3_lp_cap_lpm_f2_075x": "retry of the 06:21 crash with the guard; logs per-request timing",
+  "v3_lp_cap_mr128_075x": "production runs 128 per worker; ours failed to boot at that size"
+ },
+ "needs_ok": [],
+ "between_runs": {
+  "name": "First-token anatomy at idle, second pass",
+  "status": "planned",
+  "when": "during the 2.23 M cache-first run",
+  "at": "2026-10-01 12:58",
+  "text": "a hold window once that run is serving: the idle anatomy pass, then the engine logs are saved (the 12:06 run's timing logs were lost at teardown)"
+ },
+ "parked": [
+  {
+   "name": "MiniMax's prompt-attention kernel inside our engine",
+   "at": "2026-10-01 09:45",
+   "why": "about 2× faster than ours with identical output, but it needs an older version of its CUDA toolchain than our engine image, and one process cannot load both"
+  }
+ ]
+}
