@@ -3201,6 +3201,12 @@
  },
  "reflections": [
   {
+   "at": "08:50 (10-01)",
+   "result": "16k prefill chunk on top of capacity at 0.75×: 1/15; TTFT 1.05 / 5.22 / 18.9 s, decode 53 tok/s (capacity alone 1.01 / 4.84 / 18.3, 55).",
+   "insight": "Same verdict as on Sep 30: halving the chunk does not reduce the total prefill time that stalls decoding, it only spreads it over more steps, and median TTFT gets worse. Failing-minute breakdown so far: at 2.23 M only TTFT fails (p99 in 5 minutes, median in 1); at 3.34 M decode < 60 tok/s fails in 13–14 of 15 minutes. Both trace back to slow prefill.",
+   "next": "Chunk stays 32k. Now: MSA kernel inside our engine image (4 tests), then 1.67 M and 2.23 M with the adopted settings to find a load that passes all 15 minutes, then longest-prefix-first, 128 running, fair share retry."
+  },
+  {
    "at": "08:02 (10-01)",
    "result": "MiniMax's public MSA NVFP4 sparse-attention kernel runs on B300 inside the SGLang M3 dev image (fmha_sm100 0.1.1, CuTe-DSL 4.5.2): 1.9–2.5× faster than our Triton kernel on a 16k-token prefill chunk at 32k–524k context, and bitwise identical output.",
    "insight": "Our Triton kernel is a bit-exact reproduction of this MSA kernel, so swapping it in keeps numerics unchanged while halving the time of the step that is ~30% of prefill. The earlier failures were toolchain-specific (newer MSA commit and/or CuTe-DSL 4.6.2 in our engine image), not a hardware limit. Integration needs an adapter in the training-compatible attention path: gather each request's KV pages into the flat layout MSA expects, swizzle the scales to 128×4 tiles, build the block CSR, and keep the Triton path for verify-sized batches and graph capture.",
@@ -3441,6 +3447,16 @@
     "95.2% (97.0%)",
     "0",
     "rejected: acceptance 3.66 → 3.06 tokens per verify (−16%), verify steps +27%, decode 55 → 46 tok/s; cheaper verify steps do not compensate at this load (production's block 4 is with its own DFlash2 draft)"
+   ],
+   [
+    "capacity + 16k prefill chunk (8k per DP rank) · v3.1",
+    "0.75× = 3.34 M",
+    "<b>1</b>",
+    "1.05 / 5.22 / 18.9",
+    "53",
+    "95.2% (97.0%)",
+    "0",
+    "rejected: slightly worse than capacity alone on TTFT and decode (same as the Sep 30 v2 test, 6/15 vs 10–11); smaller chunks add steps without cutting total prefill time"
    ]
   ],
   "note": "Trace built from 224 GB of production hub logs (09:00–14:00 PDT) with the v2 builder and 48 half-node buckets; t = 15000–15900 s is the measured window, the 4 hours before it rebuild cache state. Today's per-node load is 1.64× Sep 28's at the same multiple. Load multiples: production traffic is split by session into 48 half-node buckets; 1.0× = 2 buckets ≈ one node's share of the hub logs, 0.5× = 1 bucket, 2× = 4 buckets — load is raised by adding users, not by speeding up time. On v3, 0.5× = 2.23 M, 1.0× = 4.20 M per GPU offered; matching a real production node (engine counters 6.3–6.6 M) ≈ 1.5×; 7 M ≈ 1.7×."
@@ -3570,6 +3586,16 @@
      [
       2.23,
       0
+     ]
+    ]
+   },
+   {
+    "name": "+ capacity + 16k chunk (rejected)",
+    "cls": "bad",
+    "pts": [
+     [
+      3.34,
+      1
      ]
     ]
    }
