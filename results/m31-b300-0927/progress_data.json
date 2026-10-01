@@ -32,10 +32,10 @@
    "sub": "ours 1.3 vs prod 6.3–6.6 M per GPU at SLA"
   },
   {
-   "label": "Ours · v3 0.5× (today)",
-   "value": "2/15 min",
+   "label": "Ours · v3.1 real traffic (today)",
+   "value": "9/15 min",
    "cls": "bad",
-   "sub": "2.23 M per GPU offered · TTFT p50 1.22 s · routing imbalance"
+   "sub": "at 0.5× = 2.23 M per GPU · TTFT p50 0.89 s, decode 77 tok/s (prod 65) · 0.75× (3.34 M): 1/15, decode-bound · fails = p99 spikes from 300k+ cold prompts"
   }
  ],
  "configs": [
