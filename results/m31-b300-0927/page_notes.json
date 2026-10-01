@@ -195,7 +195,8 @@
   "rejected": "Rejected",
   "invalid": "Invalid",
   "invalid (engine crash)": "Invalid",
-  "failed to boot": "Invalid"
+  "failed to boot": "Invalid",
+  "no clear change": "Baseline"
  },
  "baseline_changes": [
   "baseline",

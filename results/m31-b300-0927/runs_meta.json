@@ -171,6 +171,15 @@
    "change": "find the passing load",
    "verdict": "kept",
    "why": "9/15, but the slow tail is fixed (worst first token 9.5 s, 0 minutes over 15 s). All 6 misses are the median first token just over 1 s — the per-request tokenisation floor."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8_05x",
+   "at": "2026-10-01 15:00",
+   "protocol": "v3.1",
+   "name": "+ 8 tokenizer processes (adopted settings + cache-first)",
+   "change": "tokenisation",
+   "verdict": "no clear change",
+   "why": "10/15 vs 9/15 with 4 processes: median first token 0.94 → 0.90 s and median misses 6 → 3 minutes, but 2 slow-tail minutes came back. Within run-to-run noise."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
