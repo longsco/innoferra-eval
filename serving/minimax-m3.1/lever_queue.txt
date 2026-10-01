@@ -1,0 +1,11 @@
+# chainQ lever queue: tag traces frac [VAR=value ...] (bash words; $HCX = the HiCache flags). 0.75x = b00 + half the sessions of b01.
+# Order = expected value. Single-factor levers on top of the load-aware frontier (MAXREQ 64, mem 0.68, chunk 32768, DSpark block 7).
+# cap first: hit_gap.py on v3_lp_1x -> we prefill 2.75x production's uncached tokens; 84% of the extra is sessions whose previous
+# request we served (13.3 of 30.8 M tokens after a 2-10 min gap = evicted); device pool is only 1.31 M tokens per rank with
+# 62 GB GPU memory left unused at mem 0.68; mem 0.76 -> device +37% and (ratio 3.0) host +37% (~243 GB per rank, ~1.9 TB of 3 TB).
+v3_lp_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5
+v3_lp_cap_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76
+v3_lp_blk4_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 DSPARK_BLOCK=4
+v3_lp_lpm_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 "XARGS=$HCX --schedule-policy lpm"
+v3_lp_c16_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 CHUNK=16384
+v3_lp_cap_mr128_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 MAXREQ=128
