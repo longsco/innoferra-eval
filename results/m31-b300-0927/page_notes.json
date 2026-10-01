@@ -198,13 +198,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-01 13:15",
+  "at": "2026-10-01 14:30",
   "items": [
    {
     "rule": "ttft_p50",
     "title": "Median first token over 1 s: time outside the GPU",
-    "text": "A warm request (prompt already cached) waits longer the longer its conversation, and longer than production at every length: {warm_gap}. An idle test shows the same growth (Oct 1 11:15), so the extra time is outside prompt processing; templating and tokenisation are the first suspects.",
-    "src": "PROGRESS.md Oct 1 09:35 and 11:15"
+    "text": "A warm request (prompt already cached) still waits longer the longer its conversation: {warm_gap}. Measured Oct 1 14:25: re-tokenising the whole conversation on every turn costs 0.14 s under 120k tokens, 0.34 s at 120–200k and 0.55 s above 200k (the chat template itself takes ~0.01 s). Our tokenisation cache cuts that 10–15× with identical output, but each of the 4 tokenizer processes keeps its own cache and a conversation's next turn usually reaches a different one. Next test: 1 tokenizer process with a larger cache.",
+    "src": "PROGRESS.md Oct 1 09:35, 11:15, 14:25"
    },
    {
     "rule": "decode",
