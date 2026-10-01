@@ -1069,39 +1069,55 @@
  "subtitle": "Node 0008, Sep 27–28, 2026 (Pacific time). TPM counts every token billed per minute (prompt incl. cached + completion), the same definition as the production dashboard. All figures per GPU (node ÷ 8). Code, configs, history and this page: github.com/longsco/alphabeta-m31 (private).",
  "summary": "<b>The north star is 7 M TPM per GPU on real traffic at a strict per-minute SLA, and production is already close to it.</b> Read-only engine counters on two production nodes (Sep 30, 13:29–13:34 PDT) show 50–53 M TPM per node = <b>6.3–6.6 M per GPU</b> at engine TTFT p50 0.22–0.25 s. All 96 workers are active, so the fleet runs ≈ 1.2–1.3 B TPM; your ~1.5 B peak (≈ 7.8 M per GPU) fits. The hub logs our test is built from show only 836 M for the same minutes (4.35 M per GPU): the engines see 1.1× the requests and 1.45× the prompt tokens, so the S3 bucket misses part of the load (another entry point or uneven routing). Either way the earlier production cards (3.38 M) were too low. Our best setup holds the SLA only to ≈ 1.3 M per GPU (TTFT floor 0.9 s vs production 0.25–0.31 s), a gap of about 5×. Production's serve config explains most of it: the same model family (MXFP8 dense + NVFP4 experts + sparse Q8KV4) on TP2/EP2 with DP attention off, DFlash2 block-4 drafting, chunk 16384, 128 running per worker, HiCache 3.0, <b>plus ~18 in-house kernels</b> (KV4 attention v2, prefill sparse attention v3, fused verify attention, fused router, fast TP2 comm, bounded SWA draft rings) and SLO-based admission. Our engine runs the vendor's training-compatible attention path (no MSA). Next: the settings we can copy (DP attention off), the idle TTFT anatomy and step profile (chain31), then the kernel gap.",
  "running": {
-  "title": "GPU queue: chain38 → chain39 → chainB",
-  "script": "serving/minimax-m3.1/chain18.sh, chain19.sh, chain20.sh",
-  "commit": "6dd7a86, 7c0dcee, d14e9ab",
-  "config": "Frontier base (4×tp2 lift, P1, bidirectional draft, balanced gateway) with more tokenizer workers; then a finer real-traffic staircase.",
+  "title": "GPU queue: chain38 → chainQ (lever queue at 0.75×)",
+  "script": "serving/minimax-m3.1/chain38.sh, chainQ.sh + lever_queue.txt",
+  "commit": "",
+  "config": "Frontier engines (4 × tp2/ep2/dp2, DSpark bidirectional draft w4095, HiCache 3.0, mem 0.68, 64 running, chunk 32k) behind our gateway with load-aware session pinning (gateway file limit raised to 65,536).",
   "steps": [
    [
-    "chain38: our gateway + load-aware + DP-rank pinning",
-    "running since 02:20 PDT: v3 1.0× → 0.5× → simulation ladder → agentic"
+    "chain38: load-aware pinning",
+    "1.0× done (0/15, engines saturated); 0.5× running since 03:15 PDT; then simulation ladder + agentic"
    ],
    [
-    "chain39: engine sizing (mem 0.74, 128 running), DSpark block 4, 1.5× — with load-aware pinning",
-    "armed"
+    "chainQ 1: v3_lp_075x — baseline at 0.75× (≈ 3.3 M per GPU offered)",
+    "queued"
    ],
    [
-    "chainB: deferred v3 1.0× baseline",
-    "armed (last)"
+    "chainQ 2: v3_lp_cap_075x — mem 0.76 (device and host cache +37%)",
+    "queued; evidence: we prefill 2.75× production's uncached tokens, mostly evicted sessions"
+   ],
+   [
+    "chainQ 3: v3_lp_blk4_075x — DSpark block 4 (verify 7 → 4 tokens per step; production runs block 4)",
+    "queued"
+   ],
+   [
+    "chainQ 4: v3_lp_lpm_075x — cache-aware scheduling (longest prefix first)",
+    "queued"
+   ],
+   [
+    "chainQ 5: v3_lp_c16_075x — 16k prefill chunk (production's per-GPU chunk work)",
+    "queued"
+   ],
+   [
+    "chainQ 6: v3_lp_cap_mr128_075x — mem 0.76 + 128 running",
+    "queued"
    ]
   ]
  },
  "queued": [
   {
    "title": "Dynamo retest with per-DP-rank KV events",
-   "detail": "Dynamo 1.5.0 routes by (worker, DP rank) and passes routed_dp_rank; our fork honours it. Check that each worker's KV event publisher covers both DP ranks' zmq endpoints (SGLang publishes per rank), then rerun v3 0.5× through Dynamo with strong affinity.",
+   "detail": "Dynamo 1.5.0 routes by (worker, DP rank) and passes routed_dp_rank; our fork honours it. Check that each worker's KV event publisher covers both DP ranks' zmq endpoints (SGLang publishes per rank), then rerun v3 0.5× through Dynamo with strong affinity. Note: production runs DP attention off, which our fork refuses (attention must be TP1), so a Dynamo match to production needs per-rank routing.",
    "why": "Dynamo runs balanced (all 8 GPUs busy) but hit only 65–71% vs our gateway's 94%; if the cause is half-visible KV events, the production stack becomes usable on our layout.",
    "script": "to write (after chain39)",
    "commit": "",
    "status": "planned"
   },
   {
-   "title": "Next after chain39 (decided from chain37–39 results)",
-   "detail": "If load-aware pinning fixes the 1.0× imbalance: climb v3 to 2.0× and 2.4× (≈ 7 M per GPU on the hub basis) with the best config, and revisit chunk size / fair share / the DP-attention prefill delayer at high load. If numerics pass the GSM8K gate and win at 1.0×, adopt them as the frontier. Measurement hardening from the benchmark review (fail-closed scoring, uncached ratio, served-in-window TPM) before the 2× runs.",
+   "title": "Next after chainQ (decided from the 0.75× levers)",
+   "detail": "Stack the levers that move the 0.75× pass count, then climb (1.0× → 1.5× → 1.7× ≈ 7 M per GPU on v3) with hit_gap.py on every run; measurement hardening (fail-closed scoring, uncached ratio, served-in-window TPM) before the 1.5× runs.",
    "why": "Keep the GPUs busy with the experiments that move the north star; every step is chained on the node with an idle guard.",
-   "script": "chain40+ (to write from results)",
+   "script": "lever_queue.txt (append)",
    "commit": "",
    "status": "planned"
   },
