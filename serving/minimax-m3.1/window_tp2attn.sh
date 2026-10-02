@@ -10,6 +10,7 @@ until grep -q "===== lever $1 done" $L; do sleep 15; done
 ( sleep 2700; [ -f $K/HOLD ] && rm -f $K/HOLD && echo "$(date -u +%H:%M:%S) window_tp2attn: HOLD released by the 45 min guard" >> $O ) & GUARD=$!
 log "tp2-attention smoke window after $1: engine 3 (GPUs 6,7) -> tp2/ep2 dp1 without DP attention"
 cd $K
+sudo -n docker rm -f m31-tp2-3 > /dev/null 2>&1; sleep 5   # launch.sh does not remove an existing container of the same name
 BB="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1 SGLANG_TOKENIZE_PREFIX_CACHE=1 SGLANG_CHUNKED_REQ_SHARE=1.0"
 HCX="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report"
 ( export NETNS=1 IMAGE=minimax-m31-sglang:demo-bef87f4 MODEL_PATH=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private \
