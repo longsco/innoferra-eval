@@ -283,7 +283,7 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-01 20:55",
+  "at": "2026-10-01 21:25",
   "items": [
    {
     "rule": "decode",
@@ -299,9 +299,9 @@
    },
    {
     "rule": "ttft_p99",
-    "title": "Slowest 1% of first tokens: no longer an SLA rule",
-    "text": "Dropped from the SLA on Oct 1. Still the worst user experience: a 300k+ token uncached prompt runs 16k-token pieces back to back for 20+ s, its engine generates nothing meanwhile and new requests cannot join (engine log Oct 1 19:46).",
-    "src": "PROGRESS.md Oct 1 04:35, 07:05, 19:55 and 20:05"
+    "title": "Slowest 1% of first tokens: fixed at 2.23 M (no longer an SLA rule)",
+    "text": "Dropped from the SLA on Oct 1, and fixed anyway: a 300k+ token uncached prompt ran 16k-token pieces back to back for 20+ s while its engine generated nothing. One decode step after each piece (Oct 1 21:24) brought the slowest 1% at 2.23 M to 8.2 s, better than production's 10.4 s on the same requests, with every minute at or under 14.5 s.",
+    "src": "PROGRESS.md Oct 1 20:05 and 21:25"
    },
    {
     "rule": "cache",
@@ -320,6 +320,16 @@
   "cause_src": "runs_v3.json re-scored on the Oct 1 SLA"
  },
  "log": [
+  {
+   "at": "2026-10-01 21:24",
+   "kind": "test",
+   "label": "First full pass under the strict rule",
+   "result": "15/15 at 2.23 M, p99 8.2 s",
+   "verdict": "Finding",
+   "src": [
+    "progress:21:25 (10-01)"
+   ]
+  },
   {
    "at": "2026-10-01 20:05",
    "kind": "test",
@@ -1071,9 +1081,9 @@
   },
   {
    "name": "Decode step after each prefill",
-   "state": "queued",
-   "at": "2026-10-01 19:45",
-   "text": "a 300k-token uncached prompt runs 16k-token pieces back to back for 20+ s and its engine generates nothing meanwhile (first visible word 6–21 s late for 20 requests at 2.23 M); one decode step after each piece keeps generation going. Next in the queue",
+   "state": "adopted",
+   "at": "2026-10-01 21:24",
+   "text": "after any prompt piece on either GPU the next step generates; at 2.23 M the slowest-1% first token fell to 8.2 s (production 10.4) and every minute passed the old strict rule for the first time; its effect at 3.34 M (generation speed) is queued",
    "ref": "serving/minimax-m3.1/patch_decode_after_prefill.py · PROGRESS.md Oct 1 19:45"
   },
   {
@@ -1550,6 +1560,12 @@
    "adopted_at": "2026-10-01 20:41",
    "run": "v3_lp_cap_lpm_tok8shid_05x",
    "note": "TOKW=8, SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/dev/shm/m31tokpc, SGLANG_MM_PASS_IDS_WITHOUT_MEDIA=1 (patch_tok_shared.py, patch_mm_pass_ids.py)"
+  },
+  {
+   "name": "one decode step after each prefill step",
+   "adopted_at": "2026-10-01 21:24",
+   "run": "v3_lp_cap_lpm_tok8shid_dap_05x",
+   "note": "SGLANG_DECODE_AFTER_PREFILL=1 (patch_decode_after_prefill.py)"
   }
  ],
  "sim": {
