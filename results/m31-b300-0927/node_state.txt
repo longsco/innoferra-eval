@@ -1,17 +1,14 @@
-# read_utc 2026-10-02T14:18:46Z
+# read_utc 2026-10-02T15:22:45Z
 ## queue
-v3_ab_c16_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pre
 v3_ab_pd60_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pr
 v3_ab_nodap_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --p
 v3_ab_dfa4_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pr
+v3_ab_c16_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pre
 ## done
-13:22:36 v3_ab_ccap_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-del
-14:15:20 v3_ab_c16_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-dela
 14:16:33 v3_ab_ccap22_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-d
+15:21:24 v3_ab_c16_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-dela
+15:22:02 v3_ab_ccap88_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-d
 ## markers
-10:14:43 ===== lever v3_ab_dap3_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchi
-10:59:55 ===== lever v3_ab_dap3_1x done
-10:59:55 ===== lever v3_ab_cap80_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarch
 11:43:39 ===== lever v3_ab_cap80_1x done
 11:43:39 ===== lever v3_ab_wb_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchica
 12:36:10 ===== lever v3_ab_wb_1x done
@@ -21,3 +18,6 @@ v3_ab_dfa4_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json
 14:15:20 ===== lever v3_ab_ccap_1x done
 14:15:20 ===== lever v3_ab_c16_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchic
 14:16:33 ===== lever v3_ab_ccap22_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarc
+15:21:24 ===== lever v3_ab_ccap22_1x done
+15:21:24 ===== lever v3_ab_c16_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchic
+15:22:03 ===== lever v3_ab_ccap88_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarc

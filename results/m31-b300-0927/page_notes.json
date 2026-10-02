@@ -429,6 +429,30 @@
   "v3_ab_ccap_1x@B": {
    "name": "prompt chunks shrink with prefix length (group B)",
    "short": "cost-aware prompt chunks"
+  },
+  "v3_ab_ccap22_1x": {
+   "name": "twin, full load: chunk pivot 22k vs 44k",
+   "short": "chunk pivot 22k"
+  },
+  "v3_ab_ccap22_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_ccap22_1x@B": {
+   "name": "chunk pivot 22k (group B)",
+   "short": "chunk pivot 22k"
+  },
+  "v3_ab_ccap88_1x": {
+   "name": "twin, full load: chunk pivot 88k vs 44k",
+   "short": "chunk pivot 88k"
+  },
+  "v3_ab_ccap88_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_ccap88_1x@B": {
+   "name": "chunk pivot 88k (group B)",
+   "short": "chunk pivot 88k"
   }
  },
  "plain_words": [
