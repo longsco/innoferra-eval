@@ -183,8 +183,8 @@
    "short": "decode after prefill"
   },
   "v3_lp_cap_lpm_tok8shid_dap_075x": {
-   "name": "+ one decode step after each prefill",
-   "short": "decode after prefill"
+   "name": "decode after prefill at ¾ load (baseline)",
+   "short": "¾ load baseline"
   },
   "v3_lp_cap_lpm_tok8shid_dap_s875_05x": {
    "name": "+ 2k tokens per step for waiting requests",
@@ -205,6 +205,14 @@
   "v3_lp_cap_lpm_tok8shid_075x": {
    "name": "tokenise-once stack at ¾ load (baseline)",
    "short": "baseline at ¾"
+  },
+  "v3_lp_cap_lpm_tok8shid_dap_dg_075x": {
+   "name": "+ draft model replays its CUDA graph",
+   "short": "draft graph"
+  },
+  "v3_lp_cap_lpm_tok8shid_dap_pd30_075x": {
+   "name": "+ pair the two GPUs' prompt pieces",
+   "short": "paired prefills"
   }
  },
  "plain_words": [
@@ -1072,6 +1080,27 @@
   "2026-10-01 04:50"
  ],
  "engineering": [
+  {
+   "name": "MiniMax's prompt-attention kernel (MSA)",
+   "state": "parked",
+   "at": "2026-10-01 22:55",
+   "text": "now loadable in our image (a one-line gate fix compiles it; prebuilt objects link), but prompt attention is only ~11–23% of prompt time, so the expected gain at 3.34 M is +1–4 tok/s; a 15-minute GPU check for identical output comes first",
+   "ref": "PROGRESS.md Oct 1 22:45"
+  },
+  {
+   "name": "Pair the two GPUs' prompt pieces (prefill delayer)",
+   "state": "queued",
+   "at": "2026-10-01 22:55",
+   "text": "94–96% of prompt steps run on one GPU while the other waits; the built-in delayer holds a lone prompt up to 30 passes to pair it (model: +6–10% generation speed at 3.34 M, median first token ~1.5–2.5 s)",
+   "ref": "PROGRESS.md Oct 1 22:45"
+  },
+  {
+   "name": "Draft model replays its CUDA graph",
+   "state": "queued",
+   "at": "2026-10-01 22:55",
+   "text": "the DSpark draft captures CUDA graphs at boot but never replays them with DP attention on (a dp-global flag gate), so every decode step launches ~270 kernels eagerly; a one-line gate fix should save 2–5 ms per step (+3–7 tok/s at 3.34 M)",
+   "ref": "serving/minimax-m3.1/patch_draft_local_graph.py · PROGRESS.md Oct 1 22:55"
+  },
   {
    "name": "Tokenise each prompt once",
    "state": "adopted",
