@@ -197,7 +197,7 @@ def badge(v, href=None):
 
 # ---------------------------------------------------------------- runs (runs_v3.json + runs_meta.json)
 def share_of(tag):
-    m = re.search(r"_(\d+)x(?=_|$)", tag)
+    m = re.search(r"_(\d+)x(?=_|$)", tag.split("@")[0])   # innoferra 10-02: tag@A/@B = one group of a twin run
     if not m:
         return None
     s = m.group(1)

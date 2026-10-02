@@ -1091,6 +1091,12 @@
      "before": "13/15, misses m1 1.02 s and m11 1.05 s",
      "after": "13/15 (m1 1.19, m10 1.02 s); 13/15 (m0 1.02, m1 1.11 s)",
      "source": "PROGRESS.md 09:35, 13:35, 16:30 PDT (10-01); runs_v3.json"
+    },
+    {
+     "metric": "A/A twin, paired generation difference (Oct 2 01:46)",
+     "before": "sequential runs: ~1.2–1.6 tok/s apart",
+     "after": "−0.3 tok/s, 95% CI −1.5..+1.1 (2,305 paired requests)",
+     "source": "ab_compare.py on v3_ab_aa_dg_075x@A/@B"
     }
    ],
    "change_what": "Repeated the best 2.23 M configuration on the same traffic as a noise check (r2, 19:10), after the v2 baseline repeat on Sep 30. The 19:10 row set the rule: a lever must move the pass count by 2+ minutes, or be repeated, before it is adopted or rejected.",
@@ -1101,7 +1107,8 @@
     "Treat a one-minute change in pass count as noise; require a 2+ minute move or a repeat before adopting or rejecting a lever.",
     "Rank levers on continuous per-minute margins (median TTFT, decode) alongside pass counts; counts flip when minutes sit within 0.1-0.2 s of a threshold.",
     "Buy margin, not a bare pass: 1.79 M misses were 0.02-0.19 s over 1 s, so the floor had to drop 0.2-0.3 s for a robust pass.",
-    "At 3.34 M, 10 of the best run's 15 minutes decode within 4.6 tok/s of 60, the typical repeat move: its 4/15 is fragile, so repeat 3.34 M winners."
+    "At 3.34 M, 10 of the best run's 15 minutes decode within 4.6 tok/s of 60, the typical repeat move: its 4/15 is fragile, so repeat 3.34 M winners.",
+    "Twin runs (both groups replay the same half of the sessions) resolve ~1.5 tok/s in one run; per-minute pass counts per group stay noisy (10/15 vs 10/15 here, but single minutes differ by up to 13 tok/s)."
    ],
    "caveats": [
     "Only two identical real-traffic pairs exist (v2 at 1.36 M, v3.1 at 2.23 M). Noise at 3.34 M is not measured, and the 4.6 tok/s decode spread comes from 2.23 M.",

@@ -306,6 +306,24 @@
    "change": "scheduling",
    "verdict": "adopted",
    "why": "15/15 at 3.34 M, the first pass at this load: generation 63–93 tok/s per minute (74.5 overall vs production 64.8), median first token 1.1–1.7 s, 0 errors, acceptance 3.66."
+  },
+  {
+   "tag": "v3_ab_aa_dg_075x@A",
+   "at": "2026-10-02 01:46",
+   "protocol": "v3.1",
+   "name": "A/A twin, group A",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Twin calibration (same settings on both 2-engine groups, same half of the sessions): 10/15, generation 61.4 tok/s, median first token 0.64 s. Paired B vs A: −0.3 tok/s (95% CI −1.5..+1.1)."
+  },
+  {
+   "tag": "v3_ab_aa_dg_075x@B",
+   "at": "2026-10-02 01:46",
+   "protocol": "v3.1",
+   "name": "A/A twin, group B",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Twin calibration (same settings on both 2-engine groups, same half of the sessions): 10/15, generation 63.3 tok/s, median first token 0.61 s. Paired B vs A: −0.3 tok/s (95% CI −1.5..+1.1)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
