@@ -569,6 +569,18 @@
   "v3_full_cl_0875x": {
    "name": "full node, fair replay (v3.2), all adopted changes, 0.875×",
    "short": "full node v3.2 0.875×"
+  },
+  "v3_ab_longpool_cl_1x": {
+   "name": "twin, full load (v3.2): very long sessions on a dedicated GPU slot",
+   "short": "long-session pool"
+  },
+  "v3_ab_longpool_cl_1x@A": {
+   "name": "control half at full load (v3.2)",
+   "short": "control"
+  },
+  "v3_ab_longpool_cl_1x@B": {
+   "name": "sessions starting at 300k+ tokens on one slot (group B)",
+   "short": "long-session pool"
   }
  },
  "plain_words": [
