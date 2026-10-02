@@ -1600,14 +1600,9 @@
     "status": "done: load-aware routing adopted Oct 1 03:56; Dynamo tested Oct 1 01:25 and 02:15 (cache hit {hit:dyn_05x}–{hit:dyn2_05x}), rejected"
    },
    {
-    "prod": "KV memory 0.80 (84.7 GB per GPU)",
+    "prod": "KV memory 0.80 (84.7 GB/GPU); no prompt/generation split",
     "ours": "0.76 (67.1 GB per GPU)",
     "status": "0.80 tested Oct 2 04:43: no gain. Test again with TP2."
-   },
-   {
-    "prod": "No prompt/generation split: all 96 workers do both",
-    "ours": "The same",
-    "status": "Not necessary to match production."
    }
   ],
   "note": "On v3.1 requests our generation speed already beats production's at {load:best_0.5} M ({dec:best_0.5} vs {pdec:best_0.5} tok/s, Oct 1 {at:best_0.5}). The gap is prompt-processing speed, the two-GPU lockstep and per-request time outside GPU math. (This retires the older '75 vs 212 tok/s per stream' note, which current data contradicts.)"
