@@ -207,6 +207,15 @@
    "change": "tokenisation",
    "verdict": "rejected",
    "why": "Aborted after 8 of 15 minutes: slowest-1% first tokens 25–60 s per minute (6–15 s without) and decode 54–67 tok/s; the extra tokenizer threads most likely starve the GPU scheduler processes. Retesting with 4 pieces."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8par4_05x",
+   "at": "2026-10-01 17:39",
+   "protocol": "v3.1",
+   "name": "+ parallel tokenising (4 pieces)",
+   "change": "tokenisation",
+   "verdict": "rejected",
+   "why": "5/15 vs 10/15 without it: slowest-1% first tokens 15–28 s in several minutes. Even 4 pieces hurt the engine, so parallel tokenising inside the tokenizer processes is dropped."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

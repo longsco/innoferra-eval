@@ -1,12 +1,11 @@
-# read_utc 2026-10-01T23:58:25Z
+# read_utc 2026-10-02T00:40:18Z
 ## queue
+v3_lp_cap_lpm_tok8_05x_r2 /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm"
 ## done
-22:48:16 v3_lp_cap_lpm_tok8_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm"
 23:24:32 v3_lp_cap_lpm_tok8par_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PARALLEL_CHUNKS=16 RAYON_NUM_THREADS=16"
 23:55:03 v3_lp_cap_lpm_tok8par4_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PARALLEL_CHUNKS=4"
+00:39:21 v3_lp_cap_lpm_tok8wb_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_WARM_BYPASS_TOKENS=8192 SGLANG_WARM_BYPASS_MAX_SKIPS=1"
 ## markers
-21:12:55 ===== lever v3_lp_cap_lpm_05x done
-21:12:55 ===== lever v3_lp_cap_lpm_tok8_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hicac
 22:00:40 ===== lever v3_lp_cap_lpm_tok8_05x done
 22:00:40 ===== lever v3_lp_cap_lpm_tok1_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=1 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hicac
 22:45:02 ===== lever v3_lp_cap_lpm_tok1_05x done
@@ -17,3 +16,5 @@
 23:24:32 ===== lever v3_lp_cap_lpm_tok8par_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hi
 23:55:03 ===== lever v3_lp_cap_lpm_tok8par_05x done
 23:55:03 ===== lever v3_lp_cap_lpm_tok8par4_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --h
+00:39:21 ===== lever v3_lp_cap_lpm_tok8par4_05x done
+00:39:21 ===== lever v3_lp_cap_lpm_tok8wb_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hic
