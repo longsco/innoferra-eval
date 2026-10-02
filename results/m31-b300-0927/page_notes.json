@@ -543,13 +543,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-02 08:35",
+  "at": "2026-10-02 09:40",
   "items": [
    {
     "rule": "decode",
     "title": "Generation speed at full load (4.42 M)",
-    "text": "3.34 M passes 15/15 since Oct 2 01:00. At full load (4.42 M) the same stack scores 3/15: no errors and median first token 1.3–2.0 s, but generation falls to 52.4 tok/s (production 64.6 on the same requests). Where GPU time goes at full load (engine timers, measured window): generating 58%, prompt work 37%, idle 1%. Prompt work is high because we process 30.1 M uncached prompt tokens vs production's 15.6 M: 31% of the difference is sessions whose history started before our warm-up, 26% is production reusing the answer it generated itself (a replay effect: our cache holds a different answer), and 43% is real cache loss on about 110 follow-ups of very long (128k+) sessions. Giving the cache 15% more memory (production's share, Oct 2 04:43) changed nothing: same hit rate, same uncached tokens, so the misses are not a capacity problem. A kernel profile under real traffic (Oct 2 04:51) shows the bigger lever: the two GPUs of an engine step together, and the GPU holding the long-context sessions spends 31% of its time in the sparse-attention indexer while its partner waits (KV tokens per GPU 1.2–1.6× the pair's mean, although request counts are balanced). A write-back host cache changed nothing (Oct 2 05:50; new counters show no cache entries are dropped, the host cache simply fills and evicts oldest-first). Placing new sessions by in-flight context size made things worse (Oct 2 06:30: sessions bunch up). Sizing prompt chunks by their cost (shorter chunks over long prefixes) is the day's first win at full load: generation +2.7 tok/s and first token −8% (Oct 2 07:15, adopted). Splitting attention across both GPUs (production's layout) now runs on our kernels with unchanged answer quality (GSM8K 96.29% vs 96.21%, Oct 2 08:35); its full-load twin is next after a chunk-pivot check.",
-    "src": "PROGRESS.md Oct 2 04:40–08:35"
+    "text": "At 3.34 M per GPU, the stack passes 15 of 15 minutes. At full load (4.42 M per GPU), it passes 6 to 9 of 15 minutes. The cause is the generation speed: it is 57 to 61 tok/s, and the rule is more than 60. Prompt work uses 37% of the GPU time, and prompt work stops generation on both GPUs of an engine. The GPU with the long sessions also does more indexer work, and its partner GPU waits. Prompt chunks sized by their cost reduce this wait (+2.7 tok/s, adopted Oct 2 07:15 PDT). The next test splits the attention across both GPUs, as production does. The result comes at approximately 10:00 PDT.",
+    "src": "PROGRESS.md Oct 2 04:40–09:15"
    },
    {
     "rule": "ttft_p50",
@@ -1572,12 +1572,12 @@
    },
    {
     "prod": "attention split over both GPUs of a worker, no lockstep (DP attention off)",
-    "status": "write, plus an accuracy check of non-training numerics; the profile (Oct 1 05:25) confirms the lockstep cost"
+    "status": "Runs on our kernels (Oct 2 08:35 PDT). Answer quality is the same: GSM8K 96.29% vs 96.21%. The full-load twin runs now; the result comes at approximately 10:00 PDT."
    },
    {
     "prod": "in-house 4-bit-KV prompt attention and indexer kernels, prompt CUDA graphs, 16k chunks",
     "ours": "attention + indexer ≈ half of prompt time (profile Oct 1 05:25); our Triton kernels run at ~12–14% of tensor-core peak",
-    "status": "MiniMax's kernel 1.9–2.5× faster with identical output in a standalone test (Oct 1 08:02); parked Oct 1 09:45 (its toolchain clashes with our engine image); Triton autotune planned",
+    "status": "MiniMax's kernel 1.9–2.5× faster with identical output in a standalone test (Oct 1 08:02); parked Oct 1 09:45 (its toolchain clashes with our engine image); Triton autotune planned. Live profile (Oct 2 04:51 PDT): the indexer uses 31% of the GPU time on the GPU with the long sessions. Prompt chunks sized by their cost give +2.7 tok/s (adopted Oct 2 07:15 PDT).",
     "buys": "faster processing of the 5–60k uncached prompt tokens of a typical request (sets where passing collapses)"
    },
    {
@@ -1598,6 +1598,16 @@
     "prod": "Dynamo KV router with a strict-affinity plugin + session pinning",
     "ours": "our gateway: session pinning with load-aware placement",
     "status": "done: load-aware routing adopted Oct 1 03:56; Dynamo tested Oct 1 01:25 and 02:15 (cache hit {hit:dyn_05x}–{hit:dyn2_05x}), rejected"
+   },
+   {
+    "prod": "KV cache memory fraction 0.80 (84.7 GB per GPU, 2.10 M tokens per GPU)",
+    "ours": "0.76 (67.1 GB per GPU, 1.85 M tokens per GPU)",
+    "status": "Tested 0.80 on Oct 2 04:43 PDT: no gain (generation −1.0 tok/s, same cache hit). Test again with the attention split (TP2), as production runs both."
+   },
+   {
+    "prod": "No prompt/generation split: all 96 workers (24 nodes × 4) do both (Dynamo registers 0 prefill workers, read Oct 2 09:26 PDT)",
+    "ours": "The same: every engine does both",
+    "status": "Not necessary to match production. A dedicated prompt pool is a possible later step for flat speed under load."
    }
   ],
   "note": "On v3.1 requests our generation speed already beats production's at {load:best_0.5} M ({dec:best_0.5} vs {pdec:best_0.5} tok/s, Oct 1 {at:best_0.5}). The gap is prompt-processing speed, the two-GPU lockstep and per-request time outside GPU math. (This retires the older '75 vs 212 tok/s per stream' note, which current data contradicts.)"
@@ -1896,7 +1906,7 @@
  },
  "sessions_per_node": {
   "at": "2026-10-02 06:10",
-  "headline": "Tracked number: active sessions per node per minute. Production node at peak ≈ 205 (1,530 sessions per 15 min, ≈100 in flight); off-peak ≈ 130 (1,300 per 15 min, ≈90 in flight). Ours at the highest load that passes the SLA: 165 (1,183 per 15 min, 80 in flight), about 80% of a production node at peak.",
+  "headline": "The number to track is active sessions per node per minute. A production node at peak has 205 (430 requests per minute). Off-peak, it has 130 (275 requests per minute). Our node passes the SLA at 165 (325 requests per minute). This is 80% of a production node at peak.",
   "defs": "Session = distinct prompt_cache_key. Active per minute = sessions with at least one request starting that minute. In flight = sessions with a request open at that moment (sampled every 10 s; production timing for production rows, ours for ours). Production rows: every logged request of both load balancers, divided by 24 nodes (cross-checked against one node's session-hash share: 1,582 vs 1,559 sessions per 15 min, 213 vs 209 per minute).",
   "rows": [
    {
