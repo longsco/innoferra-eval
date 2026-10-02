@@ -1,5 +1,5 @@
 {
- "at": "2026-10-02 07:15",
+ "at": "2026-10-02 10:00",
  "intro": "What moved the numbers on real traffic (requests production served Sep 30 13:10–13:25 PDT, replayed on node 0008), what exactly we changed, and what we learned. Gains are ranked by effect; loads are M TPM per GPU sent (2.23 M = half a production node's traffic). Under the Oct 1 SLA the remaining limit is generation speed at 3.34 M.",
  "note": "Written Oct 1 22:05 PDT: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then every number fact-checked by 5 more (130 corrections). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
  "entries": [
@@ -1799,6 +1799,48 @@
    "sources": [
     "PROGRESS.md Oct 2 04:55, 07:15",
     "runs v3_ab_ccap_1x@A, v3_ab_ccap_1x@B"
+   ]
+  },
+  {
+   "title": "Attention split across both GPUs (TP2): faster first token, slower generation",
+   "kind": "finding",
+   "rank": 12.5,
+   "theme": "parallelism",
+   "headline": "4.42 M twin: first token −47% (0.66 s vs 1.53 s), generation −13% (48.4 vs 55.7 tok/s).",
+   "before_after": [
+    {
+     "metric": "median first token (paired ratio)",
+     "before": "1.53 s (control)",
+     "after": "0.66 s; ×0.531 (CI 0.505..0.554)",
+     "source": "twin v3_ab_tp2attn_1x, Oct 2 09:56"
+    },
+    {
+     "metric": "generation per stream p50 (paired)",
+     "before": "55.7 tok/s",
+     "after": "48.4 tok/s; −7.44 (CI −8.47..−6.30)",
+     "source": "same twin"
+    },
+    {
+     "metric": "answer quality (GSM8K)",
+     "before": "96.21%",
+     "after": "96.29%",
+     "source": "smoke test, Oct 2 08:35"
+    }
+   ],
+   "change_what": "Run each engine with attention split across its 2 GPUs (TP2, no DP attention), as production does.",
+   "change_detail": "SGLANG_M3_TRAINING_ALLOW_ATTN_TP=1 (patch_training_attn_tp.py) + patch_dspark_tp_ntnp.py; launch DP_ATTN=0 DP_SIZE=1 FORCE_TOPOLOGY=1; gateway ROUTE_DP_SIZE=1.",
+   "when": "Oct 2 08:35 (smoke) and 09:56 PDT (twin)",
+   "mechanism": "Both GPUs work on every prompt chunk, so prompt work is about 2× faster and the GPUs do not wait for each other. Each generation step needs an all-reduce of the hidden states in every layer, so generation steps cost more.",
+   "learnings": [
+    "A layout change can move the two SLA rules in opposite directions: check which rule binds before you adopt it.",
+    "Production pairs TP2 with a fused all-reduce; test the pair, not the layout alone."
+   ],
+   "caveats": [
+    "Group B had no prefill delayer (DP-only feature)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 2 08:35, 10:00",
+    "runs v3_ab_tp2attn_1x@A, v3_ab_tp2attn_1x@B"
    ]
   }
  ]

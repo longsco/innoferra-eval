@@ -477,6 +477,24 @@
    "change": "scheduling",
    "verdict": "invalid",
    "why": "Invalid run: an engine of this group crashed mid-window ('Prefill out of memory: 0 KV tokens free' while a long prompt was being prefilled in pieces); the watchdog stopped its replay. Fixed by parking the prompt for a step when no memory is free (patch_chunk_oom_park.py); the twin is re-queued."
+  },
+  {
+   "tag": "v3_ab_tp2attn_1x@A",
+   "at": "2026-10-02 09:56",
+   "protocol": "v3.1",
+   "name": "control half at full load",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU): 6/15, generation 55.7 tok/s, median first token 1.53 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_tp2attn_1x@B",
+   "at": "2026-10-02 09:56",
+   "protocol": "v3.1",
+   "name": "+ attention split across both GPUs (TP2, production's layout)",
+   "change": "parallelism",
+   "verdict": "rejected",
+   "why": "Paired against the control on the same requests: first token ×0.53 (CI 0.51..0.55; median 0.66 s vs 1.53 s, p99 9.7 s vs 14.3 s), but generation −7.4 tok/s (CI −8.5..−6.3); 3/15. Draft acceptance is the same (3.65). Each generation step costs more: the split needs an all-reduce in every layer. The next test adds production's fused all-reduce."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
