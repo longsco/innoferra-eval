@@ -131,6 +131,7 @@ def prep(r, mode):
 async def send(client, body):
     """-> dict(status, error, ttft, total, usage)."""
     t0 = time.perf_counter(); ttft = None; usage = None; status = None; err = None
+    wall = time.time(); rid = None; first = None    # innoferra 10-01: join keys for the engine's per-request time stats
     try:
         async with client.stream("POST", a.base_url.rstrip("/") + "/v1/chat/completions", json=body,
                                  headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}) as resp:
@@ -138,7 +139,7 @@ async def send(client, body):
             if status != 200: err = (await resp.aread())[:300].decode(errors="ignore")
             elif not body.get("stream"):
                 txt = await resp.aread(); ttft = time.perf_counter() - t0
-                try: usage = json.loads(txt).get("usage")
+                try: jj = json.loads(txt); usage = jj.get("usage"); rid = jj.get("id")
                 except Exception: err = txt[:200].decode(errors="ignore")
             else:
                 async for line in resp.aiter_lines():
@@ -147,6 +148,7 @@ async def send(client, body):
                     if data == "[DONE]": break
                     try: j = json.loads(data)
                     except Exception: continue
+                    if first is None: first = time.perf_counter() - t0; rid = j.get("id")
                     if ttft is None:
                         ch = (j.get("choices") or [{}])[0].get("delta") or {}
                         if ch.get("content") or ch.get("reasoning_content") or ch.get("tool_calls"): ttft = time.perf_counter() - t0
@@ -155,7 +157,8 @@ async def send(client, body):
         err = f"{type(e).__name__}: {str(e)[:160]}"
     u = usage or {}; det = u.get("prompt_tokens_details") or {}
     return {"status": status, "error": err, "ttft": ttft, "total": time.perf_counter() - t0, "prompt_tokens": u.get("prompt_tokens"),
-            "completion_tokens": u.get("completion_tokens"), "cached_tokens": det.get("cached_tokens", u.get("cached_tokens"))}
+            "completion_tokens": u.get("completion_tokens"), "cached_tokens": det.get("cached_tokens", u.get("cached_tokens")),
+            "resp_id": rid, "sent_wall": round(wall, 4), "first_chunk": first}
 
 def rec_base(r, phase):
     return {"phase": phase, "request_id": r.get("request_id"), "key": r["key"][:48], "t": r["t"], "prod_status": r.get("prod_status"),
