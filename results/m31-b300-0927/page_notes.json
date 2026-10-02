@@ -1572,7 +1572,7 @@
    },
    {
     "prod": "attention split over both GPUs of a worker, no lockstep (DP attention off)",
-    "status": "Runs on our kernels (Oct 2 08:35 PDT). Answer quality is the same: GSM8K 96.29% vs 96.21%. The full-load twin runs now; the result comes at approximately 10:00 PDT."
+    "status": "Runs on our kernels since Oct 2. Answer quality is the same: GSM8K 96.29% vs 96.21%. The full-load twin result comes at about 10:00."
    },
    {
     "prod": "in-house 4-bit-KV prompt attention and indexer kernels, prompt CUDA graphs, 16k chunks",
