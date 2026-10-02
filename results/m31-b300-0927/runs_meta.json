@@ -459,6 +459,24 @@
    "change": "scheduling",
    "verdict": "rejected",
    "why": "Paired against the control on the same requests: generation −2.92 tok/s (95% CI −3.8..−1.9), first token unchanged (×1.001); 6/15. Cutting long-prefix chunks harder adds generation pauses; the pivot stays at 44k and 88k is tested next."
+  },
+  {
+   "tag": "v3_ab_ccap88_1x@A",
+   "at": "2026-10-02 09:12",
+   "protocol": "v3.1",
+   "name": "control half at full load",
+   "change": "calibration",
+   "verdict": "invalid",
+   "why": "Invalid run: an engine of this group crashed mid-window ('Prefill out of memory: 0 KV tokens free' while a long prompt was being prefilled in pieces); the watchdog stopped its replay. Fixed by parking the prompt for a step when no memory is free (patch_chunk_oom_park.py); the twin is re-queued."
+  },
+  {
+   "tag": "v3_ab_ccap88_1x@B",
+   "at": "2026-10-02 09:12",
+   "protocol": "v3.1",
+   "name": "chunk pivot 88k (group B)",
+   "change": "scheduling",
+   "verdict": "invalid",
+   "why": "Invalid run: an engine of this group crashed mid-window ('Prefill out of memory: 0 KV tokens free' while a long prompt was being prefilled in pieces); the watchdog stopped its replay. Fixed by parking the prompt for a step when no memory is free (patch_chunk_oom_park.py); the twin is re-queued."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
