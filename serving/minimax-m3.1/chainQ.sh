@@ -20,14 +20,34 @@ base_env(){ export NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPI
   export TRAINING_COMPAT=1 NUMA=0 EXTRA_ENV="$BB" RAW_COMPLETIONS=1 ROUTE_PIN_BY_INFLIGHT=1 ROUTE_REPIN_SLACK=16
   export XARGS="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report"; }
 up4(){ t0=$(date +%s); while :; do up=0; for i in 0 1 2 3; do curl -sf -m 30 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done; [ $up = 4 ] && return 0; [ $(( $(date +%s)-t0 )) -gt 1800 ] && return 1; sleep 30; done; }
-lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env; for kv in "$@"; do export "$kv"; done
-  log "===== lever $tag: traces $traces frac $frac; $* (ROUTE_PIN_BY_INFLIGHT=$ROUTE_PIN_BY_INFLIGHT ROUTE_REPIN_SLACK=$ROUTE_REPIN_SLACK EXTRA_ENV=$EXTRA_ENV)"
-  bash launch_tp2x4_old.sh 2>&1 | tail -1; up4 || { log "lever $tag FAILED to boot"; return 1; }
+lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env
+  local akv=() bkv=() ab=0 kv
+  for kv in "$@"; do if [ "$kv" = "--" ]; then ab=1; elif [ $ab = 1 ]; then bkv+=("$kv"); else akv+=("$kv"); fi; done   # innoferra 10-02: "--" = A/B twin
+  for kv in "${akv[@]}"; do export "$kv"; done
+  if [ $ab = 1 ]; then export AB_B_ENV="$(printf '%s\n' "${bkv[@]}")"; echo "${AB_B_SIDE:-1}" > $K/AB_ACTIVE; else unset AB_B_ENV; rm -f $K/AB_ACTIVE; fi
+  log "===== lever $tag: traces $traces frac $frac; ${akv[*]}$([ $ab = 1 ] && echo " -- B: ${bkv[*]}") (ROUTE_PIN_BY_INFLIGHT=$ROUTE_PIN_BY_INFLIGHT ROUTE_REPIN_SLACK=$ROUTE_REPIN_SLACK EXTRA_ENV=$EXTRA_ENV)"
+  bash launch_tp2x4_old.sh 2>&1 | tail -1; up4 || { log "lever $tag FAILED to boot"; rm -f $K/AB_ACTIVE; return 1; }
   (nohup setsid bash $K/diag_1x.sh 4200 $tag > /dev/null 2>&1 < /dev/null &)
   bash $K/accept_metrics.sh snap /tmp/am-L-$tag
-  V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed --out /tr/v3L-$tag.jsonl
-  log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag); gateway route: $(curl -s -m 5 http://127.0.0.1:8000/health | cut -c1-300)"
-  log "TTFT by uncached size ($tag):"; (cd $T && python3 ttft_buckets_v3.py $tag)
+  if [ $ab = 1 ]; then
+    local P=${AB_PLAN:-/tr/v3/ab-075x-s0.json} H=${AB_HALF:-0} FA=http://127.0.0.1:19191,http://127.0.0.1:19291 FB=http://127.0.0.1:19391,http://127.0.0.1:19491 t
+    [ "${AB_B_SIDE:-1}" = 0 ] && { t=$FA; FA=$FB; FB=$t; }
+    log "A/B twin: both groups replay half $H of plan $P; A = ${akv[*]} | B = ${akv[*]} ${bkv[*]}"
+    V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed \
+       --ab-plan $P --ab-half $H --gpus 4 --base-url http://127.0.0.1:8000 --flush-urls $FA --out "/tr/v3L-$tag@A.jsonl" > /tmp/ab-$tag-A.log 2>&1 &
+    V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed \
+       --ab-plan $P --ab-half $H --gpus 4 --base-url http://127.0.0.1:8001 --flush-urls $FB --out "/tr/v3L-$tag@B.jsonl" > /tmp/ab-$tag-B.log 2>&1 &
+    wait
+    log "== group A ($tag@A):"; cat /tmp/ab-$tag-A.log
+    log "== group B ($tag@B):"; cat /tmp/ab-$tag-B.log
+    log "A/B paired comparison ($tag):"; python3 $K/ab_compare.py "$T/v3L-$tag@A.jsonl" "$T/v3L-$tag@B.jsonl" 2>&1 | tail -30
+    log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag)"
+    rm -f $K/AB_ACTIVE
+  else
+    V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed --out /tr/v3L-$tag.jsonl
+    log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag); gateway route: $(curl -s -m 5 http://127.0.0.1:8000/health | cut -c1-300)"
+    log "TTFT by uncached size ($tag):"; (cd $T && python3 ttft_buckets_v3.py $tag)
+  fi
   log "===== lever $tag done"; }
 IBEVAL(){ INFERENCE_API_KEY=$KEY $V/bin/python $K/gsm8k_bounded.py --concurrency 128 "$@" 2>&1 | grep -vE "PyTorch was not found" | tail -4; }   # bounded: the stock evaluate bursts 1,319 requests at once
 HCX="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report"

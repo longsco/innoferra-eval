@@ -18,7 +18,12 @@ while [ ! -f "$STOP" ]; do
     if [ "${bad[$i]}" -ge 3 ]; then
       why=$(sudo -n docker logs --tail 3000 m31-tp2-$i 2>&1 | grep -oE "OutOfMemoryError: CUDA out of memory[^.]*|Scheduler hit an exception|Watchdog[^,]*" | tail -1)
       log "WATCHDOG engine $i health=$c x3 after being healthy ($why): stopping the running replay (level invalid) and restarting m31-tp2-$i"
+      if [ -f /data01/minimax31/serving/AB_ACTIVE ]; then   # innoferra 10-02: A/B twin run: only the failing group's replay is invalid
+        g=A; [ $((i/2)) = "$(cat /data01/minimax31/serving/AB_ACTIVE)" ] && g=B; log "WATCHDOG A/B: group $g invalid from now; stopping only its replay"
+        for r in $(sudo -n docker ps -q); do sudo -n docker inspect --format '{{join .Args " "}}' "$r" 2>/dev/null | grep -q "replay_v2.py.*@$g.jsonl" && sudo -n docker rm -f "$r" >/dev/null 2>&1; done
+      else
       for r in $(sudo -n docker ps --no-trunc --format '{{.ID}} {{.Command}}' | grep replay_v2 | awk '{print $1}'); do sudo -n docker rm -f "$r" >/dev/null 2>&1; done
+      fi
       sudo -n docker restart m31-tp2-$i >/dev/null 2>&1; bad[$i]=0; seen[$i]=0
     fi
   done

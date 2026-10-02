@@ -14,7 +14,7 @@ Load: k half-node buckets merged at their real timestamps = k/2 x one node's sha
    next message is primed (messages + prime_msg, max_tokens=1), so the session's next turn meets the cache production had.
 Report: per-minute TTFT p50/p99, decode p50, errors, TPM (measured requests only; primes excluded); per-request cache hit and TTFT
 against production's for the same requests (validity gate)."""
-import argparse, asyncio, base64, heapq, io, json, os, sys, time, statistics as st
+import argparse, asyncio, base64, hashlib, heapq, io, json, os, sys, time, statistics as st
 import httpx
 ap = argparse.ArgumentParser()
 ap.add_argument("--traces", required=True); ap.add_argument("--base-url", required=True); ap.add_argument("--out", required=True)
@@ -33,6 +33,9 @@ ap.add_argument("--warm-relevant", type=float, default=0.0, help="innoferra 10-0
                 "turn (any age) of every measured-window session whose first measured request production served with cached >= this share "
                 "of its prompt (e.g. 0.5) and that the recency warm-up missed; reproduces production's observed cache state for the "
                 "measured sessions (v3 at 0.5x left 5 production-cached 160-420k-token sessions cold: idle > 1 h)")
+ap.add_argument("--gpus", type=int, default=8, help="innoferra 10-02: GPUs serving this replay (TPM/GPU); 4 for one engine group of an A/B twin run")
+ap.add_argument("--ab-plan", default="", help="innoferra 10-02: JSON {session key[:48]: 0|1} from ab_plan.py; keep only the sessions of --ab-half")
+ap.add_argument("--ab-half", type=int, default=0)
 a = ap.parse_args()
 KEY = open(a.key_file).read().strip() if os.path.exists(a.key_file) else ""
 SLA_P50, SLA_P99, SLA_DEC, SLA_ERR = [float(x) for x in a.sla.split(",")]
@@ -108,6 +111,14 @@ def load():
               f"{(ages[len(ages)//2] if ages else 0)/60:.0f} min (max {(ages[-1] if ages else 0)/60:.0f} min); warmed after the recency set", flush=True)
         warm += extra
     for r in warm: r.pop("_src", None)
+    if a.ab_plan:   # innoferra 10-02: A/B twin run: keep whole sessions of one balanced half (missing keys: stable hash)
+        plan = json.load(open(a.ab_plan)); plan = plan.get("plan", plan)
+        half = lambda k: plan[k[:48]] if k[:48] in plan else int(hashlib.sha256(k.encode()).hexdigest()[:8], 16) & 1
+        miss = len({r["key"] for r in warm + meas if r["key"][:48] not in plan})
+        nw, nm = len(warm), len(meas)
+        warm = [r for r in warm if half(r["key"]) == a.ab_half]; meas = [r for r in meas if half(r["key"]) == a.ab_half]
+        print(f"A/B plan {os.path.basename(a.ab_plan)} half {a.ab_half}: warm {len(warm)}/{nw}, measured {len(meas)}/{nm} requests "
+              f"({miss} sessions not in the plan, assigned by hash)", flush=True)
     # causal links inside the measured window: successor = (key, t == predecessor's next_t)
     by = {(r["key"], r["t"]): i for i, r in enumerate(meas)}
     for i, r in enumerate(meas):
@@ -237,7 +248,7 @@ def report(recs, wall, n_buckets):
     pt = sum(r["prompt_tokens"] or 0 for r in ok); cc = sum(r["cached_tokens"] or 0 for r in ok); ct = sum(r["completion_tokens"] or 0 for r in ok)
     ppt = sum(r["prod_prompt_tokens"] or 0 for r in ok); pcc = sum(r["prod_cached_tokens"] or 0 for r in ok); pct_ = sum(r["prod_completion_tokens"] or 0 for r in ok)
     tpm = (pt + ct) / minutes / 1e6; ptpm = (ppt + pct_) / minutes / 1e6
-    print(f"   TPM node {tpm:.2f} M = {tpm/8:.2f} M/GPU (production for the same requests: {ptpm:.2f} M = {ptpm/8:.2f} M/GPU)")
+    print(f"   TPM node {tpm:.2f} M = {tpm/a.gpus:.2f} M/GPU over {a.gpus} GPUs (production for the same requests: {ptpm:.2f} M = {ptpm/a.gpus:.2f} M/GPU)")
     print(f"   cache hit ours {cc/max(pt,1)*100:.1f}% vs production {pcc/max(ppt,1)*100:.1f}% (same requests); prompt tokens ours/prod {pt/max(ppt,1):.3f}; completion ours/prod {ct/max(pct_,1):.3f}")
     img = [r for r in ok if r.get("img_fixed")]
     if img: print(f"   image requests {len(img)}: prompt tokens ours/prod {sum(r['prompt_tokens'] or 0 for r in img)/max(sum(r['prod_prompt_tokens'] or 0 for r in img),1):.3f}")
@@ -264,9 +275,9 @@ def report(recs, wall, n_buckets):
     for b in sorted(bins):
         d = bins[b]; p50, p99, dp = q(d["ttft"], .5), q(d["ttft"], .99), q(d["dec"], .5); er = d["err"] / max(d["base"], 1)
         ok_ = p50 is not None and p50 <= SLA_P50 and p99 <= SLA_P99 and (dp is None or dp >= SLA_DEC) and er <= SLA_ERR; passed += ok_
-        print(f"   {b:5d} | {d['n']:4d} | {d['err']:3d} | {d['tok']/1e6/8:6.2f} | {d['cc']/max(d['pt'],1)*100:5.1f}% | {f2(p50):>5} / {f2(p99):>6} | {f2(dp):>6} | {'pass' if ok_ else 'FAIL'}")
+        print(f"   {b:5d} | {d['n']:4d} | {d['err']:3d} | {d['tok']/1e6/a.gpus:6.2f} | {d['cc']/max(d['pt'],1)*100:5.1f}% | {f2(p50):>5} / {f2(p99):>6} | {f2(dp):>6} | {'pass' if ok_ else 'FAIL'}")
     print(f"   SLA (TTFT p50 <= {SLA_P50:g} s, p99 <= {SLA_P99:g} s, decode p50 >= {SLA_DEC:g} tok/s, errors <= {SLA_ERR*100:g}%): {passed}/{len(bins)} minutes pass -> "
-          f"{'PASS' if passed == len(bins) else 'FAIL'} at {load:g}x = {tpm/8:.2f} M/GPU")
+          f"{'PASS' if passed == len(bins) else 'FAIL'} at {load:g}x = {tpm/a.gpus:.2f} M/GPU")
 
 async def main():
     warm, meas = load(); nb = len(a.traces.split(","))

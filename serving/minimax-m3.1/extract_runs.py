@@ -54,7 +54,7 @@ for fn in sorted(glob.glob(os.path.join(T, "v3L-*.jsonl")) + glob.glob(os.path.j
     runs.append({"tag": tag, "partial": fn.endswith(".partial"), "done_utc": done.get(tag), "requests": len(M),
                  "errors": sum(1 for r in M if r.get("prod_status") == 200 and (r["status"] != 200 or r.get("error"))),
                  "prod_non200": sum(1 for r in M if r.get("prod_status") != 200),
-                 "tpm_gpu": round(tok / 15 / 1e6 / 8, 3), "prod_tpm_gpu": round(ptok / 15 / 1e6 / 8, 3),
+                 "tpm_gpu": round(tok / 15 / 1e6 / (4 if "@" in tag else 8), 3), "prod_tpm_gpu": round(ptok / 15 / 1e6 / (4 if "@" in tag else 8), 3),   # innoferra 10-02: tag@A/@B = one 4-GPU group of a twin run
                  "hit": round(cc / max(pt, 1), 4), "prod_hit": round(pcc / max(ppt, 1), 4),
                  "ttft": [q([r["ttft"] for r in s], x) for x in (.5, .9, .99)], "prod_ttft": [q([r["prod_ttft"] for r in ps], x) for x in (.5, .9, .99)],
                  "decode_p50": q(dec(s, "total", "ttft", "completion_tokens"), .5), "prod_decode_p50": q(dec(ps, "prod_total", "prod_ttft", "prod_completion_tokens"), .5),
