@@ -158,21 +158,18 @@ NMIN = int(SLA["minutes"])
 GOAL = NOTES.get("goal") or {}
 TARGET = float(GOAL.get("value") or NOTES.get("target", DATA.get("target", 7.0)))
 GOAL_CONFIRMED = bool(GOAL.get("basis"))       # None until the owner states which count the goal uses
-P99 = SLA.get("ttft_p99")                        # None since the Oct 1 SLA change (no slowest-1% rule)
-SLA_SENTENCE = (f"A minute is in SLA when the median first token (TTFT p50) is under {SLA['ttft_p50']:g} s, median generation speed (TPS) "
-                f"is above {SLA['decode']:g} tokens/s" + (f", the slowest 1 in 100 first tokens arrive within {P99:g} s" if P99 is not None else "")
-                + (" and every request succeeds (success rate 100%)" if not SLA['errors_pct'] else f" and errors are at most {SLA['errors_pct']:g}%")
-                + f". A load passes only when all {NMIN} measured minutes are in SLA." + (f" {SLA['changed_note']}" if SLA.get("changed_note") else ""))
-RULES = {"ttft_p50": ("TTFT p50", f"median first token {SLA['ttft_p50']:g} s or more", f"Median first token \u2265 {SLA['ttft_p50']:g} s", "the median first token"),
-         "ttft_p99": ("TTFT p99", f"slowest 1 in 100 first tokens over {P99 if P99 is not None else 15:g} s", f"Slowest 1% > {P99 if P99 is not None else 15:g} s", "the slowest 1%"),
-         "decode": ("TPS", f"median generation speed {SLA['decode']:g} tokens/s or less", f"TPS \u2264 {SLA['decode']:g}", "generation speed"),
-         "errors": ("errors", "a failed request" if not SLA['errors_pct'] else f"errors over {SLA['errors_pct']:g}% of the minute's requests",
-                    "Any failed request" if not SLA['errors_pct'] else f"Errors > {SLA['errors_pct']:g}%", "errors")}
+SLA_SENTENCE = (f"A minute is in SLA when the median first token (TTFT p50) arrives within {SLA['ttft_p50']:g} s, the slowest 1 in 100 "
+                f"(TTFT p99) within {SLA['ttft_p99']:g} s, median generation speed (decode) is at least {SLA['decode']:g} tokens/s, and errors "
+                f"are at most {SLA['errors_pct']:g}%. A load passes only when all {NMIN} measured minutes are in SLA.")
+RULES = {"ttft_p50": ("TTFT p50", f"median first token over {SLA['ttft_p50']:g} s", f"Median first token > {SLA['ttft_p50']:g} s", "the median first token"),
+         "ttft_p99": ("TTFT p99", f"slowest 1 in 100 first tokens over {SLA['ttft_p99']:g} s", f"Slowest 1% > {SLA['ttft_p99']:g} s", "the slowest 1%"),
+         "decode": ("decode", f"median generation speed under {SLA['decode']:g} tokens/s", f"Generation < {SLA['decode']:g} tok/s", "generation speed"),
+         "errors": ("errors", f"errors over {SLA['errors_pct']:g}% of the minute's requests", f"Errors > {SLA['errors_pct']:g}%", "errors")}
 TIE = {"decode": 0, "ttft_p50": 1, "ttft_p99": 2, "errors": 3}
-ABBR = {"TTFT p50": f"median first token: seconds until the first output token for the median request (SLA: under {SLA['ttft_p50']:g} s)",
-        "TTFT p99": "slowest 1 in 100 first tokens" + (f" (SLA: within {P99:g} s)" if P99 is not None else " (no longer an SLA rule since Oct 1)"),
+ABBR = {"TTFT p50": "median first token: seconds until the first output token for the median request (SLA: within 1 s)",
+        "TTFT p99": "slowest 1 in 100 first tokens (SLA: within 15 s)",
         "TTFT": "time to first token, seconds: median / slowest 1 in 100",
-        "decode": f"generation speed (TPS): output tokens per second for one streaming request (SLA: median above {SLA['decode']:g})",
+        "decode": "generation speed: output tokens per second for one streaming request (SLA: median at least 60)",
         "Load sent": "the TPM per GPU that the replayed production requests ask for, not what we served"}
 def ab(term, label=None): return f'<abbr title="{esc(ABBR[term])}">{esc(label or term)}</abbr>'
 def rule_ab(k): return f'<abbr title="{esc(RULES[k][1])}">{esc(RULES[k][0])}</abbr>'
@@ -233,22 +230,6 @@ def live_tag():
     return run.get("tag") if run else None
 
 
-def rescore(minutes):
-    """innoferra 10-01: score per-minute records under the current SLA (page_notes.json 'sla'); extract_runs.py scored them under the
-    rule of the day. Strict 'under'/'above' comparisons; errors_pct 0 = success rate 100%."""
-    for m in minutes or []:
-        f = []
-        if m.get("ttft_p50") is None or m["ttft_p50"] >= SLA["ttft_p50"]: f.append("ttft_p50")
-        if P99 is not None and (m.get("ttft_p99") is None or m["ttft_p99"] > P99): f.append("ttft_p99")
-        if m.get("decode_p50") is None or m["decode_p50"] <= SLA["decode"]: f.append("decode")
-        if (m.get("err") or 0) > SLA["errors_pct"] / 100.0 * (m.get("n") or 0): f.append("errors")
-        m["fails"], m["pass"] = f, not f
-    return sum(1 for m in minutes or [] if m["pass"])
-
-
-for _r in RAW:
-    if _r.get("minutes"): _r["passed"] = rescore(_r["minutes"])
-    if _r.get("prod_minutes"): _r["prod_passed"] = rescore(_r["prod_minutes"])
 LIVE = live_tag()
 RUNS = []
 for _r in RAW:
@@ -324,7 +305,7 @@ def best_points(test):
 
 CURV = [r for r in VALID if r["test"] == CUR]
 CLOSEST = max(CURV, key=lambda r: (r["pass"], r["load"], r["at"])) if CURV else None
-PASS_TOP = max([r for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected"], key=lambda r: (r["load"], r["at"]), default=None)
+PASS_TOP = max([r for r in CURV if r["pass"] >= NMIN], key=lambda r: (r["load"], r["at"]), default=None)
 NEWEST = RUNS[0] if RUNS else None
 NEWEST_CUR = max(CURV, key=lambda r: r["at"]) if CURV else None
 BEST_CUR = best_points(CUR)
@@ -646,13 +627,13 @@ def vs(x, thr, f):
 def minute_title(m, who=""):
     f, parts = m.get("fails") or [], []
     if "ttft_p50" in f:
-        parts.append(f"median first token {vs(m.get('ttft_p50'), SLA['ttft_p50'], tt)} s \u2265 {SLA['ttft_p50']:g} s")
+        parts.append(f"median first token {vs(m.get('ttft_p50'), SLA['ttft_p50'], tt)} s > {SLA['ttft_p50']:g} s")
     if "ttft_p99" in f:
-        parts.append(f"slowest-1% first token {vs(m.get('ttft_p99'), P99, tt)} s > {P99:g} s")
+        parts.append(f"slowest-1% first token {vs(m.get('ttft_p99'), SLA['ttft_p99'], tt)} s > {SLA['ttft_p99']:g} s")
     if "decode" in f:
-        parts.append(f"generation {vs(m.get('decode_p50'), SLA['decode'], dec)} tok/s \u2264 {SLA['decode']:g}")
+        parts.append(f"generation {vs(m.get('decode_p50'), SLA['decode'], dec)} tok/s < {SLA['decode']:g}")
     if "errors" in f:
-        parts.append(f"{plural(m.get('err', 0), 'error')} in {m.get('n', 0)} requests" + ("" if not SLA['errors_pct'] else f" (> {SLA['errors_pct']:g}%)"))
+        parts.append(f"{plural(m.get('err', 0), 'error')} in {m.get('n', 0)} requests (> {SLA['errors_pct']:g}%)")
     if not parts:
         parts.append(f"in SLA: median first token {tt(m.get('ttft_p50'))} s, slowest 1% {tt(m.get('ttft_p99'))} s, generation {dec(m.get('decode_p50'))} tok/s")
     return (who + " " if who else "") + f"minute {m['min']} · " + "; ".join(parts)
@@ -1399,10 +1380,10 @@ def run_row(r, with_load):
     else:
         p50, p99, dd = w["ttft"][0], w["ttft"][2], w["decode_p50"]
         def flag(txt, bad): return f'<span class="bad">{txt}</span>' if bad else txt
-        ttft = f'<span class="nw">{flag(tt(p50), p50 >= SLA["ttft_p50"])} / {flag(tt(p99), P99 is not None and p99 > P99)}</span>'
+        ttft = f'<span class="nw">{flag(tt(p50), p50 > SLA["ttft_p50"])} / {flag(tt(p99), p99 > SLA["ttft_p99"])}</span>'
         cells = ([td("t c-time", hm(r["at"])), td("k c-what", run_what(r, "runs"))] + load
                  + [td("c-min", f'<span class="sn">{strip_html(r["minutes"])}<b class="n15">{r["pass"]}/{NMIN}</b></span>'), td("c-fails", fails_html(r["fails"])),
-                    td("num", ttft), td("num", flag(dec(dd), dd <= SLA["decode"])), td("num", f"{pct(w['hit'])} ({pct(w['prod_hit'])})"),
+                    td("num", ttft), td("num", flag(dec(dd), dd < SLA["decode"])), td("num", f"{pct(w['hit'])} ({pct(w['prod_hit'])})"),
                     td("c-verd", verdict_cell(r)), td("c-ph", esc(f"TTFT {tt(p50)} / {tt(p99)} s · decode {dec(dd)} · hit {pct(w['hit'])}"))])
     return f'<tr id="run-{esc(r["id"])}">' + "".join(cells) + "</tr>"
 

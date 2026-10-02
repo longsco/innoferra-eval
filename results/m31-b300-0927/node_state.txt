@@ -1,9 +1,10 @@
-# read_utc 2026-10-02T03:47:40Z
+# read_utc 2026-10-02T03:54:25Z
 ## queue
-v3_lp_cap_lpm_tok8shid_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/de
-v3_lp_cap_lpm_tok8shid_dap_s875_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=${BB/SGLANG_CHUNKED_REQ_SHARE=1.0/SGLANG_
-v3_lp_cap_lpm_tok8shid_05x_r2 /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/de
+v3_lp_cap_lpm_tok8shid_tc0_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 TRAINING_COMPAT=0 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG
+v3_lp_cap_lpm_tok8shid_tc0kv8_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 TRAINING_COMPAT=0 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGL
 v3_lp_cap_lpm_tok8shid_dap_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_C
+v3_lp_cap_lpm_tok8shid_pd_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer" "EXTRA_ENV=$BB 
+v3_lp_cap_lpm_tok8shid_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE
 ## done
 02:10:00 v3_lp_cap_lpm_tok8sh_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR
 02:54:30 v3_lp_cap_lpm_tok8shid_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_D

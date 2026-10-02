@@ -9,15 +9,22 @@
   "src": "progress_data.json timeline Sep 30 13:40 and summary"
  },
  "sla": {
-  "ttft_p50": 1.0,
-  "ttft_p99": 15,
+  "ttft_p50": 3.0,
+  "ttft_p99": null,
   "decode": 60,
-  "errors_pct": 0.1,
-  "minutes": 15
+  "errors_pct": 0,
+  "minutes": 15,
+  "changed_note": "The SLA changed on Oct 1 (before: TTFT p50 ≤ 1 s, TTFT p99 ≤ 15 s, errors ≤ 0.1%); every run with per-minute records is re-scored, and run notes written earlier still quote the old rule.",
+  "old": {
+   "ttft_p50": 1.0,
+   "ttft_p99": 15,
+   "decode": 60,
+   "errors_pct": 0.1
+  }
  },
  "layout_notice": {
-  "text": "Page reorganised Oct 1: Timeline → Results › Run log · Production → Setup & production.",
-  "until": "2026-10-02 10:30"
+  "text": "SLA changed Oct 1: TTFT p50 under 3 s, TPS above 60, success rate 100%. Every run with per-minute records is re-scored; run notes written earlier still quote the old rule (TTFT p50 ≤ 1 s, p99 ≤ 15 s, errors ≤ 0.1%).",
+  "until": "2026-10-04 00:00"
  },
  "test_versions": {
   "v3.1": {
@@ -182,6 +189,22 @@
   "v3_lp_cap_lpm_tok8shid_dap_s875_05x": {
    "name": "+ 2k tokens per step for waiting requests",
    "short": "room for waiting requests"
+  },
+  "v3_lp_cap_lpm_tok8shid_tc0_075x": {
+   "name": "production attention path, our 4-bit KV",
+   "short": "production attention"
+  },
+  "v3_lp_cap_lpm_tok8shid_tc0kv8_075x": {
+   "name": "production numerics (attention + 8-bit KV)",
+   "short": "production numerics"
+  },
+  "v3_lp_cap_lpm_tok8shid_pd_075x": {
+   "name": "+ pair the two GPUs' prompt pieces",
+   "short": "paired prefills"
+  },
+  "v3_lp_cap_lpm_tok8shid_075x": {
+   "name": "tokenise-once stack at ¾ load (baseline)",
+   "short": "baseline at ¾"
   }
  },
  "plain_words": [
@@ -260,24 +283,24 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-01 20:45",
+  "at": "2026-10-01 20:55",
   "items": [
    {
+    "rule": "decode",
+    "title": "TPS at ¾ load (3.34 M): the only rule we still miss",
+    "text": "Under the Oct 1 SLA every recent setting passes 15/15 at 1.79 M and 2.23 M; at 3.34 M the best is 4/15 and every miss is generation speed (per-minute median about 58 tok/s, worst 46). Each engine's two GPUs step together and never mix prompt processing with generation, so any prompt piece on either GPU pauses generation on both; at 3.34 M there is ~50% more prompt work than at 2.23 M. Leads, largest first: production's attention path (training-compatible mode off) generated 17% faster at 2.23 M (86 vs 74 tok/s) and is first in the queue with our 4-bit KV kept (its 8-bit KV halves cache capacity); then one decode step after each prompt piece, then pairing the two GPUs' prompt pieces.",
+    "src": "runs_v3.json (v3_tc0kv8_05x vs v3_tpc_05x), PROGRESS.md Oct 1 05:25 and 20:55"
+   },
+   {
     "rule": "ttft_p50",
-    "title": "Median first token: fixed (tokenised once)",
+    "title": "Median first token: passes (rule now under 3 s)",
     "text": "Fixed Oct 1 20:41. M3.1 is an image-capable model, so the engine tokenised every conversation, turned the tokens back into text and tokenised it all again; our caches only sped up the first pass. Passing the cached tokens straight through (identical tokens on 300/300 real prompts) plus one cache shared by the 8 tokenizer processes cut the median first token at 2.23 M from 0.85 s to 0.54 s; every minute is now 0.49–0.61 s against the 1 s limit. Per request (median): tokenising 0.045 s, hand-off 0.04 s, waiting 0.003 s, prompt processing 0.22 s, first visible word back to the client 0.10 s.",
     "src": "PROGRESS.md Oct 1 19:20, 19:55, 20:45"
    },
    {
-    "rule": "decode",
-    "title": "Generation speed under 60 tokens/s",
-    "text": "Each engine's two GPUs step together, so prompt processing on either GPU pauses generation on both. More load means more prompt processing, so median generation speed falls: {decode_series}.",
-    "src": "kernel profile, PROGRESS.md Oct 1 05:25"
-   },
-   {
     "rule": "ttft_p99",
-    "title": "Slowest 1% of first tokens over 15 s: one huge prompt stalls its engine",
-    "text": "When an uncached prompt of 300k+ tokens arrives, its GPU processes it in 16k-token pieces, about 1 s each, back to back for 20+ s (engine log Oct 1 19:46). During that time (a) the engine generates nothing for its running requests, so requests that had just started wait up to 21 s for their first visible word, and (b) new requests, even small cached ones, cannot join because each piece uses the whole step; one GPU's queue grew from 1 to 7. It is the only rule still failing at 2.23 M (3 minutes, 16–22 s, with the tokenisation fix). Queued: one decode step after each piece, then 2k tokens per step kept for waiting requests.",
+    "title": "Slowest 1% of first tokens: no longer an SLA rule",
+    "text": "Dropped from the SLA on Oct 1. Still the worst user experience: a 300k+ token uncached prompt runs 16k-token pieces back to back for 20+ s, its engine generates nothing meanwhile and new requests cannot join (engine log Oct 1 19:46).",
     "src": "PROGRESS.md Oct 1 04:35, 07:05, 19:55 and 20:05"
    },
    {
@@ -293,8 +316,8 @@
     "src": "PROGRESS.md Oct 1 03:20 and 03:55"
    }
   ],
-  "cause_lead": "Per-request time outside the GPU",
-  "cause_src": "PROGRESS.md Oct 1 09:35 and 11:15"
+  "cause_lead": "TPS at ¾ load",
+  "cause_src": "runs_v3.json re-scored on the Oct 1 SLA"
  },
  "log": [
   {
