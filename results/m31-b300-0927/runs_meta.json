@@ -513,6 +513,24 @@
    "change": "parallelism",
    "verdict": "rejected",
    "why": "Paired against the control: first token ×0.53 (CI 0.50..0.56), generation −8.2 tok/s (CI −9.4..−6.7); 2/15. The fused all-reduce was active (engine log), so the all-reduce is not the main cost. Likely cause: both GPUs repeat the norm, quantization and other element-wise steps for every token. The next test keeps those activations split (--enable-attn-tp-input-scattered)."
+  },
+  {
+   "tag": "v3_ab_proto32_1x@A",
+   "at": "2026-10-02 12:11",
+   "protocol": "v3.1",
+   "name": "today's replay (v3.1), adopted stack",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU) on the v3.1 replay: 6/15, generation 56.2 tok/s, median first token 1.67 s, cache hit 95.1%, uncached prompt 12.9 M tokens."
+  },
+  {
+   "tag": "v3_ab_proto32_1x@B",
+   "at": "2026-10-02 12:11",
+   "protocol": "v3.2",
+   "name": "fair closed-loop replay (v3.2), same engines",
+   "change": "protocol",
+   "verdict": "adopted",
+   "why": "Same engines, same sessions; each follow-up carries our own earlier answers (full 1,913, partial 303; 965 with no replayed earlier turn). Paired: generation +1.53 tok/s (CI +0.2..+2.9), first token ×0.904 (CI 0.88..0.94), p99 11.8 s vs 17.7 s; uncached prompt 11.7 M (−9%), cache hit 95.5% (production 97.1%); 6/15 both. v3.2 is the test from now on."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

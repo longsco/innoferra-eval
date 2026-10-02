@@ -1,5 +1,5 @@
 {
- "at": "2026-10-02 10:00",
+ "at": "2026-10-02 12:15",
  "intro": "What moved the numbers on real traffic (requests production served Sep 30 13:10–13:25 PDT, replayed on node 0008), what exactly we changed, and what we learned. Gains are ranked by effect; loads are M TPM per GPU sent (2.23 M = half a production node's traffic). Under the Oct 1 SLA the remaining limit is generation speed at 3.34 M.",
  "note": "Written Oct 1 22:05 PDT: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then every number fact-checked by 5 more (130 corrections). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
  "entries": [
@@ -1841,6 +1841,48 @@
    "sources": [
     "PROGRESS.md Oct 2 08:35, 10:00",
     "runs v3_ab_tp2attn_1x@A, v3_ab_tp2attn_1x@B"
+   ]
+  },
+  {
+   "title": "Fair replay (v3.2): feed our own answers into the next turn",
+   "kind": "finding",
+   "rank": 11.8,
+   "theme": "measurement",
+   "headline": "Same engines: uncached prompt −9%, generation +1.5 tok/s, first token −10%; SLA minutes unchanged (6/15).",
+   "before_after": [
+    {
+     "metric": "uncached prompt tokens (half node, 15 min)",
+     "before": "12.9 M (v3.1)",
+     "after": "11.7 M (v3.2)",
+     "source": "twin v3_ab_proto32_1x, Oct 2 12:11"
+    },
+    {
+     "metric": "cache hit vs production",
+     "before": "95.1% vs 97.1%",
+     "after": "95.5% vs 97.1%",
+     "source": "same twin"
+    },
+    {
+     "metric": "generation per stream (paired)",
+     "before": "56.2 tok/s",
+     "after": "56.9 tok/s; +1.53 (CI +0.2..+2.9)",
+     "source": "same twin"
+    }
+   ],
+   "change_what": "Replay each follow-up turn with our engine's earlier answers in place of production's (cumulative along the session); warm-up turns with a measured successor generate.",
+   "change_detail": "replay_v2_cl.py --closed-loop (protocol v3.2); chainQ.sh REPLAY_FILE_A/B and REPLAY_EXTRA_A/B per lever.",
+   "when": "Oct 2 12:15 PDT",
+   "mechanism": "Production's cache holds the answers it generated, and a real deployment of our engine would hold ours. Replaying production's answers made us process them again. With v3.2 our cache reuses our own answers, except where the client sends the answer back without its reasoning (then the text differs, for production too).",
+   "learnings": [
+    "Check that the test does not charge the system for work a real deployment would not do.",
+    "A fairer test moved the numbers a little, not the conclusion: generation speed at full load is the limit."
+   ],
+   "caveats": [
+    "31% of measured requests have no replayed earlier turn and keep production's history."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 2 12:15",
+    "runs v3_ab_proto32_1x@A, v3_ab_proto32_1x@B"
    ]
   }
  ]

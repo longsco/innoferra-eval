@@ -1,17 +1,14 @@
-# read_utc 2026-10-02T18:27:46Z
+# read_utc 2026-10-02T19:13:47Z
 ## queue
-v3_ab_tp2sc_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --p
-v3_ab_pd60_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pr
-v3_ab_nodap_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --p
-v3_ab_dfa4_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pr
-v3_ab_c16_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pre
+v3_ab_pd60_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-1x-s0.jso
+v3_ab_nodap_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-1x-s0.js
+v3_ab_dfa4_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-1x-s0.jso
+v3_ab_c16_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-1x-s0.json
 ## done
-18:25:23 v3_ab_proto32_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-polic
 18:25:24 v3_ab_pd60_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-del
 18:26:09 v3_ab_proto32_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-polic
+19:11:24 v3_ab_tp2sc_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-de
 ## markers
-15:21:24 ===== lever v3_ab_c16_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchic
-15:22:03 ===== lever v3_ab_ccap88_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarc
 16:12:08 ===== lever v3_ab_ccap88_1x done
 16:12:08 ===== lever v3_ab_tp2attn_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierar
 16:56:02 ===== lever v3_ab_tp2attn_1x done
@@ -22,3 +19,5 @@ v3_ab_c16_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json 
 18:25:23 ===== lever v3_ab_proto32_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTR
 18:25:24 ===== lever v3_ab_pd60_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchi
 18:26:09 ===== lever v3_ab_proto32_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTR
+19:11:24 ===== lever v3_ab_proto32_1x done
+19:11:24 ===== lever v3_ab_tp2sc_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarch
