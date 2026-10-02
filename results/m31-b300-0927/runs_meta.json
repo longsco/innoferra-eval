@@ -405,6 +405,24 @@
    "change": "cache",
    "verdict": "no clear change",
    "why": "Paired against the control on the same requests: generation +0.18 tok/s (95% CI −0.8..+1.3), first token +0.7% (CI −2..+4%); 7/15; uncached prompt 11.9 M vs 12.4 M. New drop counters show zero failed backups and zero dropped cache entries in BOTH groups: the host cache is full and evicts by plain LRU, so write-back has nothing to fix. Write-through stays (write-back has a known crash under load, sglang #19212)."
+  },
+  {
+   "tag": "v3_ab_ctxpin_1x@A",
+   "at": "2026-10-02 06:30",
+   "protocol": "v3.1",
+   "name": "control half at full load",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU): 7/15, generation 59.6 tok/s, median first token 1.53 s, 0 errors; uncached prompt 12.3 M tokens."
+  },
+  {
+   "tag": "v3_ab_ctxpin_1x@B",
+   "at": "2026-10-02 06:30",
+   "protocol": "v3.1",
+   "name": "+ new sessions placed by in-flight context size",
+   "change": "routing",
+   "verdict": "rejected",
+   "why": "Paired against the control on the same requests: generation −4.87 tok/s (95% CI −6.5..−3.4), first token +56% (CI +43..+68%), first-token p99 106 s; 6/15; uncached prompt 16.9 M vs 12.3 M. A GPU with little context in flight attracts every new (small) session until they grow, so sessions bunch up and the cache churns. Request-count placement stays."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
