@@ -213,6 +213,10 @@
   "v3_lp_cap_lpm_tok8shid_dap_pd30_075x": {
    "name": "+ pair the two GPUs' prompt pieces",
    "short": "paired prefills"
+  },
+  "v3_lp_cap_lpm_tok8shid_dap_pf_075x": {
+   "name": "+ production's plan-stream and streaming flags",
+   "short": "production flags"
   }
  },
  "plain_words": [
