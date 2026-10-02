@@ -217,6 +217,18 @@
   "v3_lp_cap_lpm_tok8shid_dap_pf_075x": {
    "name": "+ production's plan-stream and streaming flags",
    "short": "production flags"
+  },
+  "v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x": {
+   "name": "+ pair the two GPUs' prompt pieces",
+   "short": "paired prefills"
+  },
+  "v3_lp_cap_lpm_tok8shid_dap_dg_pf_075x": {
+   "name": "+ production's plan-stream and streaming flags",
+   "short": "production flags"
+  },
+  "v3_lp_cap_lpm_tok8shid_dg_075x": {
+   "name": "without decode-after-prefill (baseline)",
+   "short": "no-DAP baseline"
   }
  },
  "plain_words": [
