@@ -1,4 +1,4 @@
-# read_utc 2026-10-02T03:54:25Z
+# read_utc 2026-10-02T03:55:43Z
 ## queue
 v3_lp_cap_lpm_tok8shid_tc0_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 TRAINING_COMPAT=0 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG
 v3_lp_cap_lpm_tok8shid_tc0kv8_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 TRAINING_COMPAT=0 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGL

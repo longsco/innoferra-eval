@@ -249,6 +249,7 @@ def rescore(minutes):
 for _r in RAW:
     if _r.get("minutes"): _r["passed"] = rescore(_r["minutes"])
     if _r.get("prod_minutes"): _r["prod_passed"] = rescore(_r["prod_minutes"])
+CHART_DROPPED = {}
 LIVE = live_tag()
 RUNS = []
 for _r in RAW:
@@ -1032,13 +1033,16 @@ def chart_svg(variant):
                 m["x"] = x
                 placed.append(m)
                 return
-        WARNINGS.append(f"chart ({variant}): no free slot for {m['r']['id']}")
-        placed.append(m)
-    gray = [mk("gray", r, X(r["load"]), Y(r["pass"]), R_GRAY, title=run_title(r)) for r in sorted(CURV, key=lambda r: r["at"]) if r["id"] not in ink]
+        m["dropped"] = True                                   # innoferra 10-01: a tie with no free slot is left out (still in the tables)
+    gray = [mk("gray", r, X(r["load"]), Y(r["pass"]), R_GRAY, title=run_title(r)) for r in sorted(CURV, key=lambda r: r["at"], reverse=True) if r["id"] not in ink]
     old = [mk("old", r, X(r["load"]), Y(r["pass"]), R_OLD, group="v3", title=run_title(r))
            for r in sorted([r for r in VALID if r["test"] != CUR and not any(r is e for e in EXTRA)], key=lambda r: r["at"])]
     for m in gray + old:
         place(m)
+    CHART_DROPPED[variant] = [m["r"]["id"] for m in marks if m.get("dropped")]
+    marks[:] = [m for m in marks if not m.get("dropped")]
+    gray[:] = [m for m in gray if not m.get("dropped")]
+    old[:] = [m for m in old if not m.get("dropped")]
     shifted = [m for m in marks if m["kind"] in ("ink", "gray", "star", "extra") and abs(m["x"] - X(m["r"]["pload"] if m["kind"] == "star" else m["r"]["load"])) > 0.5]
     for m in marks:
         if m["group"] is None:
@@ -1068,8 +1072,9 @@ def chart_svg(variant):
         g.append('<g class="v3">' + "".join(hits["v3"]) + "</g>")
     nr = NEWEST_CUR
     if nr and wide:
-        g.append(f'<circle class="ring" cx="{ink[nr["id"]]["x"] if nr["id"] in ink else next(m["x"] for m in gray if m["r"] is nr):.1f}" '
-                 f'cy="{Y(nr["pass"]):.1f}" r="9"/>')
+        _rx = ink[nr["id"]]["x"] if nr["id"] in ink else next((m["x"] for m in gray if m["r"] is nr), None)
+        if _rx is not None:
+            g.append(f'<circle class="ring" cx="{_rx:.1f}" cy="{Y(nr["pass"]):.1f}" r="9"/>')
     vis = {None: [], "v3": []}
     for m in sorted(marks, key=lambda m: order[m["kind"]]):
         x, y = m["x"], m["y"]
@@ -1162,6 +1167,9 @@ def chart_html():
         more.append(f"Not plotted: {plural(len(inv), 'invalid run')} (" + "; ".join(f"{hm(r['at'])}, {r['broke']}" for r in sorted(inv, key=lambda r: r['at'])) + ").")
     more.append("Gray dots: other changes tried at that load. Blue stars: production on the same requests, scored with the same rule; "
                 "hollow marks: older test.")
+    _nd = max((len(v) for v in CHART_DROPPED.values()), default=0)
+    if _nd:
+        more.append(f"{plural(_nd, 'older run')} tied with a newer run at the same spot {'is' if _nd == 1 else 'are'} not drawn; every run is in the tables.")
     if GOAL_ENG and not GOAL_CONFIRMED:
         more.append(f"The {m2(TARGET)} M goal's basis is not confirmed; the shaded band ({rng2(*GOAL_ENG)} M) is where it sits if it counts "
                     "like production's engine counters (How to read, line 6).")
