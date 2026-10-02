@@ -453,6 +453,18 @@
   "v3_ab_ccap88_1x@B": {
    "name": "chunk pivot 88k (group B)",
    "short": "chunk pivot 88k"
+  },
+  "v3_ab_tp2attn_1x": {
+   "name": "twin, full load: attention split over both GPUs (TP2)",
+   "short": "attention TP2"
+  },
+  "v3_ab_tp2attn_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_tp2attn_1x@B": {
+   "name": "attention split over both GPUs (group B)",
+   "short": "attention TP2"
   }
  },
  "plain_words": [
@@ -531,13 +543,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-02 07:15",
+  "at": "2026-10-02 08:35",
   "items": [
    {
     "rule": "decode",
     "title": "Generation speed at full load (4.42 M)",
-    "text": "3.34 M passes 15/15 since Oct 2 01:00. At full load (4.42 M) the same stack scores 3/15: no errors and median first token 1.3–2.0 s, but generation falls to 52.4 tok/s (production 64.6 on the same requests). Where GPU time goes at full load (engine timers, measured window): generating 58%, prompt work 37%, idle 1%. Prompt work is high because we process 30.1 M uncached prompt tokens vs production's 15.6 M: 31% of the difference is sessions whose history started before our warm-up, 26% is production reusing the answer it generated itself (a replay effect: our cache holds a different answer), and 43% is real cache loss on about 110 follow-ups of very long (128k+) sessions. Giving the cache 15% more memory (production's share, Oct 2 04:43) changed nothing: same hit rate, same uncached tokens, so the misses are not a capacity problem. A kernel profile under real traffic (Oct 2 04:51) shows the bigger lever: the two GPUs of an engine step together, and the GPU holding the long-context sessions spends 31% of its time in the sparse-attention indexer while its partner waits (KV tokens per GPU 1.2–1.6× the pair's mean, although request counts are balanced). A write-back host cache changed nothing (Oct 2 05:50; new counters show no cache entries are dropped, the host cache simply fills and evicts oldest-first). Placing new sessions by in-flight context size made things worse (Oct 2 06:30: sessions bunch up). Sizing prompt chunks by their cost (shorter chunks over long prefixes) is the day's first win at full load: generation +2.7 tok/s and first token −8% (Oct 2 07:15, adopted). Next: tune that pivot, and a boot test of splitting attention across both GPUs (production's layout).",
-    "src": "PROGRESS.md Oct 2 04:40–07:15"
+    "text": "3.34 M passes 15/15 since Oct 2 01:00. At full load (4.42 M) the same stack scores 3/15: no errors and median first token 1.3–2.0 s, but generation falls to 52.4 tok/s (production 64.6 on the same requests). Where GPU time goes at full load (engine timers, measured window): generating 58%, prompt work 37%, idle 1%. Prompt work is high because we process 30.1 M uncached prompt tokens vs production's 15.6 M: 31% of the difference is sessions whose history started before our warm-up, 26% is production reusing the answer it generated itself (a replay effect: our cache holds a different answer), and 43% is real cache loss on about 110 follow-ups of very long (128k+) sessions. Giving the cache 15% more memory (production's share, Oct 2 04:43) changed nothing: same hit rate, same uncached tokens, so the misses are not a capacity problem. A kernel profile under real traffic (Oct 2 04:51) shows the bigger lever: the two GPUs of an engine step together, and the GPU holding the long-context sessions spends 31% of its time in the sparse-attention indexer while its partner waits (KV tokens per GPU 1.2–1.6× the pair's mean, although request counts are balanced). A write-back host cache changed nothing (Oct 2 05:50; new counters show no cache entries are dropped, the host cache simply fills and evicts oldest-first). Placing new sessions by in-flight context size made things worse (Oct 2 06:30: sessions bunch up). Sizing prompt chunks by their cost (shorter chunks over long prefixes) is the day's first win at full load: generation +2.7 tok/s and first token −8% (Oct 2 07:15, adopted). Splitting attention across both GPUs (production's layout) now runs on our kernels with unchanged answer quality (GSM8K 96.29% vs 96.21%, Oct 2 08:35); its full-load twin is next after a chunk-pivot check.",
+    "src": "PROGRESS.md Oct 2 04:40–08:35"
    },
    {
     "rule": "ttft_p50",
