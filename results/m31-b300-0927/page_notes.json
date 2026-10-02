@@ -245,6 +245,78 @@
   "v3_lp_cap80_lpm_tok8shid_dap_dg_075x": {
    "name": "+ KV memory 0.80 (production's)",
    "short": "memory 0.80"
+  },
+  "v3_ab_aa_dg_075x": {
+   "name": "A/A twin calibration (same settings)",
+   "short": "A/A calibration"
+  },
+  "v3_ab_aa_dg_075x@A": {
+   "name": "A/A twin, group A",
+   "short": "control"
+  },
+  "v3_ab_aa_dg_075x@B": {
+   "name": "A/A twin, group B",
+   "short": "A/A calibration"
+  },
+  "v3_ab_pfhs_075x": {
+   "name": "twin: production's host-overhead flags",
+   "short": "host-overhead flags"
+  },
+  "v3_ab_pfhs_075x@A": {
+   "name": "control half (adopted settings)",
+   "short": "control"
+  },
+  "v3_ab_pfhs_075x@B": {
+   "name": "production's host-overhead flags (group B)",
+   "short": "host-overhead flags"
+  },
+  "v3_ab_dfa4_075x": {
+   "name": "twin: FA4 attention for the draft",
+   "short": "FA4 draft attention"
+  },
+  "v3_ab_dfa4_075x@A": {
+   "name": "control half (adopted settings)",
+   "short": "control"
+  },
+  "v3_ab_dfa4_075x@B": {
+   "name": "FA4 attention for the draft (group B)",
+   "short": "FA4 draft attention"
+  },
+  "v3_ab_dap3_075x": {
+   "name": "twin: three decode steps after each prefill",
+   "short": "3 decode steps"
+  },
+  "v3_ab_dap3_075x@A": {
+   "name": "control half (adopted settings)",
+   "short": "control"
+  },
+  "v3_ab_dap3_075x@B": {
+   "name": "three decode steps after each prefill (group B)",
+   "short": "3 decode steps"
+  },
+  "v3_ab_nodap_075x": {
+   "name": "twin: without decode-after-prefill",
+   "short": "no decode-after-prefill"
+  },
+  "v3_ab_nodap_075x@A": {
+   "name": "control half (adopted settings)",
+   "short": "control"
+  },
+  "v3_ab_nodap_075x@B": {
+   "name": "without decode-after-prefill (group B)",
+   "short": "no decode-after-prefill"
+  },
+  "v3_ab_cap80_075x": {
+   "name": "twin: KV memory 0.80",
+   "short": "memory 0.80"
+  },
+  "v3_ab_cap80_075x@A": {
+   "name": "control half (adopted settings)",
+   "short": "control"
+  },
+  "v3_ab_cap80_075x@B": {
+   "name": "KV memory 0.80 (group B)",
+   "short": "memory 0.80"
   }
  },
  "plain_words": [
