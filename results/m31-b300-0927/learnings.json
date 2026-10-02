@@ -1,5 +1,5 @@
 {
- "at": "2026-10-02 04:45",
+ "at": "2026-10-02 07:15",
  "intro": "What moved the numbers on real traffic (requests production served Sep 30 13:10–13:25 PDT, replayed on node 0008), what exactly we changed, and what we learned. Gains are ranked by effect; loads are M TPM per GPU sent (2.23 M = half a production node's traffic). Under the Oct 1 SLA the remaining limit is generation speed at 3.34 M.",
  "note": "Written Oct 1 22:05 PDT: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then every number fact-checked by 5 more (130 corrections). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
  "entries": [
@@ -1757,6 +1757,48 @@
    "sources": [
     "PROGRESS.md Oct 2 04:40, 04:45",
     "production :8081 metrics on b300-18 (read-only)"
+   ]
+  },
+  {
+   "title": "Prompt chunks sized by cost (shorter chunks over long prefixes)",
+   "kind": "gain",
+   "rank": 10.8,
+   "theme": "scheduling",
+   "headline": "4.42 M twin: generation +2.7 tok/s (+4.7%), median first token −8%, first-token p99 18.1 → 13.1 s.",
+   "before_after": [
+    {
+     "metric": "generation per stream p50 (paired, same requests)",
+     "before": "57.5 tok/s (control)",
+     "after": "59.6 tok/s; +2.69 (95% CI +1.6..+3.8)",
+     "source": "twin v3_ab_ccap_1x, Oct 2 07:15"
+    },
+    {
+     "metric": "median first token (paired ratio)",
+     "before": "1.57 s",
+     "after": "1.44 s; ×0.921 (CI 0.888..0.957)",
+     "source": "same twin"
+    },
+    {
+     "metric": "first-token p99",
+     "before": "18.1 s",
+     "after": "13.1 s",
+     "source": "same twin"
+    }
+   ],
+   "change_what": "Cap each request's prompt chunk by its estimated cost: 16k tokens up to a 44k-token prefix, 10.9k at 88k, 5.9k at 200k, 3.2k at 400k.",
+   "change_detail": "patch_chunk_cost_cap.py (schedule_policy.py PrefillAdder: add_chunked_req and add_one_req), env SGLANG_CHUNK_COST_PIVOT=44000; cost model chunk × (1 + prefix/44k) fitted from the live kernel profile (indexer ~7 ms per layer per 16k chunk at a 200k prefix vs ~2.7 ms for MoE + GEMMs).",
+   "when": "Oct 2 07:15 PDT",
+   "mechanism": "The sparse-attention indexer of a prompt chunk reads the whole prefix, so a 16k chunk over a 200k prefix costs ~4.5× one over a short prefix. The two GPUs of an engine step together (MoE every layer), so one expensive chunk stalls its partner and pauses generation on both. Bounding the cost per step evens the steps and shortens the pauses.",
+   "learnings": [
+    "Profile under real traffic before choosing a lever: the synthetic profile hid that indexer cost grows with prefix length.",
+    "Balance work per step, not requests: placing sessions by in-flight context (same goal, routing side) made things worse; capping per-step cost in the scheduler worked."
+   ],
+   "caveats": [
+    "One twin at 4.42 M; the pivot (44k) is a first guess and is being tuned (22k twin next)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 2 04:55, 07:15",
+    "runs v3_ab_ccap_1x@A, v3_ab_ccap_1x@B"
    ]
   }
  ]

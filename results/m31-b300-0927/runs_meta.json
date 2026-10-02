@@ -423,6 +423,24 @@
    "change": "routing",
    "verdict": "rejected",
    "why": "Paired against the control on the same requests: generation −4.87 tok/s (95% CI −6.5..−3.4), first token +56% (CI +43..+68%), first-token p99 106 s; 6/15; uncached prompt 16.9 M vs 12.3 M. A GPU with little context in flight attracts every new (small) session until they grow, so sessions bunch up and the cache churns. Request-count placement stays."
+  },
+  {
+   "tag": "v3_ab_ccap_1x@A",
+   "at": "2026-10-02 07:15",
+   "protocol": "v3.1",
+   "name": "control half at full load",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU): 6/15, generation 57.5 tok/s, median first token 1.57 s, 0 errors; uncached prompt 13.2 M tokens."
+  },
+  {
+   "tag": "v3_ab_ccap_1x@B",
+   "at": "2026-10-02 07:15",
+   "protocol": "v3.1",
+   "name": "+ prompt chunks sized by cost",
+   "change": "scheduling",
+   "verdict": "adopted",
+   "why": "Paired against the control on the same requests: generation +2.69 tok/s (95% CI +1.6..+3.8), median first token −8% (CI −11..−4%), first-token p99 13.1 s vs 18.1 s; 7/15 vs 6/15. A prompt chunk over a long prefix costs far more (the indexer reads the whole prefix), so the chunk shrinks as the prefix grows: 16k tokens up to a 44k prefix, 5.9k at 200k. Both GPUs of an engine finish their step together more often."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
