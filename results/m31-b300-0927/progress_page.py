@@ -1885,7 +1885,7 @@ pre.cmd{background:var(--tab);border:1px solid var(--line);border-radius:6px;pad
 code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85rem;overflow-wrap:anywhere}
 .ft{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padding-top:10px;margin-top:8px}
 @media (max-width:1179px){.top{grid-template-columns:minmax(0,1fr)}.cells{grid-template-columns:repeat(3,minmax(0,1fr))}svg.wide{max-width:840px;margin:0 auto}}
-@media (max-width:900px){
+@media (max-width:1100px){   /* innoferra 10-01: run tables become cards up to 1100 px (1024 px clipped as a table) */
  table.rt thead{display:none}
  table.rt,table.rt tbody{display:block}
  table.rt tr{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:8px 0;border-bottom:1px solid var(--grid)}
