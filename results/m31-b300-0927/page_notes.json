@@ -432,7 +432,7 @@
     "src": "PROGRESS.md Oct 1 03:20 and 03:55"
    }
   ],
-  "cause_lead": "TPS at ¾ load",
+  "cause_lead": "Full load (4.42 M) is next",
   "cause_src": "runs_v3.json re-scored on the Oct 1 SLA"
  },
  "log": [

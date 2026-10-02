@@ -1,4 +1,4 @@
-# read_utc 2026-10-02T08:02:12Z
+# read_utc 2026-10-02T08:03:04Z
 ## queue
 v3_lp_cap_lpm_tok8shid_dap_dg_pd30_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill
 v3_ab_pfhs_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill-delayer-max-delay-pas
