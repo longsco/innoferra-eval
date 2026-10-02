@@ -234,6 +234,15 @@
    "change": "calibration",
    "verdict": "calibration",
    "why": "11/15 on the settings that gave 10/15 earlier: identical runs differ by about one minute. Misses: median 1.10 and 1.05 s (minutes 0, 11); slowest-1% 16–24 s in minutes 11, 12, 14."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8sh_05x",
+   "at": "2026-10-01 19:54",
+   "protocol": "v3.1",
+   "name": "+ shared tokenisation cache across 8 processes",
+   "change": "tokenisation",
+   "verdict": "kept",
+   "why": "12/15 (same settings without it: 10 and 11). Every minute passes the median rule (worst 0.98 s); the 3 misses are slowest-1% only (21–24 s, huge uncached prompts). Kept as part of the tokenisation fix."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
