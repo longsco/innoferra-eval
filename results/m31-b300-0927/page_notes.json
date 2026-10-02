@@ -142,6 +142,22 @@
   "v3_lp_cap_lpm_tok8par4_05x": {
    "name": "+ parallel tokenising (4 pieces)",
    "short": "parallel tokenising"
+  },
+  "v3_lp_cap_lpm_tok8wb_05x": {
+   "name": "+ warm prompts step ahead of uncached chunks",
+   "short": "warm prompts first"
+  },
+  "v3_lp_cap_lpm_tok8_05x_r2": {
+   "name": "8 tokenizer processes, repeat run (noise check)",
+   "short": "noise repeat"
+  },
+  "v3_lp_cap_lpm_tok8sh_05x": {
+   "name": "+ one tokenisation cache shared by all 8 processes",
+   "short": "shared tokenisation cache"
+  },
+  "v3_lp_cap_lpm_tok8sh_0375x": {
+   "name": "+ one tokenisation cache shared by all 8 processes",
+   "short": "shared tokenisation cache"
   }
  },
  "plain_words": [
@@ -220,13 +236,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-01 14:30",
+  "at": "2026-10-01 18:55",
   "items": [
    {
     "rule": "ttft_p50",
     "title": "Median first token over 1 s: time outside the GPU",
-    "text": "A warm request (prompt already cached) still waits longer the longer its conversation: {warm_gap}. Measured Oct 1 14:25: re-tokenising the whole conversation on every turn costs 0.14 s under 120k tokens, 0.34 s at 120–200k and 0.55 s above 200k (the chat template itself takes ~0.01 s). Our tokenisation cache cuts that 10–15× with identical output, but each of the 4 tokenizer processes keeps its own cache and a conversation's next turn usually reaches a different one. Next test: 1 tokenizer process with a larger cache.",
-    "src": "PROGRESS.md Oct 1 09:35, 11:15, 14:25"
+    "text": "A warm request (prompt already cached) still waits longer the longer its conversation: {warm_gap}. Re-tokenising the whole conversation costs 0.14 s under 120k tokens, 0.34 s at 120–200k and 0.55 s above 200k (Oct 1 14:25). Our tokenisation cache cuts that to ~0.02 s, but each of the 8 tokenizer processes keeps its own cache and a conversation's next turn usually reaches a different one: replaying 600 real turns offline, the separate caches save only 32% of what one cache would (Oct 1 18:50). One tokenizer process (rejected: it also carries all streaming) and parallel tokenising (rejected: it slows the GPU schedulers) did not help, and letting warm prompts step ahead of uncached chunks changed nothing. Next test: one cache shared by all 8 processes (offline: identical output, 99.5% of the one-process saving, median tokenising 0.061 → 0.017 s).",
+    "src": "PROGRESS.md Oct 1 09:35, 11:15, 14:25, 18:30, 18:55"
    },
    {
     "rule": "decode",
@@ -257,6 +273,16 @@
   "cause_src": "PROGRESS.md Oct 1 09:35 and 11:15"
  },
  "log": [
+  {
+   "at": "2026-10-01 18:55",
+   "kind": "test",
+   "label": "Shared tokenisation cache, offline replay",
+   "result": "identical output; saves 99.5% of what one cache would (8 separate caches: 32%)",
+   "verdict": "Finding",
+   "src": [
+    "progress:18:55 (10-01)"
+   ]
+  },
   {
    "at": "2026-10-01 11:15",
    "kind": "test",
@@ -950,11 +976,18 @@
  ],
  "engineering": [
   {
+   "name": "One tokenisation cache shared by an engine's tokenizer processes",
+   "state": "queued",
+   "at": "2026-10-01 18:55",
+   "text": "each conversation's previous turn is reused whichever of the 8 processes gets the next one; offline on 600 real turns: identical output, median tokenising 0.061 → 0.017 s, slowest 10% 0.64 → 0.28 s",
+   "ref": "serving/minimax-m3.1/patch_tok_shared.py · tok_shared_verify.py · PROGRESS.md Oct 1 18:55"
+  },
+  {
    "name": "Per-request timing breakdown under load",
-   "state": "planned",
-   "at": "2026-10-01 12:58",
-   "text": "the 12:06 run's timing logs were lost when its engines were torn down; the launcher now keeps engine logs, and the 2.23 M cache-first run logs per-request tokenise, queue and prompt-processing time again",
-   "ref": "PROGRESS.md Oct 1 11:15, 12:05 and 13:05 (--enable-request-time-stats-logging)"
+   "state": "queued",
+   "at": "2026-10-01 18:55",
+   "text": "the launcher now keeps engine logs at teardown; the shared-cache run at 2.23 M logs per-request tokenise, queue and prompt-processing time",
+   "ref": "PROGRESS.md Oct 1 11:15, 13:05 and 18:55 (--enable-request-time-stats-logging)"
   },
   {
    "name": "MiniMax's prompt-attention kernel inside our engine",
@@ -1124,8 +1157,8 @@
   "rows": [
    {
     "prod": "Rust frontend renders and tokenises prompts (fastokens); workers skip it",
-    "ours": "Python chat template + 4 tokenizer workers per engine + tokenization prefix cache (adopted Sep 30 13:54)",
-    "status": "Under test (Oct 1 09:35): warm first token grows with prompt length; the idle pass (Oct 1 11:15) puts the extra time outside prompt processing; templating and tokenisation are the first suspects; per-request timing logs and 8 tokenizer workers are queued (Oct 1 13:05)"
+    "ours": "Python chat template + 4–8 tokenizer processes per engine (8 in the current tests) + tokenisation prefix cache (adopted Sep 30 13:54)",
+    "status": "Under test (Oct 1 18:55): one tokenisation cache shared by the 8 tokenizer processes (offline: identical output, 99.5% of the one-process saving) is queued at 2.23 M and 1.79 M; one process, parallel tokenising and warm-first scheduling did not help"
    },
    {
     "prod": "fused, graph-safe verify and accept kernels",
@@ -1358,6 +1391,14 @@
   [
    "serving/minimax-m3.1/gsm8k_bounded.py",
    "quality check (GSM8K, bounded concurrency)"
+  ],
+  [
+   "serving/minimax-m3.1/patch_tok_shared.py",
+   "one tokenisation cache shared by an engine's tokenizer processes (/dev/shm, env-gated)"
+  ],
+  [
+   "serving/minimax-m3.1/tok_shared_verify.py",
+   "offline check of the shared cache on real turns (identical output, savings)"
   ]
  ],
  "setup_current": [
