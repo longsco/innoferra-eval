@@ -495,6 +495,24 @@
    "change": "parallelism",
    "verdict": "rejected",
    "why": "Paired against the control on the same requests: first token ×0.53 (CI 0.51..0.55; median 0.66 s vs 1.53 s, p99 9.7 s vs 14.3 s), but generation −7.4 tok/s (CI −8.5..−6.3); 3/15. Draft acceptance is the same (3.65). Each generation step costs more: the split needs an all-reduce in every layer. The next test adds production's fused all-reduce."
+  },
+  {
+   "tag": "v3_ab_tp2ar_1x@A",
+   "at": "2026-10-02 11:25",
+   "protocol": "v3.1",
+   "name": "control half at full load",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU): 6/15, generation 58.2 tok/s, median first token 1.52 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_tp2ar_1x@B",
+   "at": "2026-10-02 11:25",
+   "protocol": "v3.1",
+   "name": "+ TP2 attention with fused all-reduce (production's pair)",
+   "change": "parallelism",
+   "verdict": "rejected",
+   "why": "Paired against the control: first token ×0.53 (CI 0.50..0.56), generation −8.2 tok/s (CI −9.4..−6.7); 2/15. The fused all-reduce was active (engine log), so the all-reduce is not the main cost. Likely cause: both GPUs repeat the norm, quantization and other element-wise steps for every token. The next test keeps those activations split (--enable-attn-tp-input-scattered)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

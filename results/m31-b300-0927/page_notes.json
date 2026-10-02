@@ -489,6 +489,18 @@
   "v3_ab_proto32_1x@B": {
    "name": "fair closed-loop replay (v3.2), same engines",
    "short": "replay v3.2"
+  },
+  "v3_ab_tp2sc_1x": {
+   "name": "twin, full load: TP2 attention + split activations + fused all-reduce",
+   "short": "TP2 + split input"
+  },
+  "v3_ab_tp2sc_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_tp2sc_1x@B": {
+   "name": "TP2 attention, split activations, fused all-reduce (group B)",
+   "short": "TP2 + split input"
   }
  },
  "plain_words": [
@@ -1596,7 +1608,7 @@
    },
    {
     "prod": "attention split over both GPUs of a worker, no lockstep (DP attention off)",
-    "status": "Tested Oct 2: first token −47%, but generation −13%. The next test adds the fused all-reduce that production uses."
+    "status": "Tested Oct 2, also with the fused all-reduce: first token −47%, generation −14%. Next test: keep the activations split."
    },
    {
     "prod": "in-house 4-bit-KV prompt attention and indexer kernels, prompt CUDA graphs, 16k chunks",
