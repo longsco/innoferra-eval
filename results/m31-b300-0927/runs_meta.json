@@ -549,6 +549,24 @@
    "change": "parallelism",
    "verdict": "rejected",
    "why": "Paired against the control: first token ×0.58 (CI 0.55..0.61), generation −9.7 tok/s (CI −10.5..−8.4); 2/15. Splitting the activations did not help. Three TP2 variants all lose 14–17% of generation speed with our kernels; the TP2 line is closed for now."
+  },
+  {
+   "tag": "v3_ab_pd60_cl_1x@A",
+   "at": "2026-10-02 13:40",
+   "protocol": "v3.2",
+   "name": "control half at full load (fair replay v3.2, adopted stack)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.39 M per GPU) on the fair replay with every adopted change (cost-sized chunks, pivot 88k): 7/15, generation 61.0 tok/s, median first token 1.45 s, first-token p99 12.3 s, 0 errors; uncached prompt 11.1 M tokens."
+  },
+  {
+   "tag": "v3_ab_pd60_cl_1x@B",
+   "at": "2026-10-02 13:40",
+   "protocol": "v3.2",
+   "name": "+ longer prompt pairing (60 passes)",
+   "change": "scheduling",
+   "verdict": "no clear change",
+   "why": "Paired against the control on the same sessions: generation +0.31 tok/s (95% CI −0.6..+1.6), first token ×1.015 (CI 0.97..1.05); 7/15 both. The pairing stays at 30 passes."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
