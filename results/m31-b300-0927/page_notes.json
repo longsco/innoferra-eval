@@ -288,7 +288,7 @@
    {
     "rule": "decode",
     "title": "TPS at ¾ load (3.34 M): the only rule we still miss",
-    "text": "Under the Oct 1 SLA every recent setting passes 15/15 at 1.79 M and 2.23 M; at 3.34 M the best is 4/15 and every miss is generation speed (per-minute median about 58 tok/s, worst 46). Each engine's two GPUs step together and never mix prompt processing with generation, so any prompt piece on either GPU pauses generation on both; at 3.34 M there is ~50% more prompt work than at 2.23 M. Leads, largest first: production's attention path (training-compatible mode off) generated 17% faster at 2.23 M (86 vs 74 tok/s) and is first in the queue with our 4-bit KV kept (its 8-bit KV halves cache capacity); then one decode step after each prompt piece, then pairing the two GPUs' prompt pieces.",
+    "text": "Under the Oct 1 SLA every recent setting passes 15/15 at 1.79 M and 2.23 M; at 3.34 M the best is 4/15 and every miss is generation speed (per-minute median about 58 tok/s, worst 46). Each engine's two GPUs step together and never mix prompt processing with generation, so any prompt piece on either GPU pauses generation on both; at 3.34 M there is ~50% more prompt work than at 2.23 M. Leads, largest first: production's attention path (training-compatible mode off) generated 17% faster at 2.23 M (86 vs 74 tok/s) and cannot run with our 4-bit KV (the engine requires MiniMax's MSA kernel and no speculative decoding for that path, Oct 1 21:29), so it runs with 8-bit KV (half the cache capacity); then one decode step after each prompt piece, then pairing the two GPUs' prompt pieces.",
     "src": "runs_v3.json (v3_tc0kv8_05x vs v3_tpc_05x), PROGRESS.md Oct 1 05:25 and 20:55"
    },
    {

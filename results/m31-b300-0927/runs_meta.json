@@ -261,6 +261,15 @@
    "change": "scheduling",
    "verdict": "adopted",
    "why": "15/15 under both the old strict rule and the new SLA; slowest 1% 8.2 s (production 10.4, without it 10.8) and every minute ≤ 14.5 s. Generation speed unchanged (76 vs 78 tok/s)."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8shid_tc0_075x",
+   "at": "2026-10-01 21:29",
+   "protocol": "v3.1",
+   "name": "production attention path, our 4-bit KV",
+   "change": "numerics",
+   "verdict": "failed to boot",
+   "why": "The engine refuses it: its fast 4-bit-KV path needs MiniMax's MSA kernel and does not allow speculative decoding. Stopped after 5 minutes; the 8-bit KV variant runs next."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
