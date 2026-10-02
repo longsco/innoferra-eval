@@ -567,6 +567,24 @@
    "change": "scheduling",
    "verdict": "no clear change",
    "why": "Paired against the control on the same sessions: generation +0.31 tok/s (95% CI −0.6..+1.6), first token ×1.015 (CI 0.97..1.05); 7/15 both. The pairing stays at 30 passes."
+  },
+  {
+   "tag": "v3_ab_blk6_cl_1x@A",
+   "at": "2026-10-02 14:25",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, adopted stack)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.40 M per GPU) on the fair replay: 8/15, generation 59.8 tok/s, median first token 1.43 s, first-token p99 11.8 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_blk6_cl_1x@B",
+   "at": "2026-10-02 14:25",
+   "protocol": "v3.2",
+   "name": "+ DSpark draft block 6 (instead of 7)",
+   "change": "speculative",
+   "verdict": "no clear change",
+   "why": "Paired against the control on the same sessions: generation +0.55 tok/s (95% CI −0.6..+2.1), first token ×0.979 (CI 0.95..1.01); 7/15 vs 8/15. Cheaper verify steps balance the lower acceptance. Block 7 stays."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
