@@ -152,11 +152,11 @@
    "short": "noise repeat"
   },
   "v3_lp_cap_lpm_tok8sh_05x": {
-   "name": "+ one tokenisation cache shared by all 8 processes",
+   "name": "+ shared tokenisation cache across 8 processes",
    "short": "shared tokenisation cache"
   },
   "v3_lp_cap_lpm_tok8sh_0375x": {
-   "name": "+ one tokenisation cache shared by all 8 processes",
+   "name": "+ shared tokenisation cache across 8 processes",
    "short": "shared tokenisation cache"
   }
  },

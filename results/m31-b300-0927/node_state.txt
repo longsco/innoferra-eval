@@ -1,4 +1,4 @@
-# read_utc 2026-10-02T01:54:18Z
+# read_utc 2026-10-02T01:55:01Z
 ## queue
 v3_lp_cap_lpm_tok8sh_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/dev/shm
 v3_lp_cap_lpm_tok8sh_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/dev/shm/m31tokpc"

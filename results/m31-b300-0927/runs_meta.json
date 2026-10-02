@@ -224,7 +224,7 @@
    "name": "+ warm prompts step ahead of long uncached chunks",
    "change": "scheduling",
    "verdict": "no clear change",
-   "why": "9/15 vs 10/15 without it: median first token over 1 s in 4 minutes (1.04–1.13 s) and slowest-1% over 15 s in 2 (17.6 and 20.6 s). Warm requests seldom wait behind an uncached chunk, so the ~1 s median is not queueing; the switch stays off."
+   "why": "9/15 vs 10/15 without it: median first token over 1 s in 4 minutes (1.04–1.13 s), slowest-1% over 15 s in 2. Warm requests seldom wait behind uncached chunks, so the ~1 s median is not queueing."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
