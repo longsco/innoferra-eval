@@ -369,6 +369,24 @@
    "change": "scheduling",
    "verdict": "no clear change",
    "why": "Paired against the control on the same requests: generation +0.22 tok/s (95% CI −0.9..+1.7), first token −2% (CI −6..+1%); 6/15 both. One step stays."
+  },
+  {
+   "tag": "v3_ab_cap80_1x@A",
+   "at": "2026-10-02 04:43",
+   "protocol": "v3.1",
+   "name": "control half at full load",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU): 8/15, generation 59.6 tok/s, median first token 1.47 s, 0 errors; uncached prompt 12.6 M tokens."
+  },
+  {
+   "tag": "v3_ab_cap80_1x@B",
+   "at": "2026-10-02 04:43",
+   "protocol": "v3.1",
+   "name": "+ KV memory 0.80 (production's share)",
+   "change": "capacity",
+   "verdict": "rejected",
+   "why": "Paired against the control on the same requests: generation −0.99 tok/s (95% CI −1.9..+0.4), first token +3% (CI +0.4..+7%); 6/15. 15% more GPU and host cache (2.13 M GPU + 6.38 M host tokens per GPU, above production's 2.10 M + 6.31 M) left the cache hit unchanged at 95.4% and the uncached prompt at 12.2 M tokens: the remaining misses are not a capacity problem."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

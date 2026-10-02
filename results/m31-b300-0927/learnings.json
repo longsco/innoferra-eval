@@ -1,5 +1,5 @@
 {
- "at": "2026-10-01 22:05",
+ "at": "2026-10-02 04:45",
  "intro": "What moved the numbers on real traffic (requests production served Sep 30 13:10–13:25 PDT, replayed on node 0008), what exactly we changed, and what we learned. Gains are ranked by effect; loads are M TPM per GPU sent (2.23 M = half a production node's traffic). Under the Oct 1 SLA the remaining limit is generation speed at 3.34 M.",
  "note": "Written Oct 1 22:05 PDT: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then every number fact-checked by 5 more (130 corrections). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
  "entries": [
@@ -1714,6 +1714,49 @@
    "sources": [
     "PROGRESS.md Oct 1 22:45, Oct 2 01:05",
     "runs v3_lp_cap_lpm_tok8shid_dap_dg_075x, v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x"
+   ]
+  },
+  {
+   "title": "Full-load anatomy: where the extra prompt work comes from (and what capacity cannot fix)",
+   "kind": "finding",
+   "rank": 11.5,
+   "theme": "cache",
+   "headline": "At 4.42 M we process 30.1 M uncached prompt tokens vs production's 15.6 M; 15% more cache memory changed nothing.",
+   "before_after": [
+    {
+     "metric": "GPU rank time at 4.42 M (engine timers, measured window)",
+     "before": "—",
+     "after": "generating 58%, prompt work 37%, idle 1%",
+     "source": "metrics snapshots, Oct 2 09:09-09:22 UTC"
+    },
+    {
+     "metric": "uncached prompt tokens, same requests",
+     "before": "production 15.6 M",
+     "after": "ours 30.1 M",
+     "source": "run v3_lp_cap_lpm_tok8shid_dap_dg_pd30_1x"
+    },
+    {
+     "metric": "uncached prompt per twin group at KV memory 0.76 / 0.80",
+     "before": "12.20 M and 11.98 M (0.76)",
+     "after": "12.18 M (0.80)",
+     "source": "twins dap3_1x, cap80_1x"
+    }
+   ],
+   "change_what": "Analysis only: per-request cache hits compared with production on exact parent→child turns, engine timers, production's own engine metrics (read-only).",
+   "change_detail": "Excess 15.4 M = 31% sessions whose history predates our warm-up, 26% production reusing the answer it generated itself (its cache holds that answer; ours holds a different one), 43% real loss on ~110 follow-ups of 128k+ sessions. Production: 2.10 M GPU + 6.31 M host tokens per GPU, cumulative uncached ~3.8%, zero cache drops.",
+   "when": "Oct 2 04:40–04:45 PDT",
+   "mechanism": "Prompt work pauses generation on both GPUs of an engine, so every extra uncached token costs generation speed at full load. The misses come from replay effects (answer reuse, warm-up boundary) and from how the host cache drops entries, not from total cache size.",
+   "learnings": [
+    "Compare cache hits on exact parent→child turns: same-session ordering mixes parallel sub-agents and overstates misses.",
+    "97% of 'partial' hits only lose the last page (page size 128); look at the token distribution before blaming the cache.",
+    "Test capacity before buying it: +15% GPU/host cache moved nothing, so the next lever is the cache mechanism (write-back), not memory."
+   ],
+   "caveats": [
+    "The answer-reuse share is a property of replaying production's prompts against our different answers; a real deployment would reuse its own answers."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 2 04:40, 04:45",
+    "production :8081 metrics on b300-18 (read-only)"
    ]
   }
  ]
