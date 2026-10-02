@@ -1577,7 +1577,7 @@
    {
     "prod": "in-house 4-bit-KV prompt attention and indexer kernels, prompt CUDA graphs, 16k chunks",
     "ours": "attention + indexer ≈ half of prompt time (profile Oct 1 05:25); our Triton kernels run at ~12–14% of tensor-core peak",
-    "status": "MiniMax's kernel 1.9–2.5× faster with identical output in a standalone test (Oct 1 08:02); parked Oct 1 09:45 (its toolchain clashes with our engine image); Triton autotune planned. Live profile (Oct 2 04:51 PDT): the indexer uses 31% of the GPU time on the GPU with the long sessions. Prompt chunks sized by their cost give +2.7 tok/s (adopted Oct 2 07:15 PDT).",
+    "status": "MiniMax's kernel 1.9–2.5× faster with identical output in a standalone test (Oct 1 08:02); parked Oct 1 09:45 (its toolchain clashes with our engine image); Triton autotune planned. Indexer: 31% of GPU time (Oct 2 profile).",
     "buys": "faster processing of the 5–60k uncached prompt tokens of a typical request (sets where passing collapses)"
    },
    {
@@ -1600,14 +1600,14 @@
     "status": "done: load-aware routing adopted Oct 1 03:56; Dynamo tested Oct 1 01:25 and 02:15 (cache hit {hit:dyn_05x}–{hit:dyn2_05x}), rejected"
    },
    {
-    "prod": "KV cache memory fraction 0.80 (84.7 GB per GPU, 2.10 M tokens per GPU)",
-    "ours": "0.76 (67.1 GB per GPU, 1.85 M tokens per GPU)",
-    "status": "Tested 0.80 on Oct 2 04:43 PDT: no gain (generation −1.0 tok/s, same cache hit). Test again with the attention split (TP2), as production runs both."
+    "prod": "KV memory 0.80 (84.7 GB per GPU)",
+    "ours": "0.76 (67.1 GB per GPU)",
+    "status": "0.80 tested Oct 2 04:43: no gain. Test again with TP2."
    },
    {
-    "prod": "No prompt/generation split: all 96 workers (24 nodes × 4) do both (Dynamo registers 0 prefill workers, read Oct 2 09:26 PDT)",
-    "ours": "The same: every engine does both",
-    "status": "Not necessary to match production. A dedicated prompt pool is a possible later step for flat speed under load."
+    "prod": "No prompt/generation split: all 96 workers do both",
+    "ours": "The same",
+    "status": "Not necessary to match production."
    }
   ],
   "note": "On v3.1 requests our generation speed already beats production's at {load:best_0.5} M ({dec:best_0.5} vs {pdec:best_0.5} tok/s, Oct 1 {at:best_0.5}). The gap is prompt-processing speed, the two-GPU lockstep and per-request time outside GPU math. (This retires the older '75 vs 212 tok/s per stream' note, which current data contradicts.)"
