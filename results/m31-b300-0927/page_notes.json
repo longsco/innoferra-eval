@@ -321,6 +321,78 @@
   "v3_lp_cap_lpm_tok8shid_dap_dg_pd30_1x": {
    "name": "full stack at full load",
    "short": "full load"
+  },
+  "v3_ab_dap3_1x": {
+   "name": "twin at full load: three decode steps after each prefill",
+   "short": "three decode steps after eac"
+  },
+  "v3_ab_dap3_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_dap3_1x@B": {
+   "name": "three decode steps after each prefill (full load, group B)",
+   "short": "three decode steps after eac"
+  },
+  "v3_ab_cap80_1x": {
+   "name": "twin at full load: KV memory 0.80",
+   "short": "KV memory 0.80"
+  },
+  "v3_ab_cap80_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_cap80_1x@B": {
+   "name": "KV memory 0.80 (full load, group B)",
+   "short": "KV memory 0.80"
+  },
+  "v3_ab_dfa4_1x": {
+   "name": "twin at full load: FA4 attention for the draft",
+   "short": "FA4 attention for the draft"
+  },
+  "v3_ab_dfa4_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_dfa4_1x@B": {
+   "name": "FA4 attention for the draft (full load, group B)",
+   "short": "FA4 attention for the draft"
+  },
+  "v3_ab_pd60_1x": {
+   "name": "twin at full load: delayer holds up to 60 passes",
+   "short": "delayer holds up to 60 passe"
+  },
+  "v3_ab_pd60_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_pd60_1x@B": {
+   "name": "delayer holds up to 60 passes (full load, group B)",
+   "short": "delayer holds up to 60 passe"
+  },
+  "v3_ab_c16_1x": {
+   "name": "twin at full load: smaller prompt pieces (8k per GPU)",
+   "short": "smaller prompt pieces (8k pe"
+  },
+  "v3_ab_c16_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_c16_1x@B": {
+   "name": "smaller prompt pieces (8k per GPU) (full load, group B)",
+   "short": "smaller prompt pieces (8k pe"
+  },
+  "v3_ab_nodap_1x": {
+   "name": "twin at full load: without decode-after-prefill",
+   "short": "without decode-after-prefill"
+  },
+  "v3_ab_nodap_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_nodap_1x@B": {
+   "name": "without decode-after-prefill (full load, group B)",
+   "short": "without decode-after-prefill"
   }
  },
  "plain_words": [
@@ -399,13 +471,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-02 01:05",
+  "at": "2026-10-02 02:35",
   "items": [
    {
     "rule": "decode",
-    "title": "Generation speed: 3.34 M now passes; next limit is full load",
-    "text": "Oct 2 01:00: with the draft model replaying its CUDA graph and the two GPUs' prompt pieces paired (prefill delayer), every minute at 3.34 M passes: generation 63–93 tok/s (74.5 overall, production 64.8 on the same requests), median first token 1.1–1.7 s. The next test is full load (4.42 M), where cache capacity and prompt work grow again.",
-    "src": "PROGRESS.md Oct 2 00:14 and 01:05"
+    "title": "Generation speed at full load (4.42 M)",
+    "text": "3.34 M passes 15/15 since Oct 2 01:00. At full load (4.42 M, Oct 2 02:32) the same stack scores 3/15: median first token 1.3–2.0 s and no errors, but generation falls to 40–58 tok/s in minutes 3–13 (52.4 overall vs production's 64.6 on the same requests), with a cache hit of 94.3% vs 97.1% (we re-process about twice production's uncached tokens). More prompt work means more generation pauses. Next: twin screens at full load (3 decode steps per prompt step, KV memory 0.80, FA4 draft attention, a longer delayer hold, smaller prompt pieces).",
+    "src": "PROGRESS.md Oct 2 02:35"
    },
    {
     "rule": "ttft_p50",
@@ -432,7 +504,7 @@
     "src": "PROGRESS.md Oct 1 03:20 and 03:55"
    }
   ],
-  "cause_lead": "Full load (4.42 M) is next",
+  "cause_lead": "Generation speed at full load",
   "cause_src": "runs_v3.json re-scored on the Oct 1 SLA"
  },
  "log": [
