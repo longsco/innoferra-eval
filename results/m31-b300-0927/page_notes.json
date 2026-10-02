@@ -1849,5 +1849,55 @@
    "9": "hit 98.1%; +28% output vs the ladder without rank pinning; engines saturated",
    "10": "0 errors, cached 98.1%; +28% output vs the earlier ladder (2,684, invalid run)"
   }
+ },
+ "sessions_per_node": {
+  "at": "2026-10-02 05:30",
+  "headline": "Tracked number: sessions per node at the highest load that passes the SLA = 1,183 per 15 min (165 active per minute, 80 in flight). One production node at peak carried 1,576 per 15 min (208 per minute, 94 in flight) on the same window: we are at about 75%.",
+  "defs": "Session = distinct prompt_cache_key. Active per minute = sessions with at least one request starting that minute. In flight = sessions with a request open at that moment (sampled every 10 s; production timing for production rows, ours for ours).",
+  "rows": [
+   {
+    "who": "Production, one node's share (logged traffic), Sep 30 13:10–13:25 PDT",
+    "load": "4.46",
+    "s15": "1,576",
+    "amin": "208 / 235",
+    "inflight": "94 / 112",
+    "sla": "—"
+   },
+   {
+    "who": "Production, busiest 15 min of the 5-hour log (10:19 PDT)",
+    "load": "4.66",
+    "s15": "1,348",
+    "amin": "214 / 276",
+    "inflight": "146 / 200",
+    "sla": "—"
+   },
+   {
+    "who": "Ours at 0.75× (passes the SLA, Oct 2 01:00)",
+    "load": "3.34",
+    "s15": "1,183",
+    "amin": "165 / 185",
+    "inflight": "80 / 113",
+    "sla": "15/15"
+   },
+   {
+    "who": "Ours at 1.0× (same sessions as the first row)",
+    "load": "4.42",
+    "s15": "1,578",
+    "amin": "218 / 242",
+    "inflight": "148 / 226",
+    "sla": "3/15"
+   },
+   {
+    "who": "Ours at 0.5×",
+    "load": "2.23",
+    "s15": "771",
+    "amin": "111 / 117",
+    "inflight": "46 / 63",
+    "sla": "15/15"
+   }
+  ],
+  "live": "Live production probe (read-only engine counters, Oct 2 05:24 PDT): b300-18 343 requests/min with 24 running, b300-22 336 requests/min with 42 running, 6.9–8.6 M tokens per GPU per minute, none queued. Engines do not see session keys, so live counts are requests; sessions come from the logs.",
+  "caveat": "The logged traffic we replay undercounts production by about 1.1× in requests, so a production node at peak is likely around 1,700 sessions per 15 min.",
+  "src": "sessions_per_node.py on traces v3/b00+b01; sessions_ours.py on runs dap_05x, dap_dg_pd30_075x, dap_dg_pd30_1x; production :8081 metrics"
  }
 }

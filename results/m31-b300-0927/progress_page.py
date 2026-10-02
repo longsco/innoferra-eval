@@ -1342,6 +1342,19 @@ def _refl_keys(src):
     return out
 
 
+def sessions_html():
+    """innoferra 10-02: tracked number requested by the user: sessions per node (not an SLA)"""
+    sp = NOTES.get("sessions_per_node")
+    if not sp: return ""
+    head = ("<thead><tr><th>Who</th><th class=\"num\">Load (M tokens/GPU)</th><th class=\"num\">Sessions per 15 min</th>"
+            "<th class=\"num\">Active per minute (p50 / max)</th><th class=\"num\">In flight (p50 / max)</th><th class=\"num\">SLA minutes</th></tr></thead>")
+    rows = "".join(f'<tr><td>{esc(r["who"])}</td><td class="num">{esc(r["load"])}</td><td class="num">{esc(r["s15"])}</td>'
+                   f'<td class="num">{esc(r["amin"])}</td><td class="num">{esc(r["inflight"])}</td><td class="num">{esc(r["sla"])}</td></tr>' for r in sp["rows"])
+    return (f'<section class="panel" id="sessions"><h2>Sessions per node (tracked, not an SLA)</h2><p class="sum">{esc(sp["headline"])}</p>'
+            f'<div class="wrap"><table class="rt recent">{head}<tbody>{rows}</tbody></table></div>'
+            f'<p class="note">{esc(sp["defs"])} {esc(sp["live"])} {esc(sp["caveat"])} Updated {stamp(pdt(sp["at"]))}; source: {esc(sp["src"])}.</p></section>')
+
+
 def next_html():
     g = GPU
     items = []
@@ -2090,7 +2103,7 @@ def learnings_html():
 
 
 def build():
-    overview = (f'<div class="top">{cells_html()}{chart_html()}</div>' + recent_html() + next_html() + why_html() + howto_html())
+    overview = (f'<div class="top">{cells_html()}{chart_html()}</div>' + recent_html() + sessions_html() + next_html() + why_html() + howto_html())
     results = runs_html() + older_html() + sim_html() + queue_html() + log_html()
     setup = prod_html() + setup_html() + gap_html() + launch_html()
     learn = learnings_html()
