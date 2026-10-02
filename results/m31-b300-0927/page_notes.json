@@ -178,6 +178,10 @@
   "v3_lp_cap_lpm_tok8shid_dap_075x": {
    "name": "+ one decode step after each prefill",
    "short": "decode after prefill"
+  },
+  "v3_lp_cap_lpm_tok8shid_dap_s875_05x": {
+   "name": "+ 2k tokens per step kept for waiting requests",
+   "short": "room for waiting requests"
   }
  },
  "plain_words": [
@@ -272,9 +276,9 @@
    },
    {
     "rule": "ttft_p99",
-    "title": "Slowest 1% of first tokens over 15 s",
-    "text": "An uncached prompt of 300k+ tokens takes 15–35 s to process and holds up its GPU pair; first tokens queued behind it miss the 15 s limit. Since the shared tokenisation cache this is the only rule still failing at 2.23 M (3 minutes, 21–24 s).",
-    "src": "PROGRESS.md Oct 1 04:35, 07:05 and 19:55"
+    "title": "Slowest 1% of first tokens over 15 s: one huge prompt stalls its engine",
+    "text": "When an uncached prompt of 300k+ tokens arrives, its GPU processes it in 16k-token pieces, about 1 s each, back to back for 20+ s (engine log Oct 1 19:46). During that time (a) the engine generates nothing for its running requests, so requests that had just started wait up to 21 s for their first visible word, and (b) new requests, even small cached ones, cannot join because each piece uses the whole step; one GPU's queue grew from 1 to 7. Since the shared tokenisation cache this is the only rule still failing at 2.23 M (3 minutes, 21–24 s). Queued: one decode step after each piece, then 2k tokens per step kept for waiting requests.",
+    "src": "PROGRESS.md Oct 1 04:35, 07:05, 19:55 and 20:05"
    },
    {
     "rule": "cache",
@@ -293,6 +297,16 @@
   "cause_src": "PROGRESS.md Oct 1 09:35 and 11:15"
  },
  "log": [
+  {
+   "at": "2026-10-01 20:05",
+   "kind": "test",
+   "label": "Why the slowest 1% miss",
+   "result": "a huge prompt stalls its engine 20+ s",
+   "verdict": "Finding",
+   "src": [
+    "progress:20:05 (10-01)"
+   ]
+  },
   {
    "at": "2026-10-01 19:20",
    "kind": "test",
@@ -1036,7 +1050,7 @@
    "name": "Decode step after each prefill",
    "state": "queued",
    "at": "2026-10-01 19:45",
-   "text": "M3.1's first generated token is usually an invisible thinking marker, so the first visible token needs a decode step, which waits behind every queued prompt (0.68 s at p90, 6 s at p99 after the first token); one decode step after each prefill step should remove that wait and keep generation running during long prompts",
+   "text": "a 300k-token uncached prompt runs 16k-token pieces back to back for 20+ s and its engine generates nothing meanwhile (first visible word 6–21 s late for 20 requests at 2.23 M); one decode step after each piece keeps generation going. Next in the queue",
    "ref": "serving/minimax-m3.1/patch_decode_after_prefill.py · PROGRESS.md Oct 1 19:45"
   },
   {

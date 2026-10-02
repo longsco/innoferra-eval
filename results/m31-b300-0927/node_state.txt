@@ -1,7 +1,8 @@
-# read_utc 2026-10-02T02:56:04Z
+# read_utc 2026-10-02T02:59:35Z
 ## queue
-v3_lp_cap_lpm_tok8shid_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/de
 v3_lp_cap_lpm_tok8shid_dap_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/d
+v3_lp_cap_lpm_tok8shid_0375x /tr/v3/b00.jsonl 0.75 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/de
+v3_lp_cap_lpm_tok8shid_dap_s875_05x /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=${BB/SGLANG_CHUNKED_REQ_SHARE=1.0/SGLANG_
 v3_lp_cap_lpm_tok8shid_05x_r2 /tr/v3/b00.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/de
 v3_lp_cap_lpm_tok8shid_dap_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_C
 ## done
