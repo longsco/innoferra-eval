@@ -531,6 +531,24 @@
    "change": "protocol",
    "verdict": "adopted",
    "why": "Same engines, same sessions; each follow-up carries our own earlier answers (full 1,913, partial 303; 965 with no replayed earlier turn). Paired: generation +1.53 tok/s (CI +0.2..+2.9), first token ×0.904 (CI 0.88..0.94), p99 11.8 s vs 17.7 s; uncached prompt 11.7 M (−9%), cache hit 95.5% (production 97.1%); 6/15 both. v3.2 is the test from now on."
+  },
+  {
+   "tag": "v3_ab_tp2sc_1x@A",
+   "at": "2026-10-02 12:55",
+   "protocol": "v3.1",
+   "name": "control half at full load",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU): 7/15, generation 57.8 tok/s, median first token 1.49 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_tp2sc_1x@B",
+   "at": "2026-10-02 12:55",
+   "protocol": "v3.1",
+   "name": "+ TP2 attention, split activations, fused all-reduce",
+   "change": "parallelism",
+   "verdict": "rejected",
+   "why": "Paired against the control: first token ×0.58 (CI 0.55..0.61), generation −9.7 tok/s (CI −10.5..−8.4); 2/15. Splitting the activations did not help. Three TP2 variants all lose 14–17% of generation speed with our kernels; the TP2 line is closed for now."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
