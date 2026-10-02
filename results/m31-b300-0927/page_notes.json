@@ -1978,7 +1978,7 @@
    "note": "TOKW=8, SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/dev/shm/m31tokpc, SGLANG_MM_PASS_IDS_WITHOUT_MEDIA=1 (patch_tok_shared.py, patch_mm_pass_ids.py)"
   },
   {
-   "name": "one decode step after each prefill step",
+   "name": "one decode step after each prefill step (removed Oct 2 16:50)",
    "adopted_at": "2026-10-01 21:24",
    "run": "v3_lp_cap_lpm_tok8shid_dap_05x",
    "note": "SGLANG_DECODE_AFTER_PREFILL=1 (patch_decode_after_prefill.py)"

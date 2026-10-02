@@ -603,6 +603,24 @@
    "change": "status",
    "verdict": "calibration",
    "why": "3.72 M per GPU, 0 errors, first token passes in every minute (1.3–1.8 s); generation 65.8 tok/s (production 64.4 on the same requests); 11 of 15 minutes pass. Minutes 10–12 and 14 fail (43–55 tok/s): bursts of 5–6 requests per minute with more than 100k uncached prompt tokens."
+  },
+  {
+   "tag": "v3_ab_nodap_cl_1x@A",
+   "at": "2026-10-02 16:49",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, adopted stack with decode-after-prefill)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.40 M per GPU): 6/15, generation 57.0 tok/s, median first token 1.41 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_nodap_cl_1x@B",
+   "at": "2026-10-02 16:49",
+   "protocol": "v3.2",
+   "name": "− decode-after-prefill (setting off)",
+   "change": "scheduling",
+   "verdict": "adopted",
+   "why": "Paired against the control on the same sessions: generation +2.66 tok/s (95% CI +1.6..+3.7), first token +5.8% (CI +2..+10%; median 1.44 s); 9/15 vs 6/15. With cost-sized chunks and prompt pairing in place, the forced generation step after each prompt step no longer helps. The setting is now off."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
