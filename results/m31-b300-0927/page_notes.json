@@ -417,6 +417,18 @@
   "v3_ab_ctxpin_1x@B": {
    "name": "sessions placed by in-flight context (group B)",
    "short": "context-aware placement"
+  },
+  "v3_ab_ccap_1x": {
+   "name": "twin, full load: prompt chunks sized by cost",
+   "short": "cost-aware prompt chunks"
+  },
+  "v3_ab_ccap_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_ccap_1x@B": {
+   "name": "prompt chunks shrink with prefix length (group B)",
+   "short": "cost-aware prompt chunks"
   }
  },
  "plain_words": [
