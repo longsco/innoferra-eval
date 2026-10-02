@@ -40,7 +40,9 @@ def body(r, stream, max_tokens):
 def ttft_stream(c, url, payload):
     t0 = time.perf_counter(); first = None; usage = None
     with c.stream("POST", url, json=payload, headers=H, timeout=600) as resp:
-        resp.raise_for_status()
+        if resp.status_code != 200:
+            body = resp.read().decode(errors="ignore")[:300]
+            raise RuntimeError(f"HTTP {resp.status_code}: {body}")
         for line in resp.iter_lines():
             if not line.startswith("data:"): continue
             d = line[5:].strip()
