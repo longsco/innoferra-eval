@@ -365,6 +365,12 @@
      "before": "96.21% (1269/1319, training numerics, via Dynamo)",
      "after": "96.74% (1276/1319)",
      "source": "PROGRESS 01:31 PDT (10-01)"
+    },
+    {
+     "metric": "3.34 M, per-minute median first token / decode (Oct 1 22:29)",
+     "before": "training numerics: 0.98 s / 58.4 tok/s (cap_lpm_075x)",
+     "after": "1.1–8.6 s / 45–66 tok/s (partial record, tail cut)",
+     "source": "v3L-v3_lp_cap_lpm_tok8shid_tc0kv8_075x.jsonl.partial; PROGRESS.md Oct 1 22:30"
     }
    ],
    "change_what": "Relaunched all four engines with production's attention numerics (training-compatible mode off) and an 8-bit KV cache instead of our 4-bit KV. Layout (tp2/dp2, DP attention, attention TP1), old arrival-pinned routing and load unchanged.",
@@ -375,7 +381,8 @@
     "The production attention path lifted decode at every load tested: +22% idle, +29% at 1.36 M, +17% at 2.23 M, +37% at ~2.95 M (v2).",
     "A KV-capacity cut hides until the working set overflows (hit 94.1 vs 94.3% at 1.36 M, 83.5 vs 94.4% at 2.23 M): test at target load.",
     "GSM8K held (96.74% vs 96.21%) though greedy outputs diverge (3/30 identical); keep a GSM8K window on numerics runs.",
-    "If uniform, +17% would lift cap_lpm_075x's 3.34 M per-minute median decode (58.4) past 60 but not its worst minute (45.6); all 15 must pass."
+    "If uniform, +17% would lift cap_lpm_075x's 3.34 M per-minute median decode (58.4) past 60 but not its worst minute (45.6); all 15 must pass.",
+    "At 3.34 M the cache loss wins: halving KV capacity turned a 17% decode gain at 2.23 M into a collapse at 3.34 M (Oct 1 22:29)."
    ],
    "caveats": [
     "Old test v3 with arrival-pinned routing: in the baseline one engine ran 49-56 requests while the others ran 2-13 (Sep 30 23:08); not the adopted stack.",
