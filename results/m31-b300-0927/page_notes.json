@@ -1600,7 +1600,7 @@
     "status": "done: load-aware routing adopted Oct 1 03:56; Dynamo tested Oct 1 01:25 and 02:15 (cache hit {hit:dyn_05x}–{hit:dyn2_05x}), rejected"
    },
    {
-    "prod": "KV memory 0.80 (84.7 GB/GPU); no prompt/generation split",
+    "prod": "KV memory 0.80 (84.7 GB per GPU); prompt and generation on the same workers",
     "ours": "0.76 (67.1 GB per GPU)",
     "status": "0.80 tested Oct 2 04:43: no gain. Test again with TP2."
    }
