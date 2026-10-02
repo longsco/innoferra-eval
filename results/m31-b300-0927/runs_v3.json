@@ -9288,9 +9288,9 @@
 },
 {
 "tag": "v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x",
-"partial": true,
-"done_utc": null,
-"requests": 4886,
+"partial": false,
+"done_utc": "08:00:36",
+"requests": 4887,
 "errors": 0,
 "prod_non200": 3,
 "tpm_gpu": 3.34,
@@ -9485,7 +9485,7 @@
 },
 {
 "min": 14,
-"n": 356,
+"n": 357,
 "err": 0,
 "ttft_p50": 1.362967986962758,
 "ttft_p99": 20.357415150967427,
@@ -9644,11 +9644,11 @@
 },
 {
 "min": 14,
-"n": 356,
+"n": 357,
 "err": 1,
 "ttft_p50": 0.376,
 "ttft_p99": 10.416,
-"decode_p50": 60.12506012506013,
+"decode_p50": 60.148777895855474,
 "pass": false,
 "fails": [
 "errors"

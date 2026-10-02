@@ -317,6 +317,10 @@
   "v3_ab_cap80_075x@B": {
    "name": "KV memory 0.80 (group B)",
    "short": "memory 0.80"
+  },
+  "v3_lp_cap_lpm_tok8shid_dap_dg_pd30_1x": {
+   "name": "full stack at full load",
+   "short": "full load"
   }
  },
  "plain_words": [
@@ -395,13 +399,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-02 00:14",
+  "at": "2026-10-02 01:05",
   "items": [
    {
     "rule": "decode",
-    "title": "Generation speed at ¾ load: 11 of 15 minutes now pass",
-    "text": "Since Oct 2 00:12 (draft model replaying its CUDA graph) our per-stream generation at 3.34 M is 64.1 tok/s, level with production's 64.8 on the same requests, and 11 of 15 minutes pass; minutes 9–12 still run 50–55 tok/s. Before the fix the draft model ran without CUDA graphs on every step (about 270 separate kernel launches). Next: pair the two GPUs' prompt pieces (prefill delayer), then production's overhead flags.",
-    "src": "PROGRESS.md Oct 1 22:55 and Oct 2 00:14"
+    "title": "Generation speed: 3.34 M now passes; next limit is full load",
+    "text": "Oct 2 01:00: with the draft model replaying its CUDA graph and the two GPUs' prompt pieces paired (prefill delayer), every minute at 3.34 M passes: generation 63–93 tok/s (74.5 overall, production 64.8 on the same requests), median first token 1.1–1.7 s. The next test is full load (4.42 M), where cache capacity and prompt work grow again.",
+    "src": "PROGRESS.md Oct 2 00:14 and 01:05"
    },
    {
     "rule": "ttft_p50",
@@ -1207,9 +1211,9 @@
   },
   {
    "name": "Pair the two GPUs' prompt pieces (prefill delayer)",
-   "state": "queued",
-   "at": "2026-10-01 22:55",
-   "text": "94–96% of prompt steps run on one GPU while the other waits; the built-in delayer holds a lone prompt up to 30 passes to pair it (model: +6–10% generation speed at 3.34 M, median first token ~1.5–2.5 s)",
+   "state": "adopted",
+   "at": "2026-10-02 01:00",
+   "text": "the built-in delayer holds a lone prompt piece up to 30 scheduling passes so both GPUs process prompts in the same step; with the draft-graph fix it lifted 3.34 M from 11/15 to 15/15 (generation 64.1 → 74.5 tok/s, median first token 0.65 → 1.45 s)",
    "ref": "PROGRESS.md Oct 1 22:45"
   },
   {
@@ -1719,6 +1723,14 @@
    "adopted_at": "2026-10-02 00:12",
    "run": "v3_lp_cap_lpm_tok8shid_dap_dg_075x",
    "note": "SGLANG_DSPARK_DRAFT_LOCAL_GRAPH=1 (patch_draft_local_graph.py)"
+  },
+  {
+   "name": "pair the two GPUs' prompt pieces (prefill delayer, 30 passes)",
+   "adopted_at": "2026-10-02 01:00",
+   "run": "v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x",
+   "append": {
+    "XARGS": " --enable-prefill-delayer --prefill-delayer-max-delay-passes 30"
+   }
   }
  ],
  "sim": {

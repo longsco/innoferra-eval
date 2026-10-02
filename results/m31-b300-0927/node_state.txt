@@ -1,19 +1,16 @@
-# read_utc 2026-10-02T07:59:56Z
+# read_utc 2026-10-02T08:02:12Z
 ## queue
-v3_ab_aa_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR
-v3_ab_pfhs_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=
-v3_ab_dfa4_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=
-v3_ab_dap3_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=
-v3_ab_nodap_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR
-v3_ab_cap80_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR
+v3_lp_cap_lpm_tok8shid_dap_dg_pd30_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill
+v3_ab_pfhs_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill-delayer-max-delay-pas
+v3_ab_dfa4_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill-delayer-max-delay-pas
+v3_ab_dap3_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill-delayer-max-delay-pas
+v3_ab_nodap_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill-delayer-max-delay-pa
+v3_ab_cap80_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill-delayer-max-delay-pa
 ## done
-06:19:45 v3_lp_cap_lpm_tok8shid_dap_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKEN
-07:12:20 v3_lp_cap_lpm_tok8shid_dap_pd30_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer -
 07:13:03 v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delaye
+08:00:36 v3_ab_aa_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_S
+08:00:38 v3_ab_aa_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE_S
 ## markers
-03:41:34 ===== lever v3_lp_cap_lpm_tok8shid_05x done
-03:41:34 ===== lever v3_lp_cap_lpm_tok8shid_dap_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0
-04:24:57 ===== lever v3_lp_cap_lpm_tok8shid_dap_05x done
 04:24:58 ===== lever v3_lp_cap_lpm_tok8shid_tc0_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 TRAINING_COMPAT=0 XARGS=--enable-hi
 04:29:59 ===== lever v3_lp_cap_lpm_tok8shid_tc0kv8_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 TRAINING_COMPAT=0 XARGS=--enable
 05:29:57 ===== lever v3_lp_cap_lpm_tok8shid_tc0kv8_075x done
@@ -23,3 +20,6 @@ v3_ab_cap80_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARG
 07:12:20 ===== lever v3_lp_cap_lpm_tok8shid_dap_dg_075x done
 07:12:20 ===== lever v3_lp_cap_lpm_tok8shid_dap_pd30_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-ca
 07:13:03 ===== lever v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical
+08:00:36 ===== lever v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x done
+08:00:36 ===== lever v3_ab_aa_dg_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 
+08:00:38 ===== lever v3_ab_aa_dg_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 

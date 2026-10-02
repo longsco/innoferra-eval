@@ -1658,6 +1658,55 @@
     "PROGRESS.md Oct 1 22:45, 22:55; Oct 2 00:14",
     "runs v3_lp_cap_lpm_tok8shid_dap_075x, v3_lp_cap_lpm_tok8shid_dap_dg_075x"
    ]
+  },
+  {
+   "title": "Pairing the two GPUs' prompt steps (prefill delayer)",
+   "kind": "gain",
+   "rank": 10.5,
+   "theme": "scheduling",
+   "headline": "3.34 M: 11/15 → 15/15 (first pass at this load); generation 64.1 → 74.5 tok/s, median first token 0.65 → 1.45 s.",
+   "before_after": [
+    {
+     "metric": "minutes in SLA at 3.34 M",
+     "before": "11/15 (dap_dg_075x)",
+     "after": "15/15 (dap_dg_pd30_075x)",
+     "source": "chain log, Oct 2 00:12 and 01:00"
+    },
+    {
+     "metric": "generation per stream p50",
+     "before": "64.1 tok/s",
+     "after": "74.5 tok/s (production 64.8)",
+     "source": "same runs"
+    },
+    {
+     "metric": "worst minute's generation",
+     "before": "49.6 tok/s (minute 10)",
+     "after": "63.4 tok/s (minutes 11-12)",
+     "source": "same runs"
+    },
+    {
+     "metric": "median first token",
+     "before": "0.65 s",
+     "after": "1.45 s (limit 3 s)",
+     "source": "same runs"
+    }
+   ],
+   "change_what": "Hold a lone prompt piece for up to 30 scheduling passes so both GPUs of an engine process prompts in the same step.",
+   "change_detail": "server args --enable-prefill-delayer --prefill-delayer-max-delay-passes 30 (built into the engine; safe with SGLANG_DECODE_AFTER_PREFILL=1 because both use the all-gathered flags).",
+   "when": "Oct 2 01:00 PDT",
+   "mechanism": "With speculative decoding and DP attention a prompt step on either GPU pauses generation on both, and 94–96% of prompt steps ran on one GPU alone. Pairing them halves the number of generation pauses for the same prompt work.",
+   "learnings": [
+    "When two ranks step together, pair their expensive steps; the waiting costs first-token time, which had headroom under the 3 s rule.",
+    "Measure single-rank vs paired steps from the engine logs before tuning: the 94–96% figure predicted the gain.",
+    "Stacking matters: the delayer helps most once each generation step is cheap (draft graph fixed first)."
+   ],
+   "caveats": [
+    "One run; median first token rose to 1.1–1.7 s, so less headroom remains for heavier loads."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 1 22:45, Oct 2 01:05",
+    "runs v3_lp_cap_lpm_tok8shid_dap_dg_075x, v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x"
+   ]
   }
  ]
 }
