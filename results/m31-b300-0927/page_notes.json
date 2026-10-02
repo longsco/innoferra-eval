@@ -180,7 +180,7 @@
    "short": "decode after prefill"
   },
   "v3_lp_cap_lpm_tok8shid_dap_s875_05x": {
-   "name": "+ 2k tokens per step kept for waiting requests",
+   "name": "+ 2k tokens per step for waiting requests",
    "short": "room for waiting requests"
   }
  },
