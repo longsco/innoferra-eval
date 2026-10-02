@@ -23,15 +23,23 @@ rows = [json.loads(l) for l in open(out)]
 M = [r for r in rows if r.get("phase") == "measured" and r.get("status") == 200 and r.get("stream") and r.get("ttft") is not None and r.get("resp_id")]
 SEG = ["gw_in", "tokenize", "dispatch", "to_sched", "reqproc", "queue", "prefill", "back_engine", "back_client"]
 recs = []
+COARSE = not tok          # no tokenizer-side stamps (they were logged at INFO, which tokenizer workers drop): split at the scheduler only
+if COARSE:
+    SEG = ["to_sched_all", "reqproc", "queue", "prefill", "back_all"]
+    print("no TokTimeStats lines: coarse split (to_sched_all = client send -> scheduler receive; back_all = prefill done -> client first byte)")
 for r in M:
     t, s = tok.get(r["resp_id"]), sch.get(r["resp_id"])
-    if not t or not s: continue
-    created, tokenized, dispatch, dispatched, first = t
+    if not s or (not t and not COARSE): continue
     inp, cached, outl, att, qd, fd, entry, recv, fwd, pdone = s
-    if min(created, tokenized, dispatched, first, recv, fwd, pdone) <= 0: continue
     client_first = r["sent_wall"] + r["ttft"]
-    seg = dict(gw_in=created - r["sent_wall"], tokenize=tokenized - created, dispatch=dispatched - tokenized, to_sched=recv - dispatched,
-               reqproc=entry - recv, queue=fwd - entry, prefill=pdone - fwd, back_engine=first - pdone, back_client=client_first - first)
+    if COARSE:
+        if min(recv, fwd, pdone) <= 0: continue
+        seg = dict(to_sched_all=recv - r["sent_wall"], reqproc=entry - recv, queue=fwd - entry, prefill=pdone - fwd, back_all=client_first - pdone)
+    else:
+        created, tokenized, dispatch, dispatched, first = t
+        if min(created, tokenized, dispatched, first, recv, fwd, pdone) <= 0: continue
+        seg = dict(gw_in=created - r["sent_wall"], tokenize=tokenized - created, dispatch=dispatched - tokenized, to_sched=recv - dispatched,
+                   reqproc=entry - recv, queue=fwd - entry, prefill=pdone - fwd, back_engine=first - pdone, back_client=client_first - first)
     recs.append({"seg": seg, "ttft": r["ttft"], "inp": inp, "unc": inp - cached, "min": int(r["sched"] // 60)})
 print(f"joined {len(recs)}/{len(M)} measured streaming requests (tokenizer lines {len(tok)}, scheduler lines {len(sch)})")
 q = lambda xs, p: sorted(xs)[min(len(xs) - 1, int(p * len(xs)))] if xs else float("nan")
