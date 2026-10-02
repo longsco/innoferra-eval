@@ -260,13 +260,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-01 19:55",
+  "at": "2026-10-01 20:45",
   "items": [
    {
     "rule": "ttft_p50",
-    "title": "Median first token over 1 s: every prompt is tokenised twice",
-    "text": "A warm request (prompt already cached) still waits longer the longer its conversation: {warm_gap}. Engine timers (Oct 1 19:05) show waiting for the GPU is near zero and prompt processing takes 0.2 s at the median, while 0.7–1.0 s per request (mean) passes outside the GPU scheduler even at low load. Cause found Oct 1 19:20: M3.1 is an image-capable model, so the engine tokenises the conversation, turns the tokens back into text and tokenises the whole text again on every request; our tokenisation caches only sped up the first pass, which is why none of the tokenisation changes moved the first-token time. Passing the first pass's tokens straight through gives identical tokens on 300 of 300 real prompts and removes 0.13 s at the median and 0.70 s for the slowest 10% (0.73 s above 200k tokens). Shared cache alone (Oct 1 19:54): every minute at 2.23 M passed the median rule (worst 0.98 s). Tokens passed straight through: running now.",
-    "src": "PROGRESS.md Oct 1 14:25, 18:55, 19:05, 19:20, 19:55"
+    "title": "Median first token: fixed (tokenised once)",
+    "text": "Fixed Oct 1 20:41. M3.1 is an image-capable model, so the engine tokenised every conversation, turned the tokens back into text and tokenised it all again; our caches only sped up the first pass. Passing the cached tokens straight through (identical tokens on 300/300 real prompts) plus one cache shared by the 8 tokenizer processes cut the median first token at 2.23 M from 0.85 s to 0.54 s; every minute is now 0.49–0.61 s against the 1 s limit. Per request (median): tokenising 0.045 s, hand-off 0.04 s, waiting 0.003 s, prompt processing 0.22 s, first visible word back to the client 0.10 s.",
+    "src": "PROGRESS.md Oct 1 19:20, 19:55, 20:45"
    },
    {
     "rule": "decode",
@@ -277,7 +277,7 @@
    {
     "rule": "ttft_p99",
     "title": "Slowest 1% of first tokens over 15 s: one huge prompt stalls its engine",
-    "text": "When an uncached prompt of 300k+ tokens arrives, its GPU processes it in 16k-token pieces, about 1 s each, back to back for 20+ s (engine log Oct 1 19:46). During that time (a) the engine generates nothing for its running requests, so requests that had just started wait up to 21 s for their first visible word, and (b) new requests, even small cached ones, cannot join because each piece uses the whole step; one GPU's queue grew from 1 to 7. Since the shared tokenisation cache this is the only rule still failing at 2.23 M (3 minutes, 21–24 s). Queued: one decode step after each piece, then 2k tokens per step kept for waiting requests.",
+    "text": "When an uncached prompt of 300k+ tokens arrives, its GPU processes it in 16k-token pieces, about 1 s each, back to back for 20+ s (engine log Oct 1 19:46). During that time (a) the engine generates nothing for its running requests, so requests that had just started wait up to 21 s for their first visible word, and (b) new requests, even small cached ones, cannot join because each piece uses the whole step; one GPU's queue grew from 1 to 7. It is the only rule still failing at 2.23 M (3 minutes, 16–22 s, with the tokenisation fix). Queued: one decode step after each piece, then 2k tokens per step kept for waiting requests.",
     "src": "PROGRESS.md Oct 1 04:35, 07:05, 19:55 and 20:05"
    },
    {
@@ -1041,9 +1041,9 @@
  "engineering": [
   {
    "name": "Tokenise each prompt once",
-   "state": "queued",
-   "at": "2026-10-01 19:20",
-   "text": "for requests without images the engine now passes our cached tokens through instead of decoding them to text and re-tokenising; identical tokens on 300/300 real prompts, 0.13 s saved at the median, 0.70 s at p90",
+   "state": "adopted",
+   "at": "2026-10-01 20:41",
+   "text": "for requests without images the engine passes our cached tokens through instead of decoding them to text and re-tokenising (identical tokens); with the shared cache, median first token at 2.23 M 0.85 → 0.54 s",
    "ref": "serving/minimax-m3.1/patch_mm_pass_ids.py · mm_ids_verify.py · PROGRESS.md Oct 1 19:20"
   },
   {
@@ -1235,8 +1235,8 @@
   "rows": [
    {
     "prod": "Rust frontend renders and tokenises prompts (fastokens); workers skip it",
-    "ours": "Python chat template + 4–8 tokenizer processes per engine (8 in the current tests) + tokenisation prefix cache (adopted Sep 30 13:54)",
-    "status": "Root cause found (Oct 1 19:20): for this image-capable model the engine re-tokenises every prompt from text after our cached pass; the fix (tokens passed through when a request has no images, identical output) plus a cache shared by the 8 tokenizer processes is queued at 2.23 M and 1.79 M"
+    "ours": "Python chat template + 8 tokenizer processes per engine sharing one tokenisation cache; cached tokens passed straight to the GPU scheduler (adopted Oct 1 20:41)",
+    "status": "Closed for the median (Oct 1 20:41): tokenising 0.045 s per request at the median; first token 0.54 s at 2.23 M (production 0.34 s)"
    },
    {
     "prod": "fused, graph-safe verify and accept kernels",
@@ -1521,6 +1521,12 @@
    "append": {
     "XARGS": " --schedule-policy lpm"
    }
+  },
+  {
+   "name": "tokenise once: shared cache across 8 tokenizer processes + no second pass",
+   "adopted_at": "2026-10-01 20:41",
+   "run": "v3_lp_cap_lpm_tok8shid_05x",
+   "note": "TOKW=8, SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/dev/shm/m31tokpc, SGLANG_MM_PASS_IDS_WITHOUT_MEDIA=1 (patch_tok_shared.py, patch_mm_pass_ids.py)"
   }
  ],
  "sim": {
