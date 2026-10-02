@@ -387,6 +387,24 @@
    "change": "capacity",
    "verdict": "rejected",
    "why": "Paired against the control on the same requests: generation −0.99 tok/s (95% CI −1.9..+0.4), first token +3% (CI +0.4..+7%); 6/15. 15% more GPU and host cache (2.13 M GPU + 6.38 M host tokens per GPU, above production's 2.10 M + 6.31 M) left the cache hit unchanged at 95.4% and the uncached prompt at 12.2 M tokens: the remaining misses are not a capacity problem."
+  },
+  {
+   "tag": "v3_ab_wb_1x@A",
+   "at": "2026-10-02 05:50",
+   "protocol": "v3.1",
+   "name": "control half at full load",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU): 6/15, generation 58.6 tok/s, median first token 1.49 s, 0 errors; uncached prompt 12.4 M tokens."
+  },
+  {
+   "tag": "v3_ab_wb_1x@B",
+   "at": "2026-10-02 05:50",
+   "protocol": "v3.1",
+   "name": "+ write-back host cache",
+   "change": "cache",
+   "verdict": "no clear change",
+   "why": "Paired against the control on the same requests: generation +0.18 tok/s (95% CI −0.8..+1.3), first token +0.7% (CI −2..+4%); 7/15; uncached prompt 11.9 M vs 12.4 M. New drop counters show zero failed backups and zero dropped cache entries in BOTH groups: the host cache is full and evicts by plain LRU, so write-back has nothing to fix. Write-through stays (write-back has a known crash under load, sglang #19212)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
