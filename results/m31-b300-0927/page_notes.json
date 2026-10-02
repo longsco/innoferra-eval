@@ -323,7 +323,7 @@
    "short": "full load"
   },
   "v3_ab_dap3_1x": {
-   "name": "twin at full load: three decode steps after each prefill",
+   "name": "twin, full load: 3 decode steps",
    "short": "three decode steps after eac"
   },
   "v3_ab_dap3_1x@A": {
@@ -335,7 +335,7 @@
    "short": "three decode steps after eac"
   },
   "v3_ab_cap80_1x": {
-   "name": "twin at full load: KV memory 0.80",
+   "name": "twin, full load: KV memory 0.80",
    "short": "KV memory 0.80"
   },
   "v3_ab_cap80_1x@A": {
@@ -347,7 +347,7 @@
    "short": "KV memory 0.80"
   },
   "v3_ab_dfa4_1x": {
-   "name": "twin at full load: FA4 attention for the draft",
+   "name": "twin, full load: FA4 draft attention",
    "short": "FA4 attention for the draft"
   },
   "v3_ab_dfa4_1x@A": {
@@ -359,7 +359,7 @@
    "short": "FA4 attention for the draft"
   },
   "v3_ab_pd60_1x": {
-   "name": "twin at full load: delayer holds up to 60 passes",
+   "name": "twin, full load: delayer holds up to 60 passes",
    "short": "delayer holds up to 60 passe"
   },
   "v3_ab_pd60_1x@A": {
@@ -371,7 +371,7 @@
    "short": "delayer holds up to 60 passe"
   },
   "v3_ab_c16_1x": {
-   "name": "twin at full load: smaller prompt pieces (8k per GPU)",
+   "name": "twin, full load: smaller prompt pieces (8k per GPU)",
    "short": "smaller prompt pieces (8k pe"
   },
   "v3_ab_c16_1x@A": {
@@ -383,7 +383,7 @@
    "short": "smaller prompt pieces (8k pe"
   },
   "v3_ab_nodap_1x": {
-   "name": "twin at full load: without decode-after-prefill",
+   "name": "twin, full load: without decode-after-prefill",
    "short": "without decode-after-prefill"
   },
   "v3_ab_nodap_1x@A": {
