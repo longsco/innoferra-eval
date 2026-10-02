@@ -1,16 +1,12 @@
-# read_utc 2026-10-02T06:48:25Z
+# read_utc 2026-10-02T07:14:20Z
 ## queue
-v3_lp_cap_lpm_tok8shid_dap_pd30_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --prefill-
-v3_lp_cap_lpm_tok8shid_dap_pf_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --incremental-streaming-output" "EXTR
-v3_lp_cap_lpm_tok8shid_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CACHE
+v3_lp_cap_lpm_tok8shid_dap_dg_pf_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --incremental-streaming-output" "E
+v3_lp_cap_lpm_tok8shid_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CA
 ## done
-04:29:59 v3_lp_cap_lpm_tok8shid_tc0kv8_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 TRAINING_COMPAT=0 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_EN
-05:29:57 v3_lp_cap_lpm_tok8shid_dap_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE
 06:19:45 v3_lp_cap_lpm_tok8shid_dap_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKEN
+07:12:20 v3_lp_cap_lpm_tok8shid_dap_pd30_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer -
+07:13:03 v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delaye
 ## markers
-02:10:00 ===== lever v3_lp_cap_lpm_tok8sh_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --hic
-02:54:30 ===== lever v3_lp_cap_lpm_tok8sh_05x done
-02:54:30 ===== lever v3_lp_cap_lpm_tok8shid_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0 --h
 03:41:34 ===== lever v3_lp_cap_lpm_tok8shid_05x done
 03:41:34 ===== lever v3_lp_cap_lpm_tok8shid_dap_05x: traces /tr/v3/b00.jsonl frac 1.0; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache --hicache-ratio 3.0
 04:24:57 ===== lever v3_lp_cap_lpm_tok8shid_dap_05x done
@@ -20,3 +16,6 @@ v3_lp_cap_lpm_tok8shid_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 T
 05:29:57 ===== lever v3_lp_cap_lpm_tok8shid_dap_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cache -
 06:19:45 ===== lever v3_lp_cap_lpm_tok8shid_dap_075x done
 06:19:45 ===== lever v3_lp_cap_lpm_tok8shid_dap_dg_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-cach
+07:12:20 ===== lever v3_lp_cap_lpm_tok8shid_dap_dg_075x done
+07:12:20 ===== lever v3_lp_cap_lpm_tok8shid_dap_pd30_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical-ca
+07:13:03 ===== lever v3_lp_cap_lpm_tok8shid_dap_dg_pd30_075x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.5; MEMFRAC=0.76 TOKW=8 XARGS=--enable-hierarchical

@@ -295,13 +295,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-01 21:25",
+  "at": "2026-10-02 00:14",
   "items": [
    {
     "rule": "decode",
-    "title": "TPS at ¾ load (3.34 M): the only rule we still miss",
-    "text": "Under the Oct 1 SLA every recent setting passes 15/15 at 1.79 M and 2.23 M; at 3.34 M the best is 4/15 and every miss is generation speed (per-minute median about 58 tok/s, worst 46). Each engine's two GPUs step together and never mix prompt processing with generation, so any prompt piece on either GPU pauses generation on both; at 3.34 M there is ~50% more prompt work than at 2.23 M. Leads, largest first: production's attention path (training-compatible mode off) generated 17% faster at 2.23 M (86 vs 74 tok/s) and cannot run with our 4-bit KV (the engine requires MiniMax's MSA kernel and no speculative decoding for that path, Oct 1 21:29), so it runs with 8-bit KV (half the cache capacity); then one decode step after each prompt piece, then pairing the two GPUs' prompt pieces.",
-    "src": "runs_v3.json (v3_tc0kv8_05x vs v3_tpc_05x), PROGRESS.md Oct 1 05:25 and 20:55"
+    "title": "Generation speed at ¾ load: 11 of 15 minutes now pass",
+    "text": "Since Oct 2 00:12 (draft model replaying its CUDA graph) our per-stream generation at 3.34 M is 64.1 tok/s, level with production's 64.8 on the same requests, and 11 of 15 minutes pass; minutes 9–12 still run 50–55 tok/s. Before the fix the draft model ran without CUDA graphs on every step (about 270 separate kernel launches). Next: pair the two GPUs' prompt pieces (prefill delayer), then production's overhead flags.",
+    "src": "PROGRESS.md Oct 1 22:55 and Oct 2 00:14"
    },
    {
     "rule": "ttft_p50",
@@ -1100,9 +1100,9 @@
   },
   {
    "name": "Draft model replays its CUDA graph",
-   "state": "queued",
-   "at": "2026-10-01 22:55",
-   "text": "the DSpark draft captures CUDA graphs at boot but never replays them with DP attention on (a dp-global flag gate), so every decode step launches ~270 kernels eagerly; a one-line gate fix should save 2–5 ms per step (+3–7 tok/s at 3.34 M)",
+   "state": "adopted",
+   "at": "2026-10-02 00:12",
+   "text": "the draft captured CUDA graphs but never replayed them with DP attention on; the gate fix took 3.34 M from 2/15 to 11/15 and generation from 51.5 to 64.1 tok/s (production 64.8)",
    "ref": "serving/minimax-m3.1/patch_draft_local_graph.py · PROGRESS.md Oct 1 22:55"
   },
   {
@@ -1599,6 +1599,12 @@
    "adopted_at": "2026-10-01 21:24",
    "run": "v3_lp_cap_lpm_tok8shid_dap_05x",
    "note": "SGLANG_DECODE_AFTER_PREFILL=1 (patch_decode_after_prefill.py)"
+  },
+  {
+   "name": "draft model replays its CUDA graph",
+   "adopted_at": "2026-10-02 00:12",
+   "run": "v3_lp_cap_lpm_tok8shid_dap_dg_075x",
+   "note": "SGLANG_DSPARK_DRAFT_LOCAL_GRAPH=1 (patch_draft_local_graph.py)"
   }
  ],
  "sim": {

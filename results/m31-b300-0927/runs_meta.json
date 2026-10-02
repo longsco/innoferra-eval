@@ -288,6 +288,15 @@
    "change": "baseline for the 3.34 M levers",
    "verdict": "baseline",
    "why": "2/15: median first token 0.53–0.85 s per minute, but generation 40–66 tok/s (51.5 overall vs production 64.8) fails 13 minutes. Baseline for the draft-graph and prefill-delayer runs."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8shid_dap_dg_075x",
+   "at": "2026-10-02 00:12",
+   "protocol": "v3.1",
+   "name": "+ draft model replays its CUDA graph",
+   "change": "speculative decoding",
+   "verdict": "adopted",
+   "why": "11/15 at 3.34 M (baseline 2/15): generation 64.1 tok/s per stream, production 64.8 on the same requests (+24%); acceptance unchanged 3.64, 0 errors. Minutes 9–12 still 50–55 tok/s."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

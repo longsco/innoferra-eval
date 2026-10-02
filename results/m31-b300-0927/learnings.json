@@ -1615,6 +1615,49 @@
    ],
    "theme": "routing-cache",
    "rank": 3
+  },
+  {
+   "title": "Draft model CUDA-graph replay under DP attention",
+   "kind": "gain",
+   "rank": 11,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "3.34 M: 2/15 → 11/15 minutes; generation 51.5 → 64.1 tok/s per stream (production 64.8 on the same requests).",
+   "before_after": [
+    {
+     "metric": "minutes in SLA at 3.34 M (Oct 1 SLA)",
+     "before": "2/15 (dap_075x, Oct 1 23:19)",
+     "after": "11/15 (dap_dg_075x, Oct 2 00:12)",
+     "source": "chain log per-minute tables"
+    },
+    {
+     "metric": "generation speed per stream, p50",
+     "before": "51.5 tok/s",
+     "after": "64.1 tok/s",
+     "source": "same runs; production 64.8"
+    },
+    {
+     "metric": "draft acceptance (tokens per verify step)",
+     "before": "3.64",
+     "after": "3.64",
+     "source": "accept metrics, same runs"
+    }
+   ],
+   "change_what": "Let the speculative-decoding draft model replay the CUDA graphs it already records at start-up.",
+   "change_detail": "patch_draft_local_graph.py, env SGLANG_DSPARK_DRAFT_LOCAL_GRAPH=1: a dp-local graph runner skips the dp-global can_run_dp_cuda_graph gate in decode_cuda_graph_runner.can_run_graph (uniform and ragged paths).",
+   "when": "Oct 2 00:12 PDT",
+   "mechanism": "The runner already treats the dense DSpark draft as local to each GPU (no cross-GPU communication, graphs keyed by local batch size) but still required a cross-GPU 'can replay' flag the draft never sets, so every decode step ran the draft as ~270 separate kernel launches.",
+   "learnings": [
+    "Check that captured CUDA graphs are actually replayed: capture time in the startup log proves nothing about use.",
+    "Draft-model mistakes cannot change outputs (the main model verifies every token), so draft-side speed fixes are low-risk; watch acceptance length.",
+    "A single gate in shared code cost ~20% of generation speed at load; per-step anatomy (timed vs untimed time per step) found it."
+   ],
+   "caveats": [
+    "One run; minutes 9–12 (the heaviest prompt traffic) still miss at 50–55 tok/s."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 1 22:45, 22:55; Oct 2 00:14",
+    "runs v3_lp_cap_lpm_tok8shid_dap_075x, v3_lp_cap_lpm_tok8shid_dap_dg_075x"
+   ]
   }
  ]
 }
