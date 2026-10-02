@@ -23,7 +23,7 @@
   }
  },
  "layout_notice": {
-  "text": "SLA changed Oct 1: TTFT p50 under 3 s, TPS above 60, success rate 100%. Every run with per-minute records is re-scored; run notes written earlier still quote the old rule (TTFT p50 ≤ 1 s, p99 ≤ 15 s, errors ≤ 0.1%).",
+  "text": "SLA changed Oct 1: TTFT p50 < 3 s, TPS > 60, 100% success. All runs re-scored; older notes quote the old rule.",
   "until": "2026-10-04 00:00"
  },
  "test_versions": {
