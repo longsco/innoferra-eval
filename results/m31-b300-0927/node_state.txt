@@ -1,7 +1,10 @@
-# read_utc 2026-10-02T07:15:38Z
+# read_utc 2026-10-02T07:46:26Z
 ## queue
-v3_lp_cap_lpm_tok8shid_dap_dg_pf_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --incremental-streaming-output" "E
+v3_lp_cap_lpm_tok8shid_dap_dg_pfhs_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --incremental-streaming-output -
+v3_lp_cap_lpm_tok8shid_dap_dg_dfa4_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB S
+v3_lp_cap_lpm_tok8shid_dap3_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREF
 v3_lp_cap_lpm_tok8shid_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_CA
+v3_lp_cap80_lpm_tok8shid_dap_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.80 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PRE
 ## done
 06:19:45 v3_lp_cap_lpm_tok8shid_dap_dg_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKEN
 07:12:20 v3_lp_cap_lpm_tok8shid_dap_pd30_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer -
