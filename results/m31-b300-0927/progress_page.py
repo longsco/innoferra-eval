@@ -847,9 +847,11 @@ def cells_html():
     if PASS_TOP:
         c1 = ('<div class="cell yes"><p class="q">Do we pass the SLA at any load?</p>'
               f'<p class="lead hero"><span class="ok">✓</span> Yes, up to {m2(PASS_TOP["load"])} M</p>'
-              f'<p class="body">All {NMIN} minutes on {stamp(PASS_TOP["at"])}'
-              + (f': {half_up(PASS_TOP["load"] / TARGET * 100, 0)}% of the {m2(TARGET)} M goal.</p>' if GOAL_CONFIRMED
-                 else f' (goal {m2(TARGET)} M; its basis is not confirmed).</p>')
+              + (lambda held, nxt: f'<p class="body">{NMIN}/{NMIN} at ' + " and ".join(f"{m2(x)} M" for x in held)
+                 + f' in every run on test {CUR}.' + (f' {m2(nxt["load"])} M fails: best {nxt["pass"]}/{NMIN}.' if nxt else "") + '</p>')(
+                  sorted({round(r["load"], 2) for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected"
+                          and all(q["pass"] >= NMIN for q in CURV if abs(q["load"] - r["load"]) < 0.05)})[-2:],
+                  max([q for q in CURV if q["load"] > PASS_TOP["load"] + 0.3], key=lambda q: (q["pass"], q["at"]), default=None))
               + f'<p class="lnk"><a href="#run-{PASS_TOP["id"]}">↳ run {hm(PASS_TOP["at"])}</a></p></div>')
     else:
         c1 = ('<div class="cell no"><p class="q">Do we pass the SLA at any load?</p><p class="lead hero bad">✕ Not yet</p>'
@@ -869,6 +871,8 @@ def cells_html():
               f'<p class="lnk"><a href="#run-{esc(FULL["id"])}" title="{esc(t2)}">↳ run {hm(FULL["at"]) if FULL["at"].date() == NOW.date() else stamp(FULL["at"])} ({esc(FULL["test"])})</a> · '
               f'<a href="#prod" title="its own engine counters: why two numbers">engines {VALUES["ec_range"]} M (Sep 30)</a></p></div>')
     c3 = ""
+    if PASS_TOP:                                              # innoferra 10-01: explain the first load that fails
+        c = max([q for q in CURV if q["load"] > PASS_TOP["load"] + 0.3], key=lambda q: (q["pass"], q["at"]), default=c)
     if c:
         top = sorted(c["fails"].items(), key=lambda kv: (-kv[1], TIE[kv[0]]))
         w = NOTES["why_we_miss"]
