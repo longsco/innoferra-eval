@@ -1,0 +1,77 @@
+#!/bin/bash
+# chainQ (10-01 PDT) — persistent lever queue on real traffic v3 [helpers copied from chain39]; replaces chain39 (1.0x/1.5x levers)
+# and chainB (no-pinning 1.0x baseline). Why: v3_lp_1x showed balanced routing but every engine saturated (17-37 queued, KV 70-97%,
+# decode 38 tok/s, 0/15), so 1.0x and 1.5x can only fail; the useful question is where the knee is and which engine lever moves it.
+# Starts after CHAIN38 DONE, then repeatedly pops the first non-comment line of $K/lever_queue.txt (bash words:
+# tag traces frac [VAR=value ...]; frac = share of the LAST trace's sessions, so b00,b01 at 0.5 = 1.5 half-node buckets = 0.75x)
+# and runs it with lever(). Lines can be appended or reordered at any time; popped lines go to lever_queue.done.
+# Exits when the queue is empty (the GPU idle guard then alerts). Ends with CHAINQ DONE.
+# Protocol v3.1 (10-01 04:30 PDT): replay with --skip-prod-shed (requests production answered with 429 are not sent).
+K=/data01/minimax31/serving; L=/data01/minimax31/bench/stress2-0927.log; T=/data01/minimax31/traffic; cd $K
+IB=/data01/minimax31/inference-benchmark; V=/data01/minimax31/ib-venv; R=/data01/minimax31/ib-results
+MD=/data01/minimax31/MiniMax-M3.1-preview2-dspark-private; KEY=$(cat /home/long/.m31_apikey)
+log(){ printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*"; }
+ENG=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491
+V2(){ sudo -n docker run --rm --network host -v $T:/tr -v /home/long/.m31_apikey:/key:ro -v $K:/k:ro minimax-m31-sglang:demo-024129f \
+        python3 /k/${RF:-replay_v2.py} --key-file /key --base-url http://127.0.0.1:8000 --flush-urls $ENG "$@" 2>&1 | grep -vE "^\s*$|NVIDIA|CUDA|===|license|Container|docs.nvidia|WARNING"; }
+BB="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1 SGLANG_TOKENIZE_PREFIX_CACHE=1 SGLANG_CHUNKED_REQ_SHARE=1.0"
+base_env(){ unset REPLAY_FILE REPLAY_EXTRA REPLAY_FILE_A REPLAY_EXTRA_A REPLAY_FILE_B REPLAY_EXTRA_B   # innoferra 10-02: per-lever replay choice (protocol v3.2 = replay_v2_cl.py --closed-loop)
+  export NETNS=1 ROUTE_SPILL_MARGIN=16 ROUTE_SPILL_RATIO=2.0 ROUTE_SPILL_WINDOW_S=30 ROUTE_SESSION_KEY=prompt_cache_key,cache_salt ROUTE_BALANCE_SLACK=1 TOOL_SCHEMA_DROP_NULL=1 VALIDATE_TOOL_HISTORY=0
+  export MAXREQ=64 MEMFRAC=0.68 CHUNK=32768 TOKW=4 DRAFT_WINDOW=4095 DEV_SRC=/data01/minimax31/src/0922-sglang-hicache/python DRAFT_ATTN=flashinfer DSPARK_BLOCK= STREAM_COALESCE_CHARS=12
+  export TRAINING_COMPAT=1 NUMA=0 EXTRA_ENV="$BB" RAW_COMPLETIONS=1 ROUTE_PIN_BY_INFLIGHT=1 ROUTE_REPIN_SLACK=16
+  export XARGS="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report"; }
+up4(){ t0=$(date +%s); while :; do up=0; for i in 0 1 2 3; do curl -sf -m 30 http://127.0.0.1:$((19191+100*i))/health >/dev/null && up=$((up+1)); done; [ $up = 4 ] && return 0; [ $(( $(date +%s)-t0 )) -gt 1800 ] && return 1; sleep 30; done; }
+lever(){ local tag=$1 traces=$2 frac=$3; shift 3; base_env
+  local akv=() bkv=() ab=0 kv
+  for kv in "$@"; do if [ "$kv" = "--" ]; then ab=1; elif [ $ab = 1 ]; then bkv+=("$kv"); else akv+=("$kv"); fi; done   # innoferra 10-02: "--" = A/B twin
+  for kv in "${akv[@]}"; do export "$kv"; done
+  if [ $ab = 1 ]; then export AB_B_ENV="$(printf '%s\n' "${bkv[@]}")"; echo "${AB_B_SIDE:-1}" > $K/AB_ACTIVE; else unset AB_B_ENV; rm -f $K/AB_ACTIVE; fi
+  log "===== lever $tag: traces $traces frac $frac; ${akv[*]}$([ $ab = 1 ] && echo " -- B: ${bkv[*]}") (ROUTE_PIN_BY_INFLIGHT=$ROUTE_PIN_BY_INFLIGHT ROUTE_REPIN_SLACK=$ROUTE_REPIN_SLACK EXTRA_ENV=$EXTRA_ENV)"
+  bash launch_tp2x4_old.sh 2>&1 | tail -1; up4 || { log "lever $tag FAILED to boot"; rm -f $K/AB_ACTIVE; return 1; }
+  (nohup setsid bash $K/diag_1x.sh 4200 $tag > /dev/null 2>&1 < /dev/null &)
+  bash $K/accept_metrics.sh snap /tmp/am-L-$tag
+  if [ $ab = 1 ]; then
+    local P=${AB_PLAN:-/tr/v3/ab-075x-s0.json} H=${AB_HALF:-0} FA=http://127.0.0.1:19191,http://127.0.0.1:19291 FB=http://127.0.0.1:19391,http://127.0.0.1:19491 t
+    [ "${AB_B_SIDE:-1}" = 0 ] && { t=$FA; FA=$FB; FB=$t; }
+    log "A/B twin: both groups replay half $H of plan $P; A = ${akv[*]} | B = ${akv[*]} ${bkv[*]}"
+    log "replay A: ${REPLAY_FILE_A:-replay_v2.py} ${REPLAY_EXTRA_A:-} | replay B: ${REPLAY_FILE_B:-replay_v2.py} ${REPLAY_EXTRA_B:-}"
+    RF=${REPLAY_FILE_A:-replay_v2.py} V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed ${REPLAY_EXTRA_A:-} \
+       --ab-plan $P --ab-half $H --gpus 4 --base-url http://127.0.0.1:8000 --flush-urls $FA --out "/tr/v3L-$tag@A.jsonl" > /tmp/ab-$tag-A.log 2>&1 &
+    RF=${REPLAY_FILE_B:-replay_v2.py} V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed ${REPLAY_EXTRA_B:-} \
+       --ab-plan $P --ab-half $H --gpus 4 --base-url http://127.0.0.1:8001 --flush-urls $FB --out "/tr/v3L-$tag@B.jsonl" > /tmp/ab-$tag-B.log 2>&1 &
+    wait
+    log "== group A ($tag@A):"; cat /tmp/ab-$tag-A.log
+    log "== group B ($tag@B):"; cat /tmp/ab-$tag-B.log
+    log "A/B paired comparison ($tag):"; python3 $K/ab_compare.py "$T/v3L-$tag@A.jsonl" "$T/v3L-$tag@B.jsonl" 2>&1 | tail -30
+    log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag)"
+    rm -f $K/AB_ACTIVE
+  else
+    log "replay: ${REPLAY_FILE:-replay_v2.py} ${REPLAY_EXTRA:-}"
+    RF=${REPLAY_FILE:-replay_v2.py} V2 --traces $traces --last-frac $frac --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed ${REPLAY_EXTRA:-} --out /tr/v3L-$tag.jsonl
+    log "accept during lever $tag: $(bash $K/accept_metrics.sh diff /tmp/am-L-$tag); gateway route: $(curl -s -m 5 http://127.0.0.1:8000/health | cut -c1-300)"
+    log "TTFT by uncached size ($tag):"; (cd $T && python3 ttft_buckets_v3.py $tag)
+  fi
+  log "===== lever $tag done"; }
+IBEVAL(){ INFERENCE_API_KEY=$KEY $V/bin/python $K/gsm8k_bounded.py --concurrency 128 "$@" 2>&1 | grep -vE "PyTorch was not found" | tail -4; }   # bounded: the stock evaluate bursts 1,319 requests at once
+HCX="--enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report"
+QF=$K/lever_queue.txt
+pop(){ python3 - "$QF" <<'PY'
+import os, sys
+p = sys.argv[1]; lines = open(p).read().splitlines(True); out = []; got = ""
+for l in lines:
+    if not got and l.strip() and not l.lstrip().startswith("#"): got = l.strip(); continue
+    out.append(l)
+open(p + ".tmp", "w").writelines(out); os.replace(p + ".tmp", p); print(got)
+PY
+}
+{
+  until grep -q "===== CHAIN38 DONE" $L; do sleep 60; done
+  log "===== chainQ: lever queue on real traffic v3 with load-aware pinning (capacity knee at 0.75x)"
+  rm -f $K/STOP_WATCHDOG; (nohup setsid bash $K/engine_watchdog.sh $K/STOP_WATCHDOG > /dev/null 2>&1 < /dev/null &)
+  while :; do
+    line=$(pop); [ -n "$line" ] || break
+    printf '%s %s\n' "$(date -u +%H:%M:%S)" "$line" >> $K/lever_queue.done
+    eval "set -- $line"; lever "$@"
+  done
+  touch $K/STOP_WATCHDOG
+  echo "===== CHAINQ DONE"; } >> $L 2>&1
