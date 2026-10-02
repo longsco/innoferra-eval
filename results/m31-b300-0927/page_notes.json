@@ -331,7 +331,7 @@
    "short": "control"
   },
   "v3_ab_dap3_1x@B": {
-   "name": "three decode steps after each prefill (full load, group B)",
+   "name": "3 decode steps per prefill (group B)",
    "short": "three decode steps after eac"
   },
   "v3_ab_cap80_1x": {
@@ -355,7 +355,7 @@
    "short": "control"
   },
   "v3_ab_dfa4_1x@B": {
-   "name": "FA4 attention for the draft (full load, group B)",
+   "name": "FA4 attention for the draft (group B)",
    "short": "FA4 attention for the draft"
   },
   "v3_ab_pd60_1x": {
@@ -367,11 +367,11 @@
    "short": "control"
   },
   "v3_ab_pd60_1x@B": {
-   "name": "delayer holds up to 60 passes (full load, group B)",
+   "name": "delayer holds up to 60 passes (group B)",
    "short": "delayer holds up to 60 passe"
   },
   "v3_ab_c16_1x": {
-   "name": "twin, full load: smaller prompt pieces (8k per GPU)",
+   "name": "twin, full load: 8k prompt pieces",
    "short": "smaller prompt pieces (8k pe"
   },
   "v3_ab_c16_1x@A": {
@@ -379,7 +379,7 @@
    "short": "control"
   },
   "v3_ab_c16_1x@B": {
-   "name": "smaller prompt pieces (8k per GPU) (full load, group B)",
+   "name": "smaller prompt pieces (8k per GPU) (group B)",
    "short": "smaller prompt pieces (8k pe"
   },
   "v3_ab_nodap_1x": {

@@ -1,4 +1,4 @@
-# read_utc 2026-10-02T11:00:33Z
+# read_utc 2026-10-02T11:01:16Z
 ## queue
 v3_ab_dfa4_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pr
 v3_ab_pd60_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 AB_PLAN=/tr/v3/ab-1x-s0.json MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer --pr
