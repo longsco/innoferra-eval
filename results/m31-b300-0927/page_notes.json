@@ -236,13 +236,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-01 18:55",
+  "at": "2026-10-01 19:10",
   "items": [
    {
     "rule": "ttft_p50",
     "title": "Median first token over 1 s: time outside the GPU",
-    "text": "A warm request (prompt already cached) still waits longer the longer its conversation: {warm_gap}. Re-tokenising the whole conversation costs 0.14 s under 120k tokens, 0.34 s at 120–200k and 0.55 s above 200k (Oct 1 14:25). Our tokenisation cache cuts that to ~0.02 s, but each of the 8 tokenizer processes keeps its own cache and a conversation's next turn usually reaches a different one: replaying 600 real turns offline, the separate caches save only 32% of what one cache would (Oct 1 18:50). One tokenizer process (rejected: it also carries all streaming) and parallel tokenising (rejected: it slows the GPU schedulers) did not help, and letting warm prompts step ahead of uncached chunks changed nothing. Next test: one cache shared by all 8 processes (offline: identical output, 99.5% of the one-process saving, median tokenising 0.061 → 0.017 s).",
-    "src": "PROGRESS.md Oct 1 09:35, 11:15, 14:25, 18:30, 18:55"
+    "text": "A warm request (prompt already cached) still waits longer the longer its conversation: {warm_gap}. Re-tokenising the whole conversation costs 0.14 s under 120k tokens, 0.34 s at 120–200k and 0.55 s above 200k (Oct 1 14:25). Our tokenisation cache cuts that to ~0.02 s, but each of the 8 tokenizer processes keeps its own cache and a conversation's next turn usually reaches a different one: replaying 600 real turns offline, the separate caches save only 32% of what one cache would (Oct 1 18:50). One tokenizer process (rejected: it also carries all streaming) and parallel tokenising (rejected: it slows the GPU schedulers) did not help, and letting warm prompts step ahead of uncached chunks changed nothing. Engine timers (Oct 1 19:05) show waiting for the GPU is near zero (median 0.00 s) and prompt processing takes 0.2 s at the median, while 0.7–1.0 s per request (mean) passes outside the GPU scheduler even at low load. Next test: one cache shared by all 8 processes (offline: identical output, 99.5% of the one-process saving, median tokenising 0.061 → 0.017 s).",
+    "src": "PROGRESS.md Oct 1 09:35, 11:15, 14:25, 18:30, 18:55, 19:05"
    },
    {
     "rule": "decode",
@@ -273,6 +273,26 @@
   "cause_src": "PROGRESS.md Oct 1 09:35 and 11:15"
  },
  "log": [
+  {
+   "at": "2026-10-01 19:05",
+   "kind": "test",
+   "label": "Where first-token time goes (engine timers)",
+   "result": "0.7–1.0 s outside the GPU scheduler",
+   "verdict": "Finding",
+   "src": [
+    "progress:19:05 (10-01)"
+   ]
+  },
+  {
+   "at": "2026-10-01 19:00",
+   "kind": "test",
+   "label": "Gateway packet merging",
+   "result": "adds 0.02 s median, 0.14 s p99",
+   "verdict": "Finding",
+   "src": [
+    "progress:19:00 (10-01)"
+   ]
+  },
   {
    "at": "2026-10-01 18:55",
    "kind": "test",
@@ -984,10 +1004,10 @@
   },
   {
    "name": "Per-request timing breakdown under load",
-   "state": "queued",
-   "at": "2026-10-01 18:55",
-   "text": "the launcher now keeps engine logs at teardown; the shared-cache run at 2.23 M logs per-request tokenise, queue and prompt-processing time",
-   "ref": "PROGRESS.md Oct 1 11:15, 13:05 and 18:55 (--enable-request-time-stats-logging)"
+   "state": "running",
+   "at": "2026-10-01 19:10",
+   "text": "engine timers (sampled every 30 s) put 0.7–1.0 s of the mean first token outside the GPU scheduler, even at low load; the shared-cache run at 2.23 M (started 19:10) logs per-request stamps that split it into tokenising, hand-off to the GPU scheduler and the return path",
+   "ref": "metrics_breakdown.py · patch_timestats_detail.py · reqstats_join.py · PROGRESS.md Oct 1 19:05"
   },
   {
    "name": "MiniMax's prompt-attention kernel inside our engine",

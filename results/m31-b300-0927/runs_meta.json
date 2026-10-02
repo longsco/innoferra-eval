@@ -225,6 +225,15 @@
    "change": "scheduling",
    "verdict": "no clear change",
    "why": "9/15 vs 10/15 without it: median first token over 1 s in 4 minutes (1.04–1.13 s), slowest-1% over 15 s in 2. Warm requests seldom wait behind uncached chunks, so the ~1 s median is not queueing."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8_05x_r2",
+   "at": "2026-10-01 19:10",
+   "protocol": "v3.1",
+   "name": "8 tokenizer processes, repeat run (noise check)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "11/15 on the settings that gave 10/15 earlier: identical runs differ by about one minute. Misses: median 1.10 and 1.05 s (minutes 0, 11); slowest-1% 16–24 s in minutes 11, 12, 14."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
