@@ -277,7 +277,7 @@
    "at": "2026-10-01 18:55",
    "kind": "test",
    "label": "Shared tokenisation cache, offline replay",
-   "result": "identical output; saves 99.5% of what one cache would (8 separate caches: 32%)",
+   "result": "identical output, 99.5% of one-cache saving",
    "verdict": "Finding",
    "src": [
     "progress:18:55 (10-01)"
