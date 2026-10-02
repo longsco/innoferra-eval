@@ -1,0 +1,1613 @@
+{
+ "at": "2026-10-01 22:05",
+ "intro": "What moved the numbers on real traffic (requests production served Sep 30 13:10–13:25 PDT, replayed on node 0008), what exactly we changed, and what we learned. Gains are ranked by effect; loads are M TPM per GPU sent (2.23 M = half a production node's traffic). Under the Oct 1 SLA the remaining limit is generation speed at 3.34 M.",
+ "note": "Written Oct 1 22:05 PDT: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then every number fact-checked by 5 more (130 corrections). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
+ "entries": [
+  {
+   "title": "Root cause: the multimodal model type made the engine tokenise every prompt twice",
+   "kind": "finding",
+   "headline": "M3.1's image-capable model type forced a decode to text plus a full re-encode: 0.131 s median, 0.695 s p90 per request.",
+   "before_after": [
+    {
+     "metric": "Second tokenising pass per request, offline CPU (300 real b00 turns without media, median 57.8k tokens)",
+     "before": "decode p50 0.017 / p90 0.078 s + re-encode p50 0.114 / p90 0.613 s; per-request sum p50 0.131 / p90 0.695 s",
+     "after": "0 (the first pass's ids are passed through)",
+     "source": "PROGRESS 19:20 PDT (10-01); mm_ids_verify.py"
+    },
+    {
+     "metric": "Second-pass cost (median) by prompt size (<120k / 120-200k / 200k+)",
+     "before": "0.061 / 0.342 / 0.731 s",
+     "after": "0",
+     "source": "PROGRESS 19:20 PDT (10-01); mm_ids_verify.py"
+    },
+    {
+     "metric": "Token ids: passthrough vs the stock encode-decode-encode round trip",
+     "before": "stock round trip",
+     "after": "identical on 300/300 turns",
+     "source": "PROGRESS 19:20 PDT (10-01); mm_ids_verify.py"
+    },
+    {
+     "metric": "First pass only, CPU, 24 real multi-turn pairs (<120k / 120-200k / 200k+)",
+     "before": "full encode 0.137 / 0.335 / 0.554 s",
+     "after": "prefix-cached 0.013 / 0.032 / 0.036 s, bit-equal. This cache never touched the second pass",
+     "source": "PROGRESS 14:25 PDT (10-01); tok_split.py"
+    },
+    {
+     "metric": "Early signal: py-spy on the frontend, Sep 27 static 80k-prompt frame",
+     "before": "prompt tokenised twice per request on one thread, ~2 req/s cap",
+     "after": "worked around with 8 tokenizer workers (c64 7.02 -> 12.34 M TPM whole node, TTFT 27 -> 2.9 s). The double pass stayed until Oct 1",
+     "source": "PROGRESS Sep 27 rows 20:09 and 21:40 UTC (13:09 / 14:40 PDT)"
+    }
+   ],
+   "change_what": "Nothing changed with this finding alone, but it explains why the Oct 1 tokenisation levers moved the median little or made it worse. The chat handler tokenised the prompt (through our cache). Because the model is registered as image-capable, it then turned the ids back into text, and the tokenizer manager tokenised the whole conversation again with no cache. The fix (pass the ids through) is in the tokenise-once entry.",
+   "change_detail": "In sglang/srt/entrypoints/openai/serving_chat.py (hicache tree /data01/minimax31/src/0922-sglang-hicache/python), _apply_jinja_template renders and encodes through our tok_prefix_cache (added Sep 30). Stock code then, because is_multimodal is true (model_type minimax_m3_vl), runs `prompt = tokenizer.decode(prompt_ids)`; _convert_to_internal_request sends {'text': prompt}, and tokenizer_manager re-encodes with self.tokenizer([text]). Checked with mm_ids_verify.py --trace <v3 b00> --n 300 (engine image, CPU). Fix: patch_mm_pass_ids.py, env SGLANG_MM_PASS_IDS_WITHOUT_MEDIA=1.",
+   "when": "Oct 1 19:20 PDT. The double tokenising first showed in a py-spy on Sep 27 13:09 PDT (row stamped 20:09 UTC)",
+   "mechanism": "Because model_type is minimax_m3_vl, serving_chat decodes the prompt ids back to text on every request, media or not, and the tokenizer manager encodes the whole conversation again, uncached. Our prefix cache and parallel encoding sped up only the first pass; more tokenizer processes add concurrency, not speed. The second pass was the tokenisation floor and grows with prompt length.",
+   "learnings": [
+    "For any model registered as vision-language, read the chat handler's text-to-ids path before tuning tokenisation. A hidden decode-and-re-encode caps what any first-pass cache can save.",
+    "When a profile shows the same work done twice, delete the duplicate before scaling it out. We added workers on Sep 27 and the second pass survived four more days.",
+    "Check that the code you optimise is on the critical path. Our cache cut the first encode to 0.013 s (<120k) while an uncached second encode still ran.",
+    "Prove an ids shortcut identical to the old round trip on recorded prompts (300/300 here) before spending GPU time; it was then adopted after a single run."
+   ],
+   "caveats": [
+    "Offline timings are single-process CPU. Online, the passthrough ran only on top of the shared cache (median 0.85 -> 0.54 s, one run each); it was never run alone.",
+    "Requests with image, video or audio still take the text path and pay both passes. Their share of v3.1 traffic is not recorded in these sources.",
+    "Production avoids the double pass: its Rust frontend (DYN_TOKENIZER=fastokens) tokenises and its workers skip tokenising (page_notes gap).",
+    "The Sep 27 TPM jump also included a Triton kernel patch, so not all of 7.02 -> 12.34 M comes from the tokenizer workers."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 19:20 and 14:25 PDT (10-01); Sep 27 rows 18:26, 20:09 and 21:40 UTC; Sep 28 18:05 PDT (DYN_TOKENIZER=fastokens)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/mm_ids_verify.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_mm_pass_ids.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/tok_split.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/tok_prefix_cache.py (our module, 09-30)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/page_notes.json why_we_miss (ttft_p50), gap",
+    "memory m31-ttft-floor-tokenization.md (ROOT CAUSE 19:20), m31-0927-demo-single-node.md (item 6), m31-prod-serve-config.md"
+   ],
+   "rank_hint": 3,
+   "theme": "tokenisation",
+   "rank": 9
+  },
+  {
+   "title": "Tokenise once: one cache shared by the 8 tokenizer processes + ids passthrough (adopted)",
+   "kind": "gain",
+   "headline": "Median first token at 2.23 M fell from 0.90-0.92 s to 0.54 s; every minute 0.49-0.61 s (production 0.34 s).",
+   "before_after": [
+    {
+     "metric": "Passthrough step: TTFT p50 / p90 / p99; decode p50; errors (2.23 M, v3.1)",
+     "before": "0.85 / 3.24 / 11.75 s; 77.2 tok/s; 0/3227 (v3_lp_cap_lpm_tok8sh_05x, shared cache only)",
+     "after": "0.54 / 3.23 / 10.80 s; 77.6 tok/s; 0/3227 (v3_lp_cap_lpm_tok8shid_05x)",
+     "source": "PROGRESS 19:55 and 20:45 PDT (10-01); runs_v3.json"
+    },
+    {
+     "metric": "TTFT p50 vs the same stack before both changes (TOKW=8, per-process cache only)",
+     "before": "0.90 and 0.92 s (tok8_05x, tok8_05x_r2)",
+     "after": "0.54 s",
+     "source": "PROGRESS 15:00, 19:10, 20:45 PDT (10-01); runs_v3.json"
+    },
+    {
+     "metric": "Per-minute TTFT p50 range, 2.23 M",
+     "before": "0.75-1.10 s (tok8_05x_r2); 0.64-0.98 s (tok8sh_05x)",
+     "after": "0.49-0.61 s",
+     "source": "runs_v3.json minutes; PROGRESS 19:55, 20:45 PDT (10-01)"
+    },
+    {
+     "metric": "Minutes passing, old strict rule (p50 <= 1 s, p99 <= 15 s, decode >= 60)",
+     "before": "10/15 and 11/15 (TOKW=8 only); 12/15 (shared cache only)",
+     "after": "12/15; all 3 misses are p99 only (16.3, 21.9, 17.6 s), which runs_meta attributes to huge uncached prompts",
+     "source": "PROGRESS 15:00, 19:10, 19:55, 20:45 PDT (10-01); runs_meta.json"
+    },
+    {
+     "metric": "Minutes passing, current SLA (p50 < 3 s, decode > 60, 100% success)",
+     "before": "15/15",
+     "after": "15/15",
+     "source": "PROGRESS 20:55 PDT (10-01) re-score; STANDINGS.md"
+    },
+    {
+     "metric": "Offline, 600 real b00 turns, 8 simulated processes: share of the one-cache saving / encode p50 / p90",
+     "before": "per-process caches: 32% / 0.061 s / 0.636 s (no cache 0.15 / 0.82 s)",
+     "after": "shared /dev/shm cache: 99.5% / 0.017 s / 0.280 s; 0 mismatches",
+     "source": "PROGRESS 18:55 PDT (10-01); tok_shared_verify.py"
+    },
+    {
+     "metric": "Tokenise segment per request, 2.23 M",
+     "before": "not measured separately (coarse split: client->scheduler p50 0.416 s, including the second pass)",
+     "after": "p50 0.045 s, mean 0.315 s (24% of mean TTFT)",
+     "source": "PROGRESS 19:55, 20:45 PDT (10-01)"
+    },
+    {
+     "metric": "History: per-process prefix cache alone (test v2, 0.5x)",
+     "before": "TTFT p50 0.87-0.90 s, 10-11/15 (old rule)",
+     "after": "0.74 s, 13/15; kept Sep 30 13:54 PDT",
+     "source": "PROGRESS Sep 30 13:54 PDT"
+    }
+   ],
+   "change_what": "Two changes, kept together. First, each engine's 8 tokenizer processes publish every tokenised prompt to a shared in-memory folder, so a conversation's next turn reuses the previous turn's tokens no matter which process gets it. Second, requests without images, video or audio pass those token ids on to the scheduler, instead of text that is tokenised again.",
+   "change_detail": "Env on top of load-aware pinning + MEMFRAC=0.76 + --schedule-policy lpm: TOKW=8 (--tokenizer-worker-num 8), SGLANG_TOKENIZE_PREFIX_CACHE=1 (on since Sep 30), SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/dev/shm/m31tokpc (defaults _SHARED_BOUNDARIES=64, _SHARED_GEN_S=600, _SHARED_KEEP=3), SGLANG_MM_PASS_IDS_WITHOUT_MEDIA=1. Patches on /data01/minimax31/src/0922-sglang-hicache/python: patch_tok_shared.py -> sglang/srt/entrypoints/openai/tok_prefix_cache.py (backup .pre-tokshared); patch_mm_pass_ids.py -> serving_chat.py (backup .pre-mmpassids). Both are off when the env is unset. Engines run --ipc private with a 64 GB /dev/shm each, so there is one cache per engine. Run: v3_lp_cap_lpm_tok8shid_05x.",
+   "when": "Shared cache built Oct 1 18:55 PDT, kept with tok8sh_05x (run end 19:54); both adopted with tok8shid_05x (run end 20:41, PROGRESS row 20:45)",
+   "mechanism": "Connections reach the tokenizer processes at random, so a per-process cache found a session's previous turn only by chance; mostly it matched just the shared system prompt, saving 32% of what one cache would. Publishing each tokenised prompt to /dev/shm as int32 ids plus boundary index files recovers 99.5%. Passing the ids through removes the second, uncached encode.",
+   "learnings": [
+    "Behind a random load balancer, a per-process cache sees a session's previous turn only by chance. Share the cache across processes or route by session before judging it.",
+    "Score a prefix cache by characters saved against one ideal cache, not by hit rate. Ours 'hit' on 98% of calls yet saved only 32%.",
+    "On every lookup, take the longest prefix found in the local or the shared store. Checking the shared store only after a total local miss gave just 2 shared hits.",
+    "Keep cross-process cache housekeeping off the hot path: atomic rename on write, time-bucketed directories, deletion by an external rm -rf, no scans of cache files inside the process."
+   ],
+   "caveats": [
+    "Under the current SLA it changes no pass count at 2.23 M (15/15 before and after). At 3.34 M every miss is decode (median TTFT already 0.98 s, v3_lp_cap_lpm_075x).",
+    "Tokenise-once at 3.34 M and at 1.79 M: not measured (tok8shid_0375x was dropped at 20:55; the 3.34 M baseline is queued).",
+    "The passthrough ran only on top of the shared cache (0.85 -> 0.54 s), and the shared cache only without it; the passthrough alone was never run.",
+    "Warm 200k+ prompts still spend 3-7 s tokenising in about a quarter of cases (336 requests: p50 0.148, p75 3.27, p90 4.25 s), even though offline replays hit the cache. CPU contention is suspected, not proven.",
+    "One run per configuration, and identical runs differ by about one minute (PROGRESS 19:10). /dev/shm memory use: not measured."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 18:55, 19:10, 19:55, 20:45, 20:55 PDT (10-01); Sep 30 13:54 PDT; Sep 28 00:57 PDT (--ipc private, 64 GB /dev/shm)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json tags v3_lp_cap_lpm_tok8_05x, v3_lp_cap_lpm_tok8_05x_r2, v3_lp_cap_lpm_tok8sh_05x, v3_lp_cap_lpm_tok8shid_05x, v3_lp_cap_lpm_075x",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_meta.json; page_notes.json setup_current; STANDINGS.md",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_tok_shared.py, patch_mm_pass_ids.py, tok_shared_verify.py, tok_prefix_cache.py",
+    "memory m31-ttft-floor-tokenization.md (18:55 update for the 98% hit rate and /dev/shm/m31tokpc; 19:55; ADOPTED 20:41)"
+   ],
+   "rank_hint": 4,
+   "theme": "tokenisation",
+   "rank": 9
+  },
+  {
+   "title": "Tokenizer process count and parallel encoding: no effect or worse",
+   "kind": "negative",
+   "headline": "At 2.23 M (old rule): 8 processes 10-11/15 vs 9/15 with 4; 1 process 1/15; parallel encode 5/15.",
+   "before_after": [
+    {
+     "metric": "TOKW 4 -> 8 at 2.23 M: minutes (old rule); TTFT p50 / p90 / p99",
+     "before": "9/15; 0.94 / 3.67 / 9.46 s (v3_lp_cap_lpm_05x)",
+     "after": "10/15, then 11/15 on a repeat; 0.90 / 3.43 / 9.80 and 0.92 / 3.60 / 12.85 s",
+     "source": "PROGRESS 14:15, 15:00, 19:10 PDT (10-01)"
+    },
+    {
+     "metric": "TOKW 4 -> 8 at 1.79 M (old rule)",
+     "before": "13/15, TTFT p50 0.83 s (v3_lp_cap_lpm_0375x)",
+     "after": "13/15, 0.87 s (v3_lp_cap_lpm_tok8_0375x)",
+     "source": "PROGRESS 13:35, 16:30 PDT (10-01)"
+    },
+    {
+     "metric": "TOKW=1 + 4096-entry prefix cache, 2.23 M",
+     "before": "9-11/15, TTFT p50 0.90-0.94 s (TOKW 4-8)",
+     "after": "1/15, TTFT p50 1.26 s, per-minute medians 0.80-1.89 s",
+     "source": "PROGRESS 15:50 PDT (10-01); runs_v3.json v3_lp_cap_lpm_tok1_05x"
+    },
+    {
+     "metric": "Parallel encode offline: 16 real prompts (tok_par_test); 300 real turns through one session-ordered cached encoder (tok_par_verify)",
+     "before": "full encode median 0.281 s; plain encode p50 / p90 0.128 / 0.692 s",
+     "after": "16 chunks median 0.073 s, bit-equal; cache + parallel 0.015 / 0.123 s, 0 mismatches, 99 of 300 turns took the parallel path",
+     "source": "PROGRESS 16:15 PDT (10-01); patch_tok_parallel.py, tok_par_verify.py"
+    },
+    {
+     "metric": "Parallel encode online, 16 chunks + RAYON_NUM_THREADS=16, 2.23 M (same minutes 0-7)",
+     "before": "TOKW=8 alone: per-minute p99 6.1-11.2 s, decode 76-88 tok/s (tok8_05x)",
+     "after": "aborted after 8 min; per-minute p99 24.6-63.0 s, decode 54-73 tok/s; 3 minutes under 60 (54.4, 58.2, 56.5)",
+     "source": "PROGRESS 17:05 PDT (10-01); runs_v3.json minutes of v3_lp_cap_lpm_tok8_05x and v3_lp_cap_lpm_tok8par_05x"
+    },
+    {
+     "metric": "Parallel encode online, 4 chunks, default rayon pool, 2.23 M",
+     "before": "10/15; TTFT 0.90 / 3.43 / 9.80 s (tok8_05x)",
+     "after": "5/15 (2.25 M offered); TTFT 0.94 / 5.11 / 21.61 s; minute 0 p50 1.92 s",
+     "source": "PROGRESS 17:45 b PDT (10-01); runs_v3.json v3_lp_cap_lpm_tok8par4_05x"
+    },
+    {
+     "metric": "History, static synthetic frame (80k cached prefix), c256",
+     "before": "45.19 M TPM/node (5.65 M/GPU), TTFT 13.6 s (frontier repeat, 2 tokenizer processes per engine)",
+     "after": "8 per engine: 62.58 M (7.82 M/GPU), TTFT 2.11 s. 16: 63.29 M (7.91 M/GPU), within the ~2% repeat noise",
+     "source": "PROGRESS Sep 28 12:25, 13:28, 17:21 PDT; memory m31-0927-demo-single-node.md item 23"
+    }
+   ],
+   "change_what": "We tried three things: more tokenizer processes per engine (8 instead of 4), a single process with a large cache, and splitting long prompts into pieces tokenised on parallel threads. TOKW=8 stayed in the stack (verdict: no clear change). The single process and both parallel variants were rejected and are off.",
+   "change_detail": "TOKW=8 / TOKW=1 (launch_tp2x4_old.sh passes --tokenizer-worker-num ${TOKW}); TOKW=1 ran with SGLANG_TOKENIZE_PREFIX_CACHE_ENTRIES=4096 (default 512). Parallel: patch_tok_parallel.py on tok_prefix_cache.py (hicache tree, backup .pre-tokpar). On a miss or a long tail (>= SGLANG_TOKENIZE_PARALLEL_MIN_CHARS=40000) it splits at special-token boundaries, runs Rust encode_batch and sets TOKENIZERS_PARALLELISM=true. Tested with SGLANG_TOKENIZE_PARALLEL_CHUNKS=16 + RAYON_NUM_THREADS=16, then 4 chunks with the default pool. Now unset. Tags: v3_lp_cap_lpm_tok8_05x, _tok8_05x_r2, _tok8_0375x, _tok1_05x, _tok8par_05x, _tok8par4_05x.",
+   "when": "Oct 1 15:00-19:10 PDT (earlier TOKW tests: Sep 28 and Sep 30)",
+   "mechanism": "The cache and parallel encode sped up only the first encode; more processes add concurrency, not speed. The uncached second encode still ran on every request, so the median barely moved. A single process also carries all HTTP and SSE streaming and became the bottleneck. Parallel threads most likely took CPU from the GPU schedulers; decode and p99 worsened.",
+   "learnings": [
+    "Require a move of 2+ minutes or a repeat run. Identical TOKW=8 runs scored 10/15 and 11/15, so 9 vs 10 is noise.",
+    "A bit-exact parallel encode that cut a full encode's offline median from 0.281 to 0.073 s still regressed online. Extra CPU threads can starve the GPU schedulers; watch decode too.",
+    "Don't funnel traffic into one process just to get cache hits: the tokenizer process also serves HTTP and streaming. Share the cache instead.",
+    "Process count sets throughput, not the latency floor: 2->8 per engine lifted the static frame 5.65->7.82 M/GPU; 4->8 moved the 2.23 M median only 0.94->0.90-0.92 s."
+   ],
+   "caveats": [
+    "Parallel encoding was tested while the second encode still ran on every request. It was not retested on the tokenise-once stack.",
+    "That the parallel threads starved the schedulers is inferred from p99 and decode. No CPU profile of these runs is recorded.",
+    "tok8par_05x was aborted after 8 minutes; runs_v3 keeps 9 partial-minute bins (1,461 requests), so its 0.95 M/GPU TPM is not comparable with full runs.",
+    "TOKW=8 on test v2 (Sep 30 12:26 PDT) also left the median unchanged (0.90 s) and cut p99 by 25%.",
+    "Re-scored on the current SLA, TOKW=1 and 4-chunk parallel also pass 15/15 (STANDINGS); the rejections rest on the old 1 s / 15 s rule, plus decode for 16 chunks."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 13:35, 14:15, 15:00, 15:50, 16:15, 16:30, 17:05, 17:45 b, 19:10 PDT (10-01); Sep 28 12:25, 13:28, 17:21 PDT; Sep 30 07:05, 12:26 PDT",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json tags v3_lp_cap_lpm_05x, v3_lp_cap_lpm_0375x, v3_lp_cap_lpm_tok8_05x, v3_lp_cap_lpm_tok8_05x_r2, v3_lp_cap_lpm_tok8_0375x, v3_lp_cap_lpm_tok1_05x, v3_lp_cap_lpm_tok8par_05x, v3_lp_cap_lpm_tok8par4_05x",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_meta.json; STANDINGS.md (current-SLA re-score)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_tok_parallel.py, tok_par_verify.py, launch_tp2x4_old.sh",
+    "memory m31-ttft-floor-tokenization.md (16:20, 17:50 updates); m31-0927-demo-single-node.md item 23"
+   ],
+   "rank_hint": 3,
+   "theme": "tokenisation",
+   "rank": 4
+  },
+  {
+   "title": "Decode drops with load; profile points to two-GPU lockstep and slow prompt kernels",
+   "kind": "finding",
+   "headline": "Decode falls 74→53→38 tok/s as load rises 2.23→4.42 M; profile: any prefill pauses both GPUs.",
+   "before_after": [
+    {
+     "metric": "Decode p50 vs load sent (load-aware routing)",
+     "before": "73.7 tok/s at 2.23 M (v3_lp_05x)",
+     "after": "53.4 at 3.34 M (v3_lp_075x); 37.9 at 4.42 M (v3_lp_1x)",
+     "source": "runs_v3.json; PROGRESS 04:35, 05:05, 03:20 PDT (10-01)"
+    },
+    {
+     "metric": "Decode on the same requests at 4.42 M: production vs ours",
+     "before": "production 64.6 tok/s",
+     "after": "ours 37.9 tok/s",
+     "source": "runs_v3.json v3_lp_1x (prod_decode_p50 vs decode_p50)"
+    },
+    {
+     "metric": "Cold 131,072-token prefill on one DP rank: total vs largest kernels",
+     "before": "6.76 s trace span, 93% busy (request wall 6.73 s = 19.5k tok/s)",
+     "after": "_q8kv4_sparse_partial 1.53 s (24% of kernel time), _q8kv4_index_score 0.95 s (15%), mega_moe 0.93 s (15%), dense GEMM 0.80 s (13%), _q8kv4_sparse_combine 0.37 s, _topk_index 0.36 s",
+     "source": "PROGRESS 05:05 and 05:25 PDT (10-01)"
+    },
+    {
+     "metric": "Sibling DP rank while the other rank prefills",
+     "before": "no prompt work of its own",
+     "after": "88% busy: padded idle batch, 1.99 s waiting in mega_moe",
+     "source": "PROGRESS 05:25 PDT (10-01)"
+    },
+    {
+     "metric": "Decode step, 32 streams: GPU busy",
+     "before": "—",
+     "after": "71% / 67% (CPU gaps between steps); mega_moe 42% of kernel time",
+     "source": "PROGRESS 05:25 PDT (10-01)"
+    },
+    {
+     "metric": "Attention layout per 2-GPU unit: ours → production",
+     "before": "tp2/ep2/dp2 with DP attention, attention TP1 (forced by training numerics)",
+     "after": "TP2/EP2, dp-size 1 (DP attention off), attention TP2",
+     "source": "launch.sh FORK CONSTRAINT; PROGRESS 23:15 PDT (09-27), 13:40 PDT (09-30)"
+    },
+    {
+     "metric": "Prompt attention/indexer kernels: ours → production",
+     "before": "vendor Triton q8kv4 kernels, ~12-14% of tensor-core peak",
+     "after": "~18 in-house toggles incl. kv4_prefill_attn_v3, kv4_prefill_index_v3, kv4_fused_verify_attn, fused_router, fast_comm (speed not measured)",
+     "source": "memory m31-engine-profile.md, m31-prod-serve-config.md; PROGRESS 13:40 PDT (09-30)"
+    },
+    {
+     "metric": "Max running requests per 2-GPU unit: ours → production",
+     "before": "64 (128 booted Sep 28 at mem 0.66 + 1 GiB flashinfer workspace, not adopted; at mem 0.76 it died in CUDA-graph capture, Oct 1 12:05)",
+     "after": "128 (serve.yaml)",
+     "source": "PROGRESS 11:55 PDT (09-28), 12:05 PDT (10-01), 13:40 PDT (09-30)"
+    }
+   ],
+   "change_what": "No setting changed. Profiled one engine between levers (one cold 128k-token prompt, then 32-stream decode) and compared our layout and kernels with production's config.",
+   "change_detail": "prof_prefill.sh <tag> [port]: POST /flush_cache, /start_profile; cold 131,072 random-token /v1/completions (max_tokens 1); then 32 x 2,048-token prompts x 256 tokens (ignore_eos); traces in /data01/minimax31/logs/prof-<tag>-{prefill,decode}; prof_top.py sums kernel time by name and class. Ran on v3_lp_075x engine e3 (port 19491) under serving/HOLD (prof_then_release.sh). Production: read-only serve.yaml + cmdline on b300-18.",
+   "when": "Oct 1 05:05-05:25 PDT (profile); production config read Sep 27 23:15 and Sep 30 13:40 PDT",
+   "mechanism": "With speculative decoding plus DP attention, an engine's two GPUs step together, never mix prefill with decode, and run prefill first. Any prompt chunk on either GPU pauses decode on both, and our Triton prefill kernels run at ~12-14% of tensor-core peak, so more prompt work means more paused steps. Production runs attention TP2 without DP attention, with in-house kernels.",
+   "learnings": [
+    "Spec decoding plus DP attention pauses decode on both GPUs during any prefill step, so faster prefill kernels should lift decode, not only TTFT (expected, not measured).",
+    "Decode-after-prefill left 2.23 M decode unchanged (76.2 vs 77.6 tok/s): reordering keeps the same prefill work. Its 3.34 M run is queued, not measured.",
+    "Settings-only levers at 3.34 M (16k chunk, block 4, mem 0.76, cache-first) left decode at 46-57 tok/s; lockstep layout and prefill kernels are untested in the engine.",
+    "Profile between levers with the engine held (serving/HOLD): one cold 128k prefill plus a 32-stream decode trace ranks kernel targets by GPU seconds."
+   ],
+   "caveats": [
+    "One engine (e3, DP0), synthetic random-token prompts; the decode trace had low draft acceptance (05:05 row).",
+    "Running requests per engine also grow with load (20-30 at 3.34 M, 37-56 at 4.42 M), which slows each step; the profile does not separate the two causes.",
+    "The 2.23 M and 4.42 M points ran test v3 (incl. production-shed giant prompts); 3.34 M ran v3.1 (v3.1 at 2.23 M: 76.5 tok/s, v3_lp_05x_v31).",
+    "Production's kernel speeds were not measured; the dashboard's '2-3x slower prompt processing' is an estimate (page_notes setup_compare).",
+    "Production max running: 128 per worker in serve.yaml (Sep 30); the Sep 27 argv read showed 256.",
+    "DP attention off is refused while training numerics are on (fork constraint; launch.sh refuses it unless FORCE_TOPOLOGY=1); not tested with training-compat off.",
+    "decode-after-prefill and --enable-prefill-delayer at 3.34 M are queued, not measured (node_state.txt)."
+   ],
+   "sources": [
+    "PROGRESS.md 05:05, 05:25 PDT (10-01)",
+    "PROGRESS.md 03:20, 04:35, 12:05, 20:55, 21:25 PDT (10-01)",
+    "PROGRESS.md 23:15 PDT (09-27), 11:55 PDT (09-28), 13:40 PDT (09-30)",
+    "runs_v3.json v3_lp_05x, v3_lp_05x_v31, v3_lp_075x, v3_lp_1x, v3_lp_cap_075x, v3_lp_cap_blk4_075x, v3_lp_cap_c16_075x, v3_lp_cap_lpm_075x, v3_lp_cap_lpm_tok8shid_05x, v3_lp_cap_lpm_tok8shid_dap_05x",
+    "page_notes.json setup_compare, setup_conflicts, gap",
+    "node_state.txt (queue)",
+    "memory m31-engine-profile.md, m31-prod-serve-config.md, m31-sla-v2.md",
+    "serving/minimax-m3.1/prof_prefill.sh, prof_top.py, prof_then_release.sh, launch.sh"
+   ],
+   "rank_hint": 9,
+   "theme": "numerics, kernels and speculative decoding",
+   "rank": 7
+  },
+  {
+   "title": "Production attention path with 8-bit KV: faster decode, about half the cache",
+   "kind": "finding",
+   "headline": "Training-compat off + 8-bit KV: decode +17% at 2.23 M (86 vs 74 tok/s), but cache hit 94.4% → 83.5%.",
+   "before_after": [
+    {
+     "metric": "Decode, per-minute median at 2.23 M (test v3)",
+     "before": "73.7 tok/s; worst minute 61.8 (v3_tpc_05x, training numerics + 4-bit KV)",
+     "after": "86.2 tok/s (+17%); worst minute 69.8 (v3_tc0kv8_05x)",
+     "source": "PROGRESS 20:55 PDT (10-01); runs_v3.json"
+    },
+    {
+     "metric": "Prompt cache hit at 2.23 M",
+     "before": "94.4%",
+     "after": "83.5%",
+     "source": "runs_v3.json v3_tpc_05x vs v3_tc0kv8_05x"
+    },
+    {
+     "metric": "TTFT p50 / p90 / p99 at 2.23 M (s)",
+     "before": "1.22 / 18.49 / 87.6",
+     "after": "2.31 / 168.42 / 496.9",
+     "source": "runs_v3.json"
+    },
+    {
+     "metric": "Minutes in SLA, Oct 1 rule (2.23 M)",
+     "before": "12/15 (3 error minutes)",
+     "after": "5/15 (TTFT p50 ≥ 3 s in 7 minutes, errors in 4; one minute has both)",
+     "source": "runs_v3.json re-scored (progress_page.py rescore()); PROGRESS 20:55 PDT (10-01)"
+    },
+    {
+     "metric": "Single-stream decode, idle, ≥60k-token prompts",
+     "before": "133 tok/s (TTFT 1.60 s)",
+     "after": "162 tok/s, +22% (TTFT 1.43 s)",
+     "source": "PROGRESS 15:43 PDT (09-30); chain33.sh header"
+    },
+    {
+     "metric": "1.36 M (test v2, 0.5x): decode / cache hit / TTFT p99 / accept",
+     "before": "84.8 tok/s / 94.3% / 10.57 s / 3.30 (tpc)",
+     "after": "109.4 tok/s (+29%) / 94.1% / 24.06 s / 3.37",
+     "source": "PROGRESS 13:54 and 16:23 PDT (09-30)"
+    },
+    {
+     "metric": "~2.95 M (test v2, 1.0x): decode / cache hit / TTFT p50",
+     "before": "55.5 tok/s / 94.0% / 1.30 s (tpc_1x)",
+     "after": "76.2 tok/s (+37%) / 90.7% / 5.27 s (tc0kv8_1x)",
+     "source": "PROGRESS 19:50 and 20:43 PDT (09-30)"
+    },
+    {
+     "metric": "GSM8K, 1,319 questions",
+     "before": "96.21% (1269/1319, training numerics, via Dynamo)",
+     "after": "96.74% (1276/1319)",
+     "source": "PROGRESS 01:31 PDT (10-01)"
+    }
+   ],
+   "change_what": "Relaunched all four engines with production's attention numerics (training-compatible mode off) and an 8-bit KV cache instead of our 4-bit KV. Layout (tp2/dp2, DP attention, attention TP1), old arrival-pinned routing and load unchanged.",
+   "change_detail": "chainN.sh: TRAINING_COMPAT=0 (sets SGLANG_M3_TRAINING_COMPATIBLE=0) and EXTRA_ENV=\"$BB SGLANG_MINIMAX_SPARSE_KV4=0\" via launch_tp2x4_old.sh/launch.sh. Base: 4x tp2/ep2/dp2 DSpark, MAXREQ=64, MEMFRAC=0.68, CHUNK=32768, TOKW=4, HiCache ratio 3.0, SGLANG_TOKENIZE_PREFIX_CACHE=1. Replay: replay_v2.py v3 b00 frac 1.0 (no --skip-prod-shed). Idle A/B chain32.sh; v2 chain33.sh lever tc0kv8 and chain35.sh tc0kv8_1x; GSM8K gsm8k_bounded.py (chainD).",
+   "when": "Oct 1 00:25 PDT (v3 run); idle A/B Sep 30 15:43; v2 Sep 30 16:23 (0.5x) and 20:43 (1.0x); GSM8K Oct 1 01:31; 3.34 M retest started Oct 1 21:29:59 PDT",
+   "mechanism": "Training-compat on routes spec verify through TrainingAttention's extend path and forces attention TP1; off, the production sparse backend runs and steps got cheaper (acceptance 3.37 vs 3.30 on v2). With DSpark and no MSA, our fork allows this only with 8-bit KV: twice the bytes per token, about half the cached tokens, so more re-prefill at 2.23 M.",
+   "learnings": [
+    "The production attention path lifted decode at every load tested: +22% idle, +29% at 1.36 M, +17% at 2.23 M, +37% at ~2.95 M (v2).",
+    "A KV-capacity cut hides until the working set overflows (hit 94.1 vs 94.3% at 1.36 M, 83.5 vs 94.4% at 2.23 M): test at target load.",
+    "GSM8K held (96.74% vs 96.21%) though greedy outputs diverge (3/30 identical); keep a GSM8K window on numerics runs.",
+    "If uniform, +17% would lift cap_lpm_075x's 3.34 M per-minute median decode (58.4) past 60 but not its worst minute (45.6); all 15 must pass."
+   ],
+   "caveats": [
+    "Old test v3 with arrival-pinned routing: in the baseline one engine ran 49-56 requests while the others ran 2-13 (Sep 30 23:08); not the adopted stack.",
+    "At 2.23 M the decode gain may be partly confounded by long queues (TTFT p90 168 s); idle (+22%) and 1.36 M at equal hit rate (+29%) are cleaner.",
+    "Not yet measured at 3.34 M: v3_lp_cap_lpm_tok8shid_tc0kv8_075x (tokenise-once stack, no decode-after-prefill, GSM8K window) started Oct 1 21:29:59 PDT.",
+    "Under load at 1.36 M this path prefilled 32k+ uncached prompts slower (p50 5.0 vs 3.75 s), although idle single-stream TTFT was faster (1.43 vs 1.60 s).",
+    "The 8-bit engine's pool size is not quoted in these sources; 'about half' comes from KV bytes per token (20:55 row).",
+    "Errors 8 vs 6 of 3,234 on test v3 (before the literal-<image> fix); cause of the extra 2 not recorded."
+   ],
+   "sources": [
+    "PROGRESS.md 13:54, 15:43, 16:23, 19:50, 20:43, 23:08 PDT (09-30)",
+    "PROGRESS.md 01:31, 20:55, 21:30 PDT (10-01)",
+    "runs_v3.json v3_tc0kv8_05x, v3_tpc_05x, v3_lp_cap_lpm_075x",
+    "runs_meta.json v3_tc0kv8_05x",
+    "node_state.txt",
+    "serving/minimax-m3.1/chainN.sh, chain32.sh, chain33.sh, chain35.sh, chain37.sh, launch.sh, launch_tp2x4_old.sh",
+    "memory m31-sla-v2.md"
+   ],
+   "rank_hint": 8,
+   "theme": "numerics, kernels and speculative decoding",
+   "rank": 8
+  },
+  {
+   "title": "MiniMax MSA prompt-attention kernel: ~2x faster standalone, bit-identical, parked",
+   "kind": "finding",
+   "headline": "Standalone, MSA sparse attention is 1.93-2.47x faster than our Triton kernel and bitwise equal, but cannot load in our image.",
+   "before_after": [
+    {
+     "metric": "Sparse prefill attention, 16,384 query tokens, ms per call at 32k / 131k / 524k context",
+     "before": "Triton 4.80 / 4.87 / 5.07",
+     "after": "MSA 2.11 / 2.40 / 2.63 (2.27x / 2.03x / 1.93x)",
+     "source": "PROGRESS 08:02 PDT (10-01)"
+    },
+    {
+     "metric": "Same, sm_100f build",
+     "before": "Triton (as above)",
+     "after": "2.47x / 2.02x / 1.93x",
+     "source": "PROGRESS 08:02 PDT (10-01)"
+    },
+    {
+     "metric": "Output vs Triton",
+     "before": "—",
+     "after": "max|diff| 0 on all shapes; adapter mixed batch 6/6 requests bitwise equal (dev image)",
+     "source": "PROGRESS 08:02 and 09:00 PDT (10-01)"
+    },
+    {
+     "metric": "Engine-shaped call via adapter (q_lens 12000..1, context ≤ 260k, dev image)",
+     "before": "Triton 4.77 ms",
+     "after": "3.86 ms (1.24x); 3.69 ms with cached gather index (1.29x)",
+     "source": "PROGRESS 09:00 PDT (10-01)"
+    },
+    {
+     "metric": "Adapter cost split (dev image)",
+     "before": "Triton 4.81 ms",
+     "after": "MSA kernel 2.164 + gather K/V 0.617 + scales 0.747 + CSR 0.163 ms; fused gather estimated ~1.85x",
+     "source": "PROGRESS 09:45 PDT (10-01)"
+    },
+    {
+     "metric": "Load in our engine image (CuTe-DSL 4.6.2)",
+     "before": "—",
+     "after": "fails: [A] AttributeError cute.core.ThrMma; [T3] with 4.5.2 forced first, ImportError alloc_reserved_mbarrier; public MSA fails NVVM on sm_100f and sm_103a",
+     "source": "PROGRESS 06:25, 09:00, 09:45 PDT (10-01); memory m31-engine-profile.md"
+    }
+   ],
+   "change_what": "Benchmarked MiniMax's open-source (MIT) MSA prompt-attention kernel against our Triton kernel on identical inputs in our packed KV layout, wrote an engine adapter, and tried to run both inside our engine image.",
+   "change_detail": "kernels/bench_msa_vs_triton.py (MSA sparse_atten_nvfp4_kv_func vs fork q8kv4_sparse_attention; FP8 Q, random packed NVFP4 K/V + E4M3 scales, top-16 blocks, pattern local, T=16384) in lmsysorg/sglang:dev-cu13-minimax-m3 (fmha_sm100 0.1.1 @fdc49e7, CuTe-DSL 4.5.2) on GPU 7 (window_msa_devimage.sh); adapter kernels/msa_nvfp4_adapter.py (SGLANG_Q8KV4_MSA_SPARSE=1, SGLANG_MSA_CUTE_DIR) + test_msa_adapter.py; image tests window_msa_ourimage.sh (A/B/T1/T2), window_msa_t3.sh (T3/T4); our image minimax-m31-sglang:demo-bef87f4.",
+   "when": "Oct 1 06:25-09:45 PDT",
+   "mechanism": "Sparse attention (partial + combine) is ~30% of prefill GPU time (05:25 profile), so a ~2x kernel should shorten each prompt chunk and, via the two-GPU lockstep, each decode pause (not measured). MSA takes contiguous K/V, so the adapter gathers paged K/V and swizzles scales: ~1.5 ms extra on a 2.16 ms kernel call (09:45).",
+   "learnings": [
+    "Standalone kernel speedups shrink in the engine's call shape: 1.93-2.47x alone became 1.24-1.29x on a mixed engine-like batch once K/V gather and scale swizzle were included.",
+    "Check a kernel's DSL toolchain before porting: CuTe-DSL 4.5.2 (MSA) and 4.6.2 (our image) cannot share one Python process.",
+    "Bit-exact output on our packed KV layout means a swap can be validated by a parity test (the fork's MSA gate asserts bit-identity) rather than a quality run.",
+    "The remaining kernel-side step is fusing the K/V gather (estimated ~1.85x), once the toolchain clash is solved."
+   ],
+   "caveats": [
+    "No engine run with MSA: end-to-end prefill, TTFT and decode gains are not measured.",
+    "Synthetic inputs: random KV bytes and a 'local' top-16 block pattern; the adapter test is one mixed batch.",
+    "The adapter is eager-only (never used under CUDA-graph capture).",
+    "The adapter targets the Triton sparse attention of our current training-numerics prefill path; it does not unlock training-compat off with 4-bit KV, whose guard also forbids spec decoding."
+   ],
+   "sources": [
+    "PROGRESS.md 05:25, 06:25, 07:15, 08:02, 09:00, 09:45 PDT (10-01)",
+    "page_notes.json engineering, setup_compare, gap",
+    "memory m31-engine-profile.md",
+    "serving/minimax-m3.1/kernels/bench_msa_vs_triton.py, msa_nvfp4_adapter.py, test_msa_adapter.py, window_msa_devimage.sh, window_msa_ourimage.sh, window_msa_t3.sh"
+   ],
+   "rank_hint": 6,
+   "theme": "numerics, kernels and speculative decoding",
+   "rank": 6
+  },
+  {
+   "title": "Production attention path with our 4-bit KV: refused at boot",
+   "kind": "negative",
+   "headline": "TRAINING_COMPAT=0 with our 4-bit KV crash-loops at boot: fork requires MSA kernel and no speculative decoding.",
+   "before_after": [
+    {
+     "metric": "Engines up (lever v3_lp_cap_lpm_tok8shid_tc0_075x, 3.34 M)",
+     "before": "Training numerics + 4-bit KV boot and serve (dap_05x: 15/15 at 2.23 M, 21:25)",
+     "after": "Failed to boot: containers crash-looped from 21:28 PDT; stopped by hand 21:29 PDT, ~5 min after the 21:24:58 launch",
+     "source": "PROGRESS 21:25 and 21:30 PDT (10-01); node_state.txt; runs_meta.json"
+    },
+    {
+     "metric": "Training-compat off: which KV format boots",
+     "before": "8-bit KV (SGLANG_MINIMAX_SPARSE_KV4=0): boots, DSpark and CUDA graphs allowed",
+     "after": "4-bit KV: 'ValueError: MiniMax sparse KV4 requires blk128 MSA, FP8 queries, max-score indexer and no speculative decoding'",
+     "source": "chain32.sh header; PROGRESS 15:43 PDT (09-30), 21:30 PDT (10-01)"
+    },
+    {
+     "metric": "Same refusal seen before",
+     "before": "Sep 27 13:38 PDT, vendor 0927 image: crash at attention init, msa_available() False; Sep 30 chain32.sh header: this path 'needs MSA and refuses speculative decoding'",
+     "after": "Oct 1 21:28 PDT, our 0922-sglang-hicache tree: same guard; the message now lists 'no speculative decoding'",
+     "source": "PROGRESS 20:38 row (UTC, Sep 27); chain32.sh header; PROGRESS 21:30 PDT (10-01)"
+    }
+   ],
+   "change_what": "Tried production's attention numerics while keeping our 4-bit KV cache, on the tokenise-once stack at 3.34 M.",
+   "change_detail": "chainQ lever v3_lp_cap_lpm_tok8shid_tc0_075x (started 04:24:58 UTC): TRAINING_COMPAT=0 with launch.sh defaults SGLANG_MINIMAX_SPARSE_KV4=1 and SGLANG_DISABLE_MSA=1; SPEC=dspark, MEMFRAC=0.76, TOKW=8, --schedule-policy lpm, --enable-request-time-stats-logging. Aborted by killing chainQ, watchdog and the waiting launcher by PID; chainQ restarted; next lever v3_lp_cap_lpm_tok8shid_tc0kv8_075x (TRAINING_COMPAT=0 + 8-bit KV) started 04:29:59 UTC.",
+   "when": "Oct 1 21:25-21:30 PDT (first seen Sep 27 13:38 PDT)",
+   "mechanism": "With training-compat off, attention uses the production sparse backend. In our 0922 fork its 4-bit-KV mode requires blk128 MSA, FP8 queries, a max-score indexer and no speculative decoding. Our image has no usable MSA (launch.sh sets SGLANG_DISABLE_MSA=1) and every config runs DSpark, so the guard fires at init. Production runs this path with in-house KV4 kernels (kv4_fused_verify_attn etc.).",
+   "learnings": [
+    "Read a backend's init guards before queuing a numerics lever: this refusal was logged Sep 27 13:38 PDT and in chain32.sh (Sep 30), yet cost another boot window.",
+    "Production numerics with 4-bit KV need a KV4 attention kernel the guard accepts (MSA or our own) and KV4 verify that works with speculative decoding.",
+    "Until then, production numerics come only with 8-bit KV, at about half the cache capacity."
+   ],
+   "caveats": [
+    "Whether the guard reflects a hard kernel limit or a conservative check was not tested.",
+    "Production's KV4 kernels are not available to us (owner rule: learn settings, do not copy their image or kernels).",
+    "Lever lines are truncated in the node snapshot (node_state.txt); only the listed knobs are confirmed."
+   ],
+   "sources": [
+    "PROGRESS.md 21:25, 21:30, 20:55 PDT (10-01)",
+    "PROGRESS.md 20:38 row (UTC, Sep 27 13:38 PDT)",
+    "PROGRESS.md 23:15 PDT (09-27), 15:43 PDT (09-30)",
+    "runs_meta.json v3_lp_cap_lpm_tok8shid_tc0_075x",
+    "node_state.txt",
+    "serving/minimax-m3.1/launch.sh, launch_tp2x4_old.sh, chain32.sh",
+    "memory m31-sla-v2.md, m31-prod-serve-config.md"
+   ],
+   "rank_hint": 5,
+   "theme": "numerics, kernels and speculative decoding",
+   "rank": 6
+  },
+  {
+   "title": "DSpark draft: block 7 beats block 4; acceptance is not our gap",
+   "kind": "negative",
+   "headline": "DSpark block 4 cut acceptance 3.66→3.06 and decode 54.7→46.3 tok/s at 3.34 M; block 7 stays.",
+   "before_after": [
+    {
+     "metric": "Accepted tokens per verify step, 3.34 M (v3.1)",
+     "before": "3.66 (block 7, v3_lp_cap_075x)",
+     "after": "3.06 (block 4, v3_lp_cap_blk4_075x)",
+     "source": "PROGRESS 05:55 and 07:58 PDT (10-01)"
+    },
+    {
+     "metric": "Verify steps over the run",
+     "before": "981,478",
+     "after": "1,247,501 (+27%)",
+     "source": "PROGRESS 07:58 PDT (10-01)"
+    },
+    {
+     "metric": "Decode p50 at 3.34 M",
+     "before": "54.7 tok/s",
+     "after": "46.3 tok/s (best minute 55.7)",
+     "source": "PROGRESS 07:58 PDT (10-01); runs_v3.json"
+    },
+    {
+     "metric": "Minutes in SLA, Oct 1 rule",
+     "before": "2/15",
+     "after": "0/15 (decode ≤ 60 in all 15)",
+     "source": "runs_v3.json re-scored (progress_page.py rescore())"
+    },
+    {
+     "metric": "Draft attention inside the block (v1 staircase accept)",
+     "before": "3.78 causal, window 4096 (c13p1)",
+     "after": "4.07 bidirectional + window 4095, SGLANG_DSPARK_M31_BIDIR_DRAFT=1 (c13p1bd)",
+     "source": "PROGRESS 02:55, 04:42 and 05:07 PDT (09-28)"
+    },
+    {
+     "metric": "Acceptance: isolated probe vs real traffic (block 7, bidirectional)",
+     "before": "5.79 (3 real 60-80k prompts x 2, c1, temp 0)",
+     "after": "3.60-3.76 on v3/v3.1 replays",
+     "source": "PROGRESS 04:42 PDT (09-28); 03:20, 05:05, 19:10 PDT (10-01)"
+    },
+    {
+     "metric": "Production vs ours near 3.34 M (accept / decode p50)",
+     "before": "production DFlash2 block 4: accept 2.75-3.04 (its own fleet, read Sep 30) / 64.8 tok/s on the same requests",
+     "after": "ours DSpark block 7: 3.66 / 54.7 tok/s (v3_lp_cap_075x)",
+     "source": "memory m31-prod-serve-config.md; PROGRESS 05:55 PDT (10-01); runs_v3.json"
+    }
+   ],
+   "change_what": "Shortened the DSpark draft block from 7 to 4 tokens (production's draft uses 4) at 3.34 M, everything else equal.",
+   "change_detail": "chainQ lever v3_lp_cap_blk4_075x: MEMFRAC=0.76 DSPARK_BLOCK=4 (launch.sh adds --speculative-dspark-block-size 4); baseline v3_lp_cap_075x leaves DSPARK_BLOCK empty (our DSpark port defaults to 7: resolve_gamma(default=7)). Both: SPEC=dspark, DRAFT_ATTN=flashinfer, DRAFT_WINDOW=4095, SGLANG_DSPARK_M31_BIDIR_DRAFT=1, SGLANG_Q8KV4_SORT_MIN_LANES=1e12. Acceptance from accept_metrics.sh: delta(generated tokens - requests) / delta(spec_verify_calls).",
+   "when": "Oct 1 07:58 PDT; acceptance history Sep 27 19:10 to Oct 1 21:25 PDT",
+   "mechanism": "Each verify step runs the target model once. Block 4 accepted fewer tokens per step (3.06 vs 3.66), so the same replay needed 27% more verify steps (1,247,501 vs 981,478) and decode fell 15% (54.7→46.3 tok/s), in line with the 16% acceptance drop. Our DSpark port defaults to block 7; production's block 4 pairs with its DFlash2 draft.",
+   "learnings": [
+    "Tune block size per draft and traffic: production's block 4 pairs with DFlash2; our DSpark accepts 3.06 at block 4 vs 3.66 at 7 (M3: block 8 beat 4).",
+    "Our higher acceptance (3.66 vs production's reported 2.75-3.04) did not make decode faster than production's (54.7 vs 64.8 tok/s); production's config notes DSpark wins only at low concurrency.",
+    "Judge drafts on real-traffic metric deltas: a 3-prompt probe showed 5.79 accepted tokens per step, real replays 3.60-3.76.",
+    "Spec decoding pays only with CUDA graphs: c6 per stream 135 tok/s with graphs vs 19 for the vendor's eager DSpark and 37 without spec (Sep 27 19:10 PDT)."
+   ],
+   "caveats": [
+    "One run per block size at 3.34 M; identical runs differ by about one minute (Oct 1 19:10). The Sep 28 v1 test agreed (block 4 staircase accept 3.33 vs 4.07).",
+    "We have not run production's DFlash2 draft; DFlash2 vs DSpark not compared on our engine.",
+    "Production's fa4 draft attention tested only on v2 at 1.36 M (Sep 30 11:44): 9/15, accept 3.30 vs 3.40, no gain.",
+    "Production's decode (64.8) and acceptance (2.75-3.04) come from its own fleet load, not from our 3.34 M replay."
+   ],
+   "sources": [
+    "PROGRESS.md 03:20, 05:05, 05:55, 07:58, 19:10 PDT (10-01)",
+    "PROGRESS.md 02:55, 04:42, 05:07, 10:34 PDT (09-28)",
+    "PROGRESS.md 02:10 row (UTC; Sep 27 19:10 PDT)",
+    "PROGRESS.md 14:14 PDT (09-29); 07:05, 11:44, 13:40 PDT (09-30)",
+    "runs_v3.json v3_lp_cap_075x, v3_lp_cap_blk4_075x",
+    "runs_meta.json v3_lp_cap_blk4_075x",
+    "memory m31-prod-serve-config.md",
+    "serving/minimax-m3.1/accept_metrics.sh, launch.sh, chainQ.sh, lever_queue.txt, patches/dspark_minimax/minimax_m3_dspark.py"
+   ],
+   "rank_hint": 3,
+   "theme": "numerics, kernels and speculative decoding",
+   "rank": 3
+  },
+  {
+   "title": "DP-attention lockstep: prefill on one GPU pauses decode on both",
+   "kind": "finding",
+   "rank_hint": 9,
+   "headline": "Prefill on either GPU stops decode on both: decode 76.5 → 53.4 → 37.9 tok/s at 2.23/3.34/4.42 M.",
+   "before_after": [
+    {
+     "metric": "Our decode p50, 2.23 → 3.34 M (test v3.1, load-aware routing, mem 0.68)",
+     "before": "76.5 tok/s",
+     "after": "53.4 tok/s (production, same requests: 65.5 → 64.8)",
+     "source": "runs_v3.json v3_lp_05x_v31, v3_lp_075x; PROGRESS 07:05, 05:05 PDT (10-01)"
+    },
+    {
+     "metric": "Our decode p50, 3.34 → 4.42 M",
+     "before": "53.4 tok/s",
+     "after": "37.9 tok/s (test v3; production 64.6)",
+     "source": "runs_v3.json v3_lp_1x; PROGRESS 03:20 PDT (10-01)"
+    },
+    {
+     "metric": "Minutes with decode > 60 at 3.34 M: production vs ours (best config, cap + lpm)",
+     "before": "production: decode above 60 in all 15 minutes (lowest 60.1)",
+     "after": "ours 4/15 (per-minute median 58.4, worst 45.6); these 11 are all our current-SLA misses",
+     "source": "runs_v3.json v3_lp_cap_lpm_075x minutes + prod_minutes; PROGRESS 20:55 PDT (10-01)"
+    },
+    {
+     "metric": "GPU activity while DP0 prefills one 131,072-token cold prompt (6.76 s span; DP1 has no requests of its own)",
+     "before": "DP0: 93% busy prefilling",
+     "after": "DP1: 88% busy anyway (padded idle batch + 1.99 s waiting in mega_moe)",
+     "source": "PROGRESS 05:25 PDT (10-01); prof_prefill.sh phase 1 (one request) on v3_lp_075x engine e3"
+    }
+   ],
+   "change_what": "Nothing changed; we profiled one engine during a cold prefill and read the fork's scheduler to explain why decode falls as load rises.",
+   "change_detail": "Layout: launch_tp2x4_old.sh TP_SIZE=2 EP_SIZE=2 DP_SIZE=2 DP_ATTN=1, TRAINING_COMPAT=1; launch.sh refuses attention TP > 1 on this fork ('training-compatible arithmetic requires attention TP1'), so DP attention is required. Tools: prof_prefill.sh (SGLang /start_profile), prof_top.py. Fork knobs present but off: --enable-prefill-delayer (queued at 3.34 M as v3_lp_cap_lpm_tok8shid_pd_075x), speculative_skip_dp_mlp_sync. SGLANG_DECODE_AFTER_PREFILL=1 is adopted but measured at 2.23 M only.",
+   "when": "Suspected Sep 27 20:10 PDT; confirmed by kernel profile + scheduler read Oct 1 05:25 PDT; decode became the only failing rule at 3.34 M with the SLA change (Oct 1 20:55 PDT).",
+   "mechanism": "Training-compatible numerics force attention TP1, so each engine runs attention data-parallel on its two GPUs with a shared MoE step. With speculative decoding the DP MLP sync forbids mixing prefill and decode across ranks, and prefill goes first, so any prefill chunk on either rank halts decode on both. Paused fraction ≈ 1−(1−p)², p = one rank's prefill share.",
+   "learnings": [
+    "Coupled ranks turn prompt load into decode loss: ~50% more prompt work from 2.23 to 3.34 M cut our decode 76.5 → 53.4 while production stayed ~65.",
+    "Cheap levers only bound or pair the pauses (decode-after-prefill, --enable-prefill-delayer); the structural fix, attention TP2 like production, is blocked by training-compatible numerics.",
+    "Profile the idle rank too: with no requests of its own, DP1 was 88% busy on a padded batch and mega_moe waits; utilisation hides lockstep waste.",
+    "Smaller lockstep groups paid before: four dp2 engines decoded 71 tok/s per stream vs 25 for one dp8 engine (Sep 27 21:49 PDT, M3-era v1 trace, settings differed)."
+   ],
+   "caveats": [
+    "Production also runs ~18 in-house kernels, so its flat ~65 tok/s is not the layout alone.",
+    "The 1−(1−p)² paused fraction is the explanation in memory m31-engine-profile.md, not fitted to measurements; that note quotes 74 tok/s (v3_lp_05x, test v3) for 2.23 M.",
+    "Our own profile note expects decode interleaving not to raise per-request decode rate (same prefill work).",
+    "2.23 and 3.34 M points are test v3.1; 4.42 M is test v3, which still replayed giants production had refused with 429 and had the media-tag HTTP 500s.",
+    "No remedy measured at 3.34 M yet: decode-after-prefill and --enable-prefill-delayer are queued (PROGRESS 20:55, 21:25; node_state.txt); speculative_skip_dp_mlp_sync untested.",
+    "Non-training numerics with our 4-bit KV fail to boot (need MSA and no spec decoding; PROGRESS 21:30 PDT 10-01); with 8-bit KV they boot but cache hit fell to 83.5% (v3_tc0kv8_05x)."
+   ],
+   "sources": [
+    "PROGRESS.md 20:10 PDT and 21:49 PDT (09-27)",
+    "PROGRESS.md 03:20, 05:05, 05:25, 07:05, 20:55, 21:25, 21:30 PDT (10-01)",
+    "runs_v3.json: v3_lp_05x_v31, v3_lp_075x, v3_lp_1x, v3_lp_cap_lpm_075x (minutes, prod_minutes), v3_tc0kv8_05x",
+    "page_notes.json setup_compare 'Layout', why_we_miss 'decode'",
+    "node_state.txt (queued lever lines dap_075x, pd_075x)",
+    "memory m31-engine-profile.md, m31-prod-serve-config.md, m31-sla-v2.md",
+    "serving/minimax-m3.1/launch_tp2x4_old.sh, launch.sh (FORK CONSTRAINT comment), prof_prefill.sh, prof_top.py"
+   ],
+   "theme": "scheduling",
+   "rank": 9
+  },
+  {
+   "title": "Decode-after-prefill (SGLANG_DECODE_AFTER_PREFILL=1)",
+   "kind": "gain",
+   "rank_hint": 6,
+   "headline": "Forced decode step after each prefill step: first 15/15 on the old strict rule; p99 10.8 → 8.2 s.",
+   "before_after": [
+    {
+     "metric": "Minutes in SLA at 2.23 M, old strict rule (p50 ≤ 1 s, p99 ≤ 15 s, decode ≥ 60, errors ≤ 0.1%)",
+     "before": "12/15 (misses: p99 16.3 / 21.9 / 17.6 s in minutes 11 / 13 / 14)",
+     "after": "15/15, the first ever",
+     "source": "runs_v3.json v3_lp_cap_lpm_tok8shid_05x → v3_lp_cap_lpm_tok8shid_dap_05x; PROGRESS 20:45, 21:25 PDT (10-01)"
+    },
+    {
+     "metric": "Minutes in SLA at 2.23 M, current SLA (p50 < 3 s, decode > 60, 0 errors)",
+     "before": "15/15",
+     "after": "15/15 (no change)",
+     "source": "runs_v3.json re-scored with the progress_page.py rescore() rule; PROGRESS 21:25 PDT (10-01)"
+    },
+    {
+     "metric": "TTFT p50 / p90 / p99 at 2.23 M",
+     "before": "0.54 / 3.23 / 10.80 s",
+     "after": "0.54 / 2.82 / 8.22 s (production, same requests: 0.34 / 3.00 / 10.38)",
+     "source": "PROGRESS 21:25 PDT (10-01); runs_v3.json"
+    },
+    {
+     "metric": "Worst per-minute TTFT p99 at 2.23 M",
+     "before": "21.9 s (3 minutes over 15 s)",
+     "after": "14.5 s (none over 15 s)",
+     "source": "runs_v3.json per-minute records"
+    },
+    {
+     "metric": "Warm (uncached < 2k) TTFT p99; streaming requests over 10 s",
+     "before": "9.85 s; 37",
+     "after": "6.54 s; 21",
+     "source": "PROGRESS 21:25 PDT (10-01)"
+    },
+    {
+     "metric": "Decode p50 at 2.23 M (overall; per-minute median; worst minute)",
+     "before": "77.6; 78.2; 68.8 tok/s",
+     "after": "76.2; 76.3; 63.8 tok/s (lower in 10 of 15 minutes)",
+     "source": "runs_v3.json; PROGRESS 21:25 PDT (10-01)"
+    },
+    {
+     "metric": "Decode at 3.34 M, the rule we still miss",
+     "before": "per-minute median 58.4 tok/s (cap + lpm, without tokenise-once or this change)",
+     "after": "not measured (v3_lp_cap_lpm_tok8shid_dap_075x queued)",
+     "source": "runs_v3.json v3_lp_cap_lpm_075x; PROGRESS 21:25 PDT (10-01); node_state.txt queue"
+    }
+   ],
+   "change_what": "After any step in which either GPU of an engine processed a prompt, the next step only generates tokens; prompt processing resumes the step after.",
+   "change_detail": "patch_decode_after_prefill.py on the 0922-sglang-hicache tree (sglang/srt/managers/scheduler.py, backup *.pre-dap): if SGLANG_DECODE_AFTER_PREFILL=1 and last_batch.is_extend_in_batch (all-gathered, identical on both DP ranks), the step skips get_new_batch_prefill and only decodes. Env set via EXTRA_ENV in chainQ lever v3_lp_cap_lpm_tok8shid_dap_05x (trace b00, frac 1.0) on MEMFRAC=0.76, --schedule-policy lpm, --enable-request-time-stats-logging, TOKW=8, SGLANG_TOKENIZE_PREFIX_CACHE_SHARED_DIR=/dev/shm/m31tokpc, SGLANG_MM_PASS_IDS_WITHOUT_MEDIA=1.",
+   "when": "Patch Oct 1 19:45 PDT; run finished and adopted Oct 1 21:24 PDT (test v3.1, 2.23 M).",
+   "mechanism": "Prefill always went first and, under spec decoding + DP attention, never shares a step with decode. A 315k-token cold prompt therefore ran 16k-token chunks back to back for 20+ s while running requests on both GPUs waited, including first visible text queued behind an invisible think marker. One forced decode step per prefill step bounds that starvation.",
+   "learnings": [
+    "Bound starvation instead of slicing work: one decode step per prefill step fixed the 2.23 M tail; fair share and CHUNK=16384 had worsened p99 at 3.34 M.",
+    "Decide per-step policy from state every DP rank already shares (all-gathered is_extend_in_batch): ranks cannot diverge and no extra collective is needed.",
+    "A tail fix can be invisible to a median SLA: 15/15 → 15/15 under the current rule; its value now rests on decode at 3.34 M.",
+    "On M3.1 (adaptive thinking) the first generated token is usually an invisible think marker; track first visible content separately (lag p99 6.0 s on tok8sh_05x)."
+   ],
+   "caveats": [
+    "One run; identical runs differ by about one minute (PROGRESS 19:10 PDT 10-01).",
+    "Decode dipped at 2.23 M (lower in 10 of 15 minutes, mean −1.8 tok/s, worst minute 68.8 → 63.8); at 3.34 M minutes sit near 58, so the sign matters. Not measured there.",
+    "Our profile note (m31-engine-profile.md) expects decode interleaving not to raise per-request decode rate (same prefill work).",
+    "Cold giants now get at most every other step (chunk and decode steps alternate); their own TTFT under the change is not reported.",
+    "First-content lag was not re-measured after the change."
+   ],
+   "sources": [
+    "PROGRESS.md 19:35, 19:45, 20:05, 20:45, 21:25 PDT (10-01)",
+    "runs_v3.json: v3_lp_cap_lpm_tok8shid_05x, v3_lp_cap_lpm_tok8shid_dap_05x, v3_lp_cap_lpm_075x",
+    "runs_meta.json (v3_lp_cap_lpm_tok8shid_dap_05x verdict)",
+    "page_notes.json setup_current, why_we_miss 'ttft_p99'",
+    "node_state.txt (dap_05x lever line, dap_075x queued)",
+    "serving/minimax-m3.1/patch_decode_after_prefill.py",
+    "memory m31-sla-v2.md, m31-engine-profile.md"
+   ],
+   "theme": "scheduling",
+   "rank": 8
+  },
+  {
+   "title": "Cache-first scheduling (--schedule-policy lpm)",
+   "kind": "gain",
+   "rank_hint": 5,
+   "headline": "Cache-first order at 3.34 M: per-minute decode median 55.0 → 58.4 tok/s; current-SLA minutes 2 → 4 of 15.",
+   "before_after": [
+    {
+     "metric": "Minutes in SLA at 3.34 M, current SLA (re-scored)",
+     "before": "2/15 (v3_lp_cap_075x)",
+     "after": "4/15 (v3_lp_cap_lpm_075x); all 11 misses are decode",
+     "source": "runs_v3.json; PROGRESS 20:55 PDT (10-01)"
+    },
+    {
+     "metric": "Decode at 3.34 M: per-minute median (overall p50)",
+     "before": "55.0 (54.7) tok/s",
+     "after": "58.4 (56.7) tok/s; production 64.8",
+     "source": "runs_v3.json; PROGRESS 11:10 PDT (10-01)"
+    },
+    {
+     "metric": "TTFT p50 / p90 / p99 at 3.34 M",
+     "before": "1.01 / 4.84 / 18.31 s",
+     "after": "0.98 / 4.69 / 13.40 s",
+     "source": "PROGRESS 11:10 PDT (10-01)"
+    },
+    {
+     "metric": "Failing minutes at 3.34 M, old rule: median / p99 / decode",
+     "before": "7 / 7 / 13",
+     "after": "6 / 5 / 11",
+     "source": "PROGRESS 11:10 PDT (10-01)"
+    },
+    {
+     "metric": "TTFT p99 at 2.23 M (minutes over 15 s)",
+     "before": "11.69 s (3)",
+     "after": "9.46 s (0)",
+     "source": "PROGRESS 10:20, 14:15 PDT (10-01); runs_v3.json v3_lp_cap_05x, v3_lp_cap_lpm_05x"
+    },
+    {
+     "metric": "1.79 M: old-rule minutes; TTFT p50 / p90 / p99; decode p50",
+     "before": "13/15; 0.85 / 2.75 / 6.79 s; 92.0 tok/s",
+     "after": "13/15; 0.83 / 2.93 / 7.49 s; 88.7 tok/s (no gain)",
+     "source": "PROGRESS 09:35, 13:35 PDT (10-01)"
+    },
+    {
+     "metric": "Cache hit at 3.34 M",
+     "before": "95.0%",
+     "after": "95.3% (production 97.0%)",
+     "source": "runs_v3.json"
+    }
+   ],
+   "change_what": "The engine admits waiting requests longest-cached-prefix first (SGLang policy 'lpm'); the fork's default order is not recorded in our notes.",
+   "change_detail": "SGLang flag --schedule-policy lpm appended to XARGS (lever_queue.txt line \"XARGS=$HCX --schedule-policy lpm\"), on MEMFRAC=0.76 and load-aware session pinning (ROUTE_PIN_BY_INFLIGHT=1, ROUTE_REPIN_SLACK=16). Run v3_lp_cap_lpm_075x (b00 + half of b01's sessions = 3.34 M, test v3.1).",
+   "when": "Run finished Oct 1 11:05 PDT and adopted (PROGRESS row 11:10 PDT).",
+   "mechanism": "Hypothesis, not measured: at ~95% token cache hit, warm follow-up turns need few new tokens; admitting longest-cached-prefix first lets more of them share a prefill step while uncached prompts wait, so fewer decode pauses under the lockstep. It cannot pre-empt a giant already chunking: the chunked request is always admitted first.",
+   "learnings": [
+    "With ~95% of prompt tokens cached, admitting by cached prefix cut the 3.34 M tail (p99 18.3 → 13.4 s) and lifted decode; small costs at lower load.",
+    "Score each lever per failing rule: 1/15 → 1/15 on the old rule hid gains on all three rules (median, p99, decode).",
+    "Scheduling gains appeared only under load: none at 1.79 M, tail-only at 2.23 M, tail and decode at 3.34 M; test levers at the load that fails."
+   ],
+   "caveats": [
+    "Single runs; identical runs differ by about one minute (PROGRESS 19:10 PDT 10-01).",
+    "Small costs at lower load: at 2.23 M the median rose 0.88 → 0.94 s (old-rule median misses 3 → 6, before the tokenisation fix); at 1.79 M decode 92.0 → 88.7. Both still pass the current SLA.",
+    "Still 11 of 15 minutes at or below 60 tok/s at 3.34 M; the worst minute did not improve (46.0 → 45.6).",
+    "Production's argv (read Sep 27) has no --schedule-policy, so it runs its engine default, which we have not recorded; parity unknown."
+   ],
+   "sources": [
+    "PROGRESS.md 09:35, 10:20, 11:10, 13:35, 14:15, 20:55 PDT (10-01)",
+    "runs_v3.json: v3_lp_cap_075x, v3_lp_cap_lpm_075x, v3_lp_cap_05x, v3_lp_cap_lpm_05x, v3_lp_cap_0375x, v3_lp_cap_lpm_0375x",
+    "runs_meta.json (v3_lp_cap_lpm_075x verdict)",
+    "page_notes.json setup_current, setup_compare 'Scheduling order'",
+    "serving/minimax-m3.1/lever_queue.txt, chainQ.sh; PROGRESS 16:35 PDT (09-28) for add_chunked_req admitting the chunked request first"
+   ],
+   "theme": "scheduling",
+   "rank": 7
+  },
+  {
+   "title": "Slow-tail anatomy: one giant cold prompt freezes its engine",
+   "kind": "finding",
+   "rank_hint": 4,
+   "headline": "p99 tail: a 300k+ cold prompt chunks back to back for 20+ s; most victims need <8k uncached tokens.",
+   "before_after": [
+    {
+     "metric": "Engine 0, rank DP1, Oct 1 19:46:50–19:47:09 PDT (2.23 M, tok8sh_05x): cause → effect",
+     "before": "a 315k cold prompt runs 16k chunks (~1 s each) back to back; each step's whole budget goes to it (#new-seq 1)",
+     "after": "its 5 running requests get no decode for 20+ s; #queue-req 1 → 7",
+     "source": "PROGRESS 20:05 PDT (10-01), engine log of tok8sh_05x"
+    },
+    {
+     "metric": "Streaming requests > 10 s at 2.23 M, by cause (tok8sh_05x: 47)",
+     "before": "giants themselves: 347k / 332k / 302k uncached, prefill 20.6–23.2 s",
+     "after": "bystanders: small or warm requests queued 10–21 s; first visible content 6–21 s after prefill (20 requests lagged > 5 s)",
+     "source": "PROGRESS 20:05 PDT (10-01); slow_reqs.py"
+    },
+    {
+     "metric": "Requests with TTFT > 15 s that needed < 8k uncached tokens themselves (test v3, 2.23 M, v3_lp_05x)",
+     "before": "31 of 43",
+     "after": "not measured after the fixes",
+     "source": "PROGRESS 04:35 PDT (10-01)"
+    },
+    {
+     "metric": "TTFT p99 at 2.23 M, test v3 → v3.1 (stop replaying giants production refused with 429)",
+     "before": "18.28 s (v3_lp_05x)",
+     "after": "14.28 s (v3_lp_05x_v31)",
+     "source": "runs_v3.json; PROGRESS 04:35, 07:05 PDT (10-01)"
+    },
+    {
+     "metric": "Warm (uncached < 2k) TTFT p99 at 2.23 M, after decode-after-prefill",
+     "before": "9.85 s",
+     "after": "6.54 s",
+     "source": "PROGRESS 21:25 PDT (10-01)"
+    }
+   ],
+   "change_what": "No engine change: we split each slow request into time segments and read the per-rank engine log around it.",
+   "change_detail": "slow_reqs.py (to_sched / queue / prefill / first content per request from ReqTimeStats; needs --enable-request-time-stats-logging); reqstats_join.py; log-only patch_timestats_detail.py; engine logs kept at teardown by launch_tp2x4_old.sh (logs/engine-<ts>-tp2-<i>.log); tail_anatomy.py (Sep 28); replay_v2.py --skip-prod-shed defines test v3.1.",
+   "when": "Sep 28 16:35 PDT (first anatomy, older v1 staircase); Oct 1 04:35 PDT (test v3); Oct 1 20:05 PDT (engine-log anatomy on tok8sh_05x).",
+   "mechanism": "The scheduler admits the in-progress chunked request first with the whole step budget (16k tokens per rank), so a giant takes every step on its rank until done. Prefill precedes decode and spec + DP attention never mix them, so both ranks stop decoding; new arrivals on that rank, even a 1k-token or 9k warm prompt, queue behind it.",
+   "learnings": [
+    "Most tail victims are bystanders: 31 of 43 requests over 15 s needed <8k uncached tokens (Oct 1); 33 of the 60 slowest (>12 s) needed <4k (Sep 28).",
+    "Read the per-rank engine log: back-to-back 'Prefill batch' lines with #new-seq 1 and a rising #queue-req mark a monopolising chunk.",
+    "Split slow requests by segment (to scheduler, queue, prefill, first visible content): the three tail kinds need different fixes.",
+    "Replay only what production served: 3 of 5 spike clusters were giant prompts production had refused with HTTP 429."
+   ],
+   "caveats": [
+    "The engine-log trace is one rank in one ~19-s window; the 47-request split is one run (tok8sh_05x).",
+    "p99 left the SLA on Oct 1, but the same freeze stops decode, which is still a rule.",
+    "The v3 → v3.1 p99 change also includes the media-tag fix (6 HTTP 500s → 0).",
+    "Production caps outstanding uncached prefill at 600k tokens per worker (admission); we have none. page_notes rates that difference 'Small'."
+   ],
+   "sources": [
+    "PROGRESS.md 16:35 PDT (09-28)",
+    "PROGRESS.md 04:35, 07:05, 19:35, 20:05, 21:25 PDT (10-01); 22:50 PDT (09-30) for production admission",
+    "runs_v3.json: v3_lp_05x, v3_lp_05x_v31",
+    "page_notes.json setup_compare 'Admission'",
+    "memory m31-protocol-v31.md, m31-ttft-floor-tokenization.md",
+    "serving/minimax-m3.1/slow_reqs.py, tail_anatomy.py, patch_fair_chunk.py (docstring: 33 of the 60 slowest, TTFT > 12 s; add_chunked_req)"
+   ],
+   "theme": "scheduling",
+   "rank": 5
+  },
+  {
+   "title": "Scheduling knobs that did not help: fair chunk share, smaller chunks, warm bypass, 128 per engine",
+   "kind": "negative",
+   "rank_hint": 3,
+   "headline": "Fair share and CHUNK=16384 cut 3.34 M per-minute decode (58.4→55.0, 55.0→52.9 tok/s); warm bypass flat; 128/engine failed boot.",
+   "before_after": [
+    {
+     "metric": "Fair chunk share 0.5 at 3.34 M (on cap + lpm): current-SLA minutes; per-minute decode median; TTFT p99",
+     "before": "4/15; 58.4 tok/s; 13.40 s",
+     "after": "2/15; 55.0 tok/s; 18.45 s",
+     "source": "runs_v3.json v3_lp_cap_lpm_075x → v3_lp_cap_lpm_f2_075x; PROGRESS 13:05 PDT (10-01)"
+    },
+    {
+     "metric": "Fair chunk share 0.5: engine stability",
+     "before": "share 1.0 (default): no such crash recorded",
+     "after": "2 crashes before the guards: chunked_req assertion (Sep 28 21:16 PDT, v1 staircase), 'Prefill out of memory' (Oct 1 06:17 PDT); no crash with both guards (Oct 1 13:05)",
+     "source": "PROGRESS 21:55 PDT (09-28); 06:25, 06:30, 13:05 PDT (10-01); chain21.sh (fair4 = share 0.5)"
+    },
+    {
+     "metric": "CHUNK=16384 (8k per DP rank; default 32768 = 16k) at 3.34 M (on cap): current-SLA minutes; per-minute decode median; TTFT p99",
+     "before": "2/15; 55.0 tok/s; 18.31 s",
+     "after": "1/15; 52.9 tok/s; 18.88 s",
+     "source": "runs_v3.json v3_lp_cap_075x → v3_lp_cap_c16_075x; PROGRESS 08:50 PDT (10-01); launch.sh chunk-split comment"
+    },
+    {
+     "metric": "Same two knobs at low load (test v2, 1.36 M, old rule)",
+     "before": "base 10–11/15, decode 82.8–84.1",
+     "after": "fair share 12/15 (13 vs 13 with tokenisation cache: tie); CHUNK=16384 6/15, decode 79.8",
+     "source": "PROGRESS 22:10 PDT (09-29); 07:05, 07:50, 08:33, 13:54, 18:39 PDT (09-30)"
+    },
+    {
+     "metric": "Warm bypass (SGLANG_WARM_BYPASS_TOKENS=8192, 1 skip) at 2.23 M: old-rule minutes; TTFT p50 / p99",
+     "before": "10/15 and 11/15 (two runs); 0.90 / 9.80 and 0.92 / 12.85 s",
+     "after": "9/15; 0.91 / 10.89 s; current SLA 15/15 both ways",
+     "source": "PROGRESS 15:00, 18:30, 19:10 PDT (10-01); runs_v3.json re-scored"
+    },
+    {
+     "metric": "128 requests per engine (MAXREQ=128) at 3.34 M",
+     "before": "limit 64: 20–30 running per engine at 3.34 M (v3_lp_075x, mem 0.68)",
+     "after": "failed to boot: 'Rank 0 scheduler died during initialization (exit code: -3)' in CUDA-graph capture; ~55 GPU-min lost",
+     "source": "PROGRESS 05:05, 12:05 PDT (10-01)"
+    }
+   ],
+   "change_what": "Four single-factor changes, each on the then-adopted stack: give waiting requests half of each prefill step, halve the prefill chunk, let warm requests jump uncached chunks, double requests per engine.",
+   "change_detail": "SGLANG_CHUNKED_REQ_SHARE=0.5 (patch_fair_chunk.py + patch_fair_chunk_v2.py + patch_chunk_oom_guard.py); CHUNK=16384 (--chunked-prefill-size, default 32768; SGLang splits it across the 2 DP ranks, so 16k → 8k per rank); SGLANG_WARM_BYPASS_TOKENS=8192 SGLANG_WARM_BYPASS_MAX_SKIPS=1 (patch_warm_bypass.py); MAXREQ=128 (--max-running-requests; lever line MEMFRAC=0.76 MAXREQ=128). All reverted: share 1.0, CHUNK 32768, bypass env unset, MAXREQ 64.",
+   "when": "Test v3.1, Oct 1 PDT rows: CHUNK=16384 08:50, 128/engine 12:05, fair share 13:05, warm bypass 18:30; test v2 checks Sep 29 22:10 – Sep 30 18:39; fair-share crashes Sep 28 21:16 and Oct 1 06:17 PDT.",
+   "mechanism": "Likely: under the DP lockstep, smaller prefill pieces (CHUNK=16384; half-step fair share) add prefill steps without cutting prefill work, and each prefill step pauses decode on both GPUs. Warm requests rarely queued (p50 0.007 s), so the bypass could not move the median; with one skip it left 2 minutes over 15 s. Engines ran 20–30 of 64 allowed requests.",
+   "learnings": [
+    "Under rank lockstep, slicing prefill finer cost decode at load (fair share helped slightly or tied at 1.36 M, lost at 3.34 M); interleaving decode steps fixed the tail instead.",
+    "Measure the wait before building a bypass: warm requests queued 0.007 s median (17:05, before the 17:45 patch), and parking chunks gained nothing.",
+    "Check that a cap binds before raising it: engines ran 20–30 requests against a limit of 64 at 3.34 M (v3_lp_075x).",
+    "Carry known boot fixes into new lever lines: 128/engine booted Sep 28 only with a 1 GiB flashinfer workspace (mem 0.66); Oct 1 set neither (failure undiagnosed)."
+   ],
+   "caveats": [
+    "Single runs; identical runs differ by about one minute (PROGRESS 19:10 PDT 10-01).",
+    "Warm bypass was tested only at 2.23 M, where every v3.1 config passes the current SLA. Production's warm_bypass is an admission outcome counter (warm_cache_hit_ratio 0.9, max_outstanding_uncached_prefill_tokens 600000), which we did not test.",
+    "Warm queueing is rare, not absent: the 20:05 tail anatomy (tok8sh_05x) found small or warm requests queued 10–21 s behind giants.",
+    "The Oct 1 128/engine boot failure was not diagnosed; differences from the Sep 28 runs that booted (chain17.sh b128ws, chain19.sh t8r64) include mem 0.76 vs 0.66, no 1 GiB SGLANG_FLASHINFER_WORKSPACE_SIZE, and the HiCache tree with HiCache on.",
+    "Fair share 0.875 when requests wait (dap_s875) was dropped untested."
+   ],
+   "sources": [
+    "PROGRESS.md 21:55 PDT (09-28); 10:46, 11:55 PDT (09-28) for the 128/engine workspace fix",
+    "PROGRESS.md 22:10 PDT (09-29); 07:05, 07:50, 08:33, 13:54, 18:39, 22:50 PDT (09-30)",
+    "PROGRESS.md 05:05, 06:25, 06:30, 08:50, 12:05, 13:05, 15:00, 17:05, 17:45, 18:30, 19:10, 20:05, 20:55 PDT (10-01)",
+    "runs_v3.json: v3_lp_cap_075x, v3_lp_cap_c16_075x, v3_lp_cap_lpm_075x, v3_lp_cap_lpm_f2_075x, v3_lp_cap_lpm_tok8_05x, v3_lp_cap_lpm_tok8_05x_r2, v3_lp_cap_lpm_tok8wb_05x",
+    "runs_meta.json verdicts for those runs and v3_lp_cap_mr128_075x",
+    "serving/minimax-m3.1/patch_fair_chunk.py, patch_fair_chunk_v2.py, patch_chunk_oom_guard.py, patch_warm_bypass.py, lever_queue.txt, chainQ.sh, chain17.sh, chain19.sh, chain21.sh, launch.sh, launch_tp2x4_old.sh"
+   ],
+   "theme": "scheduling",
+   "rank": 4
+  },
+  {
+   "title": "Oct 1 SLA change: re-scoring the stored minutes moved the bottleneck to decode",
+   "kind": "finding",
+   "headline": "Re-scored under Oct 1 SLA: every v3.1 run at 1.79/2.23 M passes 15/15; 3.34 M best 4/15, misses all decode",
+   "before_after": [
+    {
+     "metric": "Minutes passing, v3_lp_cap_lpm_tok1_05x (2.23 M)",
+     "before": "1/15 (old rule)",
+     "after": "15/15 (new rule)",
+     "source": "runs_v3.json minutes[] re-scored with progress_page.py rescore(); PROGRESS.md 15:50 PDT (10-01)"
+    },
+    {
+     "metric": "Minutes passing, v3_lp_cap_lpm_tok8_05x (2.23 M)",
+     "before": "10/15",
+     "after": "15/15",
+     "source": "runs_v3.json, rescore(); PROGRESS.md 15:00 PDT (10-01)"
+    },
+    {
+     "metric": "Minutes passing, v3_lp_cap_0375x (1.79 M)",
+     "before": "13/15",
+     "after": "15/15",
+     "source": "runs_v3.json, rescore(); PROGRESS.md 09:35 PDT (10-01)"
+    },
+    {
+     "metric": "Minutes passing, v3_lp_cap_lpm_075x (3.34 M, best)",
+     "before": "1/15 (failing minutes: median 6, p99 5, decode 11)",
+     "after": "4/15 (failing: decode 11; per-minute decode median 58.4, worst 45.6)",
+     "source": "PROGRESS.md 11:10 and 20:55 PDT (10-01); runs_v3.json"
+    },
+    {
+     "metric": "Minutes passing, v3_lp_cap_blk4_075x (3.34 M)",
+     "before": "0/15",
+     "after": "0/15 (decode fails all 15)",
+     "source": "runs_v3.json, rescore()"
+    },
+    {
+     "metric": "Minutes passing, v3_lp_1x (4.42 M, test v3)",
+     "before": "0/15",
+     "after": "0/15 (decode 15, median TTFT 13, errors 10)",
+     "source": "runs_v3.json, rescore()"
+    },
+    {
+     "metric": "Minutes passing, v3_tc0kv8_05x (2.23 M, TRAINING_COMPAT=0 + 8-bit KV, test v3)",
+     "before": "0/15",
+     "after": "5/15 (median TTFT ≥ 3 s in 7 minutes, errors in 4)",
+     "source": "runs_v3.json; PROGRESS.md 20:55 PDT (10-01)"
+    },
+    {
+     "metric": "Production on the same requests, 2.23 M (v3.1)",
+     "before": "12/15",
+     "after": "12/15 (3 x 504 fail 'success 100%')",
+     "source": "runs_v3.json prod_minutes[]; PROGRESS.md 10:00 PDT (10-01)"
+    },
+    {
+     "metric": "GPU queue",
+     "before": "1.79/2.23 M checks queued: tok8shid_0375x, dap_s875_05x, tok8shid_05x_r2",
+     "after": "dropped; 3.34 M levers queued: tc0, tc0kv8, dap_075x, --enable-prefill-delayer, baseline",
+     "source": "PROGRESS.md 20:55 PDT (10-01); node_state.txt queue"
+    }
+   ],
+   "change_what": "The owner set a new rule: median first token under 3 s, decode above 60 tok/s, 100% success, no p99 rule. Every stored per-minute record, ours and production's, is re-scored when the page renders instead of being re-run. The GPU queue was re-planned around decode speed at 3.34 M.",
+   "change_detail": "page_notes.json 'sla' = {ttft_p50: 3.0, ttft_p99: null, decode: 60, errors_pct: 0, minutes: 15}; the old rule is kept under 'old' (1.0 s / 15 s / 60 / 0.1%). progress_page.py rescore() (line 236) re-scores runs_v3.json minutes[] and prod_minutes[] on every render. A minute fails if ttft_p50 >= 3.0 or missing, decode_p50 <= 60 or missing, or it has any error. extract_runs.py still encodes the old rule (docstring, line 35), so the 'passed' it stores is old-rule. page_notes.json run-number placeholders are filled by fill() from the re-scored records. progress_page.py exits 1 and writes nothing on any ERROR, including a complete run with no runs_meta.json entry (partial records only warn). update_progress.sh renders the page, runs dom_test.js and check_layout.sh (390-1440 px), and skips the commit if the render or the tab-script test fails. A layout failure still commits.",
+   "when": "Oct 1; logged 20:55 PDT (PROGRESS: rule seen on the dashboard 20:50; memory m31-sla-v2: notice 20:11, owner comment 20:33)",
+   "mechanism": "The 3 s line is 5-6x the tokenise-once run's per-minute medians at 2.23 M (0.49-0.61 s) and p99 is gone, so first-token time no longer binds. Decode must still exceed 60; the best 3.34 M run decodes 45.6-63.7 per minute. Code reading (05:25): any prefill on either GPU of an engine pauses decode on both; untested as the cause.",
+   "learnings": [
+    "Store per-minute quantiles and apply thresholds at render: the Oct 1 rule change re-scored all 28 stored run records without a GPU minute.",
+    "When the rule moves, move the test load: every v3.1 run now passes 15/15 at 2.23 M (tok1 went 1/15 → 15/15), so only 3.34 M ranks levers.",
+    "Re-score the reference too: under 'success 100%' production fails 3 minutes on its own 504s at 2.23-3.34 M, and its per-minute decode at 3.34 M is only 60.1-68.8.",
+    "Fill run numbers from the records at render (placeholders filled from the run records), never type them; extract_runs.py's stored 'passed' is still old-rule, so read verdicts via rescore()."
+   ],
+   "caveats": [
+    "Run notes written before 20:55 still quote the old rule (page_notes.json layout_notice).",
+    "Our 15/15 against production's 12/15 at 2.23 M comes from production's own 504s, not from more capacity.",
+    "3.34 M has no identical repeat, so its pass-count noise is not measured; 10 of the best run's 15 minutes decode within 4.6 tok/s of 60.",
+    "Re-scoring worked only because the new rule uses quantiles already stored (TTFT p50, decode p50, errors).",
+    "Missing data scores differently: extract_runs.py passes a minute with no decode samples, rescore() fails it. No stored minute lacks samples today.",
+    "Planned hardening is not built: fail-closed scoring at extraction, a per-minute uncached ratio, and TPM counted only for tokens served inside the window (page_notes.json engineering).",
+    "The basis of the 7 M/GPU goal is unconfirmed (page_notes.json goal)."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 05:25, 09:35, 11:10, 15:00, 15:50, 20:55 PDT (10-01)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json (minutes[], prod_minutes[] of all 28 records)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/page_notes.json (sla, layout_notice, engineering, goal)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/progress_page.py (rescore line 236; fill line 512; build checks lines 2130-2168)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/update_progress.sh",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/check_layout.sh",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/node_state.txt",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/extract_runs.py",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-sla-v2.md",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-engine-profile.md"
+   ],
+   "rank_hint": 9,
+   "theme": "measurement and protocol",
+   "rank": 10
+  },
+  {
+   "title": "Run-to-run noise: identical settings differ by about one minute",
+   "kind": "finding",
+   "headline": "Identical settings scored 10/15 then 11/15; per-minute TTFT medians moved 0.06 s typical, decode 4.6 tok/s",
+   "before_after": [
+    {
+     "metric": "Minutes passing (old rule), identical settings at 2.23 M",
+     "before": "10/15 (v3_lp_cap_lpm_tok8_05x, Oct 1 15:00)",
+     "after": "11/15 (repeat v3_lp_cap_lpm_tok8_05x_r2, Oct 1 19:10)",
+     "source": "runs_v3.json; PROGRESS.md 15:00 and 19:10 PDT (10-01)"
+    },
+    {
+     "metric": "Failing minutes",
+     "before": "m0, m1, m10 (median); m12, m14 (p99)",
+     "after": "m0, m11 (median); m11, m12, m14 (p99)",
+     "source": "runs_v3.json minutes[]"
+    },
+    {
+     "metric": "Median TTFT in minute 1 / minute 10",
+     "before": "1.20 / 1.16 s (both fail)",
+     "after": "0.98 / 0.95 s (both pass)",
+     "source": "runs_v3.json minutes[]"
+    },
+    {
+     "metric": "Per-minute change, first run → repeat (median / max |Δ| over 15 minutes)",
+     "before": "TTFT p50, TTFT p99, decode per minute of tok8_05x",
+     "after": "TTFT p50 0.061 / 0.216 s; p99 1.23 / 9.59 s; decode 4.64 / 9.98 tok/s",
+     "source": "runs_v3.json minutes[] (computed for this entry)"
+    },
+    {
+     "metric": "Run TTFT p50/p90/p99; decode p50",
+     "before": "0.90/3.43/9.80 s; 80.2 tok/s",
+     "after": "0.92/3.60/12.85 s; 78.6 tok/s",
+     "source": "runs_v3.json"
+    },
+    {
+     "metric": "v2 baseline repeated at 1.36 M",
+     "before": "10/15 (chain28 v2e, Sep 29 22:10)",
+     "after": "11/15 (chain29 base2, Sep 30 07:05)",
+     "source": "PROGRESS.md 22:10 PDT (09-29), 07:05 PDT (09-30)"
+    },
+    {
+     "metric": "1.79 M runs, different configs (cap; +lpm; +lpm+TOKW=8), old rule",
+     "before": "13/15, misses m1 1.02 s and m11 1.05 s",
+     "after": "13/15 (m1 1.19, m10 1.02 s); 13/15 (m0 1.02, m1 1.11 s)",
+     "source": "PROGRESS.md 09:35, 13:35, 16:30 PDT (10-01); runs_v3.json"
+    }
+   ],
+   "change_what": "Repeated the best 2.23 M configuration on the same traffic as a noise check (r2, 19:10), after the v2 baseline repeat on Sep 30. The 19:10 row set the rule: a lever must move the pass count by 2+ minutes, or be repeated, before it is adopted or rejected.",
+   "change_detail": "v3_lp_cap_lpm_tok8_05x_r2 repeats v3_lp_cap_lpm_tok8_05x: /tr/v3/b00.jsonl frac 1.0 (2.23 M), protocol v3.1 (--skip-prod-shed), MEMFRAC=0.76, TOKW=8, XARGS='$HCX --schedule-policy lpm', ROUTE_PIN_BY_INFLIGHT=1, ROUTE_REPIN_SLACK=16 (chainQ.sh base_env). The r2 lever line is in node_state.txt; it started 18:27 PDT. v2 pair: chain28 v2e 0.5x and chain29 base2 (mem 0.68, --no-prime --img 1x1). Pairwise spreads were computed for this entry from runs_v3.json minutes[] (ttft_p50, ttft_p99, decode_p50) and are not in PROGRESS.md.",
+   "when": "Sep 30 07:05 PDT (v2 repeat); Oct 1 19:10 PDT (v3.1 repeat)",
+   "mechanism": "Each minute is a pass/fail verdict on quantiles of one minute's traffic (179-274 requests). Between the identical runs, per-minute TTFT medians moved 0.061 s typically (max 0.216), p99 1.2 s (max 9.6) and decode 4.6 tok/s (max 10.0); 12-14 of 15 minutes sat within 0.2 s of the 1 s line, so misses wander.",
+   "learnings": [
+    "Treat a one-minute change in pass count as noise; require a 2+ minute move or a repeat before adopting or rejecting a lever.",
+    "Rank levers on continuous per-minute margins (median TTFT, decode) alongside pass counts; counts flip when minutes sit within 0.1-0.2 s of a threshold.",
+    "Buy margin, not a bare pass: 1.79 M misses were 0.02-0.19 s over 1 s, so the floor had to drop 0.2-0.3 s for a robust pass.",
+    "At 3.34 M, 10 of the best run's 15 minutes decode within 4.6 tok/s of 60, the typical repeat move: its 4/15 is fragile, so repeat 3.34 M winners."
+   ],
+   "caveats": [
+    "Only two identical real-traffic pairs exist (v2 at 1.36 M, v3.1 at 2.23 M). Noise at 3.34 M is not measured, and the 4.6 tok/s decode spread comes from 2.23 M.",
+    "Spreads come from the 15 paired minutes of one pair; the maxima are single minutes.",
+    "The pass-count noise shown is under the old rule; under the Oct 1 SLA both repeats pass 15/15.",
+    "The three 1.79 M runs differ in config, so their shifting misses mix noise with small lever effects.",
+    "Between the two runs, env-gated patches (parallel tokenise 16:15, warm bypass 17:45) were added to the engine tree and left off."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 09:35, 13:35, 15:00, 16:15, 16:30, 17:45, 19:10 PDT (10-01); 22:10 PDT (09-29); 07:05 PDT (09-30)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json (v3_lp_cap_lpm_tok8_05x vs _r2; 1.79 M runs; v3_lp_cap_lpm_075x)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_meta.json",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/node_state.txt (r2 lever marker)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/page_notes.json (howto: about ±1 minute run to run)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/chainQ.sh",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-ttft-floor-tokenization.md (update 19:15)"
+   ],
+   "rank_hint": 7,
+   "theme": "measurement and protocol",
+   "rank": 7
+  },
+  {
+   "title": "Replay protocol v3.1, with production scored on the same requests",
+   "kind": "method",
+   "headline": "At 2.23 M, v3.1 drops 4 production-refused (429) requests; 3 were 357-420k-token cold prompts behind 3 of 5 stall clusters",
+   "before_after": [
+    {
+     "metric": "Uncached prefill from production-refused requests (2.23 M, v3)",
+     "before": "3 cold prompts of 357-420k tokens = 8% of ours; sources of 3 of 5 clusters of streaming TTFT > 15 s",
+     "after": "0 (not sent)",
+     "source": "replay_v2.py --skip-prod-shed help; PROGRESS.md 04:35 PDT (10-01); memory m31-protocol-v31.md"
+    },
+    {
+     "metric": "Requests sent in the 15-minute window (2.23 M)",
+     "before": "3,234",
+     "after": "3,230 (at 3.34 M: 4 measured + 59 earlier 429s not sent)",
+     "source": "runs_v3.json; PROGRESS.md 04:35 PDT (10-01)"
+    },
+    {
+     "metric": "Our TTFT p50/p90/p99, same settings (v3_lp_05x → v3_lp_05x_v31)",
+     "before": "0.89/4.23/18.28 s",
+     "after": "0.89/3.69/14.28 s",
+     "source": "runs_v3.json; PROGRESS.md 04:35 and 07:05 PDT (10-01)"
+    },
+    {
+     "metric": "Minutes with TTFT p99 > 15 s",
+     "before": "6 (m0, m2, m9, m10, m11, m14)",
+     "after": "5 (m0, m11, m12, m13, m14)",
+     "source": "runs_v3.json minutes[]"
+    },
+    {
+     "metric": "Minutes passing (old rule), same settings",
+     "before": "7/15 (8 misses: m4, m6 on errors only; 6 on TTFT)",
+     "after": "9/15 (6 misses, all TTFT)",
+     "source": "runs_v3.json; PROGRESS.md 04:35 and 07:05 PDT (10-01)"
+    },
+    {
+     "metric": "Our errors on requests production answered 200",
+     "before": "6/3,227 (literal-<image> HTTP 500s)",
+     "after": "0/3,227",
+     "source": "PROGRESS.md 03:55, 04:35 and 07:05 PDT (10-01)"
+    },
+    {
+     "metric": "Production on the same requests, minutes passing",
+     "before": "9/15 (7 non-200: 429s and 504s)",
+     "after": "12/15 (3 x 504); passes every TTFT and decode minute",
+     "source": "runs_v3.json prod_minutes[]; PROGRESS.md 10:00 PDT (10-01)"
+    },
+    {
+     "metric": "Measured-phase wall time at 3.34 M (900 s window)",
+     "before": "900 s scheduled",
+     "after": "1,456 s (v3_lp_075x), 1,535 s (v3_lp_cap_075x)",
+     "source": "PROGRESS.md 05:05 and 05:55 PDT (10-01); replay_v2.py measured()"
+    }
+   ],
+   "change_what": "From Oct 1 04:30, every replay leaves out the requests production itself refused with HTTP 429, and the literal '<image>' text bug that produced HTTP 500s is fixed. Production's logged results for exactly the replayed requests are scored minute by minute with the same rule and shown next to ours.",
+   "change_detail": "replay_v2.py --skip-prod-shed drops every trace record with prod_status == 429, in the warm-up and measured windows; their logged retries stay. chainQ.sh lever() runs replay_v2.py --traces /tr/v3/b00.jsonl[,/tr/v3/b01.jsonl] --last-frac <f> --measure-from 15000 --measure-to 15900 --warm-window 3600 --warm-inflight 32 --no-prime --img 1x1 --skip-prod-shed, with --flush-urls set to the 4 engines. patch_mm_literal_tags.py is applied to both engine trees. extract_runs.py writes runs_v3.json with per-minute TTFT p50/p99, decode p50 (streams with >= 20 tokens) and errors, for ours and for production (prod_ttft = hub upstream header_time, prod_total = response_time, prod_status; traffic_extract_v2.py). Our errors count only on requests production answered 200. Loads: b00 frac 0.75 = 1.79 M, b00 = 2.23 M, b00 + half of b01 = 3.34 M, b00 + b01 = 4.42 M.",
+   "when": "Oct 1, 04:30 PDT (v3.1); 10:00 PDT (production scored per minute)",
+   "mechanism": "Production's admission caps cold work at 600k uncached tokens per worker and refuses the excess with HTTP 429. Replaying those requests gave our engine work production never did: 3 of the 4 at 2.23 M were 357-420k-token cold prompts, each holding a DP rank 20-35 s in 16k chunks while its other requests waited.",
+   "learnings": [
+    "Replay only work the reference served: 3 production-refused cold giants (357-420k tokens) seeded 3 of 5 stall clusters at 2.23 M; dropping them left TTFT-failing minutes at 6.",
+    "Read prod_status before production's token counts: a 429 logs prompt and cached tokens as 0, which looks like zero uncached work.",
+    "Score production per minute on the same requests with the same rule: on valid runs it passed every latency and decode minute, so misses beyond its own errors are ours.",
+    "Budget the replay tail: measured phases ran 1,456-1,535 s for a 900 s window at 3.34 M, about 10 idle-GPU minutes per lever."
+   ],
+   "caveats": [
+    "The 7 → 9/15 equals the 2 error-only minutes (m4, m6) fixed by the literal-<image> patch bundled into v3.1. TTFT-failing minutes stayed at 6: p99 recovered in m2, m9 and m10 but failed anew in m12 and m13.",
+    "Run p99 differed 9.80 vs 12.85 s between identical runs, so the 18.28 → 14.28 s drop is near noise; the case for v3.1 rests on the traced stall clusters.",
+    "TTFT definitions differ. Ours is the first content, reasoning or tool delta at the client. Production's is the hub upstream header_time, which matched its frontend first-token histogram (Sep 30 13:40).",
+    "Fidelity gaps remain: images are sent as 1x1 (on v2, image-request prompts were 0.872x production's, Sep 29 16:15) and there is no priming. Cache hit also trails production (95.4% vs 96.8%, tok8shid_05x). At 4.42 M, 84% of the extra uncached tokens came from evicted sessions and 15% from sessions first seen in the replay (Oct 1 03:45).",
+    "The load axis is production's request logs; its engines counted 1.1x the requests and 1.45x the prompt tokens per request (Sep 30 13:40).",
+    "Production passing every minute holds for valid runs only. In the partial record of v3_lp_f2_075x (engine crash 06:17, stopped 06:21), production's decode fell below 60 in 2 minutes (53.1, 50.9).",
+    "TPM credits the window with tokens that finished in the tail; counting only tokens served inside the window is planned, not built."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 03:45, 03:55, 04:35, 05:05, 05:55, 06:25, 07:05, 10:00 PDT (10-01); 13:40, 22:50 PDT (09-30); 16:15 PDT (09-29)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json (v3_lp_05x, v3_lp_05x_v31, v3_lp_f2_075x, prod_minutes[])",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_meta.json (production_scoring_note)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/page_notes.json (test_versions; log 10:00 caveat; setup_compare Admission)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/replay_v2.py (--skip-prod-shed help line 31, load(), send(), measured())",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/extract_runs.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/chainQ.sh",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/lever_queue.txt (0.75x = b00 + half the sessions of b01)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/traffic_extract_v2.py (prod_ttft = header_time)",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-protocol-v31.md",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-cache-hit-gap.md",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-ttft-floor-tokenization.md (replay tail ~10 min per lever)"
+   ],
+   "rank_hint": 6,
+   "theme": "measurement and protocol",
+   "rank": 6
+  },
+  {
+   "title": "First-token split: engine timers, per-request stamps and a gateway join",
+   "kind": "method",
+   "headline": "Engine timers put 0.65-1.01 s outside the scheduler; code reading found a second encode; tokenise-once cut median 0.85→0.54 s",
+   "before_after": [
+    {
+     "metric": "Engine time outside the scheduler (engine TTFT − queue − prefill − request_process, means), run r2",
+     "before": "0.65-1.01 s in 3 measured minutes, 19:02-19:04 PDT (~220 first tokens/min)",
+     "after": "0.69-1.02 s in the low-load tail, 19:05-19:08 PDT (7-67 req/min)",
+     "source": "PROGRESS.md 19:05 PDT (10-01); metrics_breakdown.py"
+    },
+    {
+     "metric": "Client → scheduler per request at 2.23 M",
+     "before": "p50 0.416 s, mean 0.698 s = 46% of mean TTFT (tok8sh_05x, coarse split, 3,043 joined)",
+     "after": "p50 each: gw_in 0.032, tokenize 0.045, dispatch 0.001, to_sched 0.042 s; mean tokenize 0.315 s = 24% of mean TTFT (tok8shid_05x, 2,901 joined)",
+     "source": "PROGRESS.md 19:55 and 20:45 PDT (10-01)"
+    },
+    {
+     "metric": "Median TTFT at 2.23 M",
+     "before": "0.85 s (tok8sh_05x)",
+     "after": "0.54 s (tok8shid_05x; every minute 0.49-0.61 s)",
+     "source": "runs_v3.json; PROGRESS.md 20:45 PDT (10-01)"
+    },
+    {
+     "metric": "Gateway → client first-token gap (STREAM_COALESCE_CHARS=12, STREAM_COALESCE_MS=120)",
+     "before": "v2 A/Bs with coalescing off read neutral: 10/15 vs 10-11/15, 12/15 vs 13/15",
+     "after": "client minus gateway-received first token (tok8wb_05x): +0.009/0.018/0.081/0.143 s at p10/p50/p90/p99; median-rule minutes 11/15 either way",
+     "source": "PROGRESS.md 09:17 and 14:42 PDT (09-30), 19:00 PDT (10-01); coalesce_gap.py"
+    },
+    {
+     "metric": "First visible content after the first stream chunk",
+     "before": "not measured",
+     "after": "p50 0.085, p90 0.68, p99 6.0 s (tok8sh_05x, 180 requests)",
+     "source": "PROGRESS.md 19:35 PDT (10-01)"
+    },
+    {
+     "metric": "TTFT p90/p99 at 2.23 M after acting on that lag (decode-after-prefill)",
+     "before": "3.23/10.80 s (tok8shid_05x)",
+     "after": "2.82/8.22 s (tok8shid_dap_05x)",
+     "source": "runs_v3.json; PROGRESS.md 21:25 PDT (10-01)"
+    }
+   ],
+   "change_what": "Built three first-token instruments on real traffic. First, 30-second snapshots of the engines' latency histograms, reduced to per-minute deltas. Second, wall-clock stamps at each hand-off inside the engine, joined per request to the replay's send time. Third, a join of the client's first-token time against the gateway's own record, to price packet merging.",
+   "change_detail": "metrics_sampler.sh: curl /metrics on ports 19191/19291/19391/19491 every 30 s, filtered to 10 sglang metric families, → /data01/minimax31/logs/metrics. metrics_breakdown.py: per-minute histogram bucket deltas; rest = engine TTFT − queue − prefill_forward − request_process (means). patch_timestats_detail.py: log-only, needs --enable-request-time-stats-logging; logs TokTimeStats created/tokenized/dispatch/dispatched/first_token at WARNING, and ReqTimeStats gains recv/fwd/prefill_done. replay_v2.py records resp_id/sent_wall/first_chunk, and reqstats_join.py joins them to the engine stamps. analyze_lever.sh <tag> [live] runs both. coalesce_gap.py joins replay TTFT to the gateway access-log ttft on prompt/completion/cached tokens. launch_tp2x4_old.sh saves outgoing engine logs (logs/engine-<ts>-tp2-<i>.log). patch_shim_firstnow.py adds STREAM_COALESCE_FIRST_NOW=1 (built, default off).",
+   "when": "Oct 1, 19:00-20:45 PDT",
+   "mechanism": "Engine TTFT runs from the HTTP handler to the first token at the tokenizer process. Histograms showed queue p50 0.00 s and prefill p50 0.21-0.24 s; subtracting means left 0.65-1.02 s outside the scheduler in both the measured window and the low-load tail. Per-request wall-clock stamps split it into gateway, tokenise, IPC and return segments.",
+   "learnings": [
+    "Before optimising tokenisation, trace the text→ids path: four tokenisation levers failed to lower the median because the VLM path decoded the prompt and re-encoded it downstream of the cache.",
+    "Use the replay's low-load tail as a free control: the outside-scheduler time stayed 0.69-1.02 s at 7-67 req/min, so it was a load-independent per-request cost.",
+    "Measure small effects by joining logs, not by A/B pass counts: the gateway-to-client gap is 0.018 s median; two v2 coalescing A/Bs read neutral inside ±1-minute noise.",
+    "Point the same instruments at decode: metrics_sampler.sh already records inter_token_latency_seconds and forward_execution_seconds_total, but metrics_breakdown.py does not parse them yet."
+   ],
+   "caveats": [
+    "The second encode was found by reading serving_chat (19:20), not by the timers. mm_ids_verify.py sized it offline (p50 0.131 s, p90 0.695 s), and tok8shid confirmed it on GPU (20:45).",
+    "py-spy had already shown each prompt tokenised twice on Sep 27 (13:09 PDT; PROGRESS row 20:09 UTC). It was read as a throughput cap and answered with 8 tokenizer workers.",
+    "Engine-metric TTFT means already put the time before the scheduler on Sep 28 (ttft_breakdown.sh, 12:25). New on Oct 1 were per-minute deltas on real traffic, per-request stamps and the gateway join.",
+    "Tokenizer worker processes drop INFO logs, so the stamps moved to WARNING; one run's time stats were lost at teardown before the launcher saved engine logs (13:05).",
+    "Histogram quantiles are interpolated from coarse buckets; the outside-scheduler remainder uses means.",
+    "The decode-after-prefill tail gain (p99 10.80 → 8.22 s) comes from one run; identical runs differed 9.80 vs 12.85 s in run p99.",
+    "Warm 200k+ prompts still tokenise slowly in the tail (p75 3.27 s, p90 4.25 s; 336 requests), even though offline replay hits the cache almost every time. Cause not established; CPU contention in the engine cpuset is the next suspect.",
+    "The gateway join matched 3,013 of 3,043 streaming requests on token counts and measures coalescing plus delivery (an upper bound). The first-packet flush (STREAM_COALESCE_FIRST_NOW=1) is built but has not been run."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 13:05, 15:00, 15:50, 17:05, 17:45 b, 19:00, 19:05, 19:20, 19:35, 19:45, 19:55, 20:45, 21:25 PDT (10-01); 09:17, 14:42 PDT (09-30); 12:25 PDT (09-28); 20:09 UTC (09-27)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json (tok8sh_05x, tok8shid_05x, tok8shid_dap_05x)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/metrics_sampler.sh",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/metrics_breakdown.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_timestats_detail.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/reqstats_join.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/analyze_lever.sh",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/coalesce_gap.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_shim_firstnow.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/replay_v2.py (send(): ttft, first_chunk, resp_id, sent_wall)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/ttft_breakdown.sh",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-ttft-floor-tokenization.md"
+   ],
+   "rank_hint": 4,
+   "theme": "measurement and protocol",
+   "rank": 5
+  },
+  {
+   "title": "Load-aware session routing in our gateway (vs sessions pinned by arrival)",
+   "kind": "gain",
+   "rank_hint": 6,
+   "headline": "Load-aware pinning: TTFT p90 18.5 → 4.2 s, p99 87.6 → 18.3 s at 2.23 M; current-SLA minutes unchanged (12/15).",
+   "before_after": [
+    {
+     "metric": "Minutes in SLA at 2.23 M, current SLA (TTFT p50 < 3 s, decode > 60, 0 errors)",
+     "before": "12/15 (the 3 misses are media-tag HTTP 500 minutes 2, 4, 6)",
+     "after": "12/15 (same 3 error minutes)",
+     "source": "runs_v3.json v3_tpc_05x vs v3_lp_05x per-minute records, re-scored with progress_page.py rescore()"
+    },
+    {
+     "metric": "Minutes in SLA at 2.23 M, old strict rule (TTFT p50 ≤ 1 s, p99 ≤ 15 s, decode ≥ 60, errors ≤ 0.1%)",
+     "before": "2/15",
+     "after": "7/15",
+     "source": "runs_v3.json 'passed'; PROGRESS 23:08 PDT Sep 30 and 04:35 PDT Oct 1"
+    },
+    {
+     "metric": "TTFT p50 / p90 / p99 at 2.23 M (production on the same requests 0.34 / 3.00 / 10.38 s)",
+     "before": "1.22 / 18.49 / 87.60 s",
+     "after": "0.89 / 4.23 / 18.28 s",
+     "source": "runs_v3.json v3_tpc_05x, v3_lp_05x (PROGRESS 04:35 quotes production p90 as 2.96 s)"
+    },
+    {
+     "metric": "Per-minute TTFT p99 range / worst per-minute p50 at 2.23 M",
+     "before": "6.0-98.5 s / 1.98 s",
+     "after": "5.9-29.6 s / 1.14 s",
+     "source": "runs_v3.json minutes"
+    },
+    {
+     "metric": "Decode p50 / cache hit at 2.23 M (production 65.5 tok/s / 96.7%)",
+     "before": "71.7 tok/s / 94.4%",
+     "after": "73.7 tok/s / 94.6%",
+     "source": "runs_v3.json; PROGRESS 23:08 PDT Sep 30, 04:35 PDT Oct 1"
+    },
+    {
+     "metric": "Engine load during the run (diag_1x.sh)",
+     "before": "2.23 M (v3_tpc_05x): e0 running 49-56, queued 43-66; e1-e3 running 2-13, queue 0. v2 1.0x (tc0kv8_1x, 2.94 M): gateway in-flight 43/43/37/12 on four slots, 0/0/1/0 on the other four",
+     "after": "4.42 M (v3_lp_1x): all four engines running 37-56, queued 17-37 (balanced, saturated); 22 re-pins. No reading reported for v3_lp_05x",
+     "source": "PROGRESS 23:08 and 20:25 PDT Sep 30, 03:20 PDT Oct 1"
+    },
+    {
+     "metric": "Simulation agentic-quick c64 (cross-check only, never used to rank)",
+     "before": "827 out tok/s, TTFT p50 3.31 s, per-request speed p50 13.4 tok/s",
+     "after": "2,765 out tok/s, TTFT p50 0.28 s, speed p50 72 tok/s",
+     "source": "PROGRESS 22:05 PDT Sep 30 (gap_bench: chain36 engines with the same settings, gateway with poolrank + arrival pinning) and 04:50 PDT Oct 1 (v3_lp_05x engines, load-aware pinning)"
+    }
+   ],
+   "change_what": "The gateway still pins each conversation to one engine DP rank (slot), so its cached prompt is reused. A new conversation now goes to the slot with the fewest requests in flight. On its next request, a conversation moves if its slot has more than 16 requests in flight above the least-busy slot.",
+   "change_detail": "Gateway shim.py patched by serving/minimax-m3.1/patch_shim_loadpin.py, which builds on patch_shim_slots.py, patch_shim_session.py and patch_shim_balance.py (in-flight counters). ROUTE_PIN_BY_INFLIGHT=1: new session → slot with the fewest in-flight requests; ties go by estimated tokens arrived in 120 s, then arrivals in 30 s. ROUTE_REPIN_SLACK=16: re-pin when slot in-flight > least-loaded + 16. Unchanged: ROUTE_SESSION_KEY=prompt_cache_key,cache_salt and ROUTE_BALANCE_SLACK=1 (chainQ.sh base_env); ROUTE_DP_SIZE=2 (launch_tp2x4_old.sh; 8 slots = 4 engines × 2 DP ranks). run_gateway.sh line 35 forwards both new vars and chainQ.sh base_env sets them. /health route.repin counts moves.",
+   "when": "Patch armed Sep 30 20:25 PDT. Runs ended Oct 1 03:15 PDT (4.42 M) and 03:56 PDT (2.23 M). Adopted 03:56 PDT (page_notes setup_current); chainQ.sh base_env already carried it from 03:29 PDT (commit a042954).",
+   "mechanism": "Arrival pinning placed each new session by tokens arrived in the last 120 s and never moved it, ignoring work in flight: at 2.23 M one engine queued 43-66 requests while three ran 2-13. Placing by in-flight count, and moving a session whose slot runs more than 16 above the least-loaded, spreads load and keeps hit (94.4% → 94.6%).",
+   "learnings": [
+    "Pin sessions for cache locality but place new ones by live in-flight count, and re-pin when a slot runs far above the least-loaded (22 moves at 4.42 M).",
+    "A router needs stickiness and load-awareness together: arrival pinning piled load on one engine; spreading without rank stickiness lost cache (Sep 28 hash+spill 86.6% → 81.0%; Dynamo 65-71%).",
+    "Check per-slot in-flight counters every run: twice about half the DP ranks sat idle (hash-digit bug, Sep 27 23:53; arrival pinning in v2 1.0x, Sep 30 20:25).",
+    "A TTFT-median-only SLA hides routing faults: arrival pinning kept every minute's p50 under 3 s at 2.23 M while p99 reached 87.6 s and one engine queued 43-66."
+   ],
+   "caveats": [
+    "One run per arm, on test v3. Production-429 requests were still replayed (3 stall sources were 357-420k-token prompts) and media-tag 500s were present. The gateway open-file limit was raised between the two runs, but neither run had connection resets.",
+    "Under the current SLA both arms score 12/15 at 2.23 M; the measured gain is in the tail and under the old strict rule.",
+    "No arrival-pinned run exists at 3.34 or 4.42 M on v3/v3.1; the higher-load pile-up evidence is the v2 1.0x diagnostic (tc0kv8_1x, 2.94 M/GPU).",
+    "Placement counts requests, not prompt tokens: a 300k-token cold prompt counts as one in-flight request. By design a re-pinned session pays one cold prefill on its new slot (patch docstring; not measured).",
+    "runs_meta.json says traffic piled onto 2 of 4 engines; that matches the v2 1.0x diagnostic. The v3 2.23 M diagnostic shows one hot engine (e0)."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 23:53 PDT Sep 27; 02:10 and 02:15 PDT Sep 28; 20:25, 20:43, 22:05, 23:08 PDT Sep 30; 03:20, 04:35, 04:50 PDT Oct 1",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json tags v3_tpc_05x, v3_lp_05x, v3_lp_1x",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_meta.json (v3_tpc_05x, v3_lp_05x, v3_lp_1x)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/page_notes.json setup_current[0]",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/progress_page.py rescore() (line 236)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_shim_loadpin.py (docstring, re-pin condition)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_shim_session.py and patch_shim_balance.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/chain37.sh, chain38.sh, chainQ.sh (base_env), launch_tp2x4_old.sh (line 20), gap_bench.sh",
+    "/Users/longsmini/Vialabs/alphabeta-m31/gateway/run_gateway.sh (line 35) and shim.py (lines 161-237); commit a042954"
+   ],
+   "theme": "routing-cache",
+   "rank": 10
+  },
+  {
+   "title": "Dynamo KV router (stock 1.5.0, production-like settings) on our DP-attention engines",
+   "kind": "negative",
+   "rank_hint": 3,
+   "headline": "Stock Dynamo 1.5.0 KV router cut cache hit 94.4% → 65-71% on our DP-attention engines: 0/15 minutes at 2.23 M.",
+   "before_after": [
+    {
+     "metric": "Cache hit at 2.23 M (production 96.7-96.8%)",
+     "before": "94.4% (our gateway, sessions pinned by arrival; v3_tpc_05x)",
+     "after": "65.2% (Dynamo, credit 1.0, decay 0.5) / 70.8% (credit 3.0, no decay, no busy threshold)",
+     "source": "runs_v3.json v3_tpc_05x, dyn_05x, dyn2_05x; PROGRESS 01:31 and 02:21 PDT Oct 1"
+    },
+    {
+     "metric": "Cold prefills with ≥32k uncached tokens",
+     "before": "79 (our gateway)",
+     "after": "679 / 575",
+     "source": "PROGRESS 01:31 and 02:21 PDT Oct 1"
+    },
+    {
+     "metric": "TTFT p50 / p90 / p99",
+     "before": "1.22 / 18.49 / 87.60 s",
+     "after": "8.79 / 38.69 / 90.13 s and 6.35 / 24.12 / 77.47 s",
+     "source": "runs_v3.json"
+    },
+    {
+     "metric": "Decode p50 (production 65.5 tok/s)",
+     "before": "71.7 tok/s",
+     "after": "45.2 / 50.3 tok/s",
+     "source": "runs_v3.json"
+    },
+    {
+     "metric": "Minutes in SLA, current SLA",
+     "before": "12/15 (only the 3 media-tag error minutes fail)",
+     "after": "0/15 and 0/15 (TTFT p50 ≥ 3 s in all 15 minutes; decode ≤ 60 in 10 and 9)",
+     "source": "runs_v3.json per-minute records re-scored with progress_page.py rescore()"
+    },
+    {
+     "metric": "Where Dynamo's hit deficit sits (hit_gap.py, dyn 0.5x)",
+     "before": "not measured for our gateway at 2.23 M",
+     "after": "98% of the extra uncached tokens on sessions already served in the replay; 41 M tokens with <30 s since their previous turn ('affinity loss, not capacity')",
+     "source": "memory m31-cache-hit-gap.md"
+    },
+    {
+     "metric": "Earlier precedent, test v1 staircase (Sep 27): cache hit",
+     "before": "88.5% (our gateway affinity, chain11b)",
+     "after": "59.7% (Dynamo KV router, chain9)",
+     "source": "PROGRESS 21:49 and 23:22 PDT Sep 27"
+    }
+   ],
+   "change_what": "Ran Dynamo 1.5.0's KV-cache-aware router (the base of production's router, stock build) instead of our gateway's routing, in front of four workers with the same engine settings. First with production-like settings, then with stronger cache affinity. Our gateway stayed in front only to translate the API (no session pinning).",
+   "change_detail": "chainD.sh: dynamo/frontend.sh (dynamo.frontend --router-mode kv --router-replica-sync --router-temperature 0 --dyn-chat-processor sglang --dyn-preprocess-workers 8 --migration-limit 3) + FRONTEND_EXTRA='--router-prefill-load-scale 1.0 --router-kv-overlap-score-credit 1.0 --router-kv-overlap-score-credit-decay 0.5 --active-prefill-tokens-threshold 600000'. Workers via dynamo/up.sh WORKER_TP=2: tp2/ep2/dp2, MAXREQ 64, CHUNK 32768, image demo-dynamo, tree 0922-sglang-hicache, MEMFRAC=0.68, DSpark bidir window 4095, HiCache ratio 3. Gateway: ROUTE_SESSION_KEY= ROUTE_DP_SIZE=0. chainD2.sh restarted only the frontend: overlap credit 3.0, decay 0.0, no busy threshold.",
+   "when": "Oct 1 01:25 PDT (dyn_05x) and 02:15 PDT (dyn2_05x); routing kept in our gateway at 02:21 PDT.",
+   "mechanism": "Each of our engines runs DP attention: two ranks, two prefix caches. In our runs Dynamo chose the engine but did not pin the DP rank, so a returning session could land on the sibling rank and re-prefill its conversation; any prefill pauses decode on both ranks. Production runs DP attention off: one cache per worker, matching Dynamo's routing unit.",
+   "learnings": [
+    "A cache-aware router works only if its routing unit equals the cache unit; with DP attention each rank holds its own cache, so the router must pick the rank.",
+    "Affinity tuning did not fix the granularity mismatch: tripling the overlap credit and removing its decay and busy threshold lifted hit only from 65.2% to 70.8%.",
+    "Borrow a production component together with the topology it assumes: production's router faces one cache per worker (DP attention off); ours faced two.",
+    "Judge any router change first by cache hit and cold-prefill count: hit fell 24-29 points and 32k+ cold prefills rose 7-9x, matching the latency collapse."
+   ],
+   "caveats": [
+    "Stock Dynamo 1.5.0 only approximated production. The fleet's strict-affinity policy (min 2 blocks, >50% overlap) and admission-control flags are not in 1.5.0 (frontend.sh), and session-pin Redis was not used.",
+    "Dynamo's frontend did its own templating and tokenisation (--dyn-chat-processor sglang; production uses dynamo), so our engines' tokenisation prefix cache was not in the path.",
+    "One run per setting, at 2.23 M on test v3; the planned 1.0x Dynamo run was skipped.",
+    "Re-test only once our engines can run DP attention off (production's layout). Our build requires DP attention because TRAINING_COMPAT=1 forces attention TP1.",
+    "Baseline is arrival pinning (hit 94.4%); load-aware pinning later reached 94.6% on the same test."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 21:49, 23:15, 23:22 PDT Sep 27; 22:50 PDT Sep 30; 01:31, 02:21, 05:25, 20:55 PDT Oct 1",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json tags dyn_05x, dyn2_05x, v3_tpc_05x",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_meta.json (dyn_05x, dyn2_05x)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/page_notes.json setup_compare (Layout, Routing)",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-cache-hit-gap.md",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/chainD.sh",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/chainD2.sh",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/dynamo/frontend.sh and dynamo/up.sh"
+   ],
+   "theme": "routing-cache",
+   "rank": 5
+  },
+  {
+   "title": "Cache capacity: hit-gap analysis → KV memory 0.68 → 0.76 (HiCache host tier grows with it)",
+   "kind": "gain",
+   "rank_hint": 5,
+   "headline": "84% of extra prefill (4.42 M) was on already-served sessions; mem 0.76 cut >10 s first tokens 42% (3.34 M).",
+   "before_after": [
+    {
+     "metric": "Hit-gap anatomy at 4.42 M, mem 0.68 (v3_lp_1x, 6,335 requests): uncached prefill vs production",
+     "before": "2.75x production's (extra 30.76 M tokens on top of production's 17.53 M). Extra by session history: 84% (25.81 M) on sessions already served in the replay (gap since previous turn: 2-10 min 13.29 M, 30-120 s 5.50 M, <30 s 4.48 M, >10 min 2.54 M); 15% (4.63 M) first in the replay (not covered by warm-up); 0.32 M after a failed request",
+     "after": "not re-measured at 4.42 M with 0.76",
+     "source": "PROGRESS 03:45 PDT Oct 1; memory m31-cache-hit-gap.md"
+    },
+    {
+     "metric": "KV pool per GPU rank (available_gpu_mem after init)",
+     "before": "1,311,872 tokens (61.9 GB free)",
+     "after": "1,854,080 tokens, +41% computed (39.8 GB free)",
+     "source": "PROGRESS 03:45 and 05:55 PDT Oct 1"
+    },
+    {
+     "metric": "Host memory for HiCache (ratio 3.0 of the device pool)",
+     "before": "pools ~171 GB per rank, 1.37 TB of 3 TB",
+     "after": "host RAM 2.0/3.0 TB (whole-host figure as logged; pool size not logged)",
+     "source": "PROGRESS 03:45 and 05:55 PDT Oct 1"
+    },
+    {
+     "metric": "3.34 M: extra uncached tokens vs production (2-10 min idle / >10 min idle; requests from returning sessions that lost >50% of a >20k cached prefix)",
+     "before": "10.09 M (1.39 / 1.59 M; 30)",
+     "after": "8.94 M (1.06 / 0.73 M; 16)",
+     "source": "PROGRESS 05:55 PDT Oct 1 (hit_gap.py)"
+    },
+    {
+     "metric": "3.34 M: cache hit (production 97.0%)",
+     "before": "94.6%",
+     "after": "95.0%",
+     "source": "runs_v3.json v3_lp_075x, v3_lp_cap_075x; PROGRESS 05:05 and 05:55 PDT Oct 1"
+    },
+    {
+     "metric": "3.34 M: TTFT p50 / p90 / p99; streaming first tokens > 10 s",
+     "before": "1.19 / 6.53 / 18.24 s; 243",
+     "after": "1.01 / 4.84 / 18.31 s; 140",
+     "source": "runs_v3.json; PROGRESS 05:55 PDT Oct 1"
+    },
+    {
+     "metric": "3.34 M: decode p50; minutes in SLA (current SLA)",
+     "before": "53.4 tok/s; 2/15",
+     "after": "54.7 tok/s; 2/15 (decode ≤ 60 in 13 minutes in both)",
+     "source": "runs_v3.json re-scored with rescore(); STANDINGS.md"
+    },
+    {
+     "metric": "2.23 M: minutes in SLA, old rule / current SLA; TTFT p99",
+     "before": "9/15 / 15/15; 14.28 s (v3_lp_05x_v31, mem 0.68)",
+     "after": "10/15 / 15/15; 11.69 s (v3_lp_cap_05x)",
+     "source": "runs_v3.json; PROGRESS 07:05 and 10:20 PDT Oct 1"
+    },
+    {
+     "metric": "HiCache off → on, test v1 staircase (Sep 28): capacity at production-parity latency; cache hit",
+     "before": "1.14 M/GPU; 88.8%",
+     "after": "1.14 M/GPU; 90.8%",
+     "source": "PROGRESS 19:43 and 20:49 PDT Sep 28"
+    },
+    {
+     "metric": "Test v2 0.5x (Sep 30, 1.36 M/GPU, token usage p50 ~0.10): minutes in old strict rule",
+     "before": "11/15 (base2: mem 0.68, HiCache ratio 3; 10/15 in chain28, same settings)",
+     "after": "8/15 with mem 0.72; 8/15 with HiCache ratio 4 (both 'no gain')",
+     "source": "PROGRESS 22:10 PDT Sep 29; 07:05, 07:30, 10:13, 11:44 PDT Sep 30; page_notes.json v2 notes; chain29.sh"
+    }
+   ],
+   "change_what": "Gave the GPU KV cache a bigger share of each GPU's memory (static fraction 0.68 → 0.76). The host-RAM cache tier (HiCache, sized at 3× the GPU cache) grew with it.",
+   "change_detail": "MEMFRAC=0.76 → launch.sh --mem-fraction-static 0.76 (line v3_lp_cap_075x in lever_queue.txt, commit a042954). Every lever queued from 06:25 PDT on adds it; v3_lp_f2_075x and the v3_lp_05x_v31 calibration were queued earlier and ran at 0.68. HiCache unchanged: --enable-hierarchical-cache --hicache-ratio 3.0 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first, on tree 0922-sglang-hicache with patch_hicache_nvfp4.py. That patch removes the 'MiniMax NVFP4 does not yet support HiCache scale transfer' guard and takes the vendor's draft-pool write-back; correctness check PASS Sep 28 18:36 PDT. Diagnosis tool: serving/minimax-m3.1/hit_gap.py <replay out .jsonl>.",
+   "when": "Gap analysis Oct 1 03:45 PDT. The 0.76 run ended 05:52 PDT (page_notes adopted_at); the queue was rebuilt on top of it at 06:25 PDT (lever_queue.txt note).",
+   "mechanism": "At 4.42 M we prefilled 2.75x production's uncached tokens; 84% of the extra was on already-served sessions, about half after 2-10 min idle, while 61.9 GB per GPU sat unused. mem 0.76 grew the device KV pool 41% and, via HiCache ratio 3.0, the host tier; at 3.34 M idle-session deficits shrank (2-10 min 1.39→1.06 M, >10 min 1.59→0.73 M).",
+   "learnings": [
+    "Classify cache misses by session history and idle gap before tuning: 84% of excess prefill was on already-served sessions, about half after 2-10 min idle, which pointed at capacity.",
+    "mem 0.72 and HiCache ratio 4 showed no gain at v2 0.5x (KV use ~10%); mem 0.76 cut >10 s first tokens 42% at 3.34 M: test capacity under load.",
+    "A host KV tier does not guarantee retention: with HiCache ratio 3, sessions idle 2-10 min still cost 13.29 M extra uncached tokens at 4.42 M.",
+    "Cache gains move tails, not decode-bound minutes: mem 0.76 left 3.34 M at 2/15 under the current SLA because decode stays at or below 60 tok/s in 13 minutes."
+   ],
+   "caveats": [
+    "One run per setting. Identical runs differ by about one minute (PROGRESS 19:10 PDT Oct 1), so 9 → 10/15 at 2.23 M is within noise; the main evidence is the 3.34 M tail and the hit-gap shifts.",
+    "The gap anatomy came from 4.42 M on test v3; 4.42 M was not re-run at 0.76.",
+    "Not all of the 84% is eviction. hit_gap's 'seen' class also covers prefixes sent to another slot or never cached. The <30 s bucket is structural: our answers differ from production's, so the next turn's new tail is uncached (memory m31-protocol-v31.md).",
+    "HiCache was never isolated on v3/v3.1: on/off ran on the v1 staircase (Sep 28) and ratio 4 on v2 0.5x. About 1 TB host RAM was still free at 0.76; a larger host tier was not tested.",
+    "A Sep 28 closed-loop HiCache result (31.50 M node at 99.8% hit) was invalid: the host cache still held prompts from the preceding staircase (PROGRESS 19:43 PDT Sep 28).",
+    "Hit is still 95.0% vs production 97.0% at 3.34 M."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 17:55, 18:36, 19:43, 20:49 PDT Sep 28; 22:10 PDT Sep 29; 07:05, 07:30, 10:13, 11:44 PDT Sep 30; 03:45, 05:05, 05:55, 06:25, 07:05, 10:20, 19:10 PDT Oct 1",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json tags v3_lp_1x, v3_lp_075x, v3_lp_cap_075x, v3_lp_05x_v31, v3_lp_cap_05x",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_meta.json (v3_lp_cap_075x, v3_lp_cap_05x)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/page_notes.json why_we_miss (cache), setup_current[1], v2 notes ('Mem fraction 0.72', 'HiCache ratio 4')",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/STANDINGS.md",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-cache-hit-gap.md",
+    "/Users/longsmini/.claude/projects/-Users-longsmini-Vialabs/memory/m31-protocol-v31.md",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/hit_gap.py",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/lever_queue.txt (06:25 note); alphabeta-m31 commits a042954 and 757bf75 (earlier queue versions)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_hicache_nvfp4.py, chain29.sh, launch.sh (line 100)"
+   ],
+   "theme": "routing-cache",
+   "rank": 6
+  },
+  {
+   "title": "Gateway open-file limit (nofile 1,024 → 65,536)",
+   "kind": "finding",
+   "rank_hint": 4,
+   "headline": "Gateway's 1,024 open-file limit, the likely cause of 27 instant ReadErrors at 4.42 M, raised to 65,536.",
+   "before_after": [
+    {
+     "metric": "Gateway container open-file limit",
+     "before": "soft 1,024 (engines 65,535)",
+     "after": "65,536 soft / 524,288 hard",
+     "source": "PROGRESS 03:20 PDT Oct 1; regw.sh line 11; alphabeta-m31/gateway/run_gateway.sh line 18"
+    },
+    {
+     "metric": "Errors at 4.42 M (v3_lp_1x)",
+     "before": "33 = 27 ReadError at 0.0 s + 6 media-tag HTTP 500",
+     "after": "not measured (4.42 M not re-run)",
+     "source": "PROGRESS 03:20 PDT Oct 1; runs_v3.json v3_lp_1x"
+    },
+    {
+     "metric": "Minutes with ≥1 error at 4.42 M (each fails the current 100%-success rule)",
+     "before": "10/15",
+     "after": "not measured",
+     "source": "runs_v3.json v3_lp_1x minutes; page_notes.json why_we_miss (errors)"
+    },
+    {
+     "metric": "Errors at 2.23 M on test v3 (before: v3_tpc_05x at 1,024; after: v3_lp_05x at 65,536)",
+     "before": "6, all HTTP 500 (media-tag, same minutes as after), no resets",
+     "after": "6, all media-tag HTTP 500, no resets",
+     "source": "PROGRESS 23:08 PDT Sep 30, 03:55 and 04:35 PDT Oct 1; runs_v3.json minutes"
+    },
+    {
+     "metric": "Errors in later runs (test v3.1, 1.79-3.34 M, 20 complete runs)",
+     "before": "n/a (v3.1 began after the fix)",
+     "after": "0",
+     "source": "runs_v3.json (all v3.1 tags)"
+    }
+   ],
+   "change_what": "Raised the gateway container's open-file limit so it can hold many more client and engine connections at once.",
+   "change_detail": "run_gateway.sh and regw.sh: docker run --ulimit nofile=65536:524288 for container m31-gateway (alphabeta-m31 commit a042954, Oct 1 03:29 PDT; its message includes 'gateway nofile fix'). Context: since patch_shim_poolrank.py (Sep 30 21:30 PDT), shim.py line 123 opens upstream clients with httpx.Limits(max_connections=None, max_keepalive_connections=None). Before that, httpx's default capped each engine at 100 connections.",
+   "when": "Found Oct 1 03:20 PDT from v3_lp_1x (ended 03:15 PDT); raised before v3_lp_05x (ended 03:56 PDT).",
+   "mechanism": "The gateway ran with a soft open-file limit of 1,024 (engines 65,535). Each streamed request holds a client and an upstream socket; since Sep 30 21:30 PDT the upstream pool is uncapped (httpx default: 100 per engine). At 4.42 M, with TTFT p99 132.5 s holding streams open, descriptors most likely ran out and new connections failed at 0.0 s.",
+   "learnings": [
+    "Set nofile explicitly on every proxy container: the gateway ran at a soft limit of 1,024 while the engines had 65,535, and it failed only at peak load.",
+    "Under a 100%-success SLA one error fails a minute: at 4.42 M, 33 errors (27 ReadErrors, 6 media-tag 500s) touched 10 of 15 minutes.",
+    "Removing a connection-pool cap moves the limit to the process file-descriptor limit; raise both together and test at peak in-flight, not average.",
+    "Audit every proxy limit before a load test: gateway caps already turned Sep 27 replays into 105 and 8,094 HTTP 429s (caps: in-flight 64 + TPM 10 M; in-flight 512)."
+   ],
+   "caveats": [
+    "Not re-validated at 4.42 M. Later runs (≤3.34 M, test v3.1) also carry the media-tag fix and skip production-429 requests, so their 0 errors do not prove the fix alone.",
+    "The link is inferred. No descriptor counts were logged; PROGRESS 03:20 lists the ReadErrors and the 1,024 limit side by side, and page_notes attributes the resets to the limit. The uncapped upstream pool's role is also inferred.",
+    "Two earlier bursts may share the cause but were never root-caused: Sep 28 02:05 PDT chain13 (53 ReadErrors at 6x, before the pool was uncapped) and Sep 30 23:18 PDT GSM8K (1,008 gateway→engine 502s and 304 client ConnectErrors, all 1,319 requests sent at once)."
+   ],
+   "sources": [
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/PROGRESS.md rows 03:20, 03:45, 03:55, 04:35 PDT Oct 1; 21:30, 23:08, 23:18 PDT Sep 30; 02:05 PDT Sep 28; UTC rows '22:41' and '01:59-02:09' (= 15:41 and 18:59 PDT Sep 27)",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/runs_v3.json tags v3_lp_1x, v3_tpc_05x, v3_lp_05x and all v3.1 tags",
+    "/Users/longsmini/Vialabs/innoferra-eval/results/m31-b300-0927/page_notes.json why_we_miss (errors)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/regw.sh (line 11)",
+    "/Users/longsmini/Vialabs/innoferra-eval/serving/minimax-m3.1/patch_shim_poolrank.py (docstring: httpx defaults 100 connections / 20 keep-alive per engine)",
+    "/Users/longsmini/Vialabs/alphabeta-m31/gateway/run_gateway.sh (line 18) and shim.py (line 123); commit a042954"
+   ],
+   "theme": "routing-cache",
+   "rank": 3
+  }
+ ]
+}

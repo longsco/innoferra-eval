@@ -1,4 +1,4 @@
-# read_utc 2026-10-02T04:30:52Z
+# read_utc 2026-10-02T05:15:33Z
 ## queue
 v3_lp_cap_lpm_tok8shid_dap_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging" "EXTRA_ENV=$BB SGLANG_TOKENIZE_PREFIX_C
 v3_lp_cap_lpm_tok8shid_pd_075x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.5 MEMFRAC=0.76 TOKW=8 "XARGS=$HCX --schedule-policy lpm --enable-request-time-stats-logging --enable-prefill-delayer" "EXTRA_ENV=$BB 

@@ -125,10 +125,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // 1. default: overview
 let t = run({});
-check('four tabs, ids overview/results/setup/learn', same(t.tabs.map(b => b.dataset.tab), ['overview', 'results', 'setup', 'learn']) && same(t.panels.map(p => p.id), ['overview', 'results', 'setup', 'learn']));
-t.click(t.tabs[3]);
-check('click Learnings -> learn visible', same(t.view().visible, ['learn']), t.view());
-t = run({});
+check('three tabs, ids overview/results/setup', same(t.tabs.map(b => b.dataset.tab), ['overview', 'results', 'setup']) && same(t.panels.map(p => p.id), ['overview', 'results', 'setup']));
 check('no hash, no storage -> overview selected and visible', same(t.view(), { selected: ['overview'], visible: ['overview'] }), t.view());
 // 2. click Results
 t.click(t.tabs[1]);
@@ -217,20 +214,20 @@ for (const h of ['constructor', '__proto__', 'toString', 'valueOf', 'hasOwnPrope
 // 18. ARIA tab pattern: type=button, roving tabindex, arrow / Home / End keys
 t = run({});
 check('tab buttons have type="button"', t.tabs.every(b => b.getAttribute('type') === 'button'));
-check('roving tabindex: only the selected tab is 0', same(t.tabs.map(b => b.getAttribute('tabindex')), ['0', '-1', '-1', '-1']), t.tabs.map(b => b.getAttribute('tabindex')));
+check('roving tabindex: only the selected tab is 0', same(t.tabs.map(b => b.getAttribute('tabindex')), ['0', '-1', '-1']), t.tabs.map(b => b.getAttribute('tabindex')));
 t.key(t.tabs[0], 'ArrowRight');
 check('ArrowRight on Overview -> Results, focus moves', same(t.view().visible, ['results']) && t.state.focused === t.tabs[1], t.view());
 t.key(t.tabs[1], 'End');
-check('End -> Learnings', same(t.view().visible, ['learn']) && same(t.tabs.map(b => b.getAttribute('tabindex')), ['-1', '-1', '-1', '0']), t.view());
-t.key(t.tabs[3], 'ArrowRight');
+check('End -> Setup & production', same(t.view().visible, ['setup']) && same(t.tabs.map(b => b.getAttribute('tabindex')), ['-1', '-1', '0']), t.view());
+t.key(t.tabs[2], 'ArrowRight');
 check('ArrowRight on the last tab wraps to Overview', same(t.view().visible, ['overview']), t.view());
 t.key(t.tabs[0], 'ArrowLeft');
-check('ArrowLeft on the first tab wraps to Learnings', same(t.view().visible, ['learn']), t.view());
-t.key(t.tabs[3], 'Home');
+check('ArrowLeft on the first tab wraps to Setup', same(t.view().visible, ['setup']), t.view());
+t.key(t.tabs[2], 'Home');
 check('Home -> Overview', same(t.view().visible, ['overview']), t.view());
 // 19. if the tab script fails, every panel is shown (fail open) and the static markup has a noscript fallback
 t = run({ breakTabs: true });
-check('tab script throwing -> all four panels visible', same(t.view().visible, ['overview', 'results', 'setup', 'learn']), t.view());
+check('tab script throwing -> all three panels visible', same(t.view().visible, ['overview', 'results', 'setup']), t.view());
 check('noscript fallback un-hides the panels', /<noscript><style>\.tabpanel\[hidden\]\{display:block\}<\/style><\/noscript>/.test(src));
 // 20. wording guards on the rendered text: no undated 'now' for the live run, no unscored production pass
 const text = markup.replace(/<[^>]+>/g, ' ');

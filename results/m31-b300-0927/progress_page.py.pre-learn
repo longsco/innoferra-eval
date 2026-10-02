@@ -1914,14 +1914,6 @@ ul.trio,ul.ql{margin:0 0 8px;padding-left:20px}ul.trio li,ul.ql li,ol.ql li{marg
 td.prodcol,th.prodcol{background:color-mix(in srgb,var(--prod) 7%,transparent)}
 pre.cmd{background:var(--tab);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85rem;line-height:1.45;white-space:pre;margin:6px 0 10px;max-width:100%}
 code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85rem;overflow-wrap:anywhere}
-details.learn{padding:12px 16px}
-details.learn>summary{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
-details.learn .ltitle{font-weight:600}
-details.learn .lhead{flex:1 1 100%;color:var(--muted);font-size:.9rem;font-weight:400}
-details.learn[open]>summary{margin-bottom:8px}
-details.learn p,details.learn ul{margin:6px 0}
-table.lba td.src{font-size:.85rem}
-section.lsec{margin:0 0 18px}section.lsec>h2{display:block;margin:6px 0 4px}
 .ft{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padding-top:10px;margin-top:8px}
 @media (max-width:1179px){.top{grid-template-columns:minmax(0,1fr)}.cells{grid-template-columns:repeat(3,minmax(0,1fr))}svg.wide{max-width:840px;margin:0 auto}}
 @media (max-width:1100px){   /* innoferra 10-01: run tables become cards up to 1100 px (1024 px clipped as a table) */
@@ -2046,55 +2038,11 @@ def nbsp_units(html_text):
     return "".join(x if x.startswith(("<style>", "<script>")) else re.sub(r"(?<=\d) M(?=[\s<·,.;:)])", "\u00a0M", x) for x in parts)
 
 
-LEARN = jload("learnings.json", required=False) or {}
-
-
-def learnings_html():
-    """innoferra 10-01: 'Learnings' tab from learnings.json (entries drafted from PROGRESS.md + run records, every number fact-checked)."""
-    ents = [e for e in LEARN.get("entries", []) if e.get("title")]
-    if not ents:
-        return '<section class="panel" id="learn-top"><h2>Learnings</h2><p class="mut">Being written.</p></section>'
-    slug = lambda t: "learn-" + re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")[:48]
-    kind_badge = {"gain": "Adopted", "finding": "Finding", "negative": "Rejected", "method": "Finding"}
-    def card(e):
-        ba = "".join(f'<tr><td>{esc(b["metric"])}</td><td class="num">{esc(b["before"])}</td><td class="num">{esc(b["after"])}</td>'
-                     f'<td class="src">{esc(b.get("source", ""))}</td></tr>' for b in e.get("before_after", []))
-        tbl = (f'<div class="wrap"><table class="lba"><thead><tr><th>Measure</th><th class="num">Before</th><th class="num">After</th><th>Source</th></tr></thead>'
-               f'<tbody>{ba}</tbody></table></div>') if ba else ""
-        li = lambda xs: "".join(f"<li>{esc(x)}</li>" for x in xs or [])
-        return (f'<details class="panel learn" id="{slug(e["title"])}"><summary><span class="ltitle">{esc(e["title"])}</span> '
-                f'{badge(kind_badge.get(e.get("kind"), "Finding"))}<span class="lhead">{esc(e.get("headline", ""))}</span></summary>'
-                + tbl
-                + f'<p><b>What changed.</b> {esc(e.get("change_what", ""))}' + (f' <span class="mut">({esc(e["when"])})</span>' if e.get("when") else "") + '</p>'
-                + (f'<p><b>Exact change.</b> <code>{esc(e["change_detail"])}</code></p>' if e.get("change_detail") else "")
-                + (f'<p><b>Why.</b> {esc(e["mechanism"])}</p>' if e.get("mechanism") else "")
-                + (f'<p><b>What we learned</b></p><ul class="ql">{li(e.get("learnings"))}</ul>' if e.get("learnings") else "")
-                + (f'<p class="mut"><b>Caveats.</b> {esc(" ".join(e["caveats"]))}</p>' if e.get("caveats") else "")
-                + (f'<p class="src">Sources: {esc("; ".join(e.get("sources", [])))}</p>' if e.get("sources") else "")
-                + '</details>')
-    rank = lambda e: (-(e.get("rank") or 0), e.get("title"))
-    gains = sorted([e for e in ents if e.get("kind") == "gain"], key=rank)
-    top = "".join(f'<tr><td class="k"><a href="#{slug(e["title"])}">{esc(e["title"])}</a></td><td class="t">{esc(e.get("when", ""))}</td>'
-                  f'<td>{esc(e.get("headline", ""))}</td></tr>' for e in gains)
-    sec = lambda title, kind, note: ("" if not [e for e in ents if e.get("kind") == kind] else
-        f'<section class="lsec"><h2>{title}</h2><p class="sum">{note}</p>' + "".join(card(e) for e in sorted([e for e in ents if e.get("kind") == kind], key=rank)) + "</section>")
-    return ('<section class="panel" id="learn-top"><h2>What gave the most, and what we learned</h2>'
-            f'<p class="lede">{esc(LEARN.get("intro", ""))}</p>'
-            '<div class="wrap"><table class="rt2"><thead><tr><th>Change</th><th>When</th><th>Effect</th></tr></thead>'
-            f'<tbody>{top}</tbody></table></div>'
-            + (f'<p class="src">{esc(LEARN["note"])}</p>' if LEARN.get("note") else "") + '</section>'
-            + sec("Gains, biggest first", "gain", "What changed, exactly, and why it worked.")
-            + sec("Findings", "finding", "Measurements that changed what we work on.")
-            + sec("What did not work", "negative", "Tried and rejected, with the reason; useful to avoid repeating.")
-            + sec("How we measure", "method", "The test protocol and the tools behind the numbers."))
-
-
 def build():
     overview = (f'<div class="top">{cells_html()}{chart_html()}</div>' + recent_html() + next_html() + why_html() + howto_html())
     results = runs_html() + older_html() + sim_html() + queue_html() + log_html()
     setup = prod_html() + setup_html() + gap_html() + launch_html()
-    learn = learnings_html()
-    tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup &amp; production"), ("learn", "Learnings")]
+    tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup &amp; production")]
     bar = ('<div class="tabs" role="tablist" aria-label="Page sections">'
            + "".join(f'<button type="button" role="tab" id="tab-{i}" data-tab="{i}" aria-controls="{i}" aria-selected="{"true" if i == "overview" else "false"}" '
                      f'tabindex="{"0" if i == "overview" else "-1"}">{n}</button>' for i, n in tabs) + "</div>")
@@ -2105,7 +2053,6 @@ def build():
             f'<section class="tabpanel" id="overview" role="tabpanel" aria-labelledby="tab-overview">{overview}</section>\n'
             f'<section class="tabpanel" id="results" role="tabpanel" aria-labelledby="tab-results" hidden>{results}</section>\n'
             f'<section class="tabpanel" id="setup" role="tabpanel" aria-labelledby="tab-setup" hidden>{setup}</section>\n'
-            f'<section class="tabpanel" id="learn" role="tabpanel" aria-labelledby="tab-learn" hidden>{learn}</section>\n'
             f"{footer_html()}\n<script>{JS}</script>\n")
 
 
