@@ -393,6 +393,18 @@
   "v3_ab_nodap_1x@B": {
    "name": "without decode-after-prefill (full load, group B)",
    "short": "without decode-after-prefill"
+  },
+  "v3_ab_wb_1x": {
+   "name": "twin, full load: write-back host cache",
+   "short": "write-back host cache"
+  },
+  "v3_ab_wb_1x@A": {
+   "name": "control half at full load",
+   "short": "control"
+  },
+  "v3_ab_wb_1x@B": {
+   "name": "write-back host cache (group B)",
+   "short": "write-back host cache"
   }
  },
  "plain_words": [
@@ -471,13 +483,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-02 02:35",
+  "at": "2026-10-02 04:40",
   "items": [
    {
     "rule": "decode",
     "title": "Generation speed at full load (4.42 M)",
-    "text": "3.34 M passes 15/15 since Oct 2 01:00. At full load (4.42 M, Oct 2 02:32) the same stack scores 3/15: median first token 1.3–2.0 s and no errors, but generation falls to 40–58 tok/s in minutes 3–13 (52.4 overall vs production's 64.6 on the same requests), with a cache hit of 94.3% vs 97.1% (we re-process about twice production's uncached tokens). More prompt work means more generation pauses. Next: twin screens at full load (3 decode steps per prompt step, KV memory 0.80, FA4 draft attention, a longer delayer hold, smaller prompt pieces).",
-    "src": "PROGRESS.md Oct 2 02:35"
+    "text": "3.34 M passes 15/15 since Oct 2 01:00. At full load (4.42 M) the same stack scores 3/15: no errors and median first token 1.3–2.0 s, but generation falls to 52.4 tok/s (production 64.6 on the same requests). Where GPU time goes at full load (engine timers, measured window): generating 58%, prompt work 37%, idle 1%. Prompt work is high because we process 30.1 M uncached prompt tokens vs production's 15.6 M: 31% of the difference is sessions whose history started before our warm-up, 26% is production reusing the answer it generated itself (a replay effect: our cache holds a different answer), and 43% is real cache loss on about 110 follow-ups of very long (128k+) sessions. Production has 13.5% more cache per GPU; the KV memory 0.80 twin (now running) matches it, and a write-back host cache twin (up to a third more cached tokens without more RAM) is next.",
+    "src": "PROGRESS.md Oct 2 04:40"
    },
    {
     "rule": "ttft_p50",
