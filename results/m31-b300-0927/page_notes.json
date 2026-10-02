@@ -561,6 +561,14 @@
   "v3_ab_blk6_cl_1x@B": {
    "name": "DSpark draft block 6 (group B, v3.2)",
    "short": "draft block 6"
+  },
+  "v3_full_cl_1x": {
+   "name": "full node, fair replay (v3.2), all adopted changes, 1.0×",
+   "short": "full node v3.2 1.0×"
+  },
+  "v3_full_cl_0875x": {
+   "name": "full node, fair replay (v3.2), all adopted changes, 0.875×",
+   "short": "full node v3.2 0.875×"
   }
  },
  "plain_words": [
