@@ -1839,6 +1839,14 @@
    "append": {
     "XARGS": " --enable-prefill-delayer --prefill-delayer-max-delay-passes 30"
    }
+  },
+  {
+   "name": "prompt chunks sized by cost",
+   "adopted_at": "2026-10-02 07:15",
+   "run": "v3_ab_ccap_1x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_CHUNK_COST_PIVOT=44000"
+   }
   }
  ],
  "sim": {
