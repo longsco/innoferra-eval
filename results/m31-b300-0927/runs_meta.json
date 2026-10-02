@@ -279,6 +279,15 @@
    "change": "numerics",
    "verdict": "rejected",
    "why": "About 0/15 at 3.34 M: median first token 1.1–8.6 s and generation 45–66 tok/s per minute; 8-bit KV holds half the tokens, so prompts are re-processed (hit 91.2%). Replay tail cut 24 min after the window."
+  },
+  {
+   "tag": "v3_lp_cap_lpm_tok8shid_dap_075x",
+   "at": "2026-10-01 23:19",
+   "protocol": "v3.1",
+   "name": "decode after prefill at ¾ load (baseline)",
+   "change": "baseline for the 3.34 M levers",
+   "verdict": "baseline",
+   "why": "2/15: median first token 0.53–0.85 s per minute, but generation 40–66 tok/s (51.5 overall vs production 64.8) fails 13 minutes. Baseline for the draft-graph and prefill-delayer runs."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
