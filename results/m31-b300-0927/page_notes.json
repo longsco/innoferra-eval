@@ -477,6 +477,18 @@
   "v3_ab_tp2ar_1x@B": {
    "name": "TP2 attention + fused all-reduce (group B)",
    "short": "TP2 + fused all-reduce"
+  },
+  "v3_ab_proto32_1x": {
+   "name": "twin, full load: fair replay (v3.2) vs today's replay (v3.1)",
+   "short": "fair replay v3.2"
+  },
+  "v3_ab_proto32_1x@A": {
+   "name": "today's replay (v3.1), same engines",
+   "short": "replay v3.1"
+  },
+  "v3_ab_proto32_1x@B": {
+   "name": "fair closed-loop replay (v3.2), same engines",
+   "short": "replay v3.2"
   }
  },
  "plain_words": [
@@ -1898,7 +1910,7 @@
    "adopted_at": "2026-10-02 07:15",
    "run": "v3_ab_ccap_1x@B",
    "append": {
-    "EXTRA_ENV": " SGLANG_CHUNK_COST_PIVOT=44000"
+    "EXTRA_ENV": " SGLANG_CHUNK_COST_PIVOT=88000"
    }
   }
  ],

@@ -462,21 +462,21 @@
   },
   {
    "tag": "v3_ab_ccap88_1x@A",
-   "at": "2026-10-02 09:12",
+   "at": "2026-10-02 10:41",
    "protocol": "v3.1",
-   "name": "control half at full load",
+   "name": "control half at full load (pivot 44k)",
    "change": "calibration",
-   "verdict": "invalid",
-   "why": "Invalid run: an engine of this group crashed mid-window ('Prefill out of memory: 0 KV tokens free' while a long prompt was being prefilled in pieces); the watchdog stopped its replay. Fixed by parking the prompt for a step when no memory is free (patch_chunk_oom_park.py); the twin is re-queued."
+   "verdict": "calibration",
+   "why": "Control half at full load (4.42 M per GPU), cost-sized chunks with pivot 44k: 7/15, generation 55.8 tok/s, median first token 1.63 s, 0 errors (re-run after the 09:12 crash; the memory park fix was in place)."
   },
   {
    "tag": "v3_ab_ccap88_1x@B",
-   "at": "2026-10-02 09:12",
+   "at": "2026-10-02 10:41",
    "protocol": "v3.1",
-   "name": "chunk pivot 88k (group B)",
+   "name": "+ chunk pivot 88k instead of 44k",
    "change": "scheduling",
-   "verdict": "invalid",
-   "why": "Invalid run: an engine of this group crashed mid-window ('Prefill out of memory: 0 KV tokens free' while a long prompt was being prefilled in pieces); the watchdog stopped its replay. Fixed by parking the prompt for a step when no memory is free (patch_chunk_oom_park.py); the twin is re-queued."
+   "verdict": "adopted",
+   "why": "Paired against the control on the same requests: generation +0.98 tok/s (95% CI +0.03..+1.98), first token −5.5% (CI −8.6..−1.5%); 6/15 vs 7/15. A pivot of 44k cuts chunks too hard; 88k keeps more of the gain. 88k is now the adopted value."
   },
   {
    "tag": "v3_ab_tp2attn_1x@A",
