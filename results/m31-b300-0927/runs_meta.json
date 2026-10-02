@@ -594,6 +594,15 @@
    "change": "status",
    "verdict": "calibration",
    "why": "4.40 M per GPU, 0 errors, first token passes in every minute (1.3–2.2 s); generation passes in 3 of 15 minutes (per-minute median 53.8 tok/s; minutes 10–14 at 37–50 tok/s). Cache hit 94.9% vs production 97.1%. The twin groups (half 0 of the sessions) read 5–6 tok/s higher, so the official level comes from full-node runs."
+  },
+  {
+   "tag": "v3_full_cl_0875x",
+   "at": "2026-10-02 16:02",
+   "protocol": "v3.2",
+   "name": "Full node, fair replay (v3.2), every adopted change, 0.875×",
+   "change": "status",
+   "verdict": "calibration",
+   "why": "3.72 M per GPU, 0 errors, first token passes in every minute (1.3–1.8 s); generation 65.8 tok/s (production 64.4 on the same requests); 11 of 15 minutes pass. Minutes 10–12 and 14 fail (43–55 tok/s): bursts of 5–6 requests per minute with more than 100k uncached prompt tokens."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
