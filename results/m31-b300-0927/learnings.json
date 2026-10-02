@@ -930,7 +930,8 @@
     "Under rank lockstep, slicing prefill finer cost decode at load (fair share helped slightly or tied at 1.36 M, lost at 3.34 M); interleaving decode steps fixed the tail instead.",
     "Measure the wait before building a bypass: warm requests queued 0.007 s median (17:05, before the 17:45 patch), and parking chunks gained nothing.",
     "Check that a cap binds before raising it: engines ran 20–30 requests against a limit of 64 at 3.34 M (v3_lp_075x).",
-    "Carry known boot fixes into new lever lines: 128/engine booted Sep 28 only with a 1 GiB flashinfer workspace (mem 0.66); Oct 1 set neither (failure undiagnosed)."
+    "Carry known boot fixes into new lever lines: 128/engine booted Sep 28 only with a 1 GiB flashinfer workspace (mem 0.66); Oct 1 set neither (failure undiagnosed).",
+    "Production's host-overhead flags (plan stream, incremental streaming, local control broadcast, recv interval 2) cost 2.15 tok/s on our stack (twin run Oct 2 03:14, CI −3.7..−0.5): settings tuned for production's layout do not transfer automatically."
    ],
    "caveats": [
     "Single runs; identical runs differ by about one minute (PROGRESS 19:10 PDT 10-01).",
