@@ -1,13 +1,10 @@
-# read_utc 2026-10-03T18:34:39Z
+# read_utc 2026-10-03T18:38:19Z
 ## queue
-v3_full_cl_tk_1x_r2 /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enable-request-t
 ## done
-16:13:35 v3_full_cl_tk_0875x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enable
 16:58:52 v3_full_cl_tk_1x_b23 /tr/v3/b02.jsonl,/tr/v3/b03.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enable
 17:49:18 v3_full_cl_tk_09375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.875 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enab
+18:37:38 v3_full_cl_tk_1x_r2 /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enable-
 ## markers
-13:33:14 ===== lever v3_ab_isvv2_cl_1x done
-13:33:14 ===== lever v3_full_cl_tk_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TO
 14:20:50 ===== lever v3_full_cl_tk_1x done
 14:20:50 ===== lever v3_full_cl_tk_1125x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.25; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed
 15:16:51 ===== lever v3_full_cl_tk_1125x done
@@ -18,3 +15,5 @@ v3_full_cl_tk_1x_r2 /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE=replay_v2_
 16:58:52 ===== lever v3_full_cl_tk_1x_b23: traces /tr/v3/b02.jsonl,/tr/v3/b03.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.7
 17:49:18 ===== lever v3_full_cl_tk_1x_b23 done
 17:49:18 ===== lever v3_full_cl_tk_09375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 0.875; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0
+18:37:38 ===== lever v3_full_cl_tk_09375x done
+18:37:38 ===== lever v3_full_cl_tk_1x_r2: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76
