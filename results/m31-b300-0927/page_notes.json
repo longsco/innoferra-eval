@@ -729,6 +729,14 @@
   "v3_ab_sattnp_cl_1x@B": {
    "name": "faster sparse attention for prompt chunks (group B)",
    "short": "faster sparse attention (prompt)"
+  },
+  "v3_full_cl_sp_125x": {
+   "name": "full node, fair replay (v3.2), all adopted kernels incl. both sparse-attention kernels, 1.25×",
+   "short": "full node 1.25× (all kernels)"
+  },
+  "v3_full_cl_sp_15x": {
+   "name": "full node, fair replay (v3.2), all adopted kernels incl. both sparse-attention kernels, 1.5×",
+   "short": "full node 1.5× (all kernels)"
   }
  },
  "plain_words": [
@@ -1599,8 +1607,8 @@
   {
    "name": "Faster sparse attention (generation steps and prompt chunks, bitwise equal)",
    "state": "adopted",
-   "at": "2026-10-03 13:34",
-   "text": "generation steps: one tile per (request, KV head) for all 8 draft tokens, 6.0× faster bit for bit (live batches 374 → 60 µs per layer); full-load twin: generation +23.4 tok/s (+35%), first token −7%, 15/15 vs 12/15 at 4.38 M per GPU. The prompt-path rewrite is in its GPU window now",
+   "at": "2026-10-03 15:31",
+   "text": "generation steps: one tile per (request, KV head) for all 8 draft tokens, 6.0× faster bit for bit; twin +23.4 tok/s (+35%). Prompt chunks: a device-built work list (no host sync per layer), 1.8× faster bit for bit, 0 mismatches in 36,000 live calls; twin +4.05 tok/s. Both adopted",
    "ref": "twin v3_ab_sattnv2_cl_1x · PROGRESS.md Oct 3 11:34–13:34 · node kernels/sattn/"
   },
   {
@@ -2225,6 +2233,14 @@
    "run": "v3_ab_sattnv2_cl_1x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_SATTN_VERIFY_V2=1 SATTN_VERIFY_V2_SPLIT=4"
+   }
+  },
+  {
+   "name": "faster sparse attention for prompt chunks (bitwise equal)",
+   "adopted_at": "2026-10-03 15:31",
+   "run": "v3_ab_sattnp_cl_1x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_SATTN_PREFILL_V2=1 SGLANG_SATTN_V2=kvall"
    }
   }
  ],

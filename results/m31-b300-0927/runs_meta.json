@@ -900,6 +900,24 @@
    "change": "status",
    "verdict": "calibration",
    "why": "4.40 M per GPU (production's full per-node load), 0 errors; 15 of 15 minutes pass - the first full-node pass at full load. Generation 86.5 tok/s (production 64.6 on the same requests, which passes 13/15); every minute 69.4 tok/s or more; median first token 1.1–1.7 s."
+  },
+  {
+   "tag": "v3_ab_sattnp_cl_1x@A",
+   "at": "2026-10-03 15:31",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, all adopted kernels incl. sparse-attention verify)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.40 M per GPU): 15/15, generation 88.7 tok/s, median first token 1.28 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_sattnp_cl_1x@B",
+   "at": "2026-10-03 15:31",
+   "protocol": "v3.2",
+   "name": "+ faster sparse attention for prompt chunks (bitwise equal)",
+   "change": "kernels",
+   "verdict": "adopted",
+   "why": "Paired against the control on the same sessions: generation +4.05 tok/s (95% CI +2.1..+6.0), first token ×0.97 (CI 0.94..1.01); 15/15 in both groups. The new kernel builds its work list on the GPU (no host sync per layer) and is 1.8× faster on prompt chunks. On in all later runs."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
