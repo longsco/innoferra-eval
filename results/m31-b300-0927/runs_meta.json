@@ -729,6 +729,15 @@
    "change": "kernels",
    "verdict": "adopted",
    "why": "Paired against the control on the same sessions: generation +3.62 tok/s (95% CI +2.2..+5.0), first token ×0.993 (CI 0.95..1.03); 12/15 vs 7/15. The new kernel gives the same scores bit for bit and makes long prompt chunks 4–5× faster, so prompt steps pause generation for less time. On in all queued runs."
+  },
+  {
+   "tag": "v3_full_cl_fa4_0875x_b23",
+   "at": "2026-10-03 00:49",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), FA4 draft attention, 0.875×, another node share (buckets b02+b03)",
+   "change": "status",
+   "verdict": "calibration",
+   "why": "3.51 M per GPU on another node's sessions. Generation (62–98 tok/s) and median first token (1.2–1.5 s) pass in every minute, but 59 requests (1.1%) failed with HTTP 400, so only 1 of 15 minutes passes. All 59 come from one session: 44 of its 218 tool schemas carry \"type\": {}, which our engine's schema check rejects and production accepts. Gateway fix written (TOOL_SCHEMA_FIX_TYPE)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
