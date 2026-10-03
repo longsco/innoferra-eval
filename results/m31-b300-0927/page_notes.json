@@ -601,6 +601,10 @@
   "v3_full_cl_fa4_1125x": {
    "name": "full node, fair replay (v3.2), adopted stack with FA4 draft attention, 1.125×",
    "short": "full node 1.125× (FA4)"
+  },
+  "v3_full_cl_fa4_0875x_b23": {
+   "name": "full node, fair replay (v3.2), FA4 draft attention, 0.875×, another node share (buckets b02+b03)",
+   "short": "full node 0.875× (b02+b03)"
   }
  },
  "plain_words": [
@@ -1474,6 +1478,13 @@
    "at": "2026-10-02 18:21",
    "text": "production's draft attention backend; at full load generation +4.65 tok/s (95% CI +3.6..+5.9) with the same draft acceptance (3.60). It only pays since the draft replays its CUDA graph (Oct 2 00:12): before that, launch overhead hid the kernel time",
    "ref": "twin v3_ab_dfa4_cl_1x · PROGRESS.md Oct 2 18:21"
+  },
+  {
+   "name": "Verify fewer draft tokens per request (DSpark ragged verify)",
+   "state": "parked",
+   "at": "2026-10-02 20:15",
+   "text": "the fork's 'compact' mode cannot run on our stack: a boot guard stops it with DP attention and CUDA graphs, our attention path assumes 8 rows per request (wrong outputs), and DP padding keeps the MoE work at 8 rows per request. The verify width is only ~26% of a step, so an engine rewrite waits behind the indexer kernels",
+   "ref": "PROGRESS.md Oct 2 20:15 · node serving/ragged/"
   },
   {
    "name": "Fused verify kernels for 4-bit KV",
