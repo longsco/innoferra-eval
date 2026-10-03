@@ -792,6 +792,24 @@
    "change": "status",
    "verdict": "calibration",
    "why": "4.99 M per GPU, 0 errors; 4 of 15 minutes pass (FA4 only: 3/15). Generation 53.3 tok/s overall (+2.4; production 65.1). Minutes 9–12 drop to 39–46 tok/s, and minute 10 also misses on first token (3.62 s). This run does not have the top-k kernel (it started before that adoption)."
+  },
+  {
+   "tag": "v3_ab_isvv2_cl_1x@A",
+   "at": "2026-10-03 06:33",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, all adopted kernels: index score + top-k)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.39 M per GPU) with every adopted change: 14/15, generation 71.9 tok/s, median first token 1.31 s, 0 errors. The best control half so far (half node; twin halves read a few tok/s higher than the full node)."
+  },
+  {
+   "tag": "v3_ab_isvv2_cl_1x@B",
+   "at": "2026-10-03 06:33",
+   "protocol": "v3.2",
+   "name": "+ faster index score for generation steps (bitwise equal)",
+   "change": "kernels",
+   "verdict": "no clear change",
+   "why": "Paired against the control on the same sessions: generation −0.63 tok/s (95% CI −1.8..+1.0), first token ×1.027 (CI 0.99..1.06); 12/15 vs 14/15. The kernel is 1.85–2.3× faster on its own, but it saves only about 2 ms per generation step, which is inside the noise. Not adopted; the patch stays off."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

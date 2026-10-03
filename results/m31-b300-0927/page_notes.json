@@ -665,6 +665,14 @@
   "v3_ab_isvv2_cl_1x@B": {
    "name": "faster index score for generation steps (group B)",
    "short": "faster verify index score"
+  },
+  "v3_full_cl_tk_1125x": {
+   "name": "full node, fair replay (v3.2), FA4 + index-score and top-k kernels, 1.125×",
+   "short": "full node 1.125× (+ both kernels)"
+  },
+  "v3_full_cl_tk_0875x_b23": {
+   "name": "full node, fair replay (v3.2), FA4 + both kernels, 0.875×, buckets b02+b03",
+   "short": "full node 0.875× b02+b03 (+ both kernels)"
   }
  },
  "plain_words": [
@@ -1541,10 +1549,10 @@
   },
   {
    "name": "Faster index score for generation steps (bitwise equal)",
-   "state": "running",
-   "at": "2026-10-03 04:55",
-   "text": "the verify path reads each request's whole index K every step; the rewrite reaches up to 3.35 TB/s and is bit-exact: 1.85× on the production-shaped batch (79.7 → 43.1 µs per layer), 2.0–2.3× on other batches; GSM8K 96.74%; full-load twin next in the queue",
-   "ref": "node kernels/idx/index_score_verify_v2.py, window_isvv2.sh"
+   "state": "parked",
+   "at": "2026-10-03 06:33",
+   "text": "bit-exact and 1.85–2.3× faster on its own, but the full-load twin showed no clear change (generation −0.63 tok/s, CI −1.8..+1.0): it saves only about 2 ms per generation step. The patch stays off.",
+   "ref": "twin v3_ab_isvv2_cl_1x · PROGRESS.md Oct 3 06:33"
   },
   {
    "name": "Faster top-k for the indexer (bitwise equal)",
