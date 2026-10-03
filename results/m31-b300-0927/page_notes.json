@@ -1457,6 +1457,13 @@
  ],
  "engineering": [
   {
+   "name": "FA4 attention for the draft model",
+   "state": "adopted",
+   "at": "2026-10-02 18:21",
+   "text": "production's draft attention backend; at full load generation +4.65 tok/s (95% CI +3.6..+5.9) with the same draft acceptance (3.60). It only pays since the draft replays its CUDA graph (Oct 2 00:12): before that, launch overhead hid the kernel time",
+   "ref": "twin v3_ab_dfa4_cl_1x · PROGRESS.md Oct 2 18:21"
+  },
+  {
    "name": "Fused verify kernels for 4-bit KV",
    "state": "planned",
    "at": "2026-10-02 00:55",
@@ -1568,7 +1575,7 @@
   "Test v3 built from Sep 30 traffic: Sep 30 22:15",
   "Simulation round (StandardKernel benchmark): done Sep 30 21:28",
   "Tokenization prefix cache: adopted Sep 30 13:54",
-  "Production's draft attention (fa4): tested Sep 30 11:44, 9/15, no gain",
+  "Production's draft attention (FA4): no gain on Sep 30 11:44 (9/15; the draft then ran without CUDA graphs); adopted Oct 2 18:21 (twin at full load: generation +4.65 tok/s, 12/15 vs 10/15)",
   "Host cache (HiCache) for our 4-bit KV: done Sep 28 20:49, kept on",
   "16 tokenizer workers: tested Sep 28 17:21, no gain",
   "Bidirectional DSpark draft: adopted Sep 28 04:42",
@@ -2011,6 +2018,14 @@
    "run": "v3_ab_ccap_1x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_CHUNK_COST_PIVOT=88000"
+   }
+  },
+  {
+   "name": "FA4 attention kernel for the draft model",
+   "adopted_at": "2026-10-02 18:21",
+   "run": "v3_ab_dfa4_cl_1x@B",
+   "override": {
+    "DRAFT_ATTN": "fa4"
    }
   }
  ],

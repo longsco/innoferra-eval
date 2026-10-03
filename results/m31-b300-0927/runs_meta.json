@@ -639,6 +639,24 @@
    "change": "routing",
    "verdict": "rejected",
    "why": "Paired against the control: generation −9.3 tok/s (95% CI −10.9..−7.5), first token +48%; 2/15; uncached prompt +20%. Only 2 sessions qualified (the gateway's size estimate is low), but the pool still reserved 1 of the 4 GPU slots, so normal traffic ran on 3 slots. A hard reservation wastes capacity; not retried."
+  },
+  {
+   "tag": "v3_ab_dfa4_cl_1x@A",
+   "at": "2026-10-02 18:21",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, adopted stack, decode-after-prefill off)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.39 M per GPU): 10/15, generation 61.3 tok/s, median first token 1.34 s, 0 errors; uncached prompt 10.4 M tokens. This is the best control half at full load so far (decode-after-prefill is now off)."
+  },
+  {
+   "tag": "v3_ab_dfa4_cl_1x@B",
+   "at": "2026-10-02 18:21",
+   "protocol": "v3.2",
+   "name": "+ FA4 attention kernel for the draft model (production's draft backend)",
+   "change": "speculative decoding",
+   "verdict": "adopted",
+   "why": "Paired against the control on the same sessions: generation +4.65 tok/s (95% CI +3.6..+5.9), first token ×1.005 (CI 0.96..1.03); 12/15 vs 10/15. Draft acceptance is the same (3.60). The draft now replays its CUDA graph, so its attention kernel is a real part of each generation step. On Sep 30 the same kernel gave no gain, because the draft then ran without graphs. FA4 is on in all queued runs."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

@@ -1884,6 +1884,54 @@
     "PROGRESS.md Oct 2 12:15",
     "runs v3_ab_proto32_1x@A, v3_ab_proto32_1x@B"
    ]
+  },
+  {
+   "title": "FA4 attention for the draft model: a gain only after the draft graph fix",
+   "kind": "gain",
+   "rank": 13,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "4.39 M twin: generation +4.65 tok/s (+7.6%), first token unchanged, 12/15 vs 10/15 minutes; draft acceptance unchanged (3.60).",
+   "before_after": [
+    {
+     "metric": "generation per stream p50 (paired, same requests)",
+     "before": "61.3 tok/s (control, flashinfer draft attention)",
+     "after": "68.1 tok/s; +4.65 (95% CI +3.63..+5.87)",
+     "source": "twin v3_ab_dfa4_cl_1x, Oct 2 18:21"
+    },
+    {
+     "metric": "median first token (paired ratio)",
+     "before": "1.34 s",
+     "after": "1.38 s; ×1.005 (CI 0.962..1.034)",
+     "source": "twin v3_ab_dfa4_cl_1x, Oct 2 18:21"
+    },
+    {
+     "metric": "minutes in SLA (half node, 15 min)",
+     "before": "10/15",
+     "after": "12/15",
+     "source": "twin v3_ab_dfa4_cl_1x, Oct 2 18:21"
+    },
+    {
+     "metric": "same kernel before the draft graph fix",
+     "before": "Sep 30 11:44: 9/15, no gain",
+     "after": "Oct 2: +4.65 tok/s",
+     "source": "PROGRESS Sep 30 11:44; Oct 2 18:21"
+    }
+   ],
+   "change_what": "Run the DSpark draft model's attention with the FA4 kernel (production's choice) in place of flashinfer.",
+   "change_detail": "launch DRAFT_ATTN=fa4 (draft attention backend); all other settings as the adopted stack (v3.2 replay, decode-after-prefill off).",
+   "when": "Oct 2 18:21 PDT",
+   "mechanism": "Every generation step runs the draft model once and the target model once. Since the draft replays its CUDA graph, the draft step costs only its kernel time, so a faster attention kernel shortens every step. Before the graph fix, CPU launch time hid the kernel time.",
+   "learnings": [
+    "Test a rejected change again after you remove the bottleneck that hid it.",
+    "Keep a list of changes that showed no gain, and the bottleneck that was active at that time."
+   ],
+   "caveats": [
+    "The twin used half the sessions on 2 engines per group; full-node runs with FA4 follow (v3_full_cl_fa4_0875x, v3_full_cl_fa4_1x)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 2 18:21 PDT",
+    "node 0008 /data01/minimax31/bench/stress2-0927.log (v3_ab_dfa4_cl_1x)"
+   ]
   }
  ]
 }

@@ -1740,7 +1740,7 @@ def ours_recipe():
            + ") + the adopted changes in page_notes.json setup_current; generated at render",
            "# adopted: " + adopted,
            "# 4 engines x TP2/EP2/DP2, 64 requests per engine, 32k prompt chunks, 4 tokenizer workers, DSpark bidirectional draft",
-           "# (block 7 = DSPARK_BLOCK empty, window 4095, flashinfer), HiCache ratio 3 write-through, tokenization prefix cache,",
+           "# (block 7 = DSPARK_BLOCK empty, window 4095; draft attention flashinfer in base_env, FA4 since Oct 2 18:21), HiCache ratio 3 write-through, tokenization prefix cache,",
            "# load-aware session routing (ROUTE_PIN_BY_INFLIGHT=1, ROUTE_REPIN_SLACK=16)"] + lines + [
            "# engine-tree patches in force: patch_chunk_oom_guard.py (Oct 1 06:30), patch_mm_literal_tags.py (Oct 1 03:55), patch_tok_prefix_cache.py",
            "bash serving/minimax-m3.1/launch_tp2x4_old.sh      # 4 engines + our gateway on :8000"]
