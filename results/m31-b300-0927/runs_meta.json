@@ -675,6 +675,15 @@
    "change": "chunking",
    "verdict": "rejected",
    "why": "Paired against the control on the same sessions: generation −3.24 tok/s (95% CI −4.6..−1.8), first token ×1.000; 9/15 vs 10/15. Cost-sized chunks already cap the expensive pieces; smaller pieces add more prompt steps that pause generation."
+  },
+  {
+   "tag": "v3_full_cl_fa4_0875x",
+   "at": "2026-10-02 19:52",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), adopted stack with FA4 draft attention, 0.875×",
+   "change": "status",
+   "verdict": "calibration",
+   "why": "3.72 M per GPU, 0 errors; 14 of 15 minutes pass (before FA4 and with decode-after-prefill: 11/15). Only minute 11 misses, at 59.97 tok/s. Generation 73.7 tok/s (production 64.4 on the same requests); median first token 1.2–1.7 s in every minute."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
