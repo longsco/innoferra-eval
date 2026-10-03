@@ -765,6 +765,24 @@
    "change": "status",
    "verdict": "calibration",
    "why": "3.58 M per GPU on another node's sessions, 0 errors (59 before the gateway fix); 14 of 15 minutes pass (was 1/15). Only minute 5 misses (56.9 tok/s). Generation 72.4 tok/s (production 66.5). The results hold on a second node's traffic."
+  },
+  {
+   "tag": "v3_ab_tkv2_cl_1x@A",
+   "at": "2026-10-03 04:30",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, FA4 + index-score kernel)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.39 M per GPU): 11/15, generation 66.4 tok/s, median first token 1.34 s, 0 errors; uncached prompt 10.7 M tokens."
+  },
+  {
+   "tag": "v3_ab_tkv2_cl_1x@B",
+   "at": "2026-10-03 04:30",
+   "protocol": "v3.2",
+   "name": "+ faster top-k for the indexer (bitwise equal)",
+   "change": "kernels",
+   "verdict": "adopted",
+   "why": "Paired against the control on the same sessions: generation +2.94 tok/s (95% CI +1.5..+4.4), first token ×1.034 (CI 1.00..1.07; median 1.37 vs 1.34 s, far under the 3 s rule); 12/15 vs 11/15. The new top-k selects the same blocks in the same order and is 4–10× faster. On in all later runs."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

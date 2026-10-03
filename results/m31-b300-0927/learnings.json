@@ -1981,6 +1981,55 @@
     "PROGRESS.md Oct 2 21:34, 21:53, 23:25 PDT",
     "node 0008 serving/kernels/idx/ (bench_results, window_isv2.log)"
    ]
+  },
+  {
+   "title": "Faster top-k for the indexer: same blocks, same order, +2.9 tok/s at full load",
+   "kind": "gain",
+   "rank": 13.2,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "4.4 M twin: generation +2.94 tok/s (+4.4%), first token +3%, 12/15 vs 11/15 minutes; kernel 6.8–10.1× on prompt chunks, 3.8–5.5× on generation steps.",
+   "before_after": [
+    {
+     "metric": "generation per stream p50 (paired, same requests)",
+     "before": "66.4 tok/s (control)",
+     "after": "69.0 tok/s; +2.94 (95% CI +1.48..+4.40)",
+     "source": "twin v3_ab_tkv2_cl_1x, Oct 3 04:30"
+    },
+    {
+     "metric": "median first token (paired ratio)",
+     "before": "1.34 s",
+     "after": "1.37 s; ×1.034 (CI 1.002..1.065)",
+     "source": "twin v3_ab_tkv2_cl_1x, Oct 3 04:30"
+    },
+    {
+     "metric": "engine top-k call vs the old kernel (CUDA graph)",
+     "before": "bitonic merge, 2.3% of memory bandwidth on prompt chunks",
+     "after": "prompt chunks 6.8–10.1×, generation bs2–64 3.8–5.5×, decode 4.3×",
+     "source": "window_topk.sh bench + call-site check, Oct 3 02:32"
+    },
+    {
+     "metric": "bit-exactness on live traffic (check mode)",
+     "before": "—",
+     "after": "38,400 calls (~480 M rows) compared with the old kernel: 0 mismatches",
+     "source": "window_topk.sh smoke, Oct 3 02:56"
+    }
+   ],
+   "change_what": "Replace the indexer's top-16 block selection with a threshold filter: find a lower bound for the 16th score, keep only the few candidates above it, sort them, and fall back to the old exact network when a row has ties.",
+   "change_detail": "kernels/idx/topk_v2.py via patch_idx_topk.py; env SGLANG_IDX_TOPK_V2=1 (=check runs the old kernel too and compares on live traffic).",
+   "when": "Oct 3 01:42 (GPU checks) – 04:30 PDT (twin)",
+   "mechanism": "The old kernel merged 64 scores at a time with a two-warp bitonic network, about 19 instructions per score, so it was bound by instruction issue. The new kernel touches each score once and sorts only about 16–21 candidates per row. Rows with exact ties take the old network, so the output order stays identical.",
+   "learnings": [
+    "A gate that tests a worst-case input can block a real gain: check what share of real rows the worst case covers before you reject.",
+    "Run a shadow comparison on live traffic before a twin: it catches what synthetic inputs miss."
+   ],
+   "caveats": [
+    "First token rose 3% (CI just above 1.0); generation is the binding rule.",
+    "Rows with 16 or fewer blocks always take the exact fallback (cheap)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 3 01:42, 02:56, 04:30 PDT",
+    "node 0008 serving/kernels/idx/ (bench_results, window_topk.log)"
+   ]
   }
  ]
 }

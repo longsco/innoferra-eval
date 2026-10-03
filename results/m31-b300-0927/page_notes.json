@@ -1532,10 +1532,10 @@
   },
   {
    "name": "Faster top-k for the indexer (bitwise equal)",
-   "state": "running",
-   "at": "2026-10-03 02:56",
-   "text": "a threshold-filter top-k with an exact fallback for ties: bit-equal on GPU (benches, engine call, and 38,400 calls on real traffic with 0 mismatches); 6.8–10.1× on prompt chunks and 3.8–5.5× on generation steps; GSM8K 96.74%; full-load twin next in the queue",
-   "ref": "node kernels/idx/topk_v2.py, window_topk.sh"
+   "state": "adopted",
+   "at": "2026-10-03 04:30",
+   "text": "a threshold-filter top-k with an exact fallback for ties: bit-equal on GPU and on live traffic (38,400 calls, 0 mismatches); 6.8–10.1× on prompt chunks, 3.8–5.5× on generation steps; full-load twin: generation +2.94 tok/s, 12/15 vs 11/15 minutes",
+   "ref": "twin v3_ab_tkv2_cl_1x · PROGRESS.md Oct 3 01:42–04:30 · node kernels/idx/topk_v2.py"
   },
   {
    "name": "FA4 attention for the draft model",
@@ -2122,6 +2122,14 @@
    "run": "v3_ab_isv2_cl_1x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_IDX_SCORE_PREFILL_V2=1 SGLANG_IDX_SCORE_V2=ws"
+   }
+  },
+  {
+   "name": "faster top-k for the indexer (bitwise equal)",
+   "adopted_at": "2026-10-03 04:30",
+   "run": "v3_ab_tkv2_cl_1x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_IDX_TOPK_V2=1"
    }
   }
  ],
