@@ -679,13 +679,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-02 18:28",
+  "at": "2026-10-02 19:25",
   "items": [
    {
     "rule": "decode",
     "title": "Generation speed at full load (4.42 M)",
-    "text": "At 3.34 M per GPU, the stack passes 15 of 15 minutes. At full load (4.4 M per GPU), generation speed is the limit: the rule is more than 60 tok/s in each minute. The failing minutes have bursts of very long sessions (300k+ tokens). In those minutes, the indexer reads each long context in every generation step, so the steps get slower. Three changes on Oct 2 raised generation speed at full load: prompt chunks sized by their cost (+2.7 tok/s), decode-after-prefill off (+2.7 tok/s) and the FA4 kernel for the draft model (+4.65 tok/s, 12/15 minutes on half the node). Attention split across both GPUs makes generation 13–17% slower; that line is closed. Next: faster indexer kernels (31% of the GPU time on the long-context GPU).",
-    "src": "PROGRESS.md Oct 2 04:40–18:21"
+    "text": "At 3.34 M per GPU, the stack passes 15 of 15 minutes. At full load (4.4 M per GPU), generation speed is the limit: the rule is more than 60 tok/s in each minute. In the failing minutes, each GPU runs 15 to 20 requests with 0.9 to 1.6 M context tokens. A generation step then takes about 88 ms, against 52 ms at 5 to 9 requests, so each request gets about 41 tok/s. The two GPUs of an engine are equally loaded in passing and failing minutes. Three changes on Oct 2 raised generation speed at full load: prompt chunks sized by their cost (+2.7 tok/s), decode-after-prefill off (+2.7 tok/s) and the FA4 kernel for the draft model (+4.65 tok/s). Next: a faster indexer kernel and fewer verified draft tokens per request in large batches.",
+    "src": "PROGRESS.md Oct 2 04:40–19:25"
    },
    {
     "rule": "ttft_p50",
