@@ -11,6 +11,10 @@ export EXTRA_ARGS="--tokenizer-worker-num ${TOKW:-2} ${XARGS:-}" DSPARK_BLOCK=${
 # innoferra 10-01: keep the outgoing engines' runtime logs (time stats, crashes) before removing them
 for i in 0 1 2 3; do sudo -n docker inspect m31-tp2-$i >/dev/null 2>&1 && sudo -n docker logs --tail 300000 m31-tp2-$i > /data01/minimax31/logs/engine-$(date -u +%Y%m%dT%H%M%SZ)-tp2-$i.log 2>&1; done
 sudo -n docker rm -f m31-0927 dyn-w0 dyn-w1 dyn-w2 dyn-w3 dyn-frontend m31-tp2-0 m31-tp2-1 m31-tp2-2 m31-tp2-3 >/dev/null 2>&1; sleep 5
+# innoferra 10-03: docker rm -f can return while a large engine still tears down (it shows Exited 137 later and keeps its name),
+# so the new docker run fails on a name conflict and the lever burns ~55 min (seen 10-02 21:53 and 10-02 23:27 PDT).
+# Retry until every m31-tp2-* name is free (max ~5 min).
+for _r in $(seq 1 30); do _left=$(sudo -n docker ps -a --format "{{.Names}}" | grep -E "^m31-tp2-[0-3]$"); [ -z "$_left" ] && break; echo "waiting for old engines to go: $_left"; sudo -n docker rm -f $_left >/dev/null 2>&1; sleep 10; done
 # NUMA=1 (innoferra 09-30): engine i (GPUs 2i, 2i+1) is pinned to NUMA node i (CPUs 32i..32i+31 and their HT siblings, memory node i)
 for i in 0 1 2 3; do CS=; MS=; [ "${NUMA:-0}" = 1 ] && { CS="$((32*i))-$((32*i+31)),$((128+32*i))-$((128+32*i+31))"; MS=$i; }
   ( if [ -n "${AB_B_ENV+x}" ] && [ $((i/2)) = "${AB_B_SIDE:-1}" ]; then   # innoferra 10-02 A/B twin run: group B overrides
@@ -26,7 +30,9 @@ if [ -n "${AB_B_ENV+x}" ]; then   # innoferra 10-02 A/B twin run: gateway A :800
   GA=http://127.0.0.1:19191,http://127.0.0.1:19291; GB=http://127.0.0.1:19391,http://127.0.0.1:19491
   [ "${AB_B_SIDE:-1}" = 0 ] && { t=$GA; GA=$GB; GB=$t; }
   env ROUTE_SESSION_KEY=${ROUTE_SESSION_KEY-prompt_cache_key} $GWENV SGLANG_URLS=$GA bash gateway.sh >/dev/null 2>&1; sleep 4
-  env ROUTE_SESSION_KEY=${ROUTE_SESSION_KEY-prompt_cache_key} $GWENV NAME=m31-gateway-b PORT=8001 ACCESS_NAME=m31_access_b.log SGLANG_URLS=$GB bash gateway.sh >/dev/null 2>&1; sleep 4
+  BGW=$(printf "%s\n" "$AB_B_ENV" | grep -E "^(ROUTE_|STREAM_COALESCE)" | tr "\n" " ")   # innoferra 10-02: ROUTE_* B overrides -> gateway B only
+  [ -n "$BGW" ] && echo "gateway B overrides: $BGW"
+  env ROUTE_SESSION_KEY=${ROUTE_SESSION_KEY-prompt_cache_key} $GWENV $BGW NAME=m31-gateway-b PORT=8001 ACCESS_NAME=m31_access_b.log SGLANG_URLS=$GB bash gateway.sh >/dev/null 2>&1; sleep 4
   curl -s -m 5 -H "Authorization: Bearer $(cat ~/.m31_apikey)" http://127.0.0.1:8001/v1/models | head -c 60; echo " (gateway B)"
 else
 ROUTE_SESSION_KEY=${ROUTE_SESSION_KEY-prompt_cache_key} UPSTREAMS=1 SGLANG_URLS=http://127.0.0.1:19191,http://127.0.0.1:19291,http://127.0.0.1:19391,http://127.0.0.1:19491 ROUTE_DP_SIZE=2 ROUTE_PREFIX_CHARS=2048 MAX_INFLIGHT=4096 TPM_LIMIT=1000000000 RPM_LIMIT=1000000 STRIP_PARAMS=prompt_cache_key bash gateway.sh >/dev/null 2>&1; sleep 4
