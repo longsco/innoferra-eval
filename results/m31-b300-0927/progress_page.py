@@ -890,9 +890,9 @@ def cells_html():
             body = (f"At {m2(c['load'])} M the median first token misses {SLA['ttft_p50']:g} s by {m2(min(over))}"
                     + (f"–{m2(max(over))}" if len(over) > 1 else "") + " s")
         else:
-            body = f"At {m2(c['load'])} M: " + ", ".join(f"{RULES[k][3]} in {n} minutes" for k, n in top)
+            body = f"At {m2(c['load'])} M it misses on " + ", ".join(f"{RULES[k][3]} in {n} minute{'s' if n != 1 else ''}" for k, n in top)
         hi = next((b for b in BEST_CUR if b["load"] > c["load"] and b["fails"].get("decode", 0) * 2 > NMIN), None)
-        body += (f"; from {m2(hi['load'])} M generation speed fails too." if hi else ".")
+        body += (f"; at {m2(hi['load'])} M in {hi['fails']['decode']} of {NMIN}." if hi else ".")
         cap(body, 18, "answer cell 3 body")
         wa = pdt(w["at"])
         c3 = ('<div class="cell"><p class="q">What is holding us back?</p>'
