@@ -667,13 +667,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-02 12:58",
+  "at": "2026-10-02 18:28",
   "items": [
    {
     "rule": "decode",
     "title": "Generation speed at full load (4.42 M)",
-    "text": "At 3.34 M per GPU, the stack passes 15 of 15 minutes. At full load (4.42 M per GPU), it passes 6 to 9 of 15 minutes. The cause is the generation speed: it is 56 to 61 tok/s, and the rule is more than 60. Prompt work uses 37% of the GPU time, and prompt work stops generation on both GPUs of an engine. Prompt chunks sized by their cost reduce the stop time (+2.7 tok/s, adopted Oct 2). Attention split across both GPUs (production's layout) halves the first-token time, but it makes generation 13–17% slower, also with a fused all-reduce and split activations. That line is closed. The test is now fair: from Oct 2 12:15 the replay feeds our own answers into the next turn (v3.2). This gives +1.5 tok/s and a 10% faster first token, but generation speed stays the limit.",
-    "src": "PROGRESS.md Oct 2 04:40–12:58"
+    "text": "At 3.34 M per GPU, the stack passes 15 of 15 minutes. At full load (4.4 M per GPU), generation speed is the limit: the rule is more than 60 tok/s in each minute. The failing minutes have bursts of very long sessions (300k+ tokens). In those minutes, the indexer reads each long context in every generation step, so the steps get slower. Three changes on Oct 2 raised generation speed at full load: prompt chunks sized by their cost (+2.7 tok/s), decode-after-prefill off (+2.7 tok/s) and the FA4 kernel for the draft model (+4.65 tok/s, 12/15 minutes on half the node). Attention split across both GPUs makes generation 13–17% slower; that line is closed. Next: faster indexer kernels (31% of the GPU time on the long-context GPU).",
+    "src": "PROGRESS.md Oct 2 04:40–18:21"
    },
    {
     "rule": "ttft_p50",
