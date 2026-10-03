@@ -717,6 +717,18 @@
   "v3_full_cl_sv_15x": {
    "name": "full node, fair replay (v3.2), all adopted kernels incl. sparse attention, 1.5×",
    "short": "full node 1.5× (+ sparse attention)"
+  },
+  "v3_ab_sattnp_cl_1x": {
+   "name": "twin, full load (v3.2): faster sparse attention for prompt chunks",
+   "short": "faster sparse attention (prompt)"
+  },
+  "v3_ab_sattnp_cl_1x@A": {
+   "name": "control half at full load (v3.2, all adopted kernels)",
+   "short": "control"
+  },
+  "v3_ab_sattnp_cl_1x@B": {
+   "name": "faster sparse attention for prompt chunks (group B)",
+   "short": "faster sparse attention (prompt)"
   }
  },
  "plain_words": [
