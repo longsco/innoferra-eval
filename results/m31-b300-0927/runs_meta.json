@@ -810,6 +810,15 @@
    "change": "kernels",
    "verdict": "no clear change",
    "why": "Paired against the control on the same sessions: generation −0.63 tok/s (95% CI −1.8..+1.0), first token ×1.027 (CI 0.99..1.06); 12/15 vs 14/15. The kernel is 1.85–2.3× faster on its own, but it saves only about 2 ms per generation step, which is inside the noise. Not adopted; the patch stays off."
+  },
+  {
+   "tag": "v3_full_cl_tk_1x",
+   "at": "2026-10-03 07:20",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), FA4 + index-score and top-k kernels, 1.0×",
+   "change": "status",
+   "verdict": "calibration",
+   "why": "4.40 M per GPU, 0 errors; 10 of 15 minutes pass. Generation 64.0 tok/s overall, about equal to production's 64.6 on the same requests (FA4 only: 58.5). Minutes 9–13 fail at 49.6–60.0 tok/s (minute 13 by 0.01); the median first token passes in every minute."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
