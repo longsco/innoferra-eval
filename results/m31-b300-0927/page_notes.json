@@ -727,7 +727,7 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-03 01:08",
+  "at": "2026-10-03 03:43",
   "items": [
    {
     "rule": "decode",
@@ -756,8 +756,8 @@
    {
     "rule": "errors",
     "title": "Errors: one client's tool schemas (Oct 3)",
-    "text": "On another node's sessions (buckets b02+b03), one session sent 218 tools per request, and 44 of them had \"type\": {}. Our engine rejected all 60 requests of that session with HTTP 400; production served them. This cost 13 of 15 minutes at 3.51 M. The gateway now deletes only invalid type values (TOOL_SCHEMA_FIX_TYPE). Earlier error causes (open-file limit, literal '<image>' text) are fixed.",
-    "src": "PROGRESS.md Oct 3 00:49; Oct 1 03:20 and 03:55"
+    "text": "On another node's sessions (buckets b02+b03), one session sent 218 tools per request, and 44 of them had \"type\": {}. Our engine rejected all 60 requests of that session with HTTP 400; production served them. The gateway now deletes only invalid type values (TOOL_SCHEMA_FIX_TYPE): the rerun had 0 errors and 14 of 15 minutes passed (was 1 of 15).",
+    "src": "PROGRESS.md Oct 3 00:49 and 03:42"
    }
   ],
   "cause_lead": "Generation speed at full load",
