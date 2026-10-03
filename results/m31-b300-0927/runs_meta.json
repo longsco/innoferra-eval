@@ -621,6 +621,24 @@
    "change": "scheduling",
    "verdict": "adopted",
    "why": "Paired against the control on the same sessions: generation +2.66 tok/s (95% CI +1.6..+3.7), first token +5.8% (CI +2..+10%; median 1.44 s); 9/15 vs 6/15. With cost-sized chunks and prompt pairing in place, the forced generation step after each prompt step no longer helps. The setting is now off."
+  },
+  {
+   "tag": "v3_ab_longpool_cl_1x@A",
+   "at": "2026-10-02 17:38",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.41 M per GPU): 8/15, generation 60.9 tok/s, median first token 1.50 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_longpool_cl_1x@B",
+   "at": "2026-10-02 17:38",
+   "protocol": "v3.2",
+   "name": "+ long-session pool (sessions starting at 300k+ tokens on one slot)",
+   "change": "routing",
+   "verdict": "rejected",
+   "why": "Paired against the control: generation −9.3 tok/s (95% CI −10.9..−7.5), first token +48%; 2/15; uncached prompt +20%. Only 2 sessions qualified (the gateway's size estimate is low), but the pool still reserved 1 of the 4 GPU slots, so normal traffic ran on 3 slots. A hard reservation wastes capacity; not retried."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

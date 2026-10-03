@@ -581,6 +581,14 @@
   "v3_ab_longpool_cl_1x@B": {
    "name": "sessions starting at 300k+ tokens on one slot (group B)",
    "short": "long-session pool"
+  },
+  "v3_full_cl_nodap_1x": {
+   "name": "full node, fair replay (v3.2), adopted stack without decode-after-prefill, 1.0×",
+   "short": "full node v3.2 1.0× (no DAP)"
+  },
+  "v3_full_cl_nodap_0875x": {
+   "name": "full node, fair replay (v3.2), adopted stack without decode-after-prefill, 0.875×",
+   "short": "full node v3.2 0.875× (no DAP)"
   }
  },
  "plain_words": [
