@@ -53,6 +53,7 @@ BRUN(){ sudo -n docker rm -f isv2-bench > /dev/null 2>&1
 log "isv2 window after lever $1: save the engine-3 log, remove m31-tp2-3 (GPUs 6,7); engines 0-2 stay up and idle"
 sudo -n docker logs --tail 300000 m31-tp2-3 > /data01/minimax31/logs/engine-$TS-tp2-3.log 2>&1
 sudo -n docker rm -f m31-tp2-3 > /dev/null 2>&1; sleep 5
+for _r in $(seq 1 30); do sudo -n docker inspect m31-tp2-3 > /dev/null 2>&1 || break; sudo -n docker rm -f m31-tp2-3 > /dev/null 2>&1; sleep 10; done   # innoferra 10-03: wait until the old engine-3 container is gone (rm -f returns before a large engine finishes tearing down)
 for p in 19191 19291; do curl -s -m 60 -X POST http://127.0.0.1:$p/flush_cache > /dev/null; done
 PY /k/greedy_ab.py --a http://127.0.0.1:19191 --b http://127.0.0.1:19291 $GA --tag isv2-control-off-vs-off > $O.greedy-control 2>&1 &
 GPID=$!
