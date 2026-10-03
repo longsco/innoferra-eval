@@ -629,6 +629,10 @@
   "v3_full_cl_isv2_0875x": {
    "name": "full node, fair replay (v3.2), FA4 + faster index-score kernel, 0.875×",
    "short": "full node 0.875× (+ index kernel)"
+  },
+  "v3_full_cl_isv2_0875x_b23": {
+   "name": "full node, fair replay (v3.2), FA4 + index-score kernel, 0.875×, buckets b02+b03, tool-schema fix",
+   "short": "full node 0.875× b02+b03 (fix)"
   }
  },
  "plain_words": [
