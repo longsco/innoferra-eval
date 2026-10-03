@@ -1,4 +1,4 @@
-# read_utc 2026-10-03T02:53:26Z
+# read_utc 2026-10-03T02:55:05Z
 ## queue
 v3_full_cl_fa4_1125x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.25 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm
 ## done

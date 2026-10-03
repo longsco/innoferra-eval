@@ -326,6 +326,8 @@ def best_points(test):
 CURV = [r for r in VALID if r["test"] == CUR]
 CLOSEST = max(CURV, key=lambda r: (r["pass"], r["load"], r["at"])) if CURV else None
 PASS_TOP = max([r for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected"], key=lambda r: (r["load"], r["at"]), default=None)
+PASS_PREV = None if PASS_TOP else max([r for r in VALID if r["test"] == "v3.1" and r["pass"] >= NMIN and r.get("verdict") != "Rejected"],
+                                       key=lambda r: (r["load"], r["at"]), default=None)   # innoferra 10-02: v3.2 current, quote the v3.1 pass
 NEWEST = RUNS[0] if RUNS else None
 NEWEST_CUR = max(CURV, key=lambda r: r["at"]) if CURV else None
 BEST_CUR = best_points(CUR)
@@ -517,6 +519,8 @@ def fill(text):
             if r is None and a.startswith("best_"):
                 try:
                     r = best_of(GROUPS.get((CUR, float(a[5:])), []))
+                    if r is None:   # innoferra 10-02: v3.2 has no runs at some shares; these notes quote the Oct 1 (v3.1) runs
+                        r = best_of(GROUPS.get(("v3.1", float(a[5:])), []))
                 except ValueError:
                     r = None
             if r is not None and k in FIELD:
@@ -616,7 +620,7 @@ def status_text():
     if PASS_TOP:
         s += f"passes the SLA up to {m2(PASS_TOP['load'])} M TPM/GPU sent (test {CUR}, {stamp(PASS_TOP['at'])})."
     else:
-        s += "no load passes the SLA yet."
+        s += f"no load passes the SLA on test {CUR} yet." + (f" On the older test {PASS_PREV['test']} it passed up to {m2(PASS_PREV['load'])} M TPM/GPU sent ({stamp(PASS_PREV['at'])})." if PASS_PREV else "")
     if CLOSEST and not PASS_TOP:
         s += f" Closest: {CLOSEST['pass']}/{NMIN} minutes at {m2(CLOSEST['load'])} M TPM/GPU sent (test {CUR}, {stamp(CLOSEST['at'])})."
     scores = [f"{b['ppass']}/{NMIN} at {m2(b['pload'])} M" + ("" if b["test"] == CUR else f" (test {b['test']})") for b in BEST_CUR + EXTRA]
@@ -855,7 +859,8 @@ def cells_html():
               + f'<p class="lnk"><a href="#run-{PASS_TOP["id"]}">↳ run {hm(PASS_TOP["at"])}</a></p></div>')
     else:
         c1 = ('<div class="cell no"><p class="q">Do we pass the SLA at any load?</p><p class="lead hero bad">✕ Not yet</p>'
-              f'<p class="body">No load has held all {NMIN} minutes.' + (f' Closest: {c["pass"]}/{NMIN} at {m2(c["load"])} M ({stamp(c["at"])}).' if c else "") + '</p>'
+              f'<p class="body">No load has held all {NMIN} minutes on test {CUR}.' + (f' Closest: {c["pass"]}/{NMIN} at {m2(c["load"])} M ({stamp(c["at"])}).' if c else "")
+              + (f' On the older test {PASS_PREV["test"]}: {NMIN}/{NMIN} up to {m2(PASS_PREV["load"])} M.' if PASS_PREV else "") + '</p>'
               + (f'<p class="lnk"><a href="#run-{c["id"]}">↳ run {hm(c["at"])}</a></p>' if c else "") + '</div>')
     ref = PASS_TOP or c
     c2 = ""

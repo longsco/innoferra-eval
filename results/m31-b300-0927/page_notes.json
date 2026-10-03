@@ -1,6 +1,6 @@
 {
  "_note": "Hand-written plain-language notes for progress_page.py: run labels, the findings/test log, why-we-miss text, setup comparison, glossary. Run numbers are NEVER typed here: {field:tag} placeholders (load, pass, prod_pass, hit, phit, dec, pdec, at, p50, p99) are filled from runs_v3.json at render, {name} placeholders from derived values. Other numbers quote the PROGRESS.md / progress_data.json row named in src. Times are PDT. Spec resolution: the setup-comparison table keeps the anchor #compare (the spec's #setup is the tab id); links meant for the table use #compare.",
- "current_test": "v3.1",
+ "current_test": "v3.2",
  "target": 7.0,
  "goal": {
   "value": 7.0,
