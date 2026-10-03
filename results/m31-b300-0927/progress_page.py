@@ -859,8 +859,8 @@ def cells_html():
               + f'<p class="lnk"><a href="#run-{PASS_TOP["id"]}">↳ run {hm(PASS_TOP["at"])}</a></p></div>')
     else:
         c1 = ('<div class="cell no"><p class="q">Do we pass the SLA at any load?</p><p class="lead hero bad">✕ Not yet</p>'
-              f'<p class="body">No load has held all {NMIN} minutes on test {CUR}.' + (f' Closest: {c["pass"]}/{NMIN} at {m2(c["load"])} M ({stamp(c["at"])}).' if c else "")
-              + (f' On the older test {PASS_PREV["test"]}: {NMIN}/{NMIN} up to {m2(PASS_PREV["load"])} M.' if PASS_PREV else "") + '</p>'
+              f'<p class="body">None on test {CUR} yet.' + (f' Closest: {c["pass"]}/{NMIN} at {m2(c["load"])} M ({stamp(c["at"])}).' if c else "")
+              + (f' Test {PASS_PREV["test"]}: {NMIN}/{NMIN} up to {m2(PASS_PREV["load"])} M.' if PASS_PREV else "") + '</p>'
               + (f'<p class="lnk"><a href="#run-{c["id"]}">↳ run {hm(c["at"])}</a></p>' if c else "") + '</div>')
     ref = PASS_TOP or c
     c2 = ""
