@@ -621,6 +621,10 @@
   "v3_ab_isv2_cl_1x@B": {
    "name": "faster index-score kernel for prompt chunks (group B)",
    "short": "faster index-score kernel"
+  },
+  "v3_full_cl_isv2_1x": {
+   "name": "full node, fair replay (v3.2), FA4 + faster index-score kernel, 1.0×",
+   "short": "full node 1.0× (+ index kernel)"
   }
  },
  "plain_words": [
@@ -1490,10 +1494,10 @@
  "engineering": [
   {
    "name": "Faster index-score kernel for prompt chunks",
-   "state": "running",
-   "at": "2026-10-02 21:53",
-   "text": "a warp-specialized rewrite of the indexer's score kernel: bitwise equal to the old kernel, 3.9–5.0× faster on long prompt chunks (58–66% of FP8 peak vs 12.5%); GSM8K 96.74%; full-load twin queued",
-   "ref": "PROGRESS.md Oct 2 21:34, 21:53 · node kernels/idx/"
+   "state": "adopted",
+   "at": "2026-10-02 23:25",
+   "text": "a warp-specialized rewrite of the indexer's score kernel: bitwise equal, 3.9–5.0× faster on long prompt chunks (58–66% of FP8 peak vs 12.5%); GSM8K 96.74%; full-load twin: generation +3.62 tok/s, 12/15 vs 7/15 minutes",
+   "ref": "twin v3_ab_isv2_cl_1x · PROGRESS.md Oct 2 21:34–23:25 · node kernels/idx/"
   },
   {
    "name": "FA4 attention for the draft model",
@@ -2072,6 +2076,14 @@
    "run": "v3_ab_dfa4_cl_1x@B",
    "override": {
     "DRAFT_ATTN": "fa4"
+   }
+  },
+  {
+   "name": "faster index-score kernel for prompt chunks (bitwise equal)",
+   "adopted_at": "2026-10-02 23:25",
+   "run": "v3_ab_isv2_cl_1x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_IDX_SCORE_PREFILL_V2=1 SGLANG_IDX_SCORE_V2=ws"
    }
   }
  ],

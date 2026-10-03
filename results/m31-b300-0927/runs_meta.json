@@ -711,6 +711,24 @@
    "change": "status",
    "verdict": "calibration",
    "why": "3.33 M per GPU, 0 errors; 15 of 15 minutes pass: the first pass on the fair test. Generation 81.0 tok/s (production 64.8 on the same requests); every minute 64.9–93.9 tok/s; median first token 1.2–1.6 s."
+  },
+  {
+   "tag": "v3_ab_isv2_cl_1x@A",
+   "at": "2026-10-02 23:25",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, FA4 draft attention)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.40 M per GPU): 7/15, generation 62.4 tok/s, median first token 1.34 s, 0 errors; uncached prompt 10.4 M tokens."
+  },
+  {
+   "tag": "v3_ab_isv2_cl_1x@B",
+   "at": "2026-10-02 23:25",
+   "protocol": "v3.2",
+   "name": "+ faster index-score kernel for prompt chunks (bitwise equal)",
+   "change": "kernels",
+   "verdict": "adopted",
+   "why": "Paired against the control on the same sessions: generation +3.62 tok/s (95% CI +2.2..+5.0), first token ×0.993 (CI 0.95..1.03); 12/15 vs 7/15. The new kernel gives the same scores bit for bit and makes long prompt chunks 4–5× faster, so prompt steps pause generation for less time. On in all queued runs."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

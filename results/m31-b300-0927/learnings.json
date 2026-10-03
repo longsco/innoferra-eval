@@ -1932,6 +1932,55 @@
     "PROGRESS.md Oct 2 18:21 PDT",
     "node 0008 /data01/minimax31/bench/stress2-0927.log (v3_ab_dfa4_cl_1x)"
    ]
+  },
+  {
+   "title": "Faster index-score kernel for prompt chunks: bitwise equal, 4–5× faster, +3.6 tok/s at full load",
+   "kind": "gain",
+   "rank": 13.5,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "4.40 M twin: generation +3.62 tok/s (+5.8%), first token unchanged, 12/15 vs 7/15 minutes; kernel 3.98× faster over 8 shapes, bit for bit.",
+   "before_after": [
+    {
+     "metric": "generation per stream p50 (paired, same requests)",
+     "before": "62.4 tok/s (control)",
+     "after": "66.2 tok/s; +3.62 (95% CI +2.20..+4.95)",
+     "source": "twin v3_ab_isv2_cl_1x, Oct 2 23:25"
+    },
+    {
+     "metric": "minutes in SLA (half node, 15 min)",
+     "before": "7/15",
+     "after": "12/15 (minutes 6–9 and 13 now pass)",
+     "source": "twin v3_ab_isv2_cl_1x, Oct 2 23:25"
+    },
+    {
+     "metric": "index score per layer, 16k-token chunk over a 262k prefix (GPU bench)",
+     "before": "8.22 ms (fork, 12.5% of FP8 peak)",
+     "after": "1.66 ms (5.0×; 58–66% of peak)",
+     "source": "window_isv2.sh bench, Oct 2 21:34"
+    },
+    {
+     "metric": "output vs the fork kernel",
+     "before": "—",
+     "after": "bitwise equal on 8 shapes, adversarial cases and CUDA-graph replay; GSM8K 96.74%",
+     "source": "window_isv2.sh, Oct 2 21:34–21:53"
+    }
+   ],
+   "change_what": "Replace the indexer's score kernel for prompt chunks with a warp-specialized rewrite that computes the same numbers.",
+   "change_detail": "kernels/idx/index_score_v2.py (variant ws) via patch_idx_score_prefill.py; env SGLANG_IDX_SCORE_PREFILL_V2=1 SGLANG_IDX_SCORE_V2=ws; the verify path keeps the fork kernel.",
+   "when": "Oct 2 21:34 (bench) – 23:25 PDT (twin)",
+   "mechanism": "The old kernel copied each K tile byte by byte, masked blocks that were fully visible and waited for each matrix multiply, so it ran at 12.5% of FP8 peak. The new kernel loads K tiles with wide aligned copies, overlaps loads, multiplies and the epilogue in separate warps, and masks only the boundary blocks. Prompt steps over long prefixes get shorter, so generation pauses less on both GPUs of an engine.",
+   "learnings": [
+    "Measure a kernel against its hardware floor: a 5× gap to peak is a lever even when the kernel is 'only' 20–30% of the time.",
+    "Keep the arithmetic identical and change only data movement and scheduling: then a bitwise test replaces a quality run."
+   ],
+   "caveats": [
+    "Tiny prompt chunks (under ~1k tokens) are host-bound and gain nothing.",
+    "The first call per tile size compiles the kernel (one time per GPU process)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 2 21:34, 21:53, 23:25 PDT",
+    "node 0008 serving/kernels/idx/ (bench_results, window_isv2.log)"
+   ]
   }
  ]
 }
