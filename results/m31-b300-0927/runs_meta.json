@@ -747,6 +747,15 @@
    "change": "status",
    "verdict": "calibration",
    "why": "4.41 M per GPU, 0 errors; 10 of 15 minutes pass (FA4 only: 8/15). Generation 61.8 tok/s overall (+3.3; production 64.6). Minutes 6 and 9–12 fail at 51.7–58.6 tok/s; the median first token passes in every minute (1.2–1.8 s)."
+  },
+  {
+   "tag": "v3_full_cl_isv2_0875x",
+   "at": "2026-10-03 02:28",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), FA4 + faster index-score kernel, 0.875×",
+   "change": "status",
+   "verdict": "calibration",
+   "why": "3.71 M per GPU, 0 errors; 12 of 15 minutes pass. Minutes 10–12 miss narrowly (55.9, 59.7, 59.1 tok/s). The FA4-only run at this load gave 14/15 with its edge minutes at 59.97 and 60.20; overall generation is the same (73.3 vs 73.7 tok/s), so the difference is noise at the 60 tok/s threshold."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
