@@ -685,6 +685,10 @@
   "v3_full_cl_tk_09375x": {
    "name": "full node, fair replay (v3.2), FA4 + index-score and top-k kernels, 0.9375×",
    "short": "full node 0.9375× (+ both kernels)"
+  },
+  "v3_full_cl_tk_1x_r2": {
+   "name": "full node, fair replay (v3.2), FA4 + both kernels, 1.0×, repeat (noise check)",
+   "short": "full node 1.0× repeat"
   }
  },
  "plain_words": [
@@ -1552,6 +1556,13 @@
   "2026-10-01 04:50"
  ],
  "engineering": [
+  {
+   "name": "Faster sparse attention (generation steps and prompt chunks, bitwise equal)",
+   "state": "running",
+   "at": "2026-10-03 11:34",
+   "text": "sparse attention is now the largest kernel (31% of the heavy GPU's time). The generation-step rewrite runs all 8 draft tokens of a request in one tile (estimated 17–21 ms less per step); the prompt rewrite builds its work list on the GPU (no host sync) and loads each K/V block once (estimated 1.8–2.2×). Both are bit-exact on CPU; the GPU window for the generation-step kernel is armed",
+   "ref": "PROGRESS.md Oct 3 11:34 · node kernels/sattn/"
+  },
   {
    "name": "Faster index-score kernel for prompt chunks",
    "state": "adopted",

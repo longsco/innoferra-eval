@@ -1,5 +1,6 @@
-# read_utc 2026-10-03T17:49:57Z
+# read_utc 2026-10-03T18:34:39Z
 ## queue
+v3_full_cl_tk_1x_r2 /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enable-request-t
 ## done
 16:13:35 v3_full_cl_tk_0875x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enable
 16:58:52 v3_full_cl_tk_1x_b23 /tr/v3/b02.jsonl,/tr/v3/b03.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --enable
