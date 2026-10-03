@@ -689,6 +689,22 @@
   "v3_full_cl_tk_1x_r2": {
    "name": "full node, fair replay (v3.2), FA4 + both kernels, 1.0×, repeat (noise check)",
    "short": "full node 1.0× repeat"
+  },
+  "v3_full_cl_sv_1x": {
+   "name": "full node, fair replay (v3.2), all adopted kernels + sparse-attention verify v2, 1.0×",
+   "short": "full node 1.0× (+ sparse attention)"
+  },
+  "v3_ab_sattnv2_cl_1x": {
+   "name": "twin, full load (v3.2): faster sparse attention for generation steps",
+   "short": "faster sparse attention (verify)"
+  },
+  "v3_ab_sattnv2_cl_1x@A": {
+   "name": "control half at full load (v3.2, all adopted kernels)",
+   "short": "control"
+  },
+  "v3_ab_sattnv2_cl_1x@B": {
+   "name": "faster sparse attention for generation steps (group B)",
+   "short": "faster sparse attention (verify)"
   }
  },
  "plain_words": [
