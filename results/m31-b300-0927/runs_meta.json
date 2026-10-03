@@ -693,6 +693,15 @@
    "change": "status",
    "verdict": "calibration",
    "why": "4.41 M per GPU, 0 errors; 8 of 15 minutes pass (before FA4 and with decode-after-prefill: 3/15). Minutes 6–12 fail on generation speed (41.8–54.9 tok/s); the median first token passes in every minute (1.3–2.1 s). Generation 58.5 tok/s overall (production 64.6)."
+  },
+  {
+   "tag": "v3_full_cl_fa4_1125x",
+   "at": "2026-10-02 21:32",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), adopted stack with FA4 draft attention, 1.125×",
+   "change": "status",
+   "verdict": "calibration",
+   "why": "4.99 M per GPU (sessions of buckets b00, b01 and a quarter of b02), 0 errors; 3 of 15 minutes pass. Generation 50.9 tok/s overall (production 65.1); minute 10 also misses on first token (3.91 s). The stack holds 14/15 at 3.72 M and 8/15 at 4.41 M."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

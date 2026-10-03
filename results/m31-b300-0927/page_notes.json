@@ -605,6 +605,10 @@
   "v3_full_cl_fa4_0875x_b23": {
    "name": "full node, fair replay (v3.2), FA4 draft attention, 0.875×, another node share (buckets b02+b03)",
    "short": "full node 0.875× (b02+b03)"
+  },
+  "v3_full_cl_fa4_075x": {
+   "name": "full node, fair replay (v3.2), adopted stack with FA4 draft attention, 0.75×",
+   "short": "full node 0.75× (FA4)"
   }
  },
  "plain_words": [
