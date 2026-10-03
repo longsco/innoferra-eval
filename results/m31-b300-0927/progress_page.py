@@ -873,7 +873,7 @@ def cells_html():
         c2 = ('<div class="cell"><p class="q">How far from production and the 7 M goal?</p>'
               f'<p class="lead">Production {FULL["ppass"]}/{NMIN} at {m2(PROD_FULL)} M</p>'
               f'<p class="body">{esc(body2[:1].upper() + body2[1:])}</p>'
-              f'<p class="lnk"><a href="#run-{esc(FULL["id"])}" title="{esc(t2)}">↳ run {hm(FULL["at"]) if FULL["at"].date() == NOW.date() else stamp(FULL["at"])} ({esc(FULL["test"])})</a> · '
+              f'<p class="lnk"><a href="#run-{esc(FULL["id"])}" title="{esc(t2)}">↳ run {hm(FULL["at"]) if (NOW - FULL["at"]).total_seconds() < 86400 else stamp(FULL["at"])} ({esc(FULL["test"])})</a> · '
               f'<a href="#prod" title="its own engine counters: why two numbers">engines {VALUES["ec_range"]} M (Sep 30)</a></p></div>')
     c3 = ""
     if PASS_TOP:                                              # innoferra 10-01: explain the first load that fails
