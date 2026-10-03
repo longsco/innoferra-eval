@@ -681,6 +681,10 @@
   "v3_full_cl_tk_1x_b23": {
    "name": "full node, fair replay (v3.2), FA4 + both kernels, 1.0×, buckets b02+b03",
    "short": "full node 1.0× b02+b03 (+ both kernels)"
+  },
+  "v3_full_cl_tk_09375x": {
+   "name": "full node, fair replay (v3.2), FA4 + index-score and top-k kernels, 0.9375×",
+   "short": "full node 0.9375× (+ both kernels)"
   }
  },
  "plain_words": [
