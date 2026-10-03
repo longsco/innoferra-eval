@@ -589,6 +589,18 @@
   "v3_full_cl_nodap_0875x": {
    "name": "full node, fair replay (v3.2), adopted stack without decode-after-prefill, 0.875×",
    "short": "full node v3.2 0.875× (no DAP)"
+  },
+  "v3_full_cl_fa4_0875x": {
+   "name": "full node, fair replay (v3.2), adopted stack with FA4 draft attention, 0.875×",
+   "short": "full node 0.875× (FA4)"
+  },
+  "v3_full_cl_fa4_1x": {
+   "name": "full node, fair replay (v3.2), adopted stack with FA4 draft attention, 1.0×",
+   "short": "full node 1.0× (FA4)"
+  },
+  "v3_full_cl_fa4_1125x": {
+   "name": "full node, fair replay (v3.2), adopted stack with FA4 draft attention, 1.125×",
+   "short": "full node 1.125× (FA4)"
   }
  },
  "plain_words": [

@@ -657,6 +657,24 @@
    "change": "speculative decoding",
    "verdict": "adopted",
    "why": "Paired against the control on the same sessions: generation +4.65 tok/s (95% CI +3.6..+5.9), first token ×1.005 (CI 0.96..1.03); 12/15 vs 10/15. Draft acceptance is the same (3.60). The draft now replays its CUDA graph, so its attention kernel is a real part of each generation step. On Sep 30 the same kernel gave no gain, because the draft then ran without graphs. FA4 is on in all queued runs."
+  },
+  {
+   "tag": "v3_ab_c16_cl_1x@A",
+   "at": "2026-10-02 19:06",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, adopted stack, flashinfer draft attention)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.43 M per GPU): 10/15, generation 65.6 tok/s, median first token 1.45 s, 0 errors. The same settings gave 61.3 tok/s at 18:21: identical control halves differ by about 4 tok/s, so only paired results decide."
+  },
+  {
+   "tag": "v3_ab_c16_cl_1x@B",
+   "at": "2026-10-02 19:06",
+   "protocol": "v3.2",
+   "name": "smaller prompt pieces (16k per engine, 8k per GPU)",
+   "change": "chunking",
+   "verdict": "rejected",
+   "why": "Paired against the control on the same sessions: generation −3.24 tok/s (95% CI −4.6..−1.8), first token ×1.000; 9/15 vs 10/15. Cost-sized chunks already cap the expensive pieces; smaller pieces add more prompt steps that pause generation."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
