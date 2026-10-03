@@ -1019,6 +1019,15 @@ def chart_svg(variant):
         return m
     ink = {b["id"]: mk("ink", b, X(b["load"]), Y(b["pass"]), R_INK, title=run_title(b)) for b in BEST_CUR}
     extra = [mk("extra", b, X(b["load"]), Y(b["pass"]), R_OLD, title=run_title(b)) for b in EXTRA]
+    dots = sorted(list(ink.values()) + extra, key=lambda d: d["x"])   # innoferra 10-03: two ink dots on nearly the same spot: nudge both apart
+    for i, d in enumerate(dots):
+        for e in dots[i + 1:]:
+            need = d["rad"] + e["rad"] + GAP
+            dx, dy = e["x"] - d["x"], e["y"] - d["y"]
+            if abs(dy) < need and math.hypot(dx, dy) < need:
+                half = (math.sqrt(need ** 2 - dy ** 2) - abs(dx)) / 2 + 0.25
+                d["x"] -= half
+                e["x"] += half
     stars = []
     for b in BEST_CUR + EXTRA:
         t = f"Production on the same requests · {m2(b['pload'])} M · {b['ppass']}/{NMIN} minutes in SLA (test {b['test']}) · {PROD_RULE_SHORT}"
