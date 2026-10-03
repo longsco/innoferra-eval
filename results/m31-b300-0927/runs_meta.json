@@ -873,6 +873,24 @@
    "change": "status",
    "verdict": "calibration",
    "why": "Repeat of the 07:20 run with identical settings: 4.40 M per GPU, 0 errors, 9 of 15 minutes pass (first run 10/15). Generation 62.1 tok/s overall (first run 64.0). Identical full-node runs differ by about one minute and about 2 tok/s."
+  },
+  {
+   "tag": "v3_ab_sattnv2_cl_1x@A",
+   "at": "2026-10-03 13:34",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, FA4 + index-score and top-k kernels)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.40 M per GPU): 12/15, generation 67.2 tok/s, median first token 1.38 s, 0 errors. Minutes 10–12 fail at 46.6–58.9 tok/s."
+  },
+  {
+   "tag": "v3_ab_sattnv2_cl_1x@B",
+   "at": "2026-10-03 13:34",
+   "protocol": "v3.2",
+   "name": "+ faster sparse attention for generation steps (bitwise equal)",
+   "change": "kernels",
+   "verdict": "adopted",
+   "why": "Paired against the control on the same sessions: generation +23.4 tok/s (95% CI +21.3..+25.1; ×1.35), median first token ×0.93; 15/15 vs 12/15 at 4.38 M per GPU, every minute 70.8–102.1 tok/s. The new kernel runs all 8 draft tokens of a request in one tile and is 6× faster bit for bit. The largest single gain so far."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

@@ -2030,6 +2030,54 @@
     "PROGRESS.md Oct 3 01:42, 02:56, 04:30 PDT",
     "node 0008 serving/kernels/idx/ (bench_results, window_topk.log)"
    ]
+  },
+  {
+   "title": "Faster sparse attention for generation steps: +23 tok/s (+35%) at full load",
+   "kind": "gain",
+   "rank": 14,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "4.4 M twin: generation 67.2 → 89.9 tok/s (+23.4, CI +21.3..+25.1), first token −7%, 15/15 vs 12/15 minutes; kernel 6.0× faster, bitwise equal.",
+   "before_after": [
+    {
+     "metric": "generation per stream p50 (paired, same requests)",
+     "before": "67.2 tok/s (control)",
+     "after": "89.9 tok/s; +23.38 (95% CI +21.25..+25.09)",
+     "source": "twin v3_ab_sattnv2_cl_1x, Oct 3 13:34"
+    },
+    {
+     "metric": "minutes in SLA at 4.38–4.40 M per GPU (half node)",
+     "before": "12/15 (minutes 10–12 at 46.6–58.9 tok/s)",
+     "after": "15/15 (every minute 70.8–102.1 tok/s)",
+     "source": "twin v3_ab_sattnv2_cl_1x, Oct 3 13:34"
+    },
+    {
+     "metric": "verify sparse attention per layer, live-shaped batch (CUDA graph)",
+     "before": "374–383 µs",
+     "after": "≈ 60 µs (6.2–6.3×); 6.0× geo-mean over 9 scenarios, every variant bit-exact",
+     "source": "window_sattn_verify.sh, Oct 3 11:40"
+    },
+    {
+     "metric": "GSM8K / greedy",
+     "before": "96.2–96.7% / control 28/30",
+     "after": "96.82% / 28/30",
+     "source": "window_sattn_verify.sh smoke, Oct 3 12:00"
+    }
+   ],
+   "change_what": "Replace the sparse attention of generation (verify) steps with a kernel that computes the same numbers but runs the 8 draft tokens x 16 query heads of one request and KV head as one 128-row matrix tile.",
+   "change_detail": "kernels/sattn/sattn_verify_v2.py via patch_sattn_verify.py; env SGLANG_SATTN_VERIFY_V2=1 SATTN_VERIFY_V2_SPLIT=4.",
+   "when": "Oct 3 11:34 (build done) – 13:34 PDT (twin)",
+   "mechanism": "The old kernel ran every (token, head, block) as its own work item with a full 128-row tile for 16 valid rows, so 87.5% of the matrix work was padding, and it read each K/V block 8 times. The new kernel loads each block once per request and fills the tile with real rows. Sparse attention was about 30% of a generation step; it is now about 5%.",
+   "learnings": [
+    "Re-profile after each kernel win: the next bottleneck moved from the indexer to sparse attention.",
+    "Count useful work, not just kernel time: a kernel that wastes 87.5% of its tiles is the biggest lever even when it looks 'compute-bound'."
+   ],
+   "caveats": [
+    "Twin halves read a few tok/s higher than the full node; full-node runs at 1.0–1.5× follow."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 3 11:34, 12:00, 13:34 PDT",
+    "node 0008 serving/kernels/sattn/ (bench_results, window_sattn_verify.log)"
+   ]
   }
  ]
 }

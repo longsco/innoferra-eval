@@ -705,6 +705,18 @@
   "v3_ab_sattnv2_cl_1x@B": {
    "name": "faster sparse attention for generation steps (group B)",
    "short": "faster sparse attention (verify)"
+  },
+  "v3_full_cl_sv_1125x": {
+   "name": "full node, fair replay (v3.2), all adopted kernels incl. sparse attention, 1.125×",
+   "short": "full node 1.125× (+ sparse attention)"
+  },
+  "v3_full_cl_sv_125x": {
+   "name": "full node, fair replay (v3.2), all adopted kernels incl. sparse attention, 1.25×",
+   "short": "full node 1.25× (+ sparse attention)"
+  },
+  "v3_full_cl_sv_15x": {
+   "name": "full node, fair replay (v3.2), all adopted kernels incl. sparse attention, 1.5×",
+   "short": "full node 1.5× (+ sparse attention)"
   }
  },
  "plain_words": [
@@ -1574,10 +1586,10 @@
  "engineering": [
   {
    "name": "Faster sparse attention (generation steps and prompt chunks, bitwise equal)",
-   "state": "running",
-   "at": "2026-10-03 11:34",
-   "text": "sparse attention is now the largest kernel (31% of the heavy GPU's time). The generation-step rewrite runs all 8 draft tokens of a request in one tile (estimated 17–21 ms less per step); the prompt rewrite builds its work list on the GPU (no host sync) and loads each K/V block once (estimated 1.8–2.2×). Both are bit-exact on CPU; the GPU window for the generation-step kernel is armed",
-   "ref": "PROGRESS.md Oct 3 11:34 · node kernels/sattn/"
+   "state": "adopted",
+   "at": "2026-10-03 13:34",
+   "text": "generation steps: one tile per (request, KV head) for all 8 draft tokens, 6.0× faster bit for bit (live batches 374 → 60 µs per layer); full-load twin: generation +23.4 tok/s (+35%), first token −7%, 15/15 vs 12/15 at 4.38 M per GPU. The prompt-path rewrite is in its GPU window now",
+   "ref": "twin v3_ab_sattnv2_cl_1x · PROGRESS.md Oct 3 11:34–13:34 · node kernels/sattn/"
   },
   {
    "name": "Faster index-score kernel for prompt chunks",
@@ -2193,6 +2205,14 @@
    "run": "v3_ab_tkv2_cl_1x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_IDX_TOPK_V2=1"
+   }
+  },
+  {
+   "name": "faster sparse attention for generation steps (bitwise equal)",
+   "adopted_at": "2026-10-03 13:34",
+   "run": "v3_ab_sattnv2_cl_1x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_SATTN_VERIFY_V2=1 SATTN_VERIFY_V2_SPLIT=4"
    }
   }
  ],
