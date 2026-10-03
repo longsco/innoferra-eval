@@ -707,13 +707,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-02 19:55",
+  "at": "2026-10-03 01:08",
   "items": [
    {
     "rule": "decode",
     "title": "Generation speed at full load (4.42 M)",
-    "text": "On the fair test (v3.2), the full node passes 14 of 15 minutes at 3.72 M per GPU (Oct 2 19:52); one minute misses at 59.97 tok/s. At full load (4.4 M per GPU), generation speed is the limit: the rule is more than 60 tok/s in each minute. In the failing minutes, each GPU runs 15 to 20 requests with 0.9 to 1.6 M context tokens. A generation step then takes about 88 ms, against 52 ms at 5 to 9 requests. The two GPUs of an engine are equally loaded in passing and failing minutes. Three changes on Oct 2 raised generation speed at full load: prompt chunks sized by their cost (+2.7 tok/s), decode-after-prefill off (+2.7 tok/s) and the FA4 kernel for the draft model (+4.65 tok/s). Next: a faster indexer kernel.",
-    "src": "PROGRESS.md Oct 2 04:40–19:52"
+    "text": "On the fair test (v3.2), the full node passes 15 of 15 minutes at 3.33 M per GPU and 14 of 15 at 3.72 M. At full load (4.4 M per GPU), generation speed is the limit: in the failing minutes each GPU runs 15 to 20 requests with 0.9 to 1.6 M context tokens, and a generation step takes about 88 ms. Four changes on Oct 2 raised generation speed at full load: prompt chunks sized by their cost (+2.7 tok/s), decode-after-prefill off (+2.7 tok/s), the FA4 kernel for the draft model (+4.65 tok/s) and a faster index-score kernel (+3.6 tok/s). Next: a faster top-k and a faster index score for generation steps.",
+    "src": "PROGRESS.md Oct 2 04:40 – Oct 3 00:49"
    },
    {
     "rule": "ttft_p50",
@@ -735,9 +735,9 @@
    },
    {
     "rule": "errors",
-    "title": "Errors at full load (older test v3)",
-    "text": "The 10 error minutes at 4.42 M came from 27 instant connection resets (the gateway's open-file limit, raised since) and 6 HTTP 500s from literal '<image>' text in prompts (fixed Oct 1 03:55).",
-    "src": "PROGRESS.md Oct 1 03:20 and 03:55"
+    "title": "Errors: one client's tool schemas (Oct 3)",
+    "text": "On another node's sessions (buckets b02+b03), one session sent 218 tools per request, and 44 of them had \"type\": {}. Our engine rejected all 60 requests of that session with HTTP 400; production served them. This cost 13 of 15 minutes at 3.51 M. The gateway now deletes only invalid type values (TOOL_SCHEMA_FIX_TYPE). Earlier error causes (open-file limit, literal '<image>' text) are fixed.",
+    "src": "PROGRESS.md Oct 3 00:49; Oct 1 03:20 and 03:55"
    }
   ],
   "cause_lead": "Generation speed at full load",
