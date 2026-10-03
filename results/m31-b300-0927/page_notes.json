@@ -609,6 +609,18 @@
   "v3_full_cl_fa4_075x": {
    "name": "full node, fair replay (v3.2), adopted stack with FA4 draft attention, 0.75×",
    "short": "full node 0.75× (FA4)"
+  },
+  "v3_ab_isv2_cl_1x": {
+   "name": "twin, full load (v3.2): faster index-score kernel for prompt chunks",
+   "short": "faster index-score kernel"
+  },
+  "v3_ab_isv2_cl_1x@A": {
+   "name": "control half at full load (v3.2, FA4)",
+   "short": "control"
+  },
+  "v3_ab_isv2_cl_1x@B": {
+   "name": "faster index-score kernel for prompt chunks (group B)",
+   "short": "faster index-score kernel"
   }
  },
  "plain_words": [
@@ -1476,6 +1488,13 @@
   "2026-10-01 04:50"
  ],
  "engineering": [
+  {
+   "name": "Faster index-score kernel for prompt chunks",
+   "state": "running",
+   "at": "2026-10-02 21:53",
+   "text": "a warp-specialized rewrite of the indexer's score kernel: bitwise equal to the old kernel, 3.9–5.0× faster on long prompt chunks (58–66% of FP8 peak vs 12.5%); GSM8K 96.74%; full-load twin queued",
+   "ref": "PROGRESS.md Oct 2 21:34, 21:53 · node kernels/idx/"
+  },
   {
    "name": "FA4 attention for the draft model",
    "state": "adopted",
