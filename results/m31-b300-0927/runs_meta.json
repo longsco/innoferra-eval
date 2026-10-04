@@ -936,6 +936,15 @@
    "change": "status",
    "verdict": "calibration",
    "why": "5.59 M per GPU (1.25× production's per-node load), 0 errors; 13 of 15 minutes pass. Minutes 0 and 10 miss narrowly (59.5 and 58.6 tok/s); the median first token passes in every minute (1.2–1.8 s). Generation 69.0 tok/s (production 65.2 on the same requests)."
+  },
+  {
+   "tag": "v3_full_cl_sp_15x",
+   "at": "2026-10-03 18:16",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), all adopted kernels incl. both sparse-attention kernels, 1.5×",
+   "change": "status",
+   "verdict": "calibration",
+   "why": "6.69 M per GPU (1.5× production's per-node load), 0 errors; 0 of 15 minutes pass: the node saturates. The median first token rises to 3.2–7.1 s, requests queue (send lateness p50 39 s), and generation is 39–57 tok/s in most minutes. The pass limit lies between 5.59 M (13/15) and 6.69 M."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
