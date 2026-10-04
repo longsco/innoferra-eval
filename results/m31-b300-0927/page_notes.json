@@ -737,6 +737,18 @@
   "v3_full_cl_sp_15x": {
    "name": "full node, fair replay (v3.2), all adopted kernels incl. both sparse-attention kernels, 1.5×",
    "short": "full node 1.5× (all kernels)"
+  },
+  "v3_ab_isvv2b_cl_1x": {
+   "name": "twin, full load (v3.2): faster index score for generation steps, re-test on the newest stack",
+   "short": "verify index score re-test"
+  },
+  "v3_ab_isvv2b_cl_1x@A": {
+   "name": "control half at full load (v3.2, all adopted kernels)",
+   "short": "control"
+  },
+  "v3_ab_isvv2b_cl_1x@B": {
+   "name": "faster index score for generation steps (group B, re-test)",
+   "short": "verify index score re-test"
   }
  },
  "plain_words": [
