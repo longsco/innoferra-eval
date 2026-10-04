@@ -1053,6 +1053,15 @@
    "change": "load",
    "verdict": "baseline",
    "why": "15/15 at 5.57 M/GPU (about 8.0 M on production's engine counters): worst minute 65.8 tok/s (was 58.2), decode p50 76.1 vs production 65.2, first token p50 1.37 s / p99 15.7 s, hit 94.9%, 0 errors. New highest full pass."
+  },
+  {
+   "tag": "v3_full_cl_hc36_1375x",
+   "at": "2026-10-04 03:10",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), every kernel + host cache ratio 3.6, 1.375×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "11/15 at 5.94 M/GPU: minutes 0, 5, 7, 9 miss on generation speed (54.8, 59.6, 59.4, 58.4 tok/s); decode p50 67.1, first token p50 1.71 s, hit 94.0%, 0 errors. The half-node twin control passed 15/15 at this load; the full node does not - the knee is between 1.25x and 1.375x."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
