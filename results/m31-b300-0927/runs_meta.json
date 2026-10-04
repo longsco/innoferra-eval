@@ -1197,6 +1197,15 @@
    "change": "framework",
    "verdict": "kept",
    "why": "15/15 at 4.38 M/GPU. Paired generation -1.35 tok/s (CI -3.19..+0.97) - inside the side bias (A/A calibration -3.28) = decode parity; first token ×1.22 (CI 1.16..1.28) = Dynamo's frontend cost (+0.26 s median). Guard: no flag; prompt parity 947 text + 18 image pairs exact; hit 96.1% vs 95.9%; 663 frontend event-loop stalls in 29 min. Next rungs: stream interval 4, then Dynamo's own KV routing."
+  },
+  {
+   "tag": "v3_full_cl_newest_14375x",
+   "at": "2026-10-04 13:32",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), full adopted stack (incl. H2+H3 and the fused cache load), 1.4375×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "14/15 at 6.39 M/GPU (about 9.2 M on production's counters): only minute 10 misses (55.4 tok/s; hit 91.0%, first token p99 47 s - a burst of uncached long prompts); decode p50 73.0 vs production 65.6, first token p50 1.46 s, 0 errors. Minute 10 is the binding minute in every run near the knee."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
