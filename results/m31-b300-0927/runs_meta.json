@@ -1062,6 +1062,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "11/15 at 5.94 M/GPU: minutes 0, 5, 7, 9 miss on generation speed (54.8, 59.6, 59.4, 58.4 tok/s); decode p50 67.1, first token p50 1.71 s, hit 94.0%, 0 errors. The half-node twin control passed 15/15 at this load; the full node does not - the knee is between 1.25x and 1.375x."
+  },
+  {
+   "tag": "v3_ab_mem80b_cl_1375x@A",
+   "at": "2026-10-04 04:22",
+   "protocol": "v3.2",
+   "name": "control half at 1.375× (KV 0.76, host ratio 3.6)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at 1.375× (5.94 M/GPU): 11/15, generation 68.9 tok/s, first token p50 1.61 s, uncached 20.0 M tokens, 0 errors."
+  },
+  {
+   "tag": "v3_ab_mem80b_cl_1375x@B",
+   "at": "2026-10-04 04:22",
+   "protocol": "v3.2",
+   "name": "+ KV memory 0.80 with host ratio 3.13 (same host tokens and RAM)",
+   "change": "cache",
+   "verdict": "adopted",
+   "why": "Paired at 1.375×: generation +4.45 tok/s (CI +2.8..+6.1), first token ×0.91 (CI 0.88..0.94), uncached -8%; 14/15 vs 11/15. Device cache +15% (1.85 -> 2.13 M tokens per GPU) with unchanged host tokens."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

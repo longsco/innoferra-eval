@@ -2186,6 +2186,41 @@
     "PROGRESS.md Oct 3 23:16 PDT",
     "serving/next150/RANKING.md #2"
    ]
+  },
+  {
+   "title": "Device KV +15% at equal host tokens: +4.5 tok/s at 1.375×",
+   "kind": "gain",
+   "rank": 14.3,
+   "theme": "cache, routing and admission",
+   "headline": "KV memory 0.76 -> 0.80 with host ratio 3.6 -> 3.13 keeps host tokens and RAM equal and still adds +4.45 tok/s and first token ×0.91.",
+   "before_after": [
+    {
+     "metric": "paired generation at 1.375×",
+     "before": "68.9 tok/s (0.76, ratio 3.6)",
+     "after": "74.0 tok/s; +4.45 (CI +2.82..+6.13)",
+     "source": "twin v3_ab_mem80b_cl_1375x"
+    },
+    {
+     "metric": "minutes in SLA (half node)",
+     "before": "11/15",
+     "after": "14/15",
+     "source": "same twin"
+    }
+   ],
+   "change_what": "MEMFRAC 0.80 and --hicache-ratio 3.13 (device 1.85 -> 2.13 M tokens per GPU; host stays 6.67 M tokens).",
+   "change_detail": "--hicache-size was not used: it sizes each hybrid host pool (KV, index-K, draft) to the same GB, which mismatches their token counts.",
+   "when": "Oct 4 04:22 PDT",
+   "mechanism": "More device cache means fewer host load-backs (each load-back forces an eager prompt pass and stalls generation on both GPUs of the engine).",
+   "learnings": [
+    "Device and host cache are separate levers: the device part pays even when host tokens stay equal.",
+    "Keep RAM fixed by trading the host ratio when device memory grows."
+   ],
+   "caveats": [
+    "GPU memory headroom falls from ~35 GB to ~24 GB per GPU; no OOM in the twin."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 4 04:22 PDT"
+   ]
   }
  ]
 }

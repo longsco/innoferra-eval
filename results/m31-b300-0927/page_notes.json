@@ -817,6 +817,18 @@
   "v3_ab_hostfix_cl_1375x@B": {
    "name": "host fixes H2+H3 (group B)",
    "short": "host fixes"
+  },
+  "v3_ab_moesmcap2copy_cl_1375x": {
+   "name": "twin at 1.375× (v3.2): MoE kernel capped at 144 SMs in graphs and copy-overlap steps (exact)",
+   "short": "MoE SM cap v2"
+  },
+  "v3_ab_aa_cl_1x": {
+   "name": "A/A calibration twin at 1.0× (v3.2, current stack)",
+   "short": "A/A calibration"
+  },
+  "v3_ab_mem80b_cl_1375x": {
+   "name": "twin at 1.375× (v3.2): KV memory 0.80 with host ratio 3.13 (same host tokens)",
+   "short": "KV 0.80 device only"
   }
  },
  "plain_words": [
@@ -1838,8 +1850,8 @@
   {
    "name": "MoE kernel capped at 144 of 148 SMs",
    "state": "running",
-   "at": "2026-10-04 02:21",
-   "text": "v2 GPU gate PASSED (9 cases bit-exact; verify x1.0007; clean prompt passes stay at 148 SMs x0.997; copy vote and graph capture pick 144; capped paths no longer stall). Smoke engine then crashed at start: DeepGEMM's buffer-size query returns a tvm-ffi Array in the engine image (int(Array) failed). Fixed in one line, CPU suite 117/117 + 46/46 + new test 4/4, re-armed after the 1.375x status run",
+   "at": "2026-10-04 03:33",
+   "text": "v2 SMOKE PASSED after the one-line fix: GPU gate bit-exact on 9 cases, verify x1.0026, clean prompt passes stay at 148 SMs (x1.0027); GSM8K 96.82%; greedy = control (28/30). Twin at 1.375x queued next (B = mode copy, 144 SMs)",
    "ref": "hostfix/window_moe_smcap_v2.sh · workflow wf_c97bcc8d-c11"
   },
   {
@@ -1852,8 +1864,8 @@
   {
    "name": "Larger cache: host +20% and device KV 0.80",
    "state": "adopted",
-   "at": "2026-10-03 23:16",
-   "text": "host +20% (ratio 3.6) ADOPTED: at 1.375x +3.91 tok/s, first token ×0.82, uncached -18%. KV memory 0.80 (old base ratio 3.0): +2.85 tok/s, first token ×0.90, uncached -10% - same mechanism; both together exceed host RAM -> next: KV 0.80 with --hicache-size holding the host pool at its ratio-3.6 size",
+   "at": "2026-10-04 04:22",
+   "text": "host +20% (ratio 3.6) ADOPTED 10-03: +3.91 tok/s at 1.375x. Then KV memory 0.80 with host ratio 3.13 (same host tokens and RAM) ADOPTED 10-04: +4.45 tok/s (CI +2.8..+6.1), first token ×0.91. New base: MEMFRAC 0.80 + ratio 3.13",
    "ref": "lever_queue v3_ab_hc36_cl_1375x, v3_ab_mem80_cl_1375x"
   },
   {
@@ -2373,6 +2385,14 @@
    "run": "v3_ab_hc36_cl_1375x@B",
    "append": {
     "XARGS": " (--hicache-ratio 3.6 replaces 3.0)"
+   }
+  },
+  {
+   "name": "KV memory 0.80 with host ratio 3.13",
+   "adopted_at": "2026-10-04 04:22",
+   "run": "v3_ab_mem80b_cl_1375x@B",
+   "append": {
+    "MEMFRAC": " 0.80 (was 0.76); --hicache-ratio 3.13 (same host tokens as 0.76 x 3.6)"
    }
   }
  ],
