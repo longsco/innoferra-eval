@@ -981,6 +981,15 @@
    "change": "load",
    "verdict": "baseline",
    "why": "13/15 at 5.58 M/GPU: minutes 10 and 11 miss on generation speed (59.0 and 58.2 tok/s); they also have the lowest cache hit (91.1%, 91.8%), so they carry the most prompt work. Decode p50 72.9 vs production 65.2; first token p50 1.5 s; 0 errors."
+  },
+  {
+   "tag": "v3_full_cl_all_15x",
+   "at": "2026-10-03 22:26",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), every adopted kernel, 1.5×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "1/15 at 6.70 M/GPU (was 0/15 before the verify-path index-score kernel): saturated, first token p50 5.0 s and send lateness p50 39 s; decode p50 58.2 (was 55.9); hit 91.3% vs production 97.1%. Prompt-processing capacity binds here, which the cache-load levers target."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
