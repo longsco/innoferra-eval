@@ -1778,6 +1778,13 @@
    "state": "asked",
    "text": "graph-safe verify kernel, NextN/MTP for M3.1, validation of the host cache with 4-bit KV",
    "ref": "progress_data.json queued[16]"
+  },
+  {
+   "name": "Bind each engine to its NUMA node",
+   "state": "parked",
+   "at": "2026-10-03 19:45",
+   "text": "twin stopped: the engine's own binding (SYS_NICE) put group B's memory policy on NUMA nodes 0-1 (its GPUs are on nodes 2-3), so the kernel OOM killer stopped group-A engines 3 times during boot. Each engine fits on its own node (about 580 of 755 GB). Retest only with explicit per-engine pins (launcher CPUSET/MEMS) on all 4 engines; expected gain is small (+0.8 tok/s)",
+   "ref": "PROGRESS.md Oct 3 19:45 · dmesg oom-kill CONSTRAINT_MEMORY_POLICY nodemask=3"
   }
  ],
  "done": [

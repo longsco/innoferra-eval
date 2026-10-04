@@ -2113,6 +2113,37 @@
    "sources": [
     "PROGRESS.md Oct 3 06:33 and 18:58 PDT"
    ]
+  },
+  {
+   "title": "NUMA binding of half the engines caused OOM kills of the other half",
+   "kind": "negative",
+   "rank": 40.5,
+   "theme": "measurement and operations",
+   "headline": "Group B's automatic NUMA binding restricted its host-cache memory to nodes 0-1; the kernel OOM killer then stopped group-A engines during boot.",
+   "before_after": [
+    {
+     "metric": "engines healthy after 25 min boot",
+     "before": "4/4 (unbound)",
+     "after": "2/4 (B bound, OOM kills at 02:08, 02:14, 02:21 UTC)",
+     "source": "launch TIMEOUT; dmesg"
+    }
+   ],
+   "change_what": "Twin v3_ab_numa_cl_1x: group B containers with --cap-add SYS_NICE so the engine binds scheduler CPUs and memory to a NUMA node.",
+   "change_detail": "launch.sh NUMA_CAP=1; fork utils/numa_utils.py binding.",
+   "when": "Oct 3 19:00-19:45 PDT",
+   "mechanism": "Node 0008 has 4 NUMA nodes of about 755 GB; GPU pair n sits on node n. One engine needs about 580 GB of host memory (2 ranks x 273 GB of cache pools). The binding gave engine 3 a policy for nodes 0-1, where engines 0-1 already hold their pools, so the bound allocation could not fit.",
+   "learnings": [
+    "Pin all engines or none: a pinned engine can push an unpinned engine out of memory.",
+    "Check the bound node against the topology (nvidia-smi topo -m) before a run; use explicit per-engine CPUSET/MEMS pins."
+   ],
+   "caveats": [
+    "The exact mapping fault (logical vs physical GPU index) is inferred, not traced."
+   ],
+   "sources": [
+    "dmesg oom-kill lines 02:21 UTC",
+    "numactl -H; nvidia-smi topo -m",
+    "PROGRESS.md Oct 3 19:45 PDT"
+   ]
   }
  ]
 }
