@@ -1805,9 +1805,9 @@
   {
    "name": "Dynamo retest with per-GPU-half cache events",
    "state": "running",
-   "text": "user direction: adopt Dynamo for long-term framework gains. Plan: run our best engines as Dynamo workers in twin group B (A = our gateway, same engines and flags) -> A/A result, then a ladder of Dynamo router settings. First check that each GPU's (DP rank's) cache events reach the router and that the router pins follow-ups to the right GPU (the cause of the Sep 29 / Oct 1 losses)",
-   "ref": "workflow wf_a9b93e05-7e8 · serving/dyn/",
-   "at": "2026-10-03 22:10"
+   "text": "Dynamo 1.5.0 DOES route per GPU (DP rank) and our engine honours it - the Oct 1 'not pinned' conclusion was wrong. Earlier losses came from router settings: prefill load scale inf (Sep 29) = random routing; scale 1.0 (Oct 1) = decode load outweighs cache affinity, 30-35% of follow-ups left their cache holder. Built: overlay (same image), opt-in launcher hook B_DYNAMO=1, two small frontend patches (forward GPU pins; keep tool 'strict' absent: 200/200 identical prompt ids), smoke window (GPUs 4-7, ~70 min), A/A twin 'pin-through' (Dynamo executes our gateway's GPU pins), then a ladder of Dynamo routing settings",
+   "ref": "serving/dyn/DESIGN.md · workflow wf_a9b93e05-7e8",
+   "at": "2026-10-04 03:33"
   },
   {
    "name": "Measurement hardening",
