@@ -1890,10 +1890,10 @@
   },
   {
    "name": "Scheduler host fixes H2+H3 (no GPU syncs in frees, cached prefix matches)",
-   "state": "parked",
-   "at": "2026-10-04 01:20",
-   "text": "smoke passed (exact; burst 108 -> 83 s) but the 1.375x twin showed no clear change: +0.10 tok/s (CI -1.8..+1.7), first token ×0.99. Patch kept with flags off",
-   "ref": "twin v3_ab_hostfix_cl_1375x"
+   "state": "adopted",
+   "at": "2026-10-04 09:08",
+   "text": "exact; side-balanced estimate +1.45 tok/s at 1.375x (twin with B on engines 2-3: +0.10; with B on engines 0-1: +2.80, CI +1.66..+4.22). The pair also measures the twin side difference (~2.7 tok/s, A/A 3.28)",
+   "ref": "twins v3_ab_hostfix_cl_1375x and v3_ab_hostfixsw_cl_1375x"
   }
  ],
  "done": [
@@ -2421,6 +2421,14 @@
    "run": "v3_ab_moesmcap2copy_cl_1375x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_MEGA_MOE_SM_CAP_MODE=copy SGLANG_MEGA_MOE_NUM_SMS=144"
+   }
+  },
+  {
+   "name": "scheduler host fixes H2+H3 (exact)",
+   "adopted_at": "2026-10-04 09:08",
+   "run": "v3_ab_hostfixsw_cl_1375x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_HOST_NO_DRAIN=1 SGLANG_LPM_SKIP_FULL_BUDGET=1"
    }
   }
  ],

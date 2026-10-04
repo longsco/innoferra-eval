@@ -2256,6 +2256,41 @@
    "sources": [
     "PROGRESS.md Oct 4 05:51 PDT"
    ]
+  },
+  {
+   "title": "Twin side bias: engines 2-3 run ~3 tok/s slower; swap sides to cancel it",
+   "kind": "method",
+   "rank": 41.2,
+   "theme": "measurement and operations",
+   "headline": "An A/A twin (identical configs) gave group B -3.28 tok/s; a side-swapped repeat of H2+H3 (+0.10 then +2.80) shows the same ~2.7 tok/s side difference and a true effect of ~+1.45.",
+   "before_after": [
+    {
+     "metric": "A/A paired decode (B - A, identical configs)",
+     "before": "expected 0",
+     "after": "-3.28 tok/s (CI -5.25..-0.96)",
+     "source": "twin v3_ab_aa_cl_1x"
+    },
+    {
+     "metric": "H2+H3 paired decode",
+     "before": "+0.10 (B on engines 2-3)",
+     "after": "+2.80 (B on engines 0-1); average +1.45",
+     "source": "twins v3_ab_hostfix_cl_1375x, v3_ab_hostfixsw_cl_1375x"
+    }
+   ],
+   "change_what": "AB_B_SIDE=0 in the A words puts the B change on engines 0-1.",
+   "change_detail": "chainQ.sh and launch_tp2x4_old.sh support it; AB_B_SIDE stays exported in the chain shell, so set it on every twin line.",
+   "when": "Oct 4 06:36-09:08 PDT",
+   "mechanism": "Some host-side asymmetry (not GPU clocks or power caps: equal SW power-cap time, no HW slowdown) makes engines 2-3 slower at high decode rates.",
+   "learnings": [
+    "Run close calls twice with swapped sides and average.",
+    "Adoptions measured with B on engines 2-3 were conservative."
+   ],
+   "caveats": [
+    "The bias was absent in the 10-02 A/A at 0.75x; it may depend on load or host conditions."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 4 06:36 and 09:08 PDT"
+   ]
   }
  ]
 }
