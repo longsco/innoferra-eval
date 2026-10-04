@@ -1161,6 +1161,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 5.95 M/GPU: minute 10 at 58.8 tok/s (60.2 in the first run); decode p50 75.4, first token p50 1.34 s / p99 14.1 s, hit 94.6%, 0 errors. 1.375x sits at the edge (15/15 and 14/15); 1.25x is the solid pass. The newer H2+H3 and fused-load levers were not in this run."
+  },
+  {
+   "tag": "v3_ab_hcloadcap_cl_1375x@A",
+   "at": "2026-10-04 11:59",
+   "protocol": "v3.2",
+   "name": "control half at 1.375× (newest stack incl. MoE cap and H2+H3)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "14/15 at 5.96 M/GPU, generation 74.0 tok/s, first token p50 1.42 s / p99 20.8 s, uncached 20.9 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_hcloadcap_cl_1375x@B",
+   "at": "2026-10-04 11:59",
+   "protocol": "v3.2",
+   "name": "+ fused per-layer cache-load kernel (byte-check mode)",
+   "change": "kernels",
+   "verdict": "adopted",
+   "why": "Paired at 1.375×: generation +6.35 tok/s (CI +4.7..+8.2), first token ×0.91 (CI 0.87..0.94), uncached -10%; 15/15 vs 14/15. B ran on the slower side and with byte checks on every 16th load; 0 mismatches over ~1,100 fused loads. Copies run 1.3x faster in 62 launches instead of ~605 per load, beside the capped MoE."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

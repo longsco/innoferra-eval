@@ -2291,6 +2291,42 @@
    "sources": [
     "PROGRESS.md Oct 4 06:36 and 09:08 PDT"
    ]
+  },
+  {
+   "title": "Fused cache-load kernel on the MoE cap: +6.4 tok/s at 1.375×",
+   "kind": "gain",
+   "rank": 14.5,
+   "theme": "cache, routing and admission",
+   "headline": "Loading cached history with one fused launch per layer (4 CTAs beside the capped MoE) adds +6.35 tok/s and first token ×0.91 at 1.375×, bit-exact.",
+   "before_after": [
+    {
+     "metric": "paired generation at 1.375×",
+     "before": "74.0 tok/s",
+     "after": "81.5 tok/s; +6.35 (CI +4.73..+8.18)",
+     "source": "twin v3_ab_hcloadcap_cl_1375x"
+    },
+    {
+     "metric": "copy speed / launches / CPU per load",
+     "before": "~32 GB/s, ~605 launches, ~6 ms",
+     "after": "~42 GB/s (x1.3), 62 launches, ~1 ms",
+     "source": "GPU gate windows 10-04 14:28 and 15:24 UTC"
+    }
+   ],
+   "change_what": "SGLANG_HICACHE_FUSED_LOAD=1 with 4 CTAs (kernels/hcload/patch_hcload.py).",
+   "change_detail": "Needs the MoE SM cap: more copy CTAs than the 4 freed SMs stall the persistent MoE kernel.",
+   "when": "Oct 4 11:59 PDT",
+   "mechanism": "A prompt pass that waits for host cache stalls both GPUs of the engine; faster, cheaper loads cut that wait and the eager-mode fallback around it.",
+   "learnings": [
+    "Pair kernels with their resource budget: the copy kernel only pays once the MoE leaves SMs free.",
+    "A run-to-run spread on the baseline can sink a single-point speed gate; judge kernels by the twin."
+   ],
+   "caveats": [
+    "The twin ran B on the slower side (engines 2-3) with byte checks on; the production-mode gain is likely larger."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 4 11:59 PDT",
+    "serving/next150/RANKING.md #1"
+   ]
   }
  ]
 }

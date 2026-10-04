@@ -1896,10 +1896,10 @@
   },
   {
    "name": "Faster cache load-back kernel (fused, no register spill)",
-   "state": "running",
-   "at": "2026-10-04 09:41",
-   "text": "on the MoE cap: gate v2 PASS (bit-exact 17 cases; x1.28-1.34 copy speed, x1.31 beside the cap, clean); smoke: GSM8K 96.74%, greedy with host-cache hits 30/30 identical, soak 0 errors, byte-check 159/159 loads with 0 mismatches - short of the 200-load evidence floor, so the window reverted. Next: twin at 1.375x with B in byte-check mode on every 16th load (keeps verifying during the run)",
-   "ref": "kernels/hcload/bench_results/window_hcload_20261004T080830Z.json"
+   "state": "adopted",
+   "at": "2026-10-04 11:59",
+   "text": "ADOPTED: at 1.375x generation +6.35 tok/s (CI +4.7..+8.2), first token ×0.91, uncached -10%, 15/15 vs 14/15; byte-identical (0 mismatches over the twin's checks + 159/159 in the smoke). One launch per layer, 4 CTAs on the SMs the MoE cap frees, 1.3x copy speed, CPU per load ~1 ms vs ~6 ms",
+   "ref": "twin v3_ab_hcloadcap_cl_1375x"
   },
   {
    "name": "Larger cache: host +20% and device KV 0.80",
@@ -2449,6 +2449,14 @@
    "run": "v3_ab_hostfixsw_cl_1375x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_HOST_NO_DRAIN=1 SGLANG_LPM_SKIP_FULL_BUDGET=1"
+   }
+  },
+  {
+   "name": "fused per-layer cache-load kernel (bit-exact)",
+   "adopted_at": "2026-10-04 11:59",
+   "run": "v3_ab_hcloadcap_cl_1375x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_HICACHE_FUSED_LOAD=1 SGLANG_HICACHE_FUSED_LOAD_CTAS=4 SGLANG_HICACHE_FUSED_LOAD_CLUSTER=2 SGLANG_HICACHE_FUSED_LOAD_DRAFT_ROWS=4"
    }
   }
  ],
