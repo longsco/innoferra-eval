@@ -1224,6 +1224,24 @@
    "change": "spec decode",
    "verdict": "rejected",
    "why": "Paired generation -8.91 tok/s (CI -10.35..-7.40); about -6 after the ~3 tok/s side bias; first token ×1.01; 14/15 vs 15/15. Fewer tokens per verify step outweigh the cheaper verify at 1.375x. Block 7 stays."
+  },
+  {
+   "tag": "v3_ab_dyn_si4_cl_1x@A",
+   "at": "2026-10-04 15:03",
+   "protocol": "v3.2",
+   "name": "our gateway (Dynamo rung 11 twin)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 4.40 M/GPU, generation 103.3 tok/s, first token p50 1.13 s."
+  },
+  {
+   "tag": "v3_ab_dyn_si4_cl_1x@B",
+   "at": "2026-10-04 15:03",
+   "protocol": "v3.2",
+   "name": "Dynamo pins + frontend stream interval 4",
+   "change": "framework",
+   "verdict": "rejected",
+   "why": "Paired generation -2.35 tok/s (CI -4.38..-0.46), first token ×1.235 (A/A at interval 20: -1.35, ×1.217) -> the first-token cost is not the stream interval; it is frontend preprocessing (Python chat processor). Next: Rust chat processor + fastokens (production's path)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
