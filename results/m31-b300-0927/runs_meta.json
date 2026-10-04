@@ -1116,6 +1116,15 @@
    "change": "calibration",
    "verdict": "calibration",
    "why": "15/15 at 4.40 M/GPU, generation 100.6 tok/s. Paired B-A on identical configs: -3.28 tok/s (CI -5.25..-0.96), first token ×0.997. Group B ran ~3% slower: B-side gains so far are conservative, and close 'no clear change' verdicts get a side-swapped repeat."
+  },
+  {
+   "tag": "v3_full_cl_m80cap_1375x",
+   "at": "2026-10-04 07:26",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), newest stack (KV 0.80, ratio 3.13, MoE cap v2, every kernel), 1.375×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "15/15 at 5.93 M/GPU (about 8.5 M on production's engine counters): worst minute 60.2 tok/s (minute 10, thin margin), decode p50 75.3 vs production 65.1, first token p50 1.43 s / p99 16.0 s, hit 94.1%, 0 errors. New highest full pass (was 11/15 on the old base)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
