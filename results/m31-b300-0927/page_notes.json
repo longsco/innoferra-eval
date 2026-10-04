@@ -1768,9 +1768,10 @@
   },
   {
    "name": "Dynamo retest with per-GPU-half cache events",
-   "state": "planned",
-   "text": "check that both GPUs' cache events reach the router, then rerun at half load",
-   "ref": "progress_data.json queued[1]"
+   "state": "running",
+   "text": "user direction: adopt Dynamo for long-term framework gains. Plan: run our best engines as Dynamo workers in twin group B (A = our gateway, same engines and flags) -> A/A result, then a ladder of Dynamo router settings. First check that each GPU's (DP rank's) cache events reach the router and that the router pins follow-ups to the right GPU (the cause of the Sep 29 / Oct 1 losses)",
+   "ref": "workflow wf_a9b93e05-7e8 · serving/dyn/",
+   "at": "2026-10-03 22:10"
   },
   {
    "name": "Measurement hardening",
