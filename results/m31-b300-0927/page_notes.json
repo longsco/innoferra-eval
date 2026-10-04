@@ -765,6 +765,10 @@
   "v3_ab_numa_cl_1x@B": {
    "name": "NUMA pinning (group B)",
    "short": "NUMA pinning"
+  },
+  "v3_full_cl_all_1375x": {
+   "name": "full node, fair replay (v3.2), every adopted kernel, 1.375×",
+   "short": "full node 1.375× (every kernel)"
   }
  },
  "plain_words": [
@@ -1648,10 +1652,10 @@
   },
   {
    "name": "Faster index score for generation steps (bitwise equal)",
-   "state": "parked",
-   "at": "2026-10-03 06:33",
-   "text": "bit-exact and 1.85–2.3× faster on its own, but the full-load twin showed no clear change (generation −0.63 tok/s, CI −1.8..+1.0): it saves only about 2 ms per generation step. The patch stays off.",
-   "ref": "twin v3_ab_isvv2_cl_1x · PROGRESS.md Oct 3 06:33"
+   "state": "adopted",
+   "at": "2026-10-03 18:58",
+   "text": "bit-exact, 1.85–2.3× faster on its own. First twin (Oct 3 06:33): no clear change while steps took ~90 ms; re-test on the newest stack (steps ~55 ms): generation +7.86 tok/s (CI +6.0..+10.0), 15/15 in both groups",
+   "ref": "twins v3_ab_isvv2_cl_1x and v3_ab_isvv2b_cl_1x · PROGRESS.md Oct 3 06:33, 18:58"
   },
   {
    "name": "Faster top-k for the indexer (bitwise equal)",
@@ -2269,6 +2273,14 @@
    "run": "v3_ab_sattnp_cl_1x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_SATTN_PREFILL_V2=1 SGLANG_SATTN_V2=kvall"
+   }
+  },
+  {
+   "name": "faster index score for generation steps (bitwise equal)",
+   "adopted_at": "2026-10-03 18:58",
+   "run": "v3_ab_isvv2b_cl_1x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_IDX_SCORE_VERIFY_V2=1 IDX_VERIFY_V2_L2D=0"
    }
   }
  ],

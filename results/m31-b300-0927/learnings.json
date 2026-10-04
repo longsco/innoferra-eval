@@ -2078,6 +2078,41 @@
     "PROGRESS.md Oct 3 11:34, 12:00, 13:34 PDT",
     "node 0008 serving/kernels/sattn/ (bench_results, window_sattn_verify.log)"
    ]
+  },
+  {
+   "title": "Re-test a rejected kernel after the bottleneck moves: verify index score +7.9 tok/s",
+   "kind": "gain",
+   "rank": 13.8,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "Same bit-exact kernel: no clear change at 06:33 (steps ~90 ms), +7.86 tok/s at 18:58 (steps ~55 ms after the sparse-attention kernels).",
+   "before_after": [
+    {
+     "metric": "paired generation, first twin (Oct 3 06:33)",
+     "before": "71.9 tok/s (control)",
+     "after": "−0.63 tok/s (CI −1.8..+1.0)",
+     "source": "twin v3_ab_isvv2_cl_1x"
+    },
+    {
+     "metric": "paired generation, re-test on the newest stack (Oct 3 18:58)",
+     "before": "92.3 tok/s (control)",
+     "after": "101.5 tok/s; +7.86 (CI +6.03..+10.00)",
+     "source": "twin v3_ab_isvv2b_cl_1x"
+    }
+   ],
+   "change_what": "Turn on the bit-exact verify-path index-score kernel (SGLANG_IDX_SCORE_VERIFY_V2=1 IDX_VERIFY_V2_L2D=0) on the stack with both sparse-attention kernels.",
+   "change_detail": "kernels/idx/index_score_verify_v2.py; patch applied since Oct 3 05:30 with the flag off.",
+   "when": "Oct 3 18:58 PDT",
+   "mechanism": "The kernel saves about 2–3 ms per generation step on the long-context GPU. When steps took about 90 ms, that was inside the run-to-run noise; at about 55 ms per step it is a clear share, and shorter steps also keep fewer requests running, which compounds the gain.",
+   "learnings": [
+    "Keep a list of 'no clear change' levers and re-test them after a large gain elsewhere.",
+    "Judge a twin against the noise of the step it changes, not only the kernel speed-up."
+   ],
+   "caveats": [
+    "The NUMA twin started before this adoption and runs without this flag on both sides."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 3 06:33 and 18:58 PDT"
+   ]
   }
  ]
 }

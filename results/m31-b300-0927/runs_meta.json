@@ -945,6 +945,24 @@
    "change": "status",
    "verdict": "calibration",
    "why": "6.69 M per GPU (1.5× production's per-node load), 0 errors; 0 of 15 minutes pass: the node saturates. The median first token rises to 3.2–7.1 s, requests queue (send lateness p50 39 s), and generation is 39–57 tok/s in most minutes. The pass limit lies between 5.59 M (13/15) and 6.69 M."
+  },
+  {
+   "tag": "v3_ab_isvv2b_cl_1x@A",
+   "at": "2026-10-03 18:58",
+   "protocol": "v3.2",
+   "name": "control half at full load (v3.2, all adopted kernels incl. both sparse-attention kernels)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at full load (4.40 M per GPU): 15/15, generation 92.3 tok/s, median first token 1.18 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_isvv2b_cl_1x@B",
+   "at": "2026-10-03 18:58",
+   "protocol": "v3.2",
+   "name": "+ faster index score for generation steps (re-test, bitwise equal)",
+   "change": "kernels",
+   "verdict": "adopted",
+   "why": "Paired against the control on the same sessions: generation +7.86 tok/s (95% CI +6.0..+10.0), first token ×0.98; 15/15 in both groups (101.5 vs 92.3 tok/s). On Oct 3 06:33 the same kernel showed no clear change: then a generation step took about 90 ms; with the sparse-attention kernels it takes about 55 ms, so the saved 2–3 ms now shows."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
