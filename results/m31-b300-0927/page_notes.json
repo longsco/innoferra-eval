@@ -1818,6 +1818,13 @@
    "at": "2026-10-03 21:50",
    "text": "two config-only twins at 1.375x queued (host ratio 3.6; KV memory 0.80); RAM check: +218 GB pinned for the twin half, ~730 GB available",
    "ref": "lever_queue v3_ab_hc36_cl_1375x, v3_ab_mem80_cl_1375x"
+  },
+  {
+   "name": "Scheduler host fixes H2+H3 (no GPU syncs in frees, cached prefix matches)",
+   "state": "running",
+   "at": "2026-10-03 21:45",
+   "text": "build done (CPU dry run PASS: 117,630 allocator ops identical, LPM match cache identical in 4 real-scheduler scenarios); GPU smoke armed after the 1.5x run: GPU check, smoke engine, GSM8K, greedy, 3 real-traffic bursts with mismatch gates; then a twin at 1.375x",
+   "ref": "hostfix/smoke_host_bundle.sh · workflow wf_b4423fe9-b1a"
   }
  ],
  "done": [
