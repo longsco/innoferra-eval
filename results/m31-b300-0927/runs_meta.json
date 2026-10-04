@@ -1026,6 +1026,24 @@
    "change": "cache",
    "verdict": "kept",
    "why": "Paired at 1.375×: generation +2.85 tok/s (CI +1.5..+4.6), first token ×0.90 (CI 0.86..0.94), uncached -10%; 14/15 vs 13/15. Same mechanism as the adopted host ratio 3.6; both together do not fit in host RAM. Follow-up: KV 0.80 with the host pool held at its ratio-3.6 size."
+  },
+  {
+   "tag": "v3_ab_hostfix_cl_1375x@A",
+   "at": "2026-10-04 01:20",
+   "protocol": "v3.2",
+   "name": "control half at 1.375× (every adopted kernel + host cache ratio 3.6)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 5.95 M/GPU (half node at full per-GPU load): generation 74.5 tok/s, first token p50 1.45 s / p99 22.4 s, uncached 19.1 M tokens, 0 errors. First 15/15 at 1.375×."
+  },
+  {
+   "tag": "v3_ab_hostfix_cl_1375x@B",
+   "at": "2026-10-04 01:20",
+   "protocol": "v3.2",
+   "name": "+ scheduler host fixes H2+H3 (exact)",
+   "change": "scheduler",
+   "verdict": "no clear change",
+   "why": "Paired: generation +0.10 tok/s (CI -1.8..+1.7), first token ×0.99 (CI 0.95..1.03); 13/15 vs 15/15. The smoke burst gain (108 -> 83 s) does not show under closed-loop real traffic; GPU-bound steps hide the host savings. Not adopted; the patch stays in the tree with its flags off."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

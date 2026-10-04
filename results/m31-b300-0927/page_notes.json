@@ -1858,10 +1858,10 @@
   },
   {
    "name": "Scheduler host fixes H2+H3 (no GPU syncs in frees, cached prefix matches)",
-   "state": "running",
-   "at": "2026-10-03 23:44",
-   "text": "GPU smoke PASSED: 0 mismatches in 7,593 prefix-match replays and 349 page frees; GSM8K 96.74%; greedy same as control; batch-pick step 19.0 -> 16.5 ms on busy prompt steps; a prompt-heavy burst ran in 83 s vs 108 s. Twin at 1.375x queued next (host ratio 3.6 on both sides)",
-   "ref": "hostfix/smoke_host_bundle.sh · workflow wf_b4423fe9-b1a"
+   "state": "parked",
+   "at": "2026-10-04 01:20",
+   "text": "smoke passed (exact; burst 108 -> 83 s) but the 1.375x twin showed no clear change: +0.10 tok/s (CI -1.8..+1.7), first token ×0.99. Patch kept with flags off",
+   "ref": "twin v3_ab_hostfix_cl_1375x"
   }
  ],
  "done": [
