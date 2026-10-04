@@ -1,14 +1,12 @@
-# read_utc 2026-10-04T11:23:34Z
+# read_utc 2026-10-04T12:53:15Z
 ## queue
-v3_ab_aa_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-1x-s0.json 
-v3_full_cl_m80_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-cach
+v3_full_cl_m80cap_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-c
+v3_full_cl_m80cap_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-cach
 ## done
-09:13:15 v3_full_cl_hc36_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarc
 10:10:23 v3_ab_mem80b_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-
 11:22:20 v3_ab_moesmcap2copy_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--
+12:51:48 v3_ab_aa_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-1x
 ## markers
-06:16:42 ===== lever v3_ab_hc36_cl_1375x done
-06:16:42 ===== lever v3_ab_mem80_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--c
 07:31:32 ===== lever v3_ab_mem80_cl_1375x done
 07:31:32 ===== lever v3_ab_hostfix_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=-
 08:20:54 ===== lever v3_ab_hostfix_cl_1375x done
@@ -19,3 +17,5 @@ v3_full_cl_m80_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REP
 10:10:23 ===== lever v3_ab_mem80b_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--
 11:22:20 ===== lever v3_ab_mem80b_cl_1375x done
 11:22:20 ===== lever v3_ab_moesmcap2copy_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXT
+12:51:48 ===== lever v3_ab_moesmcap2copy_cl_1375x done
+12:51:48 ===== lever v3_ab_aa_cl_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B

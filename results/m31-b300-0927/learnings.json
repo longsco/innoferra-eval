@@ -2221,6 +2221,41 @@
    "sources": [
     "PROGRESS.md Oct 4 04:22 PDT"
    ]
+  },
+  {
+   "title": "MoE SM cap v2: cap only where copies overlap, +4.4 tok/s at 1.375× (bit-exact)",
+   "kind": "gain",
+   "rank": 14.4,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "Capping the persistent MoE kernel at 144 of 148 SMs only in graph steps and copy-overlap steps removes the copy stall without the 4-5% prompt cost of v1.",
+   "before_after": [
+    {
+     "metric": "paired generation at 1.375×",
+     "before": "71.1 tok/s",
+     "after": "75.0 tok/s; +4.40 (CI +3.19..+6.18)",
+     "source": "twin v3_ab_moesmcap2copy_cl_1375x"
+    },
+    {
+     "metric": "v1 cap (always 144) clean prompt cost",
+     "before": "x1.04-1.05 on 4k/16k-idle/mixed prompt shapes",
+     "after": "v2: x1.00 (148 SMs kept)",
+     "source": "GPU gates 10-04 04:33 and 09:15 UTC"
+    }
+   ],
+   "change_what": "SGLANG_MEGA_MOE_SM_CAP_MODE=copy SGLANG_MEGA_MOE_NUM_SMS=144 (hostfix/patch_moe_smcap_v2.py).",
+   "change_detail": "Both DP ranks vote through the MLP-sync gather because EP2 hangs if the ranks use different SM counts; buffer layout re-checked with DeepGEMM's host query (needed an int(Array) fix found by the first smoke).",
+   "when": "Oct 4 05:51 PDT",
+   "mechanism": "HiCache copy kernels take whole SMs; a persistent 148-CTA MoE kernel then waits for them (verify MoE p50 1000 vs 318 us when overlapped). With 4 SMs left free, copies and MoE run side by side.",
+   "learnings": [
+    "A kernel gate can pass while the engine path still breaks: always run a smoke engine before a twin.",
+    "Apply a costly optimisation only where it pays (here: graph steps and copy-overlap steps)."
+   ],
+   "caveats": [
+    "Measured on the old base (KV 0.76, ratio 3.6); the full-node status run combines it with KV 0.80 + ratio 3.13."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 4 05:51 PDT"
+   ]
   }
  ]
 }

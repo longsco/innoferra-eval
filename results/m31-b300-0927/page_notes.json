@@ -829,6 +829,22 @@
   "v3_ab_mem80b_cl_1375x": {
    "name": "twin at 1.375× (v3.2): KV memory 0.80 with host ratio 3.13 (same host tokens)",
    "short": "KV 0.80 device only"
+  },
+  "v3_full_cl_m80cap_1375x": {
+   "name": "full node, fair replay (v3.2), newest stack (KV 0.80, ratio 3.13, MoE cap), 1.375×",
+   "short": "1.375× newest"
+  },
+  "v3_full_cl_m80cap_15x": {
+   "name": "full node, fair replay (v3.2), newest stack, 1.5×",
+   "short": "1.5× newest"
+  },
+  "v3_ab_aa_cl_1x@A": {
+   "name": "A/A calibration half A (1.0×)",
+   "short": "A/A A"
+  },
+  "v3_ab_aa_cl_1x@B": {
+   "name": "A/A calibration half B (1.0×)",
+   "short": "A/A B"
   }
  },
  "plain_words": [
@@ -1849,16 +1865,16 @@
   },
   {
    "name": "MoE kernel capped at 144 of 148 SMs",
-   "state": "running",
-   "at": "2026-10-04 03:33",
-   "text": "v2 SMOKE PASSED after the one-line fix: GPU gate bit-exact on 9 cases, verify x1.0026, clean prompt passes stay at 148 SMs (x1.0027); GSM8K 96.82%; greedy = control (28/30). Twin at 1.375x queued next (B = mode copy, 144 SMs)",
-   "ref": "hostfix/window_moe_smcap_v2.sh · workflow wf_c97bcc8d-c11"
+   "state": "adopted",
+   "at": "2026-10-04 05:51",
+   "text": "v2 ADOPTED: at 1.375x generation +4.40 tok/s (CI +3.2..+6.2), first token ×0.91, 15/15 vs 13/15; bit-exact. Cap only in CUDA-graph steps and eager steps with a cache copy in flight (both GPUs vote); clean prompt passes keep 148 SMs. Next: the fused load kernel on top of it (4 copy CTAs on the freed SMs)",
+   "ref": "twin v3_ab_moesmcap2copy_cl_1375x"
   },
   {
    "name": "Faster cache load-back kernel (fused, no register spill)",
    "state": "planned",
    "at": "2026-10-04 01:25",
-   "text": "GPU check: bit-exact 17/17; current kernel 29.8 GB/s, fused 40.5 GB/s at 4 CTAs (1.36x), 45.6-46.2 GB/s at 8-16 CTAs (~1.55x, near the ~55 GB/s link). Gate failed: without the MoE SM cap every extra copy CTA stalls the persistent MoE kernel (no co-run config passed), 1.36x < 1.5x target, 65 launches > 62. Next: test the MoE cap v2 first; with the cap, re-run this window with a 1.3x gate (4 copy CTAs on the 4 freed SMs)",
+   "text": "GPU check: bit-exact 17/17; current kernel 29.8 GB/s, fused 40.5 GB/s at 4 CTAs (1.36x), 45.6-46.2 GB/s at 8-16 CTAs (~1.55x, near the ~55 GB/s link). Gate failed: without the MoE SM cap every extra copy CTA stalls the persistent MoE kernel (no co-run config passed), 1.36x < 1.5x target, 65 launches > 62. Next: the MoE cap is adopted -> re-run this window with the cap as the base and a 1.3x speed gate",
    "ref": "kernels/hcload/bench_results/window_hcload_20261004T080830Z.json"
   },
   {
@@ -2393,6 +2409,14 @@
    "run": "v3_ab_mem80b_cl_1375x@B",
    "append": {
     "MEMFRAC": " 0.80 (was 0.76); --hicache-ratio 3.13 (same host tokens as 0.76 x 3.6)"
+   }
+  },
+  {
+   "name": "MoE kernel capped at 144 SMs when a cache copy can overlap (bit-exact)",
+   "adopted_at": "2026-10-04 05:51",
+   "run": "v3_ab_moesmcap2copy_cl_1375x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_MEGA_MOE_SM_CAP_MODE=copy SGLANG_MEGA_MOE_NUM_SMS=144"
    }
   }
  ],
