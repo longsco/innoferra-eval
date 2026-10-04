@@ -805,6 +805,18 @@
   "v3_full_cl_hc36_1375x": {
    "name": "full node, fair replay (v3.2), every kernel + host ratio 3.6, 1.375×",
    "short": "1.375× (ratio 3.6)"
+  },
+  "v3_ab_hostfix_cl_1375x": {
+   "name": "twin at 1.375× (v3.2): scheduler host fixes H2+H3 (exact)",
+   "short": "host fixes H2+H3"
+  },
+  "v3_ab_hostfix_cl_1375x@A": {
+   "name": "control half at 1.375× (ratio 3.6)",
+   "short": "control"
+  },
+  "v3_ab_hostfix_cl_1375x@B": {
+   "name": "host fixes H2+H3 (group B)",
+   "short": "host fixes"
   }
  },
  "plain_words": [
@@ -1847,8 +1859,8 @@
   {
    "name": "Scheduler host fixes H2+H3 (no GPU syncs in frees, cached prefix matches)",
    "state": "running",
-   "at": "2026-10-03 21:45",
-   "text": "build done (CPU dry run PASS: 117,630 allocator ops identical, LPM match cache identical in 4 real-scheduler scenarios); GPU smoke armed after the 1.5x run: GPU check, smoke engine, GSM8K, greedy, 3 real-traffic bursts with mismatch gates; then a twin at 1.375x",
+   "at": "2026-10-03 23:44",
+   "text": "GPU smoke PASSED: 0 mismatches in 7,593 prefix-match replays and 349 page frees; GSM8K 96.74%; greedy same as control; batch-pick step 19.0 -> 16.5 ms on busy prompt steps; a prompt-heavy burst ran in 83 s vs 108 s. Twin at 1.375x queued next (host ratio 3.6 on both sides)",
    "ref": "hostfix/smoke_host_bundle.sh · workflow wf_b4423fe9-b1a"
   }
  ],
