@@ -1098,6 +1098,24 @@
    "change": "kernels",
    "verdict": "adopted",
    "why": "Paired at 1.375×: generation +4.40 tok/s (CI +3.2..+6.2), first token ×0.91 (CI 0.87..0.95); 15/15 vs 13/15. Copy kernels no longer stall the persistent MoE kernel; clean prompt passes keep all 148 SMs."
+  },
+  {
+   "tag": "v3_ab_aa_cl_1x@A",
+   "at": "2026-10-04 06:35",
+   "protocol": "v3.2",
+   "name": "A/A calibration, group A (engines 0-1), newest base at 1.0×",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 4.39 M/GPU, generation 103.8 tok/s, first token p50 1.17 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_aa_cl_1x@B",
+   "at": "2026-10-04 06:35",
+   "protocol": "v3.2",
+   "name": "A/A calibration, group B (engines 2-3), identical config",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 4.40 M/GPU, generation 100.6 tok/s. Paired B-A on identical configs: -3.28 tok/s (CI -5.25..-0.96), first token ×0.997. Group B ran ~3% slower: B-side gains so far are conservative, and close 'no clear change' verdicts get a side-swapped repeat."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

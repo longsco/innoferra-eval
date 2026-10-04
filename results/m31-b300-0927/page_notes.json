@@ -845,6 +845,10 @@
   "v3_ab_aa_cl_1x@B": {
    "name": "A/A calibration half B (1.0×)",
    "short": "A/A B"
+  },
+  "v3_ab_hostfixsw_cl_1375x": {
+   "name": "twin at 1.375× (v3.2), B on engines 0-1: scheduler host fixes H2+H3 (re-test)",
+   "short": "host fixes (swapped)"
   }
  },
  "plain_words": [
