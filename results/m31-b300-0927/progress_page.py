@@ -325,7 +325,7 @@ def best_points(test):
 
 CURV = [r for r in VALID if r["test"] == CUR]
 CLOSEST = max(CURV, key=lambda r: (r["pass"], r["load"], r["at"])) if CURV else None
-PASS_TOP = max([r for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected" and "@" not in str(r.get("tag", ""))],
+PASS_TOP = max([r for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected" and "@" not in str(r.get("id", ""))],
                key=lambda r: (r["load"], r["at"]), default=None)   # innoferra 10-04: headline = full-node runs only (twin halves are half-node replays)
 PASS_PREV = None if PASS_TOP else max([r for r in VALID if r["test"] == "v3.1" and r["pass"] >= NMIN and r.get("verdict") != "Rejected"],
                                        key=lambda r: (r["load"], r["at"]), default=None)   # innoferra 10-02: v3.2 current, quote the v3.1 pass

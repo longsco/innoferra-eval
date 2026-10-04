@@ -1,4 +1,4 @@
-# read_utc 2026-10-04T10:11:26Z
+# read_utc 2026-10-04T10:12:23Z
 ## queue
 ## done
 08:20:54 v3_full_cl_hc36_125x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.5 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchi
