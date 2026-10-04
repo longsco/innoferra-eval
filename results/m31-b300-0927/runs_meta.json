@@ -1242,6 +1242,24 @@
    "change": "framework",
    "verdict": "rejected",
    "why": "Paired generation -2.35 tok/s (CI -4.38..-0.46), first token ×1.235 (A/A at interval 20: -1.35, ×1.217) -> the first-token cost is not the stream interval; it is frontend preprocessing (Python chat processor). Next: Rust chat processor + fastokens (production's path)."
+  },
+  {
+   "tag": "v3_ab_dyn_kv_cl_1x@A",
+   "at": "2026-10-04 15:45",
+   "protocol": "v3.2",
+   "name": "our gateway (Dynamo rung 1 twin)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at 1.0x (4.40 M/GPU), cache hit 96.1%, 0 errors. Group B (Dynamo's own KV routing, default cost) was stopped by the guard: hit 71.0% after 4 minutes."
+  },
+  {
+   "tag": "v3_ab_dyn_kv_cl_1x@B",
+   "at": "2026-10-04 15:45",
+   "protocol": "v3.2",
+   "name": "Dynamo's own KV routing per GPU (default cost)",
+   "change": "framework",
+   "verdict": "rejected",
+   "why": "Stopped by the twin guard after 4 measured minutes: cache hit 71.0% vs 96.1% (default cost lets decode load outweigh prefix overlap; same as 10-01). Next: two-tier cost (production-like affinity) and no decode-block term."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

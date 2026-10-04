@@ -885,6 +885,54 @@
   "v3_ab_dyn_pin_cl_1x@B": {
    "name": "Dynamo pin-through (A/A)",
    "short": "Dynamo"
+  },
+  "v3_ab_dyn_kv_cl_1x@A": {
+   "name": "our gateway (Dynamo rung 1)",
+   "short": "gateway"
+  },
+  "v3_ab_dyn_kv_cl_1x@B": {
+   "name": "Dynamo KV routing, default cost",
+   "short": "Dynamo KV"
+  },
+  "v3_ab_dyn_si4_cl_1x@A": {
+   "name": "our gateway (Dynamo rung 11)",
+   "short": "gateway"
+  },
+  "v3_ab_dyn_si4_cl_1x@B": {
+   "name": "Dynamo pins + stream interval 4",
+   "short": "Dynamo si4"
+  },
+  "v3_ab_dyn_2tier_cl_1x": {
+   "name": "twin at 1.0×: Dynamo KV routing with the two-tier cost (production-like affinity)",
+   "short": "Dynamo two-tier"
+  },
+  "v3_ab_dyn_kvnd_cl_1x": {
+   "name": "twin at 1.0×: Dynamo KV routing without the decode-block term",
+   "short": "Dynamo KV no-decode"
+  },
+  "v3_full_cl_full_1375x": {
+   "name": "full node, fair replay (v3.2), full adopted stack, 1.375×",
+   "short": "1.375× full stack"
+  },
+  "v3_full_cl_full_15x": {
+   "name": "full node, fair replay (v3.2), full adopted stack, 1.5×",
+   "short": "1.5× full stack"
+  },
+  "v3_ab_blk5_cl_1375x@A": {
+   "name": "control half (draft block 7)",
+   "short": "block 7"
+  },
+  "v3_ab_blk5_cl_1375x@B": {
+   "name": "draft block 5",
+   "short": "block 5"
+  },
+  "v3_ab_hostfixsw_cl_1375x@A": {
+   "name": "control half on engines 2-3",
+   "short": "control"
+  },
+  "v3_ab_hostfixsw_cl_1375x@B": {
+   "name": "H2+H3 on engines 0-1",
+   "short": "H2+H3 swapped"
   }
  },
  "plain_words": [
