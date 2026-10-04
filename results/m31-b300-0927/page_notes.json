@@ -849,6 +849,22 @@
   "v3_ab_hostfixsw_cl_1375x": {
    "name": "twin at 1.375× (v3.2), B on engines 0-1: scheduler host fixes H2+H3 (re-test)",
    "short": "host fixes (swapped)"
+  },
+  "v3_full_cl_m80cap_1375x_r2": {
+   "name": "full node, fair replay (v3.2), newest stack, 1.375× (repeat)",
+   "short": "1.375× repeat"
+  },
+  "v3_ab_hcloadcap_cl_1375x": {
+   "name": "twin at 1.375× (v3.2): fused HiCache load on the MoE cap (check mode)",
+   "short": "fused load"
+  },
+  "v3_full_cl_newest_14375x": {
+   "name": "full node, fair replay (v3.2), newest stack incl. H2+H3, 1.4375×",
+   "short": "1.4375× newest"
+  },
+  "v3_ab_blk5_cl_1375x": {
+   "name": "twin at 1.375× (v3.2): draft block 5 vs 7",
+   "short": "draft block 5"
   }
  },
  "plain_words": [
@@ -1876,9 +1892,9 @@
   },
   {
    "name": "Faster cache load-back kernel (fused, no register spill)",
-   "state": "planned",
-   "at": "2026-10-04 01:25",
-   "text": "GPU check: bit-exact 17/17; current kernel 29.8 GB/s, fused 40.5 GB/s at 4 CTAs (1.36x), 45.6-46.2 GB/s at 8-16 CTAs (~1.55x, near the ~55 GB/s link). Gate failed: without the MoE SM cap every extra copy CTA stalls the persistent MoE kernel (no co-run config passed), 1.36x < 1.5x target, 65 launches > 62. Next: the MoE cap is adopted -> re-run this window with the cap as the base and a 1.3x speed gate",
+   "state": "running",
+   "at": "2026-10-04 09:41",
+   "text": "on the MoE cap: gate v2 PASS (bit-exact 17 cases; x1.28-1.34 copy speed, x1.31 beside the cap, clean); smoke: GSM8K 96.74%, greedy with host-cache hits 30/30 identical, soak 0 errors, byte-check 159/159 loads with 0 mismatches - short of the 200-load evidence floor, so the window reverted. Next: twin at 1.375x with B in byte-check mode on every 16th load (keeps verifying during the run)",
    "ref": "kernels/hcload/bench_results/window_hcload_20261004T080830Z.json"
   },
   {

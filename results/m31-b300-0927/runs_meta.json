@@ -1152,6 +1152,15 @@
    "change": "scheduler",
    "verdict": "adopted",
    "why": "Paired +2.80 tok/s (CI +1.66..+4.22) with B on the faster side; the first twin (B on engines 2-3) gave +0.10. The average of the two cancels the side bias: H2+H3 ≈ +1.45 tok/s (≈ +0.5..+2.4), side difference ≈ 2.7 tok/s (A/A said 3.28). Exact change, small gain -> adopted."
+  },
+  {
+   "tag": "v3_full_cl_m80cap_1375x_r2",
+   "at": "2026-10-04 10:29",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), newest stack, 1.375× (repeat)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "14/15 at 5.95 M/GPU: minute 10 at 58.8 tok/s (60.2 in the first run); decode p50 75.4, first token p50 1.34 s / p99 14.1 s, hit 94.6%, 0 errors. 1.375x sits at the edge (15/15 and 14/15); 1.25x is the solid pass. The newer H2+H3 and fused-load levers were not in this run."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
