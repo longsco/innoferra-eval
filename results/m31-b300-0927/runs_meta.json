@@ -990,6 +990,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "1/15 at 6.70 M/GPU (was 0/15 before the verify-path index-score kernel): saturated, first token p50 5.0 s and send lateness p50 39 s; decode p50 58.2 (was 55.9); hit 91.3% vs production 97.1%. Prompt-processing capacity binds here, which the cache-load levers target."
+  },
+  {
+   "tag": "v3_ab_hc36_cl_1375x@A",
+   "at": "2026-10-03 23:16",
+   "protocol": "v3.2",
+   "name": "control half at 1.375× (v3.2, every adopted kernel, host cache ratio 3.0)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "Control half at 1.375× (5.95 M/GPU): 12/15, generation 69.2 tok/s, first token p50 1.87 s / p99 55.9 s, uncached 25.2 M tokens, 0 errors."
+  },
+  {
+   "tag": "v3_ab_hc36_cl_1375x@B",
+   "at": "2026-10-03 23:16",
+   "protocol": "v3.2",
+   "name": "+ host cache 20% larger (--hicache-ratio 3.6)",
+   "change": "cache",
+   "verdict": "adopted",
+   "why": "Paired on the same sessions at 1.375×: generation +3.91 tok/s (95% CI +2.3..+5.6), first token ×0.82 (CI 0.77..0.86), p99 55.9 -> 21.1 s, uncached prompt tokens -18%; 13/15 vs 12/15. Fewer long sessions lose their cached history to host-cache eviction."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

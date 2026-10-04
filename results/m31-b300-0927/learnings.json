@@ -2144,6 +2144,48 @@
     "numactl -H; nvidia-smi topo -m",
     "PROGRESS.md Oct 3 19:45 PDT"
    ]
+  },
+  {
+   "title": "Host cache +20% (ratio 3.6): +3.9 tok/s and first token ×0.82 at 1.375×",
+   "kind": "gain",
+   "rank": 14.2,
+   "theme": "cache, routing and admission",
+   "headline": "At 1.375× a larger host cache keeps more long sessions' history: uncached prompt tokens -18%, generation +3.9 tok/s, first token ×0.82.",
+   "before_after": [
+    {
+     "metric": "paired generation at 1.375×",
+     "before": "69.2 tok/s (ratio 3.0)",
+     "after": "72.3 tok/s; +3.91 (CI +2.30..+5.56)",
+     "source": "twin v3_ab_hc36_cl_1375x"
+    },
+    {
+     "metric": "first token p50 / p99",
+     "before": "1.87 / 55.9 s",
+     "after": "1.50 / 21.1 s (paired ×0.82)",
+     "source": "same twin"
+    },
+    {
+     "metric": "uncached prompt tokens (15 min, half node)",
+     "before": "25.2 M",
+     "after": "20.7 M",
+     "source": "same twin"
+    }
+   ],
+   "change_what": "--hicache-ratio 3.0 -> 3.6 (host pool 5.56 M -> 6.67 M tokens per GPU; +55 GB pinned RAM per GPU).",
+   "change_detail": "config only; research wf_5eb3587c-c3d #2 predicted +3.3 tok/s at 1.375×.",
+   "when": "Oct 3 23:16 PDT",
+   "mechanism": "At 1.375× the host cache evicts sessions idle for about 2 minutes; their next turn must re-compute the whole history. A 20% larger host pool keeps them longer, so fewer long prompts run and generation pauses less.",
+   "learnings": [
+    "Eviction ORDER did not matter (LRU is near-optimal in simulation); cache SIZE did.",
+    "Check RAM: full node at ratio 3.6 uses about 2.6 TB of the 3.0 TB."
+   ],
+   "caveats": [
+    "The 1.0x twin of 10-02 showed no gain from more device KV; the gain grows with load."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 3 23:16 PDT",
+    "serving/next150/RANKING.md #2"
+   ]
   }
  ]
 }

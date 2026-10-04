@@ -781,6 +781,30 @@
   "v3_ab_moesmcap_cl_1x": {
    "name": "twin, full load (v3.2): MoE kernel capped at 144 of 148 SMs (bit-exact)",
    "short": "MoE SM cap"
+  },
+  "v3_ab_hc36_cl_1375x": {
+   "name": "twin at 1.375× (v3.2): host cache ratio 3.6 vs 3.0",
+   "short": "host cache +20%"
+  },
+  "v3_ab_hc36_cl_1375x@A": {
+   "name": "control half at 1.375× (ratio 3.0)",
+   "short": "control"
+  },
+  "v3_ab_hc36_cl_1375x@B": {
+   "name": "host cache ratio 3.6 (group B)",
+   "short": "host cache +20%"
+  },
+  "v3_ab_mem80_cl_1375x": {
+   "name": "twin at 1.375× (v3.2): KV memory 0.80 vs 0.76",
+   "short": "KV memory 0.80"
+  },
+  "v3_full_cl_hc36_125x": {
+   "name": "full node, fair replay (v3.2), every kernel + host ratio 3.6, 1.25×",
+   "short": "1.25× (ratio 3.6)"
+  },
+  "v3_full_cl_hc36_1375x": {
+   "name": "full node, fair replay (v3.2), every kernel + host ratio 3.6, 1.375×",
+   "short": "1.375× (ratio 3.6)"
   }
  },
  "plain_words": [
@@ -1815,9 +1839,9 @@
   },
   {
    "name": "Larger cache: host +20% and device KV 0.80",
-   "state": "planned",
-   "at": "2026-10-03 21:50",
-   "text": "two config-only twins at 1.375x queued (host ratio 3.6; KV memory 0.80); RAM check: +218 GB pinned for the twin half, ~730 GB available",
+   "state": "adopted",
+   "at": "2026-10-03 23:16",
+   "text": "host +20% (ratio 3.6) ADOPTED: at 1.375x generation +3.91 tok/s (CI +2.3..+5.6), first token ×0.82, uncached -18%; RAM ~700 GB available with the twin. Device KV 0.80 twin running next (base ratio 3.0)",
    "ref": "lever_queue v3_ab_hc36_cl_1375x, v3_ab_mem80_cl_1375x"
   },
   {
@@ -2329,6 +2353,14 @@
    "run": "v3_ab_isvv2b_cl_1x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_IDX_SCORE_VERIFY_V2=1 IDX_VERIFY_V2_L2D=0"
+   }
+  },
+  {
+   "name": "host cache 20% larger (ratio 3.6)",
+   "adopted_at": "2026-10-03 23:16",
+   "run": "v3_ab_hc36_cl_1375x@B",
+   "append": {
+    "XARGS": " (--hicache-ratio 3.6 replaces 3.0)"
    }
   }
  ],

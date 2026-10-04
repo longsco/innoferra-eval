@@ -1,13 +1,12 @@
-# read_utc 2026-10-04T05:26:53Z
+# read_utc 2026-10-04T06:18:57Z
 ## queue
-v3_ab_mem80_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PL
+v3_full_cl_hc36_125x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.5 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-cache
+v3_full_cl_hc36_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-cac
 ## done
-03:35:00 v3_full_cl_all_125x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.5 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-pol
 04:30:06 v3_full_cl_all_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-poli
 05:26:03 v3_ab_hc36_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-lo
+06:16:42 v3_ab_mem80_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-l
 ## markers
-01:16:37 ===== lever v3_full_cl_sp_15x done
-01:16:37 ===== lever v3_ab_isvv2b_cl_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FI
 01:58:25 ===== lever v3_ab_isvv2b_cl_1x done
 01:58:25 ===== lever v3_ab_numa_cl_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE
 02:45:26 ===== lever v3_ab_numa_cl_1x ABORTED by operator: group-B NUMA memory binding (SYS_NICE) put B's host pools on NUMA nodes 0-1; kernel OOM killer (CONST
@@ -18,3 +17,5 @@ v3_ab_mem80_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REP
 04:30:06 ===== lever v3_full_cl_all_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-l
 05:26:03 ===== lever v3_full_cl_all_15x done
 05:26:03 ===== lever v3_ab_hc36_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--cl
+06:16:42 ===== lever v3_ab_hc36_cl_1375x done
+06:16:42 ===== lever v3_ab_mem80_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--c
