@@ -933,6 +933,10 @@
   "v3_ab_hostfixsw_cl_1375x@B": {
    "name": "H2+H3 on engines 0-1",
    "short": "H2+H3 swapped"
+  },
+  "v3_ab_mmcpu_cl_1375x": {
+   "name": "twin at 1.375× (v3.2): image features over CPU transport (fixes the image cache-miss leak)",
+   "short": "image transport cpu"
   }
  },
  "plain_words": [
@@ -1978,6 +1982,13 @@
    "at": "2026-10-04 09:08",
    "text": "exact; side-balanced estimate +1.45 tok/s at 1.375x (twin with B on engines 2-3: +0.10; with B on engines 0-1: +2.80, CI +1.66..+4.22). The pair also measures the twin side difference (~2.7 tok/s, A/A 3.28)",
    "ref": "twins v3_ab_hostfix_cl_1375x and v3_ab_hostfixsw_cl_1375x"
+  },
+  {
+   "name": "Image cache misses from the CUDA-IPC image transport",
+   "state": "running",
+   "at": "2026-10-04 16:05",
+   "text": "root cause of the binding burst minute: under DP attention the cuda_ipc image-feature pools leak (each slice waits for 2 acks, gets 1) and fill 5-12 min into a run; afterwards images hash on the CPU path with different pad values, so cache matches stop at the first image (image follow-up misses 0/275 on never-full engines vs 13.8% after a fill). Fix: --mm-feature-transport cpu (config only, outputs unchanged); predicted minute 10 +3.3..+4.4 tok/s. Twin at 1.375x queued first",
+   "ref": "serving/next160/RANKING.md · workflow wf_1067c834-be8"
   }
  ],
  "done": [
