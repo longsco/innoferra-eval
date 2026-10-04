@@ -963,6 +963,15 @@
    "change": "kernels",
    "verdict": "adopted",
    "why": "Paired against the control on the same sessions: generation +7.86 tok/s (95% CI +6.0..+10.0), first token ×0.98; 15/15 in both groups (101.5 vs 92.3 tok/s). On Oct 3 06:33 the same kernel showed no clear change: then a generation step took about 90 ms; with the sparse-attention kernels it takes about 55 ms, so the saved 2–3 ms now shows."
+  },
+  {
+   "tag": "v3_full_cl_all_1375x",
+   "at": "2026-10-03 20:35",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), every adopted kernel, 1.375×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "13/15 at 5.94 M/GPU: minutes 0 and 10 miss on generation speed (56.6 and 55.7 tok/s); first token p50 1.6 s, hit 93.2% vs production 97.1%, 0 errors. The knee moved from below 1.25x to about 1.375x after the verify-path index-score kernel."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
