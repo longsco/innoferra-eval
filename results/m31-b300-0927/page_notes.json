@@ -1837,9 +1837,9 @@
   {
    "name": "Dynamo retest with per-GPU-half cache events",
    "state": "running",
-   "text": "Dynamo 1.5.0 DOES route per GPU (DP rank) and our engine honours it - the Oct 1 'not pinned' conclusion was wrong. Earlier losses came from router settings: prefill load scale inf (Sep 29) = random routing; scale 1.0 (Oct 1) = decode load outweighs cache affinity, 30-35% of follow-ups left their cache holder. Built: overlay (same image), opt-in launcher hook B_DYNAMO=1, two small frontend patches (forward GPU pins; keep tool 'strict' absent: 200/200 identical prompt ids), smoke window (GPUs 4-7, ~70 min), A/A twin 'pin-through' (Dynamo executes our gateway's GPU pins), then a ladder of Dynamo routing settings",
-   "ref": "serving/dyn/DESIGN.md · workflow wf_a9b93e05-7e8",
-   "at": "2026-10-04 03:33"
+   "text": "smoke 1: routing proven (per-GPU cache events, follow-ups on the pinned GPU) but parity gaps. Diagnosis: greedy 18/30 = Dynamo drops a tool call cut by max_tokens (tokens equal up to the cut); 4 real token diffs = different cache histories (new cold-paired token gate); GSM8K = gateway effort -> Dynamo forces thinking on; images lose 2 wrapper tokens (fix SGLANG_MM_AVOID_RETOKENIZE=0 on B); dotted tool names rejected by Dynamo's validator (gateway escape + frontend restore); frontend holds tool-call streams to the end (29% of answers) and its Python chat processor adds 0.2-0.5 s. Fix set DYNB_PARITY=1 built and reviewed (CPU: all tests pass); smoke 2 to be armed after the repeat 1.375x run",
+   "ref": "serving/dyn/README.md section 10 · workflow wf_5630d551-bb0",
+   "at": "2026-10-04 09:30"
   },
   {
    "name": "Measurement hardening",
