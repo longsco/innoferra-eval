@@ -1260,6 +1260,15 @@
    "change": "framework",
    "verdict": "rejected",
    "why": "Stopped by the twin guard after 4 measured minutes: cache hit 71.0% vs 96.1% (default cost lets decode load outweigh prefix overlap; same as 10-01). Next: two-tier cost (production-like affinity) and no decode-block term."
+  },
+  {
+   "tag": "v3_full_cl_full_1375x",
+   "at": "2026-10-04 16:35",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), full adopted stack (incl. H2+H3 and fused cache load), 1.375×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "15/15 at 5.93 M/GPU with margin (about 8.5 M on production's counters): worst minute 66.1 tok/s (+6 above the limit; earlier stack 60.2 / 58.8), decode p50 76.5 vs production 65.1, first token p50 1.33 s, hit 94.2%, 0 errors."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
