@@ -869,6 +869,22 @@
   "v3_ab_dyn_pin_cl_1x": {
    "name": "twin at 1.0× (v3.2): B = same engines under NVIDIA Dynamo (pin-through)",
    "short": "Dynamo A/A"
+  },
+  "v3_ab_dyn_si4_cl_1x": {
+   "name": "twin at 1.0×: Dynamo (pins) with frontend stream interval 4",
+   "short": "Dynamo stream 4"
+  },
+  "v3_ab_dyn_kv_cl_1x": {
+   "name": "twin at 1.0×: Dynamo's own KV routing per GPU",
+   "short": "Dynamo KV routing"
+  },
+  "v3_ab_dyn_pin_cl_1x@A": {
+   "name": "our gateway (A/A)",
+   "short": "gateway"
+  },
+  "v3_ab_dyn_pin_cl_1x@B": {
+   "name": "Dynamo pin-through (A/A)",
+   "short": "Dynamo"
   }
  },
  "plain_words": [
@@ -1857,9 +1873,9 @@
   {
    "name": "Dynamo retest with per-GPU-half cache events",
    "state": "running",
-   "text": "smoke 2 with the parity set: routing proven on the engine side (S2 per-GPU cache events + metrics 4/4); prompts identical (text 200/200, images 40/40, 0 tool-name rejects); tokens identical from cold caches (S7 30/30, S8 64/64; one post-processing text diff on a cut answer); first token B/A 1.04 (was 2.5); GSM8K 96.51% both, 1316/1319 identical answers; real traffic 0 errors. A/A twin (Dynamo executes our GPU pins) queued next",
+   "text": "A/A twin at 1.0x (same engines; Dynamo executes our GPU pins): generation parity (-1.35 tok/s, CI -3.19..+0.97, inside the -3.28 side bias), both 15/15; first token ×1.22 = frontend cost (Python chat processor, 663 event-loop stalls / 29 min). Ladder next: stream interval 4 (first content may wait for 20 tokens), then Dynamo's own KV routing; Rust chat processor rungs after that",
    "ref": "serving/dyn/README.md section 10",
-   "at": "2026-10-04 11:12"
+   "at": "2026-10-04 12:42"
   },
   {
    "name": "Measurement hardening",

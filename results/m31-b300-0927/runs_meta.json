@@ -1179,6 +1179,24 @@
    "change": "kernels",
    "verdict": "adopted",
    "why": "Paired at 1.375×: generation +6.35 tok/s (CI +4.7..+8.2), first token ×0.91 (CI 0.87..0.94), uncached -10%; 15/15 vs 14/15. B ran on the slower side and with byte checks on every 16th load; 0 mismatches over ~1,100 fused loads. Copies run 1.3x faster in 62 launches instead of ~605 per load, beside the capped MoE."
+  },
+  {
+   "tag": "v3_ab_dyn_pin_cl_1x@A",
+   "at": "2026-10-04 12:42",
+   "protocol": "v3.2",
+   "name": "A/A: our gateway -> engines 0-1 (1.0×)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 4.39 M/GPU, generation 108.3 tok/s, first token p50 1.12 s, hit 95.9%, 0 errors."
+  },
+  {
+   "tag": "v3_ab_dyn_pin_cl_1x@B",
+   "at": "2026-10-04 12:42",
+   "protocol": "v3.2",
+   "name": "A/A: same engines under NVIDIA Dynamo 1.5.0 (our GPU pins, parity fixes)",
+   "change": "framework",
+   "verdict": "kept",
+   "why": "15/15 at 4.38 M/GPU. Paired generation -1.35 tok/s (CI -3.19..+0.97) - inside the side bias (A/A calibration -3.28) = decode parity; first token ×1.22 (CI 1.16..1.28) = Dynamo's frontend cost (+0.26 s median). Guard: no flag; prompt parity 947 text + 18 image pairs exact; hit 96.1% vs 95.9%; 663 frontend event-loop stalls in 29 min. Next rungs: stream interval 4, then Dynamo's own KV routing."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
