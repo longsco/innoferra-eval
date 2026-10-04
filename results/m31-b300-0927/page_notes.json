@@ -1837,9 +1837,9 @@
   },
   {
    "name": "MoE kernel capped at 144 of 148 SMs",
-   "state": "planned",
-   "at": "2026-10-04 01:05",
-   "text": "v1 gate failed (4-5% slower on clean large prompt passes). v2 built: cap only in CUDA-graph steps (verify/decode/draft) and in eager steps with a cache copy in flight, voted across both GPUs (the MoE kernel hangs if the two GPUs use different SM counts). CPU: 200/200 tests, dry run 40/40, window mock 67/67. GPU window next after the fused-load window",
+   "state": "running",
+   "at": "2026-10-04 02:21",
+   "text": "v2 GPU gate PASSED (9 cases bit-exact; verify x1.0007; clean prompt passes stay at 148 SMs x0.997; copy vote and graph capture pick 144; capped paths no longer stall). Smoke engine then crashed at start: DeepGEMM's buffer-size query returns a tvm-ffi Array in the engine image (int(Array) failed). Fixed in one line, CPU suite 117/117 + 46/46 + new test 4/4, re-armed after the 1.375x status run",
    "ref": "hostfix/window_moe_smcap_v2.sh · workflow wf_c97bcc8d-c11"
   },
   {
