@@ -1837,17 +1837,17 @@
   },
   {
    "name": "MoE kernel capped at 144 of 148 SMs",
-   "state": "running",
-   "at": "2026-10-03 21:33",
-   "text": "GPU check: bit-exact everywhere and free on generation steps (x1.00); removes a ~1.9 ms stall per MoE call when a cache copy overlaps; but 4-5% slower on clean large prompt passes (gate limit 2%) -> not applied. v2 build: cap only in CUDA-graph steps and in prompt passes with a copy in flight",
-   "ref": "hostfix/bench_results/window_moe_smcap_20261004T042409Z.json · workflow wf_c97bcc8d-c11"
+   "state": "planned",
+   "at": "2026-10-04 01:05",
+   "text": "v1 gate failed (4-5% slower on clean large prompt passes). v2 built: cap only in CUDA-graph steps (verify/decode/draft) and in eager steps with a cache copy in flight, voted across both GPUs (the MoE kernel hangs if the two GPUs use different SM counts). CPU: 200/200 tests, dry run 40/40, window mock 67/67. GPU window next after the fused-load window",
+   "ref": "hostfix/window_moe_smcap_v2.sh · workflow wf_c97bcc8d-c11"
   },
   {
    "name": "Faster cache load-back kernel (fused, no register spill)",
    "state": "running",
-   "at": "2026-10-03 21:50",
-   "text": "research: at 1.5x, loading cached history from host memory plus the eager fallback it forces is ~16-24% of prompt-pass time; today's copy kernel uses 2 CTAs and spills registers (26-28 GB/s vs ~55 GB/s link). Build: one launch per layer, same bytes to the same slots; projected edge +0.08x load",
-   "ref": "serving/next150/RANKING.md #1 · workflow wf_c97bcc8d-c11"
+   "at": "2026-10-04 01:08",
+   "text": "built: one launch per layer instead of 6 copy kernels + 5 draft kernels + ~240 index kernels per load (603 -> ~62 launches), same bytes to the same slots, no register spill. CPU: dry run 50/50, suite 67/67. GPU window armed after the host-fix twin: bit-exact check, GB/s at 1-8 CTAs, smoke engine, GSM8K, greedy; then a twin at 1.375x",
+   "ref": "kernels/hcload/window_hcload.sh · workflow wf_c97bcc8d-c11"
   },
   {
    "name": "Larger cache: host +20% and device KV 0.80",
