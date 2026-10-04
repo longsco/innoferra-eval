@@ -865,6 +865,10 @@
   "v3_ab_blk5_cl_1375x": {
    "name": "twin at 1.375× (v3.2): draft block 5 vs 7",
    "short": "draft block 5"
+  },
+  "v3_ab_dyn_pin_cl_1x": {
+   "name": "twin at 1.0× (v3.2): B = same engines under NVIDIA Dynamo (pin-through)",
+   "short": "Dynamo A/A"
   }
  },
  "plain_words": [
@@ -1853,9 +1857,9 @@
   {
    "name": "Dynamo retest with per-GPU-half cache events",
    "state": "running",
-   "text": "smoke 1: routing proven (per-GPU cache events, follow-ups on the pinned GPU) but parity gaps. Diagnosis: greedy 18/30 = Dynamo drops a tool call cut by max_tokens (tokens equal up to the cut); 4 real token diffs = different cache histories (new cold-paired token gate); GSM8K = gateway effort -> Dynamo forces thinking on; images lose 2 wrapper tokens (fix SGLANG_MM_AVOID_RETOKENIZE=0 on B); dotted tool names rejected by Dynamo's validator (gateway escape + frontend restore); frontend holds tool-call streams to the end (29% of answers) and its Python chat processor adds 0.2-0.5 s. Fix set DYNB_PARITY=1 built and reviewed (CPU: all tests pass); smoke 2 to be armed after the repeat 1.375x run",
-   "ref": "serving/dyn/README.md section 10 · workflow wf_5630d551-bb0",
-   "at": "2026-10-04 09:30"
+   "text": "smoke 2 with the parity set: routing proven on the engine side (S2 per-GPU cache events + metrics 4/4); prompts identical (text 200/200, images 40/40, 0 tool-name rejects); tokens identical from cold caches (S7 30/30, S8 64/64; one post-processing text diff on a cut answer); first token B/A 1.04 (was 2.5); GSM8K 96.51% both, 1316/1319 identical answers; real traffic 0 errors. A/A twin (Dynamo executes our GPU pins) queued next",
+   "ref": "serving/dyn/README.md section 10",
+   "at": "2026-10-04 11:12"
   },
   {
    "name": "Measurement hardening",
