@@ -749,6 +749,22 @@
   "v3_ab_isvv2b_cl_1x@B": {
    "name": "faster index score for generation steps (group B, re-test)",
    "short": "verify index score re-test"
+  },
+  "v3_full_cl_sp_1375x": {
+   "name": "full node, fair replay (v3.2), all adopted kernels, 1.375×",
+   "short": "full node 1.375× (all kernels)"
+  },
+  "v3_ab_numa_cl_1x": {
+   "name": "twin, full load (v3.2): engines bound to their GPU's NUMA node (SYS_NICE)",
+   "short": "NUMA pinning"
+  },
+  "v3_ab_numa_cl_1x@A": {
+   "name": "control half at full load (v3.2, all adopted kernels)",
+   "short": "control"
+  },
+  "v3_ab_numa_cl_1x@B": {
+   "name": "NUMA pinning (group B)",
+   "short": "NUMA pinning"
   }
  },
  "plain_words": [
