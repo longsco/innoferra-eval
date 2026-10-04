@@ -1,14 +1,11 @@
-# read_utc 2026-10-04T08:21:47Z
+# read_utc 2026-10-04T09:14:07Z
 ## queue
-v3_full_cl_hc36_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-cac
 v3_ab_mem80b_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_P
 ## done
-06:16:42 v3_ab_mem80_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-l
 07:31:32 v3_ab_hostfix_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed
 08:20:54 v3_full_cl_hc36_125x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.5 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchi
+09:13:15 v3_full_cl_hc36_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarc
 ## markers
-03:35:00 ===== lever v3_full_cl_all_1375x done
-03:35:00 ===== lever v3_full_cl_all_125x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.5; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-
 04:30:06 ===== lever v3_full_cl_all_125x done
 04:30:06 ===== lever v3_full_cl_all_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-l
 05:26:03 ===== lever v3_full_cl_all_15x done
@@ -19,3 +16,5 @@ v3_ab_mem80b_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 RE
 07:31:32 ===== lever v3_ab_hostfix_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=-
 08:20:54 ===== lever v3_ab_hostfix_cl_1375x done
 08:20:54 ===== lever v3_full_cl_hc36_125x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.5; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed
+09:13:15 ===== lever v3_full_cl_hc36_125x done
+09:13:15 ===== lever v3_full_cl_hc36_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--clos

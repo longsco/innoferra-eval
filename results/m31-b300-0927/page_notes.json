@@ -1844,10 +1844,10 @@
   },
   {
    "name": "Faster cache load-back kernel (fused, no register spill)",
-   "state": "running",
-   "at": "2026-10-04 01:08",
-   "text": "built: one launch per layer instead of 6 copy kernels + 5 draft kernels + ~240 index kernels per load (603 -> ~62 launches), same bytes to the same slots, no register spill. CPU: dry run 50/50, suite 67/67. GPU window armed after the host-fix twin: bit-exact check, GB/s at 1-8 CTAs, smoke engine, GSM8K, greedy; then a twin at 1.375x",
-   "ref": "kernels/hcload/window_hcload.sh · workflow wf_c97bcc8d-c11"
+   "state": "planned",
+   "at": "2026-10-04 01:25",
+   "text": "GPU check: bit-exact 17/17; current kernel 29.8 GB/s, fused 40.5 GB/s at 4 CTAs (1.36x), 45.6-46.2 GB/s at 8-16 CTAs (~1.55x, near the ~55 GB/s link). Gate failed: without the MoE SM cap every extra copy CTA stalls the persistent MoE kernel (no co-run config passed), 1.36x < 1.5x target, 65 launches > 62. Next: test the MoE cap v2 first; with the cap, re-run this window with a 1.3x gate (4 copy CTAs on the 4 freed SMs)",
+   "ref": "kernels/hcload/bench_results/window_hcload_20261004T080830Z.json"
   },
   {
    "name": "Larger cache: host +20% and device KV 0.80",

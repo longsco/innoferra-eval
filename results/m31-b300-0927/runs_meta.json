@@ -1044,6 +1044,15 @@
    "change": "scheduler",
    "verdict": "no clear change",
    "why": "Paired: generation +0.10 tok/s (CI -1.8..+1.7), first token ×0.99 (CI 0.95..1.03); 13/15 vs 15/15. The smoke burst gain (108 -> 83 s) does not show under closed-loop real traffic; GPU-bound steps hide the host savings. Not adopted; the patch stays in the tree with its flags off."
+  },
+  {
+   "tag": "v3_full_cl_hc36_125x",
+   "at": "2026-10-04 02:13",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), every kernel + host cache ratio 3.6, 1.25×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "15/15 at 5.57 M/GPU (about 8.0 M on production's engine counters): worst minute 65.8 tok/s (was 58.2), decode p50 76.1 vs production 65.2, first token p50 1.37 s / p99 15.7 s, hit 94.9%, 0 errors. New highest full pass."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
