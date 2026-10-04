@@ -1797,6 +1797,27 @@
    "at": "2026-10-03 19:45",
    "text": "twin stopped: the engine's own binding (SYS_NICE) put group B's memory policy on NUMA nodes 0-1 (its GPUs are on nodes 2-3), so the kernel OOM killer stopped group-A engines 3 times during boot. Each engine fits on its own node (about 580 of 755 GB). Retest only with explicit per-engine pins (launcher CPUSET/MEMS) on all 4 engines; expected gain is small (+0.8 tok/s)",
    "ref": "PROGRESS.md Oct 3 19:45 · dmesg oom-kill CONSTRAINT_MEMORY_POLICY nodemask=3"
+  },
+  {
+   "name": "MoE kernel capped at 144 of 148 SMs",
+   "state": "running",
+   "at": "2026-10-03 21:33",
+   "text": "GPU check: bit-exact everywhere and free on generation steps (x1.00); removes a ~1.9 ms stall per MoE call when a cache copy overlaps; but 4-5% slower on clean large prompt passes (gate limit 2%) -> not applied. v2 build: cap only in CUDA-graph steps and in prompt passes with a copy in flight",
+   "ref": "hostfix/bench_results/window_moe_smcap_20261004T042409Z.json · workflow wf_c97bcc8d-c11"
+  },
+  {
+   "name": "Faster cache load-back kernel (fused, no register spill)",
+   "state": "running",
+   "at": "2026-10-03 21:50",
+   "text": "research: at 1.5x, loading cached history from host memory plus the eager fallback it forces is ~16-24% of prompt-pass time; today's copy kernel uses 2 CTAs and spills registers (26-28 GB/s vs ~55 GB/s link). Build: one launch per layer, same bytes to the same slots; projected edge +0.08x load",
+   "ref": "serving/next150/RANKING.md #1 · workflow wf_c97bcc8d-c11"
+  },
+  {
+   "name": "Larger cache: host +20% and device KV 0.80",
+   "state": "planned",
+   "at": "2026-10-03 21:50",
+   "text": "two config-only twins at 1.375x queued (host ratio 3.6; KV memory 0.80); RAM check: +218 GB pinned for the twin half, ~730 GB available",
+   "ref": "lever_queue v3_ab_hc36_cl_1375x, v3_ab_mem80_cl_1375x"
   }
  ],
  "done": [
