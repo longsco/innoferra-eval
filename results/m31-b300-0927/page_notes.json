@@ -769,6 +769,18 @@
   "v3_full_cl_all_1375x": {
    "name": "full node, fair replay (v3.2), every adopted kernel, 1.375×",
    "short": "full node 1.375× (every kernel)"
+  },
+  "v3_full_cl_all_125x": {
+   "name": "full node, fair replay (v3.2), every adopted kernel, 1.25×",
+   "short": "full node 1.25× (every kernel)"
+  },
+  "v3_full_cl_all_15x": {
+   "name": "full node, fair replay (v3.2), every adopted kernel, 1.5×",
+   "short": "full node 1.5× (every kernel)"
+  },
+  "v3_ab_moesmcap_cl_1x": {
+   "name": "twin, full load (v3.2): MoE kernel capped at 144 of 148 SMs (bit-exact)",
+   "short": "MoE SM cap"
   }
  },
  "plain_words": [

@@ -972,6 +972,15 @@
    "change": "load",
    "verdict": "baseline",
    "why": "13/15 at 5.94 M/GPU: minutes 0 and 10 miss on generation speed (56.6 and 55.7 tok/s); first token p50 1.6 s, hit 93.2% vs production 97.1%, 0 errors. The knee moved from below 1.25x to about 1.375x after the verify-path index-score kernel."
+  },
+  {
+   "tag": "v3_full_cl_all_125x",
+   "at": "2026-10-03 21:30",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), every adopted kernel, 1.25×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "13/15 at 5.58 M/GPU: minutes 10 and 11 miss on generation speed (59.0 and 58.2 tok/s); they also have the lowest cache hit (91.1%, 91.8%), so they carry the most prompt work. Decode p50 72.9 vs production 65.2; first token p50 1.5 s; 0 errors."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

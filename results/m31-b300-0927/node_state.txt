@@ -1,13 +1,10 @@
-# read_utc 2026-10-04T03:35:55Z
+# read_utc 2026-10-04T04:30:55Z
 ## queue
-v3_full_cl_all_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-policy lpm --
 ## done
-01:58:25 v3_ab_numa_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-
 02:45:26 v3_full_cl_all_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-p
 03:35:00 v3_full_cl_all_125x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.5 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-pol
+04:30:06 v3_full_cl_all_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.76 TOKW=8 DRAFT_ATTN=fa4 "XARGS=$HCX --schedule-poli
 ## markers
-23:20:58 ===== lever v3_full_cl_sv_1125x done
-23:20:58 ===== lever v3_full_cl_sp_125x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.5; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-l
 00:15:26 ===== lever v3_full_cl_sp_125x done
 00:15:26 ===== lever v3_full_cl_sp_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-lo
 01:16:37 ===== lever v3_full_cl_sp_15x done
@@ -18,3 +15,5 @@ v3_full_cl_all_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY
 02:45:26 ===== lever v3_full_cl_all_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--close
 03:35:00 ===== lever v3_full_cl_all_1375x done
 03:35:00 ===== lever v3_full_cl_all_125x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.5; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-
+04:30:06 ===== lever v3_full_cl_all_125x done
+04:30:06 ===== lever v3_full_cl_all_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-l
