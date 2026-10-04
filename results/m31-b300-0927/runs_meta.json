@@ -1206,6 +1206,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 6.39 M/GPU (about 9.2 M on production's counters): only minute 10 misses (55.4 tok/s; hit 91.0%, first token p99 47 s - a burst of uncached long prompts); decode p50 73.0 vs production 65.6, first token p50 1.46 s, 0 errors. Minute 10 is the binding minute in every run near the knee."
+  },
+  {
+   "tag": "v3_ab_blk5_cl_1375x@A",
+   "at": "2026-10-04 14:19",
+   "protocol": "v3.2",
+   "name": "control half at 1.375× (full adopted stack, draft block 7)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 5.94 M/GPU (half node), generation 81.8 tok/s, first token p50 1.22 s / p99 13.8 s, 0 errors."
+  },
+  {
+   "tag": "v3_ab_blk5_cl_1375x@B",
+   "at": "2026-10-04 14:19",
+   "protocol": "v3.2",
+   "name": "draft block 5 instead of 7",
+   "change": "spec decode",
+   "verdict": "rejected",
+   "why": "Paired generation -8.91 tok/s (CI -10.35..-7.40); about -6 after the ~3 tok/s side bias; first token ×1.01; 14/15 vs 15/15. Fewer tokens per verify step outweigh the cheaper verify at 1.375x. Block 7 stays."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
