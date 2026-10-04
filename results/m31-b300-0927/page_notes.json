@@ -1853,7 +1853,7 @@
    "name": "Larger cache: host +20% and device KV 0.80",
    "state": "adopted",
    "at": "2026-10-03 23:16",
-   "text": "host +20% (ratio 3.6) ADOPTED: at 1.375x generation +3.91 tok/s (CI +2.3..+5.6), first token ×0.82, uncached -18%; RAM ~700 GB available with the twin. Device KV 0.80 twin running next (base ratio 3.0)",
+   "text": "host +20% (ratio 3.6) ADOPTED: at 1.375x +3.91 tok/s, first token ×0.82, uncached -18%. KV memory 0.80 (old base ratio 3.0): +2.85 tok/s, first token ×0.90, uncached -10% - same mechanism; both together exceed host RAM -> next: KV 0.80 with --hicache-size holding the host pool at its ratio-3.6 size",
    "ref": "lever_queue v3_ab_hc36_cl_1375x, v3_ab_mem80_cl_1375x"
   },
   {
