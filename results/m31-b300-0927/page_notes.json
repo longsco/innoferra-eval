@@ -2123,8 +2123,8 @@
   {
    "name": "Verify bundle: shared-expert overlap + logits all-gather blocks + EP8 combine v2",
    "state": "running",
-   "at": "2026-10-04 20:35",
-   "text": "Top 3 of the 10-04 lead sweep, all bitwise. Shared expert beside the router chain (-1.2 ms/pass, +1.0-1.2 tok/s); logits all-gather at 16-32 blocks instead of 4 (-0.4 ms/pass); EP8 combine kernel v2 at full memory speed (prompt passes -7..-11 ms). Building with CPU tests, then one HOLD window and a twin at 1.5x.",
+   "at": "2026-10-05 14:22",
+   "text": "Shared-expert overlap (+1.0-1.2 tok/s expected): module re-tested after a reviewer fix (63/64 CPU checks; the failing check only covers a mistyped flag value). GPU bench window armed after the 1.5x run, now incl. batch sizes 1-4 (the reviewer's coverage gap). Logits gather blocks: built + repaired (233/233 CPU checks), log line fix pending. EP8 combine v2: built, review interrupted. Minute-0 cache harvest: reviewer found the Triton cache stores absolute paths (fix needed).",
    "ref": "serving/next170/LEADS.md · workflow wf_9ccb26b7-34e"
   },
   {
