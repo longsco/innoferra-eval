@@ -2001,6 +2001,20 @@
    "at": "2026-10-04 17:21",
    "text": "ADOPTED: --mm-feature-transport cpu; twin at 1.375x +2.37 tok/s (CI +0.87..+3.93) with B on the slower side, uncached prompt tokens -12%, first token ×0.975. Cause: CUDA-IPC image pools leak under DP attention, fill mid-run, and change image hashes so cache matches stop at the first image",
    "ref": "serving/next160/RANKING.md · workflow wf_1067c834-be8"
+  },
+  {
+   "name": "Verify-step CUDA-graph launch gap",
+   "state": "running",
+   "at": "2026-10-04 17:45",
+   "text": "Profiled at 1.25x: the GPU waits 3.4-6.2 ms per verify step for the 2,022-kernel target graph to launch (about 10% of a 56 ms step; host gaps 19% in total). Not yet measured without the profiler, which can inflate launches. Workflow: unprofiled evidence, root cause, 1-GPU launch bench + timer for a HOLD window, then an exact fix (chunked replay, launch-path change or overlap).",
+   "ref": "serving/kernels/glaunch · workflow wf_3664335b-5d6 · next125/critpath/graph_launch.txt"
+  },
+  {
+   "name": "Sparse-attention verify kernel v3 (pipelined)",
+   "state": "running",
+   "at": "2026-10-04 17:45",
+   "text": "Bit-exact v3 on top of the adopted v2 (pipelined block loads, shared gathers). Sparse attention is 7.8 ms of a 56 ms verify step; estimate -2.0 ms/step (1.0-3.5). CPU tests, then a HOLD-window bench + smoke, then a twin.",
+   "ref": "serving/kernels/sattn · workflow wf_3664335b-5d6"
   }
  ],
  "done": [
