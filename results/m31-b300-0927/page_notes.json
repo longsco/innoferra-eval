@@ -1085,6 +1085,18 @@
   "v3_ab_ep8csw_cl_15x@B": {
    "name": "EP8 combine kernel v2 (swapped sides)",
    "short": "EP8 combine v2 sw"
+  },
+  "v3_full_cl_gcsv3_heldout_15x": {
+   "name": "held-out sessions (buckets b04-b06), full node, GC off + v3, 1.5×",
+   "short": "1.5× held-out"
+  },
+  "v3_full_cl_gcsv3_fidelity_15x": {
+   "name": "fidelity run: full-size synthetic images + production-shed requests sent, GC off + v3, 1.5×",
+   "short": "1.5× fidelity"
+  },
+  "v3_full_cl_gcsv3_15x_r2": {
+   "name": "full node, GC off + v3, 1.5× (repeat)",
+   "short": "1.5× GC+v3 repeat"
   }
  },
  "plain_words": [
@@ -2214,6 +2226,13 @@
    "at": "2026-10-05 16:00",
    "text": "At 1.5625x minute 0 runs 60.4 tok/s vs 68.8 in minute 9 at the same uncached load. Engine logs: between warm-up end and the window start (5.5 min) each rank runs 3-5 requests with the device KV 30-40% used; in minute 0 running requests jump to 14-18 per rank and the KV fills to 100% within a minute, so the first measured turns of long sessions reload their KV from host together. Largely a replay-boundary effect (production is in steady state). Candidate fixes: gated big loads, more device KV, or a warm-up that ends closer to the window (protocol change: owner decision).",
    "ref": "traffic/v3L-v3_full_cl_gcsv3_15625x.jsonl (sent_wall) + engine logs 22:20-22:34 UTC"
+  },
+  {
+   "name": "Sanity check: overfitting and fairness of the test",
+   "state": "running",
+   "at": "2026-10-05 16:20",
+   "text": "Favourable to us: images replaced by 1x1 pixels (624 requests, 4,690 images: 2.78 M prompt tokens = 0.8% and the vision encoder skipped); requests production shed with 429 are not sent (~140 heavy cold prompts); first-token target 3 s vs production's actual p50 0.34 s; tuning and status runs use the same 15-minute window. Against us: cache hit 94-95% vs production 97%; the minute-0 reload burst. Runs queued: held-out sessions (b04-b06) at 1.5x; fidelity run (full-size images + shed requests) at 1.5x; same-window repeat.",
+   "ref": "replay_v2_cl.py (--img, --skip-prod-shed, new --send-prod-shed)"
   }
  ],
  "done": [
