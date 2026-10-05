@@ -1323,6 +1323,24 @@
    "change": "framework",
    "verdict": "rejected",
    "why": "Stopped by the twin guard after 4 measured minutes: cache hit 75.6% vs 96.1% (default cost gave 71.0%). The two-tier policy does not keep sessions on the GPU that holds their cache. Our gateway pins stay in front of Dynamo. Next rung: router without the decode-block term (running)."
+  },
+  {
+   "tag": "v3_ab_dyn_kvnd_cl_1x@A",
+   "at": "2026-10-04 20:34",
+   "protocol": "v3.2",
+   "name": "our gateway (Dynamo rung 2 twin)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 4.40 M/GPU (half node, 1.0×), generation 103.2 tok/s, first token p50 1.08 s, uncached 10.3 M tokens, 0 errors."
+  },
+  {
+   "tag": "v3_ab_dyn_kvnd_cl_1x@B",
+   "at": "2026-10-04 20:34",
+   "protocol": "v3.2",
+   "name": "Dynamo's own KV routing per GPU without the decode-block term",
+   "change": "framework",
+   "verdict": "rejected",
+   "why": "13/15. Paired generation -23.0 tok/s (CI -25.4..-20.1), first token ×1.56; uncached prompt tokens 27.9 M vs 10.3 M (2.7×). Without the load term the router still spreads sessions away from their cache. Dynamo's own routing is closed for now; our gateway pins stay in front."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

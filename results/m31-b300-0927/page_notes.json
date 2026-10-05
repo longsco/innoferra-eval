@@ -1944,10 +1944,10 @@
   },
   {
    "name": "Dynamo retest with per-GPU-half cache events",
-   "state": "running",
-   "text": "A/A twin at 1.0x (same engines; Dynamo executes our GPU pins): generation parity (-1.35 tok/s, CI -3.19..+0.97, inside the -3.28 side bias), both 15/15; first token ×1.22 = frontend cost (Python chat processor, 663 event-loop stalls / 29 min). Ladder next: stream interval 4 (first content may wait for 20 tokens), then Dynamo's own KV routing; Rust chat processor rungs after that 10-04 19:50: two-tier policy also stopped by the guard (hit 75.6% vs 96.1%); next rung = router without the decode-block term.",
+   "state": "kept",
+   "text": "A/A twin at 1.0x (same engines; Dynamo executes our GPU pins): generation parity (-1.35 tok/s, CI -3.19..+0.97, inside the -3.28 side bias), both 15/15; first token ×1.22 = frontend cost (Python chat processor, 663 event-loop stalls / 29 min). Ladder next: stream interval 4 (first content may wait for 20 tokens), then Dynamo's own KV routing; Rust chat processor rungs after that 10-04 19:50: two-tier policy also stopped by the guard (hit 75.6% vs 96.1%); next rung = router without the decode-block term. 10-04 20:34: router without the decode-block term: -23.0 tok/s paired, uncached 2.7×. All three Dynamo routing rungs lose cache affinity; keep our gateway pins in front of Dynamo.",
    "ref": "serving/dyn/README.md section 10",
-   "at": "2026-10-04 19:50"
+   "at": "2026-10-04 20:34"
   },
   {
    "name": "Measurement hardening",
@@ -2013,8 +2013,8 @@
   {
    "name": "Verify-step CUDA-graph launch gap",
    "state": "running",
-   "at": "2026-10-04 17:45",
-   "text": "Profiled at 1.25x: the GPU waits 3.4-6.2 ms per verify step for the 2,022-kernel target graph to launch (about 10% of a 56 ms step; host gaps 19% in total). Not yet measured without the profiler, which can inflate launches. Workflow: unprofiled evidence, root cause, 1-GPU launch bench + timer for a HOLD window, then an exact fix (chunked replay, launch-path change or overlap).",
+   "at": "2026-10-04 20:35",
+   "text": "Profiled at 1.25x the GPU looked idle 3.4-6.2 ms per verify step during the graph launch. Unprofiled checks (GPU busy %, engine timers) show only about 1 ms per step: most of the gap is profiler overhead. Found instead: single-GPU stalls of 2-7 s (2.4-2.9% of time) while the partner waits. Final check in progress.",
    "ref": "serving/kernels/glaunch · workflow wf_3664335b-5d6 · next125/critpath/graph_launch.txt"
   },
   {
@@ -2023,6 +2023,41 @@
    "at": "2026-10-04 17:45",
    "text": "Bit-exact v3 on top of the adopted v2 (pipelined block loads, shared gathers). Sparse attention is 7.8 ms of a 56 ms verify step; estimate -2.0 ms/step (1.0-3.5). CPU tests, then a HOLD-window bench + smoke, then a twin.",
    "ref": "serving/kernels/sattn · workflow wf_3664335b-5d6"
+  },
+  {
+   "name": "Verify bundle: shared-expert overlap + logits all-gather blocks + EP8 combine v2",
+   "state": "running",
+   "at": "2026-10-04 20:35",
+   "text": "Top 3 of the 10-04 lead sweep, all bitwise. Shared expert beside the router chain (-1.2 ms/pass, +1.0-1.2 tok/s); logits all-gather at 16-32 blocks instead of 4 (-0.4 ms/pass); EP8 combine kernel v2 at full memory speed (prompt passes -7..-11 ms). Building with CPU tests, then one HOLD window and a twin at 1.5x.",
+   "ref": "serving/next170/LEADS.md · workflow wf_9ccb26b7-34e"
+  },
+  {
+   "name": "Minute-0 stalls (JIT compiles, garbage collection)",
+   "state": "running",
+   "at": "2026-10-04 20:35",
+   "text": "Minute 0 fails at 1.5x in both runs (57.2, 58.8 tok/s). Fix: keep Triton/inductor caches between launches, make one per-batch compile constant a runtime argument, log GC pauses. Expected +1.2 tok/s in minute 0. Judged by status runs, not a twin (shared caches).",
+   "ref": "serving/next170/LEADS.md rank 4 · workflow wf_9ccb26b7-34e"
+  },
+  {
+   "name": "Disk (NVMe) tier for the KV cache",
+   "state": "planned",
+   "at": "2026-10-04 20:35",
+   "text": "Keep evicted sessions on local disk instead of losing them. Expected +2.0 tok/s in the burst minutes (9-11), 6-9 days of work. Two blockers in the fork: a boot guard and missing page methods for the 4-bit KV pools. The 10-02 parking reason (draft KV) no longer applies.",
+   "ref": "serving/next170/LEADS.md rank 5"
+  },
+  {
+   "name": "Four GPUs per expert group (EP4/EP8 layout)",
+   "state": "rejected",
+   "at": "2026-10-04 20:35",
+   "text": "Closed by model before any GPU time: each expert read halves, but 4 ranks must step together, so one long prompt stalls 3 partners; central -16 tok/s (EP8 below -30). Re-test only as the decode side of a split design.",
+   "ref": "serving/next170/decode (dp4_sim_*.txt)"
+  },
+  {
+   "name": "Prefill/decode split (Dynamo disaggregation, in-node)",
+   "state": "rejected",
+   "at": "2026-10-04 20:35",
+   "text": "Closed by model: decode engines lose 9-14% per step and every follow-up must re-prefill the previous answer; Dynamo 1.5.0 refuses conditional disaggregation for SGLang. Net load factor about 0.",
+   "ref": "serving/next170/prod (pd_model.txt) · LEADS.md"
   }
  ],
  "done": [
