@@ -1037,6 +1037,22 @@
   "v3_full_cl_gcth_14375x": {
    "name": "full node, fair replay (v3.2), full stack + GC thresholds, 1.4375×",
    "short": "1.4375× + GC off"
+  },
+  "v3_full_cl_gcsv3_15x": {
+   "name": "full node, fair replay (v3.2), full stack + GC off + verify v3, 1.5×",
+   "short": "1.5× GC+v3"
+  },
+  "v3_full_cl_gcsv3_15625x": {
+   "name": "full node, fair replay (v3.2), full stack + GC off + verify v3, 1.5625×",
+   "short": "1.5625× GC+v3"
+  },
+  "v3_full_cl_gcsv3_1625x": {
+   "name": "full node, fair replay (v3.2), full stack + GC off + verify v3, 1.625×",
+   "short": "1.625× GC+v3"
+  },
+  "v3_full_cl_gcsv3_14375x": {
+   "name": "full node, fair replay (v3.2), full stack + GC off + verify v3, 1.4375×",
+   "short": "1.4375× GC+v3"
   }
  },
  "plain_words": [
@@ -2099,9 +2115,9 @@
   },
   {
    "name": "Sparse-attention verify kernel v3 (pipelined)",
-   "state": "running",
-   "at": "2026-10-05 11:40",
-   "text": "GPU bench (11:30): every v3 variant bit-exact vs v2 and the fork on every case and scenario (eager + CUDA-graph replay). Winner occ3_fuse0 (3 CTAs/SM, separate combine): 1.33-1.92x faster per call than the adopted v2 (u24 131k 96->58 us; live mix b24 127->68 us, b32 173->90 us) = about 3.5-5 ms less per verify step. Engine patch applied flag-off. Twins at 1.5x queued (both sides), with a greedy output-identity check (v2 vs v3 engines) after the first.",
+   "state": "adopted",
+   "at": "2026-10-05 13:22",
+   "text": "ADOPTED: twin at 1.5x +9.11 tok/s (CI +7.61..+10.99, +12%), first token ×0.94, with v3 on the slower side; greedy v2 vs v3 28/30 = control 28/30; single stream at 60k+ context 194 -> 236 tok/s. GPU bench: every variant bit-exact vs v2 and the fork; winner occ3_fuse0 1.33-1.92x per call.",
    "ref": "serving/kernels/sattn · workflow wf_3664335b-5d6"
   },
   {
@@ -2719,6 +2735,14 @@
    "append": {
     "XARGS": " --gc-threshold 700 10 100000",
     "EXTRA_ENV": " SGLANG_SCHED_GC_THRESHOLD=700,10,100000"
+   }
+  },
+  {
+   "name": "sparse-attention verify kernel v3 (occ3_fuse0: plan kernel + equal-share persistent grid, 3 CTAs/SM)",
+   "adopted_at": "2026-10-05 13:22",
+   "run": "v3_ab_sv3_cl_15x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_SATTN_VERIFY_V3=1 SATTN_VERIFY_V3_TM1=1 SATTN_VERIFY_V3_FUSE=0 SATTN_VERIFY_V3_CTAS_PER_SM=3 SATTN_VERIFY_V3_MAXNREG=168"
    }
   }
  ],
