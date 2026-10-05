@@ -1945,9 +1945,9 @@
   {
    "name": "Dynamo retest with per-GPU-half cache events",
    "state": "running",
-   "text": "A/A twin at 1.0x (same engines; Dynamo executes our GPU pins): generation parity (-1.35 tok/s, CI -3.19..+0.97, inside the -3.28 side bias), both 15/15; first token ×1.22 = frontend cost (Python chat processor, 663 event-loop stalls / 29 min). Ladder next: stream interval 4 (first content may wait for 20 tokens), then Dynamo's own KV routing; Rust chat processor rungs after that",
+   "text": "A/A twin at 1.0x (same engines; Dynamo executes our GPU pins): generation parity (-1.35 tok/s, CI -3.19..+0.97, inside the -3.28 side bias), both 15/15; first token ×1.22 = frontend cost (Python chat processor, 663 event-loop stalls / 29 min). Ladder next: stream interval 4 (first content may wait for 20 tokens), then Dynamo's own KV routing; Rust chat processor rungs after that 10-04 19:50: two-tier policy also stopped by the guard (hit 75.6% vs 96.1%); next rung = router without the decode-block term.",
    "ref": "serving/dyn/README.md section 10",
-   "at": "2026-10-04 12:42"
+   "at": "2026-10-04 19:50"
   },
   {
    "name": "Measurement hardening",

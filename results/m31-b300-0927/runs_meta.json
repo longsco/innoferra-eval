@@ -1305,6 +1305,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "11/15 at 6.69 M/GPU (about 9.6 M on production's counters). All 4 misses are generation speed just under the limit (57.6-59.2 tok/s in minutes 0, 9, 10, 11); first token passes in every minute. Worst minute 57.6 (46.6 without the image fix). Decode p50 68.6 vs production 65.6, first token p50 1.56 s / p99 18.0 s (was 1.78 / 33.9), hit 94.4% (was 93.6%) vs production 97.1%, 0 errors."
+  },
+  {
+   "tag": "v3_ab_dyn_2tier_cl_1x@A",
+   "at": "2026-10-04 19:50",
+   "protocol": "v3.2",
+   "name": "our gateway (Dynamo rung 4 twin)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 4.39 M/GPU (half node, 1.0×), generation 104.2 tok/s, first token p50 1.10 s, hit 96.1%, 0 errors. Group B (Dynamo two-tier routing policy) was stopped by the guard: hit 75.6% after 4 minutes."
+  },
+  {
+   "tag": "v3_ab_dyn_2tier_cl_1x@B",
+   "at": "2026-10-04 19:50",
+   "protocol": "v3.2",
+   "name": "Dynamo's own KV routing per GPU, two-tier policy (production-like affinity)",
+   "change": "framework",
+   "verdict": "rejected",
+   "why": "Stopped by the twin guard after 4 measured minutes: cache hit 75.6% vs 96.1% (default cost gave 71.0%). The two-tier policy does not keep sessions on the GPU that holds their cache. Our gateway pins stay in front of Dynamo. Next rung: router without the decode-block term (running)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
