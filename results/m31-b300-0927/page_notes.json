@@ -1053,6 +1053,22 @@
   "v3_full_cl_gcsv3_14375x": {
    "name": "full node, fair replay (v3.2), full stack + GC off + verify v3, 1.4375×",
    "short": "1.4375× GC+v3"
+  },
+  "v3_ab_shx_cl_15x@A": {
+   "name": "control half (GC off + v3 stack)",
+   "short": "control"
+  },
+  "v3_ab_shx_cl_15x@B": {
+   "name": "shared expert beside the router chain (MegaMoE)",
+   "short": "shared-expert overlap"
+  },
+  "v3_ab_shxsw_cl_15x@A": {
+   "name": "control half (swapped sides)",
+   "short": "control"
+  },
+  "v3_ab_shxsw_cl_15x@B": {
+   "name": "shared-expert overlap (swapped sides)",
+   "short": "shared-expert overlap sw"
   }
  },
  "plain_words": [
@@ -2123,8 +2139,8 @@
   {
    "name": "Verify bundle: shared-expert overlap + logits all-gather blocks + EP8 combine v2",
    "state": "running",
-   "at": "2026-10-05 14:22",
-   "text": "Shared-expert overlap (+1.0-1.2 tok/s expected): module re-tested after a reviewer fix (63/64 CPU checks; the failing check only covers a mistyped flag value). GPU bench window armed after the 1.5x run, now incl. batch sizes 1-4 (the reviewer's coverage gap). Logits gather blocks: built + repaired (233/233 CPU checks), log line fix pending. EP8 combine v2: built, review interrupted. Minute-0 cache harvest: reviewer found the Triton cache stores absolute paths (fix needed).",
+   "at": "2026-10-05 15:05",
+   "text": "Shared-expert overlap: GPU bench PASS (15:00): bit-exact at bs 1-32 on real and random weights, saving 0.93-1.15 ms per verify pass (mean 1.10). Patch applied flag-off; twins at 1.5x on the new stack queued (both sides) + greedy identity check. Logits gather blocks and EP8 combine v2: pending; minute-0 cache harvest: needs a path-rewrite fix.",
    "ref": "serving/next170/LEADS.md · workflow wf_9ccb26b7-34e"
   },
   {
