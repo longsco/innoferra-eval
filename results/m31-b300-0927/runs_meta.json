@@ -1269,6 +1269,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "15/15 at 5.93 M/GPU with margin (about 8.5 M on production's counters): worst minute 66.1 tok/s (+6 above the limit; earlier stack 60.2 / 58.8), decode p50 76.5 vs production 65.1, first token p50 1.33 s, hit 94.2%, 0 errors."
+  },
+  {
+   "tag": "v3_ab_mmcpu_cl_1375x@A",
+   "at": "2026-10-04 17:21",
+   "protocol": "v3.2",
+   "name": "control half at 1.375× (full stack, cuda_ipc image transport)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "14/15 at 5.95 M/GPU, generation 79.4 tok/s, first token p50 1.29 s, uncached 19.6 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_mmcpu_cl_1375x@B",
+   "at": "2026-10-04 17:21",
+   "protocol": "v3.2",
+   "name": "+ image features over CPU transport (--mm-feature-transport cpu)",
+   "change": "cache",
+   "verdict": "adopted",
+   "why": "Paired +2.37 tok/s (CI +0.87..+3.93) with B on the slower side; uncached prompt tokens -12% (19.6 -> 17.3 M); first token ×0.975. Removes the image cache-miss leak (CUDA-IPC pools fill under DP attention and change image hashes). Outputs unchanged."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

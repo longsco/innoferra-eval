@@ -937,6 +937,18 @@
   "v3_ab_mmcpu_cl_1375x": {
    "name": "twin at 1.375× (v3.2): image features over CPU transport (fixes the image cache-miss leak)",
    "short": "image transport cpu"
+  },
+  "v3_full_cl_fullmm_15x": {
+   "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.5×",
+   "short": "1.5× full + mm cpu"
+  },
+  "v3_ab_mmcpu_cl_1375x@A": {
+   "name": "control half (cuda_ipc image transport)",
+   "short": "control"
+  },
+  "v3_ab_mmcpu_cl_1375x@B": {
+   "name": "image transport cpu",
+   "short": "mm cpu"
   }
  },
  "plain_words": [
@@ -1985,9 +1997,9 @@
   },
   {
    "name": "Image cache misses from the CUDA-IPC image transport",
-   "state": "running",
-   "at": "2026-10-04 16:05",
-   "text": "root cause of the binding burst minute: under DP attention the cuda_ipc image-feature pools leak (each slice waits for 2 acks, gets 1) and fill 5-12 min into a run; afterwards images hash on the CPU path with different pad values, so cache matches stop at the first image (image follow-up misses 0/275 on never-full engines vs 13.8% after a fill). Fix: --mm-feature-transport cpu (config only, outputs unchanged); predicted minute 10 +3.3..+4.4 tok/s. Twin at 1.375x queued first",
+   "state": "adopted",
+   "at": "2026-10-04 17:21",
+   "text": "ADOPTED: --mm-feature-transport cpu; twin at 1.375x +2.37 tok/s (CI +0.87..+3.93) with B on the slower side, uncached prompt tokens -12%, first token ×0.975. Cause: CUDA-IPC image pools leak under DP attention, fill mid-run, and change image hashes so cache matches stop at the first image",
    "ref": "serving/next160/RANKING.md · workflow wf_1067c834-be8"
   }
  ],
@@ -2532,6 +2544,14 @@
    "run": "v3_ab_hcloadcap_cl_1375x@B",
    "append": {
     "EXTRA_ENV": " SGLANG_HICACHE_FUSED_LOAD=1 SGLANG_HICACHE_FUSED_LOAD_CTAS=4 SGLANG_HICACHE_FUSED_LOAD_CLUSTER=2 SGLANG_HICACHE_FUSED_LOAD_DRAFT_ROWS=4"
+   }
+  },
+  {
+   "name": "image features over CPU transport (fixes image cache misses)",
+   "adopted_at": "2026-10-04 17:21",
+   "run": "v3_ab_mmcpu_cl_1375x@B",
+   "append": {
+    "XARGS": " --mm-feature-transport cpu"
    }
   }
  ],
