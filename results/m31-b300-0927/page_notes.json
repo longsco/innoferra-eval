@@ -1,12 +1,12 @@
 {
  "_note": "Hand-written plain-language notes for progress_page.py: run labels, the findings/test log, why-we-miss text, setup comparison, glossary. Run numbers are NEVER typed here: {field:tag} placeholders (load, pass, prod_pass, hit, phit, dec, pdec, at, p50, p99) are filled from runs_v3.json at render, {name} placeholders from derived values. Other numbers quote the PROGRESS.md / progress_data.json row named in src. Times are PDT. Spec resolution: the setup-comparison table keeps the anchor #compare (the spec's #setup is the tab id); links meant for the table use #compare.",
  "current_test": "v3.2",
- "target": 7.0,
+ "target": 7.6,
  "goal": {
-  "value": 7.0,
+  "value": 7.6,
   "basis": null,
-  "basis_note": "Sep 30 notes tie it to production parity on production's engine counters ('north star ≈ production parity', timeline Sep 30 13:40; progress_data.json summary).",
-  "src": "progress_data.json timeline Sep 30 13:40 and summary"
+  "basis_note": "Owner, Oct 5 08:41 PDT: goal moved from 7.00 M to 7.6 M = production's peak per GPU ('7.6M on peak prod'). Read as production's engine counters it sits at about 5.0-5.3 M on our replay axis (÷1.44-1.52); read on our replay axis it is about 1.70x load. Basis question open with the owner.",
+  "src": "artifact comment thread 77e07f67 (Oct 5) + chat Oct 5"
  },
  "sla": {
   "ttft_p50": 3.0,
@@ -985,6 +985,14 @@
   "v3_full_cl_fgc_15x": {
    "name": "full node, fair replay (v3.2), full stack + GC freeze after warm-up, 1.5×",
    "short": "1.5× + GC freeze"
+  },
+  "v3_full_cl_fgc_14375x": {
+   "name": "full node, fair replay (v3.2), full stack + GC freeze after warm-up, 1.4375×",
+   "short": "1.4375× + GC freeze"
+  },
+  "v3_full_cl_fgc_15x_r2": {
+   "name": "full node, fair replay (v3.2), full stack + GC freeze after warm-up, 1.5× (repeat)",
+   "short": "1.5× + GC freeze (repeat)"
   }
  },
  "plain_words": [

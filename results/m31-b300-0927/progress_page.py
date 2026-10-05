@@ -842,7 +842,7 @@ def header_html():
     tip = (f"node 0008 queue read {hm(GPU['read_at'])} PDT from {GPU['src']}" if GPU.get("read_at") else "node queue not read")
     if GPU.get("running") and GPU["fresh"]:
         tip += f" · running: {GPU['running']['name']} at {GPU['running']['load']}"
-    return ('<header class="hd"><h1>MiniMax-M3.1 on one 8×B300 node: progress toward 7 M TPM per GPU</h1><div class="hdline">'
+    return ('<header class="hd"><h1>MiniMax-M3.1 on one 8×B300 node: progress toward ' + f'{TARGET:g}' + ' M TPM per GPU</h1><div class="hdline">'
             f'<p class="meta">Updated {stamp(NOW)} PDT{newest} · all times PDT · <a href="#howto">How to read this page</a></p>'
             f'<a class="gpu {GPU["form"]}" href="#recent" title="{esc(tip)}">{GPU.get("html") or esc(GPU["text"])}</a></div></header>')
 
@@ -871,7 +871,7 @@ def cells_html():
         body2 = cap(f"On the same requests: {half_up(PROD_FULL / ref['load'], 1)}× our {'highest passing' if PASS_TOP else 'closest'} load; {goal}",
                     18, "answer cell 2 body")
         t2 = f"production on the same requests, test {FULL['test']}, {stamp(FULL['at'])}: {PROD_RULE_SHORT}"
-        c2 = ('<div class="cell"><p class="q">How far from production and the 7 M goal?</p>'
+        c2 = ('<div class="cell"><p class="q">How far from production and the ' + f'{TARGET:g}' + ' M goal?</p>'
               f'<p class="lead">Production {FULL["ppass"]}/{NMIN} at {m2(PROD_FULL)} M</p>'
               f'<p class="body">{esc(body2[:1].upper() + body2[1:])}</p>'
               f'<p class="lnk"><a href="#run-{esc(FULL["id"])}" title="{esc(t2)}">↳ run {hm(FULL["at"]) if (NOW - FULL["at"]).total_seconds() < 86400 else stamp(FULL["at"])} ({esc(FULL["test"])})</a> · '
