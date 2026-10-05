@@ -2076,8 +2076,8 @@
   {
    "name": "Sparse-attention verify kernel v3 (pipelined)",
    "state": "running",
-   "at": "2026-10-04 17:45",
-   "text": "Bit-exact v3 on top of the adopted v2 (pipelined block loads, shared gathers). Sparse attention is 7.8 ms of a 56 ms verify step; estimate -2.0 ms/step (1.0-3.5). CPU tests, then a HOLD-window bench + smoke, then a twin.",
+   "at": "2026-10-05 10:20",
+   "text": "Built and CPU-verified bit-exact vs v2 and the fork (29/29 jobs + 107 skeptic jobs). Design: one plan kernel per layer, then an equal-share persistent grid with the combine fused in; model saving 2.2-4.6 ms per verify step (central ~3 ms of 56). Engine patch (patch_sattn_verify_v3.py) dry-run OK with every adopted patch (chain prefill v2 -> v3 -> v2 -> fork). GPU-6 bench window armed after the current twin; a twin at 1.5x follows if the bench is exact and faster.",
    "ref": "serving/kernels/sattn · workflow wf_3664335b-5d6"
   },
   {

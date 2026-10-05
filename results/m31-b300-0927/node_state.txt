@@ -1,4 +1,4 @@
-# read_utc 2026-10-05T17:16:14Z
+# read_utc 2026-10-05T17:22:47Z
 ## queue
 v3_ab_gcthsw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py AB_PLAN
 v3_full_cl_gclog_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-
