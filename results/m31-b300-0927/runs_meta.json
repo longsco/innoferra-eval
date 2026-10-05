@@ -1429,8 +1429,26 @@
    "protocol": "v3.2",
    "name": "automatic full GC off (thresholds 700,10,100000) in tokenizer, scheduler and detokenizer, engines 2-3",
    "change": "scheduling",
-   "verdict": "keep",
+   "verdict": "adopted",
    "why": "15/15. Paired generation +1.58 tok/s (CI +0.40..+3.01) with B on the slower side, first token ×0.951 (CI 0.918..0.984). Long GC pause time fell about 30% (some full passes remain). Side-swapped repeat next."
+  },
+  {
+   "tag": "v3_ab_gcthsw_cl_15x@A",
+   "at": "2026-10-05 12:20",
+   "protocol": "v3.2",
+   "name": "control half at 1.5× (swapped sides), engines 2-3",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.72 M/GPU (half node), generation 73.7 tok/s, first token p50 1.32 s, uncached 19.0 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_gcthsw_cl_15x@B",
+   "at": "2026-10-05 12:20",
+   "protocol": "v3.2",
+   "name": "automatic full GC off (700,10,100000), engines 0-1 (swapped sides)",
+   "change": "scheduling",
+   "verdict": "adopted",
+   "why": "15/15. Paired generation +2.10 tok/s (CI +0.68..+3.44), first token ×0.966 (CI 0.931..0.996). With the first twin (+1.58, ×0.951): side-balanced +1.8 tok/s, first token ×0.96. ADOPTED (exact: GC timing only)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
