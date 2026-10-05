@@ -957,6 +957,10 @@
   "v3_full_cl_fullmm_15x_r2": {
    "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.5× (repeat)",
    "short": "1.5× full + mm cpu (repeat)"
+  },
+  "v3_full_cl_fullmm_14375x_r2": {
+   "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.4375× (repeat)",
+   "short": "1.4375× full + mm cpu (repeat)"
   }
  },
  "plain_words": [

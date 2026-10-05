@@ -1341,6 +1341,15 @@
    "change": "framework",
    "verdict": "rejected",
    "why": "13/15. Paired generation -23.0 tok/s (CI -25.4..-20.1), first token ×1.56; uncached prompt tokens 27.9 M vs 10.3 M (2.7×). Without the load term the router still spreads sessions away from their cache. Dynamo's own routing is closed for now; our gateway pins stay in front."
+  },
+  {
+   "tag": "v3_full_cl_fullmm_14375x",
+   "at": "2026-10-04 21:22",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), full adopted stack + image transport cpu, 1.4375×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "14/15 at 6.37 M/GPU (about 9.2 M on production's counters): only minute 0 misses (57.6 tok/s). The burst minutes now pass with margin (minutes 9-11: 72.3, 65.5, 68.3; minute 10 was 55.4 before the image fix). Decode p50 75.0 vs production 65.6, first token p50 1.32 s / p99 13.5 s, hit 94.7% vs 97.1%, 0 errors. Minute 0 misses at 1.4375x and 1.5x in every recent run: the minute-0 fix decides 15/15 here."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
