@@ -2021,8 +2021,8 @@
   {
    "name": "Verify-step CUDA-graph launch gap",
    "state": "done",
-   "at": "2026-10-04 22:00",
-   "text": "Verdict: the profiled 3.4-6.2 ms launch gap is mostly profiler (CUPTI) overhead. Real host idle without the profiler: 1.1-1.9 ms per pass per GPU. Cause: one CPU-GPU sync per step (fix: sync-free verify, building). Also found single-GPU stalls of 2-7 s (2.3-3.8% of time, cause unknown). Unprofiled timer window armed for 22:15 PDT.",
+   "at": "2026-10-04 22:37",
+   "text": "CLOSED with a direct measurement (window 22:37 PDT, smoke engine, no profiler): target-graph launch 49-50 us of CPU (profiled 3.6-7.1 ms: the profiler inflated it 73-143x); GPU idle before the target graph 0.05 ms. Real idle is 1.4-1.5 ms per step (NVML 95.5% busy), on the draft side: the CPU waits for the previous step before it queues the draft. Launch-path fixes are closed; the sync-free verify step (building) targets the remaining idle.",
    "ref": "serving/kernels/glaunch · workflow wf_3664335b-5d6 · next125/critpath/graph_launch.txt"
   },
   {
