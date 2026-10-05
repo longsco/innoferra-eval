@@ -1,15 +1,12 @@
-# read_utc 2026-10-05T00:33:17Z
+# read_utc 2026-10-05T01:14:48Z
 ## queue
-v3_full_cl_fullmm_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-cach
 v3_ab_dyn_2tier_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-1x-s
 v3_ab_dyn_kvnd_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/tr/v3/ab-1x-s0
 ## done
-22:45:15 v3_full_cl_full_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarc
 23:35:05 v3_ab_mmcpu_cl_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-l
 00:21:34 v3_full_cl_full_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchic
+01:12:37 v3_full_cl_fullmm_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarch
 ## markers
-20:32:40 ===== lever v3_full_cl_newest_14375x done
-20:32:40 ===== lever v3_ab_blk5_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--cl
 21:19:39 ===== lever v3_ab_blk5_cl_1375x done
 21:19:39 ===== lever v3_ab_dyn_si4_cl_1x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_F
 22:03:14 ===== lever v3_ab_dyn_si4_cl_1x done
@@ -20,3 +17,5 @@ v3_ab_dyn_kvnd_cl_1x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl 1.0 REPLAY_FILE_A=replay_
 23:35:05 ===== lever v3_ab_mmcpu_cl_1375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.75; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--c
 00:21:34 ===== lever v3_ab_mmcpu_cl_1375x done
 00:21:34 ===== lever v3_full_cl_full_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-
+01:12:37 ===== lever v3_full_cl_full_15x done
+01:12:37 ===== lever v3_full_cl_fullmm_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--close

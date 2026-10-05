@@ -1287,6 +1287,15 @@
    "change": "cache",
    "verdict": "adopted",
    "why": "Paired +2.37 tok/s (CI +0.87..+3.93) with B on the slower side; uncached prompt tokens -12% (19.6 -> 17.3 M); first token ×0.975. Removes the image cache-miss leak (CUDA-IPC pools fill under DP attention and change image hashes). Outputs unchanged."
+  },
+  {
+   "tag": "v3_full_cl_full_15x",
+   "at": "2026-10-04 18:12",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), full adopted stack (incl. H2+H3 and fused cache load), 1.5×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "12/15 at 6.70 M/GPU (about 9.6 M on production's counters; the older stack gave 7/15 at this load). Misses: minute 0 (decode 57.2), minutes 9-10 (first token p50 3.56 / 4.11 s, decode 46.6 / 51.0) - the prompt-heavy burst. Decode p50 67.1 vs production 65.6, first token p50 1.78 s, hit 93.6% vs production 97.1%, 0 errors. This run did not have the image-transport fix; the repeat with it runs next."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
