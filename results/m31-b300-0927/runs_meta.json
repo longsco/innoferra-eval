@@ -1467,6 +1467,24 @@
    "change": "kernel",
    "verdict": "adopted",
    "why": "15/15. Paired generation +9.11 tok/s (CI +7.61..+10.99, +12%) with B on the slower side; first token ×0.940 (CI 0.908..0.984). Greedy identity v2 vs v3 28/30 = control v2 vs v2 28/30; single stream at 60k+ context 194 -> 236 tok/s. GPU bench: every variant bit-exact. ADOPTED."
+  },
+  {
+   "tag": "v3_ab_sv3sw_cl_15x@A",
+   "at": "2026-10-05 14:15",
+   "protocol": "v3.2",
+   "name": "control half at 1.5× (v2, swapped sides), engines 2-3",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.73 M/GPU (half node), generation 75.3 tok/s, first token p50 1.27 s, uncached 19.5 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_sv3sw_cl_15x@B",
+   "at": "2026-10-05 14:15",
+   "protocol": "v3.2",
+   "name": "sparse-attention verify v3, engines 0-1 (swapped sides)",
+   "change": "kernel",
+   "verdict": "adopted",
+   "why": "15/15. Paired generation +9.02 tok/s (CI +7.30..+10.53), first token ×0.979. With the first twin (+9.11): side-balanced +9.1 tok/s (+12%), first token about ×0.96. Confirms the adoption."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
