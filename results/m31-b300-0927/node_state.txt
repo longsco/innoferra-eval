@@ -1,7 +1,8 @@
-# read_utc 2026-10-05T19:21:29Z
+# read_utc 2026-10-05T19:22:36Z
 ## queue
 v3_ab_sv3sw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py AB_PLAN=
-v3_full_cl_gclog_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-
+v3_full_cl_gcth_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-cache 
+v3_full_cl_gcth_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-c
 ## done
 17:15:32 v3_ab_gcth_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py 
 18:07:55 v3_ab_gcthsw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.p

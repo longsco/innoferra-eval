@@ -1029,6 +1029,14 @@
   "v3_ab_sv3sw_cl_15x@B": {
    "name": "sparse-attention verify v3 (swapped sides)",
    "short": "verify v3 sw"
+  },
+  "v3_full_cl_gcth_15x": {
+   "name": "full node, fair replay (v3.2), full stack + GC thresholds, 1.5×",
+   "short": "1.5× + GC off"
+  },
+  "v3_full_cl_gcth_14375x": {
+   "name": "full node, fair replay (v3.2), full stack + GC thresholds, 1.4375×",
+   "short": "1.4375× + GC off"
   }
  },
  "plain_words": [
