@@ -1,4 +1,4 @@
-# read_utc 2026-10-05T23:40:32Z
+# read_utc 2026-10-05T23:52:04Z
 ## queue
 v3_full_cl_gcsv3_fidelity_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --img 1064x1024 --send-prod-shed" MEMFRAC=0.80 TOKW=8 DRAFT
 v3_full_cl_gcsv3_15x_r2 /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-ca
