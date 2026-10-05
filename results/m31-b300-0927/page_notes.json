@@ -993,6 +993,26 @@
   "v3_full_cl_fgc_15x_r2": {
    "name": "full node, fair replay (v3.2), full stack + GC freeze after warm-up, 1.5× (repeat)",
    "short": "1.5× + GC freeze (repeat)"
+  },
+  "v3_ab_gcth_cl_15x@A": {
+   "name": "control half (long-GC logging only)",
+   "short": "control"
+  },
+  "v3_ab_gcth_cl_15x@B": {
+   "name": "automatic full GC off in every engine process",
+   "short": "GC full off"
+  },
+  "v3_ab_gcthsw_cl_15x@A": {
+   "name": "control half (swapped sides)",
+   "short": "control"
+  },
+  "v3_ab_gcthsw_cl_15x@B": {
+   "name": "automatic full GC off (swapped sides)",
+   "short": "GC full off sw"
+  },
+  "v3_full_cl_gclog_14375x": {
+   "name": "full node, fair replay (v3.2), full stack + long-GC logging in every process, 1.4375×",
+   "short": "1.4375× GC log"
   }
  },
  "plain_words": [
@@ -2105,8 +2125,8 @@
   {
    "name": "Garbage-collection pauses (freeze GC after warm-up)",
    "state": "running",
-   "at": "2026-10-05 08:35",
-   "text": "Engines log full Python GC passes of 0.7-1.4 s over 1.1-1.5 M objects; one rank stops while its partner waits at the expert barrier. Minute 0 misses at random from 1.375x up. Fix: POST /freeze_gc to each engine after the warm-up (exact; the engine's own API). Twin at 1.5x, side-swapped repeat, then a full-node 1.5x run.",
+   "at": "2026-10-05 10:05",
+   "text": "Engines log full Python GC passes of 0.6-1.5 s about once a minute (tokenizer process, gen2 ~1.1 M objects). One /freeze_gc call froze the schedulers and the detokenizer, but the tokenizer pauses continued (12 after the freeze on a frozen engine). Scheduler GC is not logged by the stock code. New: hostfix/patch_gc_tuning.py logs long GC passes in every process and can raise GC thresholds (exact). Next: twins with automatic full GC off (thresholds 700,10,100000) in all engine processes.",
    "ref": "lever_queue v3_ab_fgc_cl_15x, v3_ab_fgcsw_cl_15x, v3_full_cl_fgc_15x · replay_v2_cl.py --freeze-gc-urls"
   },
   {
