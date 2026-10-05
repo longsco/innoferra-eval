@@ -961,6 +961,10 @@
   "v3_full_cl_fullmm_14375x_r2": {
    "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.4375× (repeat)",
    "short": "1.4375× full + mm cpu (repeat)"
+  },
+  "v3_full_cl_fullmm_1375x": {
+   "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.375×",
+   "short": "1.375× full + mm cpu"
   }
  },
  "plain_words": [
@@ -2016,9 +2020,9 @@
   },
   {
    "name": "Verify-step CUDA-graph launch gap",
-   "state": "running",
-   "at": "2026-10-04 20:35",
-   "text": "Profiled at 1.25x the GPU looked idle 3.4-6.2 ms per verify step during the graph launch. Unprofiled checks (GPU busy %, engine timers) show only about 1 ms per step: most of the gap is profiler overhead. Found instead: single-GPU stalls of 2-7 s (2.4-2.9% of time) while the partner waits. Final check in progress.",
+   "state": "done",
+   "at": "2026-10-04 22:00",
+   "text": "Verdict: the profiled 3.4-6.2 ms launch gap is mostly profiler (CUPTI) overhead. Real host idle without the profiler: 1.1-1.9 ms per pass per GPU. Cause: one CPU-GPU sync per step (fix: sync-free verify, building). Also found single-GPU stalls of 2-7 s (2.3-3.8% of time, cause unknown). Unprofiled timer window armed for 22:15 PDT.",
    "ref": "serving/kernels/glaunch · workflow wf_3664335b-5d6 · next125/critpath/graph_launch.txt"
   },
   {
@@ -2062,6 +2066,13 @@
    "at": "2026-10-04 20:35",
    "text": "Closed by model: decode engines lose 9-14% per step and every follow-up must re-prefill the previous answer; Dynamo 1.5.0 refuses conditional disaggregation for SGLang. Net load factor about 0.",
    "ref": "serving/next170/prod (pd_model.txt) · LEADS.md"
+  },
+  {
+   "name": "Sync-free verify step (CPU queues the next step while the GPU runs)",
+   "state": "running",
+   "at": "2026-10-04 22:00",
+   "text": "Each verify step waits on the CPU for the previous step's sequence lengths (one sync per step), so the GPU idles 1.1-1.9 ms per pass (pair max up to 2.4). The vendor already skips this mirror for DSpark on DeepSeek-V4. Exact (only CPU waiting and buffer sizing change). Building with CPU tests, then a window in 'check' mode and a twin at 1.5x.",
+   "ref": "serving/kernels/glaunch/BUILD_SPEC.md · workflow wf_17441694-00c"
   }
  ],
  "done": [
