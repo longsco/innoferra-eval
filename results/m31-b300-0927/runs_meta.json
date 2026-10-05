@@ -1413,6 +1413,24 @@
    "change": "scheduling",
    "verdict": "no clear change",
    "why": "15/15. Paired generation +0.35 tok/s (CI -1.14..+1.80), first token ×0.974 (CI 0.941..1.006). With the first twin (-1.40): side-balanced about -0.5 tok/s, no clear change."
+  },
+  {
+   "tag": "v3_ab_gcth_cl_15x@A",
+   "at": "2026-10-05 11:08",
+   "protocol": "v3.2",
+   "name": "control half at 1.5× (long-GC logging only), engines 0-1",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.70 M/GPU (half node), generation 75.9 tok/s, first token p50 1.27 s / p99 11.4 s, uncached 19.0 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_gcth_cl_15x@B",
+   "at": "2026-10-05 11:08",
+   "protocol": "v3.2",
+   "name": "automatic full GC off (thresholds 700,10,100000) in tokenizer, scheduler and detokenizer, engines 2-3",
+   "change": "scheduling",
+   "verdict": "keep",
+   "why": "15/15. Paired generation +1.58 tok/s (CI +0.40..+3.01) with B on the slower side, first token ×0.951 (CI 0.918..0.984). Long GC pause time fell about 30% (some full passes remain). Side-swapped repeat next."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
