@@ -1013,6 +1013,22 @@
   "v3_full_cl_gclog_14375x": {
    "name": "full node, fair replay (v3.2), full stack + long-GC logging in every process, 1.4375×",
    "short": "1.4375× GC log"
+  },
+  "v3_ab_sv3_cl_15x@A": {
+   "name": "control half (sparse-attention verify v2)",
+   "short": "control"
+  },
+  "v3_ab_sv3_cl_15x@B": {
+   "name": "sparse-attention verify v3 (occ3_fuse0)",
+   "short": "verify v3"
+  },
+  "v3_ab_sv3sw_cl_15x@A": {
+   "name": "control half (v2, swapped sides)",
+   "short": "control"
+  },
+  "v3_ab_sv3sw_cl_15x@B": {
+   "name": "sparse-attention verify v3 (swapped sides)",
+   "short": "verify v3 sw"
   }
  },
  "plain_words": [
@@ -2076,8 +2092,8 @@
   {
    "name": "Sparse-attention verify kernel v3 (pipelined)",
    "state": "running",
-   "at": "2026-10-05 10:20",
-   "text": "Built and CPU-verified bit-exact vs v2 and the fork (29/29 jobs + 107 skeptic jobs). Design: one plan kernel per layer, then an equal-share persistent grid with the combine fused in; model saving 2.2-4.6 ms per verify step (central ~3 ms of 56). Engine patch (patch_sattn_verify_v3.py) dry-run OK with every adopted patch (chain prefill v2 -> v3 -> v2 -> fork). GPU-6 bench window armed after the current twin; a twin at 1.5x follows if the bench is exact and faster.",
+   "at": "2026-10-05 11:40",
+   "text": "GPU bench (11:30): every v3 variant bit-exact vs v2 and the fork on every case and scenario (eager + CUDA-graph replay). Winner occ3_fuse0 (3 CTAs/SM, separate combine): 1.33-1.92x faster per call than the adopted v2 (u24 131k 96->58 us; live mix b24 127->68 us, b32 173->90 us) = about 3.5-5 ms less per verify step. Engine patch applied flag-off. Twins at 1.5x queued (both sides), with a greedy output-identity check (v2 vs v3 engines) after the first.",
    "ref": "serving/kernels/sattn · workflow wf_3664335b-5d6"
   },
   {
