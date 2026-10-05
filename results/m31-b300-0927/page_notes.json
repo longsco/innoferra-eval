@@ -2126,7 +2126,7 @@
    "name": "Garbage-collection pauses (freeze GC after warm-up)",
    "state": "running",
    "at": "2026-10-05 10:05",
-   "text": "Engines log full Python GC passes of 0.6-1.5 s about once a minute (tokenizer process, gen2 ~1.1 M objects). One /freeze_gc call froze the schedulers and the detokenizer, but the tokenizer pauses continued (12 after the freeze on a frozen engine). Scheduler GC is not logged by the stock code. New: hostfix/patch_gc_tuning.py logs long GC passes in every process and can raise GC thresholds (exact). Next: twins with automatic full GC off (thresholds 700,10,100000) in all engine processes.",
+   "text": "Engines log full Python GC passes of 0.6-1.5 s about once a minute (tokenizer process, gen2 ~1.1 M objects). One /freeze_gc call froze the schedulers and the detokenizer, but the tokenizer pauses continued (12 after the freeze on a frozen engine). Scheduler GC is not logged by the stock code. New: hostfix/patch_gc_tuning.py logs long GC passes in every process and can raise GC thresholds (exact). Next: twins with automatic full GC off (thresholds 700,10,100000) in all engine processes. 10:15: both freeze twins done: side-balanced -0.5 tok/s, no clear change (one call does not reach the tokenizer process pauses).",
    "ref": "lever_queue v3_ab_fgc_cl_15x, v3_ab_fgcsw_cl_15x, v3_full_cl_fgc_15x · replay_v2_cl.py --freeze-gc-urls"
   },
   {

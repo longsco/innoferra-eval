@@ -1,15 +1,12 @@
-# read_utc 2026-10-05T16:34:37Z
+# read_utc 2026-10-05T17:16:14Z
 ## queue
-v3_ab_gcth_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py AB_PLAN=/
 v3_ab_gcthsw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py AB_PLAN
 v3_full_cl_gclog_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-
 ## done
-06:30:56 v3_full_cl_fullmm_1375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.75 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hiera
 15:33:59 v3_ab_fgc_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTRA_B=--closed-loop 
 16:24:08 v3_ab_fgcsw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTRA_B=--closed-loo
+17:15:32 v3_ab_gcth_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py 
 ## markers
-03:34:21 ===== lever v3_full_cl_fullmm_14375x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.875; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--
-04:22:45 ===== lever v3_full_cl_fullmm_14375x done
 04:22:45 ===== lever v3_full_cl_fullmm_15x_r2: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--cl
 05:19:07 ===== lever v3_full_cl_fullmm_15x_r2 done
 05:19:07 ===== lever v3_full_cl_fullmm_14375x_r2: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 0.875; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA
@@ -20,3 +17,5 @@ v3_full_cl_gclog_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875
 15:33:59 ===== lever v3_ab_fgc_cl_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed
 16:24:08 ===== lever v3_ab_fgc_cl_15x done
 16:24:08 ===== lever v3_ab_fgcsw_cl_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--clos
+17:15:32 ===== lever v3_ab_fgcsw_cl_15x done
+17:15:32 ===== lever v3_ab_gcth_cl_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_B=--close

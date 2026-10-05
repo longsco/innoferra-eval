@@ -1394,7 +1394,25 @@
    "name": "GC frozen after warm-up (POST /freeze_gc), engines 2-3",
    "change": "scheduling",
    "verdict": "no clear change",
-   "why": "15/15. Paired generation -1.40 tok/s (CI -2.87..-0.05), first token ×1.05, with B on the slower side (A/A side gap -3.28): side-adjusted about +1.9, not significant alone. The side-swapped repeat decides."
+   "why": "15/15. Paired generation -1.40 tok/s (CI -2.87..-0.05) with B on engines 2-3; the side-swapped repeat gave +0.35 (CI -1.14..+1.80). Side-balanced effect about -0.5 tok/s, first token about ×1.01: no clear change. One /freeze_gc call freezes the schedulers and the detokenizer, not the tokenizer process that logs the long pauses."
+  },
+  {
+   "tag": "v3_ab_fgcsw_cl_15x@A",
+   "at": "2026-10-05 10:15",
+   "protocol": "v3.2",
+   "name": "control half at 1.5× (no GC freeze), engines 2-3",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "14/15 at 6.72 M/GPU (half node), generation 75.9 tok/s, first token p50 1.26 s, uncached 19.3 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_fgcsw_cl_15x@B",
+   "at": "2026-10-05 10:15",
+   "protocol": "v3.2",
+   "name": "GC frozen after warm-up (POST /freeze_gc), engines 0-1 (swapped sides)",
+   "change": "scheduling",
+   "verdict": "no clear change",
+   "why": "15/15. Paired generation +0.35 tok/s (CI -1.14..+1.80), first token ×0.974 (CI 0.941..1.006). With the first twin (-1.40): side-balanced about -0.5 tok/s, no clear change."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
