@@ -1359,6 +1359,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "12/15 at 6.70 M/GPU (first run 11/15). Misses: minute 0 (54.4 tok/s), minutes 9-10 (59.9, 58.1). Decode p50 69.4, first token p50 1.46 s / p99 16.9 s, hit 94.6% vs production 97.1%, 0 errors. 1.5x misses minute 0 and the 9-10 burst in both runs by 0.1-5.6 tok/s."
+  },
+  {
+   "tag": "v3_full_cl_fullmm_14375x_r2",
+   "at": "2026-10-04 23:30",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.4375× (repeat)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "15/15 at 6.39 M/GPU (about 9.2 M on production's counters): new highest full pass. Worst minute 64.9 tok/s (minute 0; 57.6 in the first run). Decode p50 74.4, first token p50 1.42 s / p99 17.4 s, hit 94.6%, 0 errors."
+  },
+  {
+   "tag": "v3_full_cl_fullmm_1375x",
+   "at": "2026-10-05 00:20",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.375×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "14/15 at 5.95 M/GPU: only minute 0 misses (57.2 tok/s); every other minute is 69.9-98.1. Minute 0 now misses at random at every load from 1.375x up (1.375x 14/15, 1.4375x 14/15 and 15/15): a start-of-window stall, not capacity. Garbage-collection pauses of 0.7-1.4 s are the lead."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

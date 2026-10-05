@@ -965,6 +965,26 @@
   "v3_full_cl_fullmm_1375x": {
    "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.375×",
    "short": "1.375× full + mm cpu"
+  },
+  "v3_ab_fgc_cl_15x@A": {
+   "name": "control half (no GC freeze)",
+   "short": "control"
+  },
+  "v3_ab_fgc_cl_15x@B": {
+   "name": "GC frozen after warm-up",
+   "short": "GC freeze"
+  },
+  "v3_ab_fgcsw_cl_15x@A": {
+   "name": "control half (no GC freeze, swapped sides)",
+   "short": "control"
+  },
+  "v3_ab_fgcsw_cl_15x@B": {
+   "name": "GC frozen after warm-up (swapped sides)",
+   "short": "GC freeze sw"
+  },
+  "v3_full_cl_fgc_15x": {
+   "name": "full node, fair replay (v3.2), full stack + GC freeze after warm-up, 1.5×",
+   "short": "1.5× + GC freeze"
   }
  },
  "plain_words": [
@@ -2073,6 +2093,20 @@
    "at": "2026-10-04 22:00",
    "text": "Each verify step waits on the CPU for the previous step's sequence lengths (one sync per step), so the GPU idles 1.1-1.9 ms per pass (pair max up to 2.4). The vendor already skips this mirror for DSpark on DeepSeek-V4. Exact (only CPU waiting and buffer sizing change). Building with CPU tests, then a window in 'check' mode and a twin at 1.5x.",
    "ref": "serving/kernels/glaunch/BUILD_SPEC.md · workflow wf_17441694-00c"
+  },
+  {
+   "name": "Garbage-collection pauses (freeze GC after warm-up)",
+   "state": "running",
+   "at": "2026-10-05 08:35",
+   "text": "Engines log full Python GC passes of 0.7-1.4 s over 1.1-1.5 M objects; one rank stops while its partner waits at the expert barrier. Minute 0 misses at random from 1.375x up. Fix: POST /freeze_gc to each engine after the warm-up (exact; the engine's own API). Twin at 1.5x, side-swapped repeat, then a full-node 1.5x run.",
+   "ref": "lever_queue v3_ab_fgc_cl_15x, v3_ab_fgcsw_cl_15x, v3_full_cl_fgc_15x · replay_v2_cl.py --freeze-gc-urls"
+  },
+  {
+   "name": "Vendor 09-26 attention fix (NaN in unwritten page tails)",
+   "state": "planned",
+   "at": "2026-10-05 08:35",
+   "text": "MiniMax's 09-26 update (024129f) zeroes K/V loads past each request's length: unwritten page tails can hold NaN scales, and a masked probability times NaN gives NaN. Our tree took the 09-26 HiCache part but not this fix, and our bit-exact kernels copy the old behaviour. The fix is exact on finite data. Port it to the fork kernel and our prefill/verify v2 kernels, with NaN-injection tests.",
+   "ref": "MiniMax-AI/0922-sglang 024129f q8kv4_msa.py; c702793 (09-27) = target-verify graphs, already ours"
   }
  ],
  "done": [
