@@ -1494,6 +1494,15 @@
    "change": "load",
    "verdict": "baseline",
    "why": "15/15 at 6.71 M/GPU (about 9.7 M on production's counters): NEW HIGHEST FULL PASS. Worst minute 66.7 tok/s (minute 10; was 57.6 before GC off + v3), minute 0 73.5. Decode p50 81.7 vs production 65.6, first token p50 1.38 s / p99 15.4 s, hit 94.6% vs 97.1%, 0 errors."
+  },
+  {
+   "tag": "v3_full_cl_gcsv3_15625x",
+   "at": "2026-10-05 15:49",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), full stack + GC off + sparse-attention verify v3, 1.5625×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "14/15 at 6.90 M/GPU (about 9.9 M on production's counters): only minute 0 misses (58.6 tok/s; first token 2.14 s, hit 92.4% - the warm-up boundary). Burst minutes pass (minute 9 65.3, minute 10 63.8). Decode p50 76.4 vs production 65.5, first token p50 1.47 s, hit 94.1%, 0 errors."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
