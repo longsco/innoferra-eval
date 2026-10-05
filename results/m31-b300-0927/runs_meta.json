@@ -1503,6 +1503,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 6.90 M/GPU (about 9.9 M on production's counters): only minute 0 misses (58.6 tok/s; first token 2.14 s, hit 92.4% - the warm-up boundary). Burst minutes pass (minute 9 65.3, minute 10 63.8). Decode p50 76.4 vs production 65.5, first token p50 1.47 s, hit 94.1%, 0 errors."
+  },
+  {
+   "tag": "v3_ab_shx_cl_15x@A",
+   "at": "2026-10-05 16:39",
+   "protocol": "v3.2",
+   "name": "control half at 1.5× (GC off + v3), engines 0-1",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.71 M/GPU (half node), generation 85.1 tok/s, first token p50 1.21 s / p99 11.3 s, uncached 19.4 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_shx_cl_15x@B",
+   "at": "2026-10-05 16:39",
+   "protocol": "v3.2",
+   "name": "shared expert beside the router chain (MegaMoE), engines 2-3",
+   "change": "kernel",
+   "verdict": "no clear change",
+   "why": "15/15. Paired generation -0.58 tok/s (CI -1.99..+0.72) with B on the slower side; first token ×0.981. The overlap was on (first fork at capture). Bench predicted about +2 tok/s; side-swapped repeat decides."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
