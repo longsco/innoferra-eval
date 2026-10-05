@@ -372,6 +372,7 @@ full env + argv + knobs + argv hash; kind=variant: probe lines + TPM csv rows). 
 | 12:20 PDT (10-05) | **GC thresholds ADOPTED:** side-swapped twin +2.10 tok/s (CI +0.68..+3.44), TTFT ×0.966; with the first twin side-balanced **+1.8 tok/s, TTFT ×0.96**. Adopted words: XARGS --gc-threshold 700 10 100000, EXTRA_ENV SGLANG_SCHED_GC_THRESHOLD=700,10,100000 (exact). Running: verify-attention v3 twin (v2 vs v3). |
 | 13:22 PDT (10-05) | **Verify attention v3 ADOPTED: twin +9.11 tok/s (CI +7.61..+10.99, +12%), first token ×0.94**, v3 on the slower side; greedy v2 vs v3 28/30 = control 28/30; single stream 194 -> 236 tok/s at 60k+ context. Queue: side-swapped v3 twin (confirmation), then full-node runs on GC + v3 at 1.5x, 1.5625x (~7.0 M our axis), 1.625x, 1.4375x. |
 | 14:15 PDT (10-05) | **v3 confirmed (side-swapped twin): +9.02 tok/s (CI +7.30..+10.53)**; side-balanced +9.1 tok/s (+12%), first token ~×0.96. Now: full node at 1.5x on GC + v3. |
+| 14:58 PDT (10-05) | **Status v3_full_cl_gcsv3_15x: 15/15 at 6.71 M/GPU (~9.7 M prod axis) - NEW HIGHEST FULL PASS** with GC off + verify v3. Worst minute 66.7 (minute 10; 57.6 before), minute 0 73.5; decode p50 81.7 vs prod 65.6; TTFT p50 1.38 s; hit 94.6%; 0 errors. Above 1.25x production's 7.6 M peak. Next: shared-expert bench window, then 1.5625x (~7.0 M our axis) and 1.625x. |
 
 ## Standing numbers
 See [STANDINGS.md](STANDINGS.md) (generated from progress_data.json by progress_page.py on every refresh; the page, this file and PLAN.md share it).
