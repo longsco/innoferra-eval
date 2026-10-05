@@ -1069,6 +1069,22 @@
   "v3_ab_shxsw_cl_15x@B": {
    "name": "shared-expert overlap (swapped sides)",
    "short": "shared-expert overlap sw"
+  },
+  "v3_ab_ep8c_cl_15x@A": {
+   "name": "control half (GC off + v3)",
+   "short": "control"
+  },
+  "v3_ab_ep8c_cl_15x@B": {
+   "name": "EP8 combine kernel v2",
+   "short": "EP8 combine v2"
+  },
+  "v3_ab_ep8csw_cl_15x@A": {
+   "name": "control half (swapped sides)",
+   "short": "control"
+  },
+  "v3_ab_ep8csw_cl_15x@B": {
+   "name": "EP8 combine kernel v2 (swapped sides)",
+   "short": "EP8 combine v2 sw"
   }
  },
  "plain_words": [
@@ -2139,8 +2155,8 @@
   {
    "name": "Verify bundle: shared-expert overlap + logits all-gather blocks + EP8 combine v2",
    "state": "running",
-   "at": "2026-10-05 15:05",
-   "text": "Shared-expert overlap: GPU bench PASS (15:00): bit-exact at bs 1-32 on real and random weights, saving 0.93-1.15 ms per verify pass (mean 1.10). Patch applied flag-off; twins at 1.5x on the new stack queued (both sides) + greedy identity check. Logits gather blocks and EP8 combine v2: pending; minute-0 cache harvest: needs a path-rewrite fix.",
+   "at": "2026-10-05 15:55",
+   "text": "Shared-expert overlap: GPU bench PASS (bit-exact bs 1-32, -0.93..-1.15 ms/pass); twins running. EP8 combine v2: GPU bench PASS 15:51 (bit-exact; x2.35-2.73 at prompt sizes, x2.3 at verify sizes); patch applied flag-off; twins queued. Logits gather blocks: pending (log fix). Minute-0 cache harvest: needs a path-rewrite fix.",
    "ref": "serving/next170/LEADS.md · workflow wf_9ccb26b7-34e"
   },
   {
@@ -2191,6 +2207,13 @@
    "at": "2026-10-05 08:35",
    "text": "MiniMax's 09-26 update (024129f) zeroes K/V loads past each request's length: unwritten page tails can hold NaN scales, and a masked probability times NaN gives NaN. Our tree took the 09-26 HiCache part but not this fix, and our bit-exact kernels copy the old behaviour. The fix is exact on finite data. Port it to the fork kernel and our prefill/verify v2 kernels, with NaN-injection tests.",
    "ref": "MiniMax-AI/0922-sglang 024129f q8kv4_msa.py; c702793 (09-27) = target-verify graphs, already ours"
+  },
+  {
+   "name": "Minute-0 dip = cache reload burst at the window start",
+   "state": "running",
+   "at": "2026-10-05 16:00",
+   "text": "At 1.5625x minute 0 runs 60.4 tok/s vs 68.8 in minute 9 at the same uncached load. Engine logs: between warm-up end and the window start (5.5 min) each rank runs 3-5 requests with the device KV 30-40% used; in minute 0 running requests jump to 14-18 per rank and the KV fills to 100% within a minute, so the first measured turns of long sessions reload their KV from host together. Largely a replay-boundary effect (production is in steady state). Candidate fixes: gated big loads, more device KV, or a warm-up that ends closer to the window (protocol change: owner decision).",
+   "ref": "traffic/v3L-v3_full_cl_gcsv3_15625x.jsonl (sent_wall) + engine logs 22:20-22:34 UTC"
   }
  ],
  "done": [
