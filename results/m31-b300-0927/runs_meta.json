@@ -1377,6 +1377,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 5.95 M/GPU: only minute 0 misses (57.2 tok/s); every other minute is 69.9-98.1. Minute 0 now misses at random at every load from 1.375x up (1.375x 14/15, 1.4375x 14/15 and 15/15): a start-of-window stall, not capacity. Garbage-collection pauses of 0.7-1.4 s are the lead."
+  },
+  {
+   "tag": "v3_ab_fgc_cl_15x@A",
+   "at": "2026-10-05 09:24",
+   "protocol": "v3.2",
+   "name": "control half at 1.5× (no GC freeze), engines 0-1",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.73 M/GPU (half node), generation 74.1 tok/s, first token p50 1.29 s / p99 10.9 s, uncached 19.5 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_fgc_cl_15x@B",
+   "at": "2026-10-05 09:24",
+   "protocol": "v3.2",
+   "name": "GC frozen after warm-up (POST /freeze_gc), engines 2-3",
+   "change": "scheduling",
+   "verdict": "no clear change",
+   "why": "15/15. Paired generation -1.40 tok/s (CI -2.87..-0.05), first token ×1.05, with B on the slower side (A/A side gap -3.28): side-adjusted about +1.9, not significant alone. The side-swapped repeat decides."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
