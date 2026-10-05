@@ -1350,6 +1350,15 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 6.37 M/GPU (about 9.2 M on production's counters): only minute 0 misses (57.6 tok/s). The burst minutes now pass with margin (minutes 9-11: 72.3, 65.5, 68.3; minute 10 was 55.4 before the image fix). Decode p50 75.0 vs production 65.6, first token p50 1.32 s / p99 13.5 s, hit 94.7% vs 97.1%, 0 errors. Minute 0 misses at 1.4375x and 1.5x in every recent run: the minute-0 fix decides 15/15 here."
+  },
+  {
+   "tag": "v3_full_cl_fullmm_15x_r2",
+   "at": "2026-10-04 22:19",
+   "protocol": "v3.2",
+   "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.5× (repeat)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "12/15 at 6.70 M/GPU (first run 11/15). Misses: minute 0 (54.4 tok/s), minutes 9-10 (59.9, 58.1). Decode p50 69.4, first token p50 1.46 s / p99 16.9 s, hit 94.6% vs production 97.1%, 0 errors. 1.5x misses minute 0 and the 9-10 burst in both runs by 0.1-5.6 tok/s."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
