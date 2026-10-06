@@ -1211,40 +1211,28 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-03 03:43",
+  "at": "2026-10-05 22:20",
   "items": [
    {
-    "rule": "decode",
-    "title": "Generation speed at full load (4.42 M)",
-    "text": "On the fair test (v3.2), the full node passes 15 of 15 minutes at 3.33 M per GPU and 14 of 15 at 3.72 M. At full load (4.4 M per GPU), generation speed is the limit: in the failing minutes each GPU runs 15 to 20 requests with 0.9 to 1.6 M context tokens, and a generation step takes about 88 ms. Four changes on Oct 2 raised generation speed at full load: prompt chunks sized by their cost (+2.7 tok/s), decode-after-prefill off (+2.7 tok/s), the FA4 kernel for the draft model (+4.65 tok/s) and a faster index-score kernel (+3.6 tok/s). Next: a faster top-k and a faster index score for generation steps.",
-    "src": "PROGRESS.md Oct 2 04:40 – Oct 3 00:49"
-   },
-   {
     "rule": "ttft_p50",
-    "title": "Median first token: passes (rule now under 3 s)",
-    "text": "Fixed Oct 1 20:41. M3.1 is an image-capable model, so the engine tokenised every conversation, turned the tokens back into text and tokenised it all again; our caches only sped up the first pass. Passing the cached tokens straight through (identical tokens on 300/300 real prompts) plus one cache shared by the 8 tokenizer processes cut the median first token at 2.23 M from 0.85 s to 0.54 s; every minute is now 0.49–0.61 s against the 1 s limit. Per request (median): tokenising 0.045 s, hand-off 0.04 s, waiting 0.003 s, prompt processing 0.22 s, first visible word back to the client 0.10 s.",
-    "src": "PROGRESS.md Oct 1 19:20, 19:55, 20:45"
+    "title": "New production days: first token at 5.7-6.1 M (cache hit)",
+    "text": "The record (15/15 at 6.71 M/GPU) holds on the Sep 30 test window only. On the Oct 3 06:30 peak window the node passes 3/15 at 5.74 M: first token p50 3.5-7.4 s in 12 minutes, while TPS passes (88.7 vs production 46.6). On Oct 5 08:00 it is overloaded at 6.07 M (0/15). Cause: our cache hit is 90.9% and 85.9% against production's 95.2% and 96.8% on the same requests, so we prefill 1.8x and 4.6x as many uncached tokens. About half the extra comes from follow-up turns inside the window, about a third from sessions the warm-up should have cached. Next: find each day's limit (4.89 / 4.56 / 5.00 M runs tonight) and close the cache-hit gap.",
+    "src": "PROGRESS.md Oct 5 20:38-21:45; runs v4p_full_cl_gcsv3_1x, v4d_cl_gcsv3_p1375x_m175x@A/@B"
    },
    {
-    "rule": "ttft_p99",
-    "title": "Slowest 1% of first tokens: fixed at 2.23 M (no longer an SLA rule)",
-    "text": "Dropped from the SLA on Oct 1, and fixed anyway: a 300k+ token uncached prompt ran 16k-token pieces back to back for 20+ s while its engine generated nothing. One decode step after each piece (Oct 1 21:24) brought the slowest 1% at 2.23 M to 8.2 s, better than production's 10.4 s on the same requests, with every minute at or under 14.5 s.",
-    "src": "PROGRESS.md Oct 1 20:05 and 21:25"
-   },
-   {
-    "rule": "cache",
-    "title": "Prompts processed again at full load",
-    "text": "At 4.42 M we re-process 2.75× as many uncached prompt tokens as production: 84% of the extra comes from conversations whose cached prompt was evicted between turns (the largest share after 2–10 minutes idle). More cache memory (0.76, adopted Oct 1 05:52) cut those evictions.",
-    "src": "PROGRESS.md Oct 1 03:45 and 05:55"
+    "rule": "decode",
+    "title": "Test window at 1.5625x: minute 0",
+    "text": "On the Sep 30 window 1.5x passes 3 of 3 runs; 1.5625x (6.90 M) misses only minute 0 (58.6 tok/s), a replay-boundary effect: running requests per rank jump from 3-5 to 14-18 and device KV from 30-40% to 100% in that minute. With full-size images and refused requests sent, 1.5x passes 13/15 (TPS -10).",
+    "src": "PROGRESS.md Oct 5 15:49-19:56"
    },
    {
     "rule": "errors",
-    "title": "Errors: one client's tool schemas (Oct 3)",
-    "text": "On another node's sessions (buckets b02+b03), one session sent 218 tools per request, and 44 of them had \"type\": {}. Our engine rejected all 60 requests of that session with HTTP 400; production served them. The gateway now deletes only invalid type values (TOOL_SCHEMA_FIX_TYPE): the rerun had 0 errors and 14 of 15 minutes passed (was 1 of 15).",
-    "src": "PROGRESS.md Oct 3 00:49 and 03:42"
+    "title": "Errors: one tool-schema form (fixed)",
+    "text": "Oct 3 peak at 1.0x: 3 minutes failed on one HTTP 400 each, all from one session whose tool schema has an enum written as an object. The engine checks every tool schema and rejects the request; production accepts it. Gateway fix TOOL_SCHEMA_FIX_ARRAYS is live from 21:35.",
+    "src": "PROGRESS.md Oct 5 20:38"
    }
   ],
-  "cause_lead": "Generation speed at full load",
+  "cause_lead": "Why we miss now: the record holds on the Sep 30 test window, not yet on new production days.",
   "cause_src": "runs_v3.json re-scored on the Oct 1 SLA"
  },
  "log": [
