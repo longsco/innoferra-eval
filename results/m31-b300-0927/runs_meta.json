@@ -1710,6 +1710,26 @@
    "change": "load",
    "verdict": "baseline",
    "why": "11/15 at 5.92 M/GPU; only first token fails: minutes 0-1 (4.49, 4.11 s: replay start, no carry-in), 5 (5.00 s) and 7 (3.82 s). TPS p50 114.5 (every minute 77-138) vs production 47.8; first token p50 2.71 s vs production 4.23 s; hit 94.0% vs production 94.6% (parity); 0 errors; 18% paced fallbacks. Knee on the Oct 3 peak: 4.92 M 15/15, 5.92 M 11/15, 6.56 M 0/15."
+  },
+  {
+   "tag": "v5t_ab_dwin_p74@A",
+   "at": "2026-10-06 05:57",
+   "protocol": "v5",
+   "share": 0.91,
+   "name": "control half (engines 0-1), Oct 3 peak complete traces, 7.26 M/GPU per half, window-pool twin",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "4/15 at 7.26 M/GPU (half node): first token p50 3.65 s (p99 55.8), TPS p50 89.3, uncached 27.9 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_dwin_p74@B",
+   "at": "2026-10-06 05:57",
+   "protocol": "v5",
+   "share": 0.91,
+   "name": "window-sized draft KV pool (+21.4% device tokens at the same memory), engines 2-3",
+   "change": "capacity",
+   "verdict": "adopted",
+   "why": "9/15 vs 4/15 at 7.27 M/GPU per half; paired TPS +5.21 tok/s (CI +2.73..+8.49), first token x0.799 (CI 0.759..0.840), uncached 27.0 vs 27.9 M, 0 errors, with B on the slower side. KV tokens 2,579,072 vs 2,125,056 per rank, same free GPU memory, same host tokens (ratio 2.579). P2 judge PASS on both B engines (0 allocation failures). Adopted 06:05 (DEV_SRC = patched copy tree + SGLANG_DSPARK_DRAFT_WINDOW_POOL=1 + --hicache-ratio 2.579); side-swap confirmation queued."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
