@@ -1728,8 +1728,8 @@
    "share": 0.91,
    "name": "window-sized draft KV pool (+21.4% device tokens at the same memory), engines 2-3",
    "change": "capacity",
-   "verdict": "adopted",
-   "why": "9/15 vs 4/15 at 7.27 M/GPU per half; paired TPS +5.21 tok/s (CI +2.73..+8.49), first token x0.799 (CI 0.759..0.840), uncached 27.0 vs 27.9 M, 0 errors, with B on the slower side. KV tokens 2,579,072 vs 2,125,056 per rank, same free GPU memory, same host tokens (ratio 2.579). P2 judge PASS on both B engines (0 allocation failures). Adopted 06:05 (DEV_SRC = patched copy tree + SGLANG_DSPARK_DRAFT_WINDOW_POOL=1 + --hicache-ratio 2.579); side-swap confirmation queued."
+   "verdict": "under review",
+   "why": "9/15 vs 4/15 at 7.27 M/GPU per half; paired TPS +5.21 tok/s (CI +2.73..+8.49), first token x0.799 (CI 0.759..0.840), uncached 27.0 vs 27.9 M, 0 errors, with B on the slower side. KV tokens 2,579,072 vs 2,125,056 per rank, same free GPU memory, same host tokens (ratio 2.579). P2 judge PASS on both B engines (0 allocation failures). Adopted 06:05 (DEV_SRC = patched copy tree + SGLANG_DSPARK_DRAFT_WINDOW_POOL=1 + --hicache-ratio 2.579); side-swap confirmation queued. 08:55: adoption UNDER REVIEW - the side-swap twin gave the opposite sign (-16.67 tok/s with B on engines 0-1)."
   },
   {
    "tag": "v5t_ab_fidproto_p60@A",
@@ -1769,7 +1769,27 @@
    "name": "gateway re-pins off (ROUTE_REPIN_SLACK=-1): a session stays on its rank even when that rank is busy (engines 2-3)",
    "change": "routing",
    "verdict": "adopted",
-   "why": "5/15 vs 2/15 at 7.26 M/GPU per half; paired TPS +14.15 tok/s (CI +11.44..+16.22, x1.21), first token x0.792 (CI 0.733..0.846), uncached 26.1 vs 32.4 M (-19%), fallbacks 21.8% vs 28.5%, 0 errors, with B on the slower side. Each re-pin moved a session to a rank without its cache: a cold re-prefill of ~140k tokens that fed the overload. Adopted 07:45 on every queued run."
+   "why": "5/15 vs 2/15 at 7.26 M/GPU per half; paired TPS +14.15 tok/s (CI +11.44..+16.22, x1.21), first token x0.792 (CI 0.733..0.846), uncached 26.1 vs 32.4 M (-19%), fallbacks 21.8% vs 28.5%, 0 errors, with B on the slower side. Each re-pin moved a session to a rank without its cache: a cold re-prefill of ~140k tokens that fed the overload. Adopted 07:45 on every queued run. 08:55 caveat: in this twin side A ran the window pool on engines 0-1, the side where the window pool ran much slower in the side-swap twin, so part of the gain may be side bias; the A/A twin will tell."
+  },
+  {
+   "tag": "v5t_ab_dwin_p74sw@A",
+   "at": "2026-10-06 08:40",
+   "protocol": "v5",
+   "share": 0.91,
+   "name": "control half (engines 2-3, side swap), window-pool twin: stack without the window pool, closed loop",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "7/15 at 7.27 M/GPU (half node): first token p50 3.10 s, TPS p50 91.1, uncached 25.5 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_dwin_p74sw@B",
+   "at": "2026-10-06 08:40",
+   "protocol": "v5",
+   "share": 0.91,
+   "name": "window-sized draft KV pool on engines 0-1 (side swap of v5t_ab_dwin_p74)",
+   "change": "capacity",
+   "verdict": "under review",
+   "why": "CONTRADICTS the first twin: B 2/15 vs A 7/15; paired TPS -16.67 tok/s (CI -19.39..-13.38), first token x1.195 (CI 1.126..1.269), uncached 34.4 vs 25.5 M. The same window-pool config ran TPS 97.9 on engines 2-3 (first twin) but 74.9 on engines 0-1, while the stack without it differs by 1.7. Side-balanced effect about -5.7 tok/s, first token about x0.98: the window-pool gain is NOT established. P2 judge PASS (no correctness issue). Under investigation: A/A twin on the adopted stack queued; per-engine logs of the 7.66 M run; NUMA placement of host pools."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
