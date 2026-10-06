@@ -1750,6 +1750,26 @@
    "change": "protocol",
    "verdict": "no clear change",
    "why": "11/15 at 5.99 M/GPU, same as A. Paired TPS +1.01 tok/s (CI -2.47..+4.77), first token x0.959 (CI 0.917..1.012); fallbacks 11.8% vs 16.7%, uncached 18.4 vs 21.2 M (-13%). The failing minutes move: the lead-in's carry-in load makes minutes 0-1 harder (8.7 s in minute 1), A's minute-10 spike is gone. Strict schedule stays the standard; revisit after the start-time fix (--t-start)."
+  },
+  {
+   "tag": "v5t_ab_norepin_p74@A",
+   "at": "2026-10-06 07:40",
+   "protocol": "v5",
+   "share": 0.91,
+   "name": "control half (engines 0-1): adopted stack (window pool), gateway re-pin slack 16, Oct 3 peak 7.26 M/GPU per half",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "2/15 at 7.26 M/GPU (half node, strict schedule): first token p50 5.49 s (p99 50.6), TPS p50 67.9, uncached 32.4 M, 28.5% paced fallbacks, 36 gateway re-pins, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_norepin_p74@B",
+   "at": "2026-10-06 07:40",
+   "protocol": "v5",
+   "share": 0.91,
+   "name": "gateway re-pins off (ROUTE_REPIN_SLACK=-1): a session stays on its rank even when that rank is busy (engines 2-3)",
+   "change": "routing",
+   "verdict": "adopted",
+   "why": "5/15 vs 2/15 at 7.26 M/GPU per half; paired TPS +14.15 tok/s (CI +11.44..+16.22, x1.21), first token x0.792 (CI 0.733..0.846), uncached 26.1 vs 32.4 M (-19%), fallbacks 21.8% vs 28.5%, 0 errors, with B on the slower side. Each re-pin moved a session to a rank without its cache: a cold re-prefill of ~140k tokens that fed the overload. Adopted 07:45 on every queued run."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
