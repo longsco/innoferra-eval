@@ -6,7 +6,14 @@
   "value": 7.6,
   "basis": null,
   "basis_note": "Owner, Oct 5 08:41 PDT: goal 7.6 M per GPU = production's peak ('7.6M on peak prod'). 10-06 correction: our M TPM/GPU and production's engine counters are the SAME unit - the old x1.44 'production axis' was the missing lb03 traffic. Production's real loads per window (engine counters): Sep 30 6.43, Oct 1 7.37, Oct 2 6.80, Oct 3 peak 8.01, Oct 5 7.76 M/GPU. Our Sep 30 record (15/15 at 6.71 M sent) = ~1.0x of production's real Sep 30 load, on traces missing lb03. The north-star test is now the Oct 3 peak on complete traces (v5) at 6.9 M (logged) and 8.0 M (engines).",
-  "src": "artifact comment thread 77e07f67 (Oct 5) + chat Oct 5; fidelity scorecard next180/FIDELITY-SCORECARD.md (10-06)"
+  "src": "artifact comment thread 77e07f67 (Oct 5) + chat Oct 5; fidelity scorecard next180/FIDELITY-SCORECARD.md (10-06)",
+  "prod_windows": {
+   "Sep 30": 6.43,
+   "Oct 1": 7.37,
+   "Oct 2": 6.8,
+   "Oct 3": 8.01,
+   "Oct 5": 7.76
+  }
  },
  "sla": {
   "ttft_p50": 3.0,
@@ -2464,15 +2471,15 @@
   "note": "On v3.1 requests our generation speed already beats production's at {load:best_0.5} M ({dec:best_0.5} vs {pdec:best_0.5} tok/s, Oct 1 {at:best_0.5}). The gap is prompt-processing speed, the two-GPU lockstep and per-request time outside GPU math. (This retires the older '75 vs 212 tok/s per stream' note, which current data contradicts.)"
  },
  "howto": [
-  "TPM per GPU = tokens processed per minute (prompt including cached, plus output) ÷ 8 GPUs: the same formula as production's dashboard. Our loads come from production's request logs, which read about {ec_hub_ratio}× lower than production's engine counters.",
+  "TPM per GPU = tokens processed per minute (prompt including cached, plus output) ÷ 8 GPUs: the same unit as production's engine counters (Oct 6: the old 1.44× 'axis' was traffic missing from our logs).",
   "{sla_sentence}",
   "Load we sent = the TPM per GPU that the replayed production requests ask for, not what we served. It rises by adding conversations, never by speeding up time.",
-  "Production has two numbers. {prod_full} M = production on exactly the requests our full-load replay sends; compare our runs with this. {ec_range} M = production's full load per GPU on its own engine counters (Sep 30 13:29–13:34). The engines count {ec_req}× the requests and about {ec_ppr}× the prompt tokens per request that the request logs record, so about {ec_hub_ratio}× the tokens in total, for reasons not yet established. The {hub_avg} M in older notes is the whole hub's average per GPU over the same 15 minutes.",
+  "Production's real load per GPU comes from its engine counters: Sep 30 6.43, Oct 1 7.37, Oct 2 6.80, Oct 3 peak 8.01, Oct 5 7.76 M. Each run is also labelled as a share of its window's real load. Production at its Oct 3 peak passes 0/15 minutes of our SLA.",
   "Production on the same requests is scored minute by minute with the same rule, from its own request logs. {prod_rule_note}",
-  "The {target} M goal's basis is not confirmed. Sep 30 notes tie it to production parity on its engine counters ('north star ≈ production parity', Sep 30 13:40); counted that way it sits at about {goal_eng} M on this page's request-log axis ({target} ÷ {ec_hub_ratio}). The chart draws both readings until the owner confirms one.",
-  "Test versions: v3.1 (current, first result {v31_first}) = production traffic recorded Sep 30 13:10–13:25 PDT, minus the requests production itself refused (HTTP 429), with the literal-<image> bug fixed. v3 = the same traffic before those fixes. v2 = lighter Sep 28 traffic. Compare runs only within one version.",
+  "The {target} M goal is production's peak (owner, Oct 5); its exact basis is not confirmed. The chart draws it as a dashed line next to production's busiest real load (8.01 M, Oct 3 06:30 PDT).",
+  "Test versions: v5.1 (newest, Oct 6 08:25) = v5 sent at production's start times plus a 5-minute lead-in. v5 (Oct 6 02:43) = complete traces from all three hub load balancers, strict schedule. v3.x and older = Sep 30 traces that miss lb03 (34-54% of each session's turns). Compare runs only within one test.",
   "SIM = the teammates' synthetic benchmark (StandardKernel): a cross-check, never a ranking.",
-  "A single run varies by about ±1 minute from run to run (v2 repeat, Sep 30: 10 vs 11). All times Pacific (PDT)."
+  "Run-to-run spread: near the knee the same setup scored 3-7 minutes apart on the two halves of the node (Oct 6, 7.27 M); on light loads about ±1 minute. All times Pacific (PDT)."
  ],
  "glossary": [
   [

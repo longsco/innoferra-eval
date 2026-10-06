@@ -69742,6 +69742,328 @@
 ]
 },
 {
+"tag": "v5t_ab_aa_adopted_p74@A",
+"partial": true,
+"done_utc": null,
+"requests": 939,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 2.24,
+"prod_tpm_gpu": 2.28,
+"hit": 0.9393,
+"prod_hit": 0.9443,
+"ttft": [
+6.276485844980925,
+28.802602764917538,
+75.65106886392459
+],
+"prod_ttft": [
+5.826,
+10.216,
+10.678
+],
+"decode_p50": 80.40215125254808,
+"prod_decode_p50": 43.20562820218704,
+"passed": 0,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 250,
+"err": 0,
+"ttft_p50": 8.326222022995353,
+"ttft_p99": 82.09706530510448,
+"decode_p50": 74.32138229743,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 1,
+"n": 206,
+"err": 0,
+"ttft_p50": 3.782472763909027,
+"ttft_p99": 72.148485846119,
+"decode_p50": 73.57631535387902,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 2,
+"n": 197,
+"err": 0,
+"ttft_p50": 8.479599757120013,
+"ttft_p99": 65.5156593141146,
+"decode_p50": 64.83486949714616,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 3,
+"n": 189,
+"err": 0,
+"ttft_p50": 6.754976856056601,
+"ttft_p99": 56.40429285308346,
+"decode_p50": 86.29860139118799,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 4,
+"n": 97,
+"err": 0,
+"ttft_p50": 3.6562056872062385,
+"ttft_p99": 30.95873630209826,
+"decode_p50": 110.65765362766456,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 250,
+"err": 0,
+"ttft_p50": 4.317,
+"ttft_p99": 10.735,
+"decode_p50": 46.53289678257212,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 206,
+"err": 0,
+"ttft_p50": 7.132,
+"ttft_p99": 10.725,
+"decode_p50": 38.90937318067146,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 197,
+"err": 0,
+"ttft_p50": 5.28,
+"ttft_p99": 10.763,
+"decode_p50": 37.33503905197953,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 189,
+"err": 0,
+"ttft_p50": 6.693,
+"ttft_p99": 10.552,
+"decode_p50": 45.65916398713826,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 97,
+"err": 0,
+"ttft_p50": 6.096,
+"ttft_p99": 10.873,
+"decode_p50": 42.56902290973175,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+]
+},
+{
+"tag": "v5t_ab_aa_adopted_p74@B",
+"partial": true,
+"done_utc": null,
+"requests": 935,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 2.258,
+"prod_tpm_gpu": 2.3,
+"hit": 0.948,
+"prod_hit": 0.9481,
+"ttft": [
+5.702502813888714,
+19.523764055920765,
+46.22635004390031
+],
+"prod_ttft": [
+5.829,
+10.218,
+10.725
+],
+"decode_p50": 69.04899375148803,
+"prod_decode_p50": 43.76709652207894,
+"passed": 0,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 250,
+"err": 0,
+"ttft_p50": 6.692929407116026,
+"ttft_p99": 57.58448057505302,
+"decode_p50": 74.62939743791756,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 1,
+"n": 207,
+"err": 0,
+"ttft_p50": 4.383942004991695,
+"ttft_p99": 28.613990786951035,
+"decode_p50": 71.30907068439177,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 2,
+"n": 200,
+"err": 0,
+"ttft_p50": 5.385477404808626,
+"ttft_p99": 35.89618134894408,
+"decode_p50": 58.032125972392386,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 193,
+"err": 0,
+"ttft_p50": 5.9225389659404755,
+"ttft_p99": 26.158360610017553,
+"decode_p50": 46.64627116583927,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 85,
+"err": 0,
+"ttft_p50": 9.002310648094863,
+"ttft_p99": 27.24091192195192,
+"decode_p50": 91.55881776880197,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 250,
+"err": 0,
+"ttft_p50": 4.317,
+"ttft_p99": 10.735,
+"decode_p50": 46.56686339427091,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 207,
+"err": 0,
+"ttft_p50": 7.069,
+"ttft_p99": 10.725,
+"decode_p50": 39.94281118756144,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 200,
+"err": 0,
+"ttft_p50": 5.28,
+"ttft_p99": 10.763,
+"decode_p50": 37.16025359362249,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 193,
+"err": 0,
+"ttft_p50": 6.685,
+"ttft_p99": 10.552,
+"decode_p50": 47.30086161420784,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 85,
+"err": 0,
+"ttft_p50": 6.32,
+"ttft_p99": 10.873,
+"decode_p50": 43.39870321015157,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+]
+},
+{
 "tag": "v5t_ab_dwin_p74@A",
 "partial": false,
 "done_utc": null,

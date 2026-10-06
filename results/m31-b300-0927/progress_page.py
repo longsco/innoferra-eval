@@ -552,6 +552,8 @@ def lever_minutes(share):
 def lc(s):
     """lower-case the first letter for use mid-sentence, unless the first word is a name or acronym (MiniMax's, HTTP, Dynamo-style)"""
     w = (s.split() or [""])[0]
+    if w in ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"):
+        return s                                   # a date ('Oct 3 peak, ...') keeps its capital
     return s if any(c.isupper() for c in w[1:]) else s[:1].lower() + s[1:]
 
 
@@ -868,7 +870,17 @@ def cells_html():
               + (f'<p class="lnk"><a href="#run-{c["id"]}">↳ run {hm(c["at"])}</a></p>' if c else "") + '</div>')
     ref = PASS_TOP or c
     c2 = ""
-    if FULL and ref:
+    if PROD_PEAK and ref:                                   # innoferra 10-06: production's REAL load (engine counters) in the replayed window
+        pw, pv, ptop, preplayed = PROD_PEAK
+        share = ref["load"] / pv
+        body2 = cap(f"Production's real load {'in that window' if preplayed else 'at its busiest'} ({pw}) is {m2(pv)} M per GPU, and it passes "
+                    f"0/{NMIN} there. Our {'best pass' if PASS_TOP else 'closest run'} is {m2(ref['load'])} M. Goal {m2(TARGET)} M"
+                    + (", basis not confirmed." if not GOAL_CONFIRMED else "."), 36, "answer cell 2 body")
+        c2 = ('<div class="cell"><p class="q">How far from production and the ' + f'{TARGET:g}' + ' M goal?</p>'
+              f'<p class="lead">{half_up(share, 2)}× of production\'s {esc(pw)} load</p>'
+              f'<p class="body">{esc(body2)}</p>'
+              f'<p class="lnk"><a href="#run-{esc(ref["id"])}">↳ run {hm(ref["at"])}</a> · <a href="#prod">production</a></p></div>')
+    elif FULL and ref:
         goal = (f"the {m2(TARGET)} M goal is {half_up(TARGET / ref['load'], 1)}× it." if GOAL_CONFIRMED
                 else f"goal {m2(TARGET)} M, basis not confirmed.")
         body2 = cap(f"On the same requests: {half_up(PROD_FULL / ref['load'], 1)}× our {'highest passing' if PASS_TOP else 'closest'} load; {goal}",
@@ -905,304 +917,736 @@ def cells_html():
     return f'<section id="status" class="cells" aria-label="Answers">{c1}{c2}{c3}</section>'
 
 
-def star_path(cx, cy, ro=6.6, ri=2.8):
-    pts = []
-    for i in range(10):
-        a = -math.pi / 2 + i * math.pi / 5
-        rr = ro if i % 2 == 0 else ri
-        pts.append(f"{cx + rr * math.cos(a):.1f},{cy + rr * math.sin(a):.1f}")
-    return "M" + " L".join(pts) + " Z"
+# ---------------------------------------------------------------- Overview: chart (test versions, frontiers, goal and production lines)
+def tv_start(t):
+    """start of a test version: page_notes.json test_versions, else its first run"""
+    s = TV.get(t, {}).get("start")
+    if s:
+        return pdt(s)
+    return min((r["at"] for r in RUNS if r["test"] == t), default=datetime.max)
 
 
-def run_title(r):
-    return (f"{stamp(r['at'])} · {lc(r['name'])} · {m2(r['load'])} M · {r['pass']}/{NMIN} · {r['verdict'].lower()}"
-            + (" · closest" if r is CLOSEST else "") + ("" if r["test"] == CUR else f" · older test {r['test']}"))
+TESTS = sorted({r["test"] for r in RUNS}, key=tv_start)              # every test version with a run, oldest first
+VTESTS = [t for t in TESTS if any(r["test"] == t for r in VALID)]     # ... with a valid run
+HL = [t for t in VTESTS if t == CUR or tv_start(t) > tv_start(CUR)] or VTESTS[-1:]   # bold: the current test and newer tests with runs
+COLOURED = VTESTS[-3:]        # innoferra 10-06: a scatter keeps at most 3 hues apart for every reader (dataviz all-pairs cap); older tests gray
+for _t in HL:
+    if _t not in COLOURED:
+        COLOURED.append(_t)
+        WARNINGS.append(f"chart: bold test {_t} is not one of the three newest tests; its colour can repeat another test's")
+SHOWN = [t for t in VTESTS if t in COLOURED]   # innoferra 10-06 r2: tests drawn by default; the gray (oldest) tests show only with the checkbox
+
+
+def tv_cls(t):
+    """colour slot of a test version = its place among the tests with a valid run (VTESTS) modulo 3, so the three coloured tests never
+    share a slot: a test keeps its hue while it is one of the three newest (the next test takes the hue of the test that turns gray).
+    CSS tokens --tv0/--tv1/--tv2; tvx = gray (--tvx)."""
+    return f"tv{VTESTS.index(t) % 3}" if t in COLOURED else "tvx"
+
+
+FRONT_TOL = 0.05     # M per GPU: replays of one load differ by a few hundredths (6.69-6.74 at 1.5x), so they count as the same load
+
+
+def frontier(rs):
+    """Pareto frontier of one test: the full-node runs (twin halves are half-node replays; rejected changes are not kept) with at least
+    one minute in SLA (a 0/15 run attains nothing, so no frontier step runs along the x axis) that no other such run beats: q beats r
+    when q has at least r's minutes in SLA at r's load or more (FRONT_TOL), and more minutes or more load. Sorted by load; equal runs
+    keep the newest."""
+    pts = [r for r in rs if not r["invalid"] and "@" not in str(r["id"]) and r.get("verdict") != "Rejected" and r["load"] is not None
+           and r["pass"] > 0]
+    def beats(q, r):
+        return q["pass"] >= r["pass"] and q["load"] >= r["load"] - FRONT_TOL and (q["pass"] > r["pass"] or q["load"] > r["load"])
+    out = []
+    for r in sorted(pts, key=lambda r: r["at"], reverse=True):
+        if not any(beats(q, r) for q in pts) and not any(o["load"] == r["load"] and o["pass"] == r["pass"] for o in out):
+            out.append(r)
+    return sorted(out, key=lambda r: r["load"])
+
+
+FRONT = {t: frontier([r for r in VALID if r["test"] == t]) for t in VTESTS}
+FRONT_IDS = {r["id"] for f in FRONT.values() for r in f}
+MONTHS = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
+
+
+def prod_windows():
+    """production's real load per GPU in each recorded window (engine counters): page_notes.json goal.prod_windows
+    ({"Oct 3": 8.01, ...}) when the owner adds it, else parsed from goal.basis_note
+    "Production's real loads per window (engine counters): Sep 30 6.43, ..., Oct 3 peak 8.01, ... M/GPU" -> [('Sep 30', 6.43), ...]"""
+    pw = GOAL.get("prod_windows")
+    if isinstance(pw, dict) and pw:
+        return [(str(k), float(v)) for k, v in pw.items()]
+    note = GOAL.get("basis_note") or ""
+    i = note.find("real loads per window")
+    j = note.find("M/GPU", i) if i >= 0 else -1
+    if j < 0:
+        return []
+    return [(a, float(b)) for a, b in re.findall(rf"((?:{MONTHS}) \d{{1,2}})(?: peak)? (\d+\.\d+)", note[i:j])]
+
+
+PROD_WIN = prod_windows()
+
+
+def replay_window(r):
+    """the production window a run replays, from its runs_meta.json name ('Oct 3 06:30 PDT peak', 'Oct 3 peak complete traces'); a twin
+    half whose name does not say takes its other half's; None when neither says"""
+    def find(name):
+        m = re.search(rf"\b((?:{MONTHS}) \d{{1,2}})(?: \d\d:\d\d(?: PDT)?)? (?:peak|window)\b", name or "")
+        return m.group(1) if m else None
+    w = find(r.get("meta_name"))
+    if not w and "@" in str(r["id"]):
+        base = str(r["id"]).rsplit("@", 1)[0]
+        for b_ in (base, re.sub(r"sw(?=_|$)", "", base, count=1)):          # its other half, else the twin it swaps sides with
+            w = w or next((find(o["meta_name"]) for o in (RUN_BY.get(b_ + "@A"), RUN_BY.get(b_ + "@B")) if o and find(o["meta_name"])), None)
+    return w
+
+
+def chart_prod_line():
+    """(window, M per GPU, is the busiest window, replayed) for the production line: production's real load in the window that every
+    bold run replays, else in its busiest recorded window"""
+    if not PROD_WIN:
+        return None
+    ws = {replay_window(r) for r in VALID if r["test"] in HL} - {None}   # runs whose names give no window are taken to replay the same one
+    byd = dict(PROD_WIN)
+    top = max(v for _, v in PROD_WIN)
+    if len(ws) == 1 and next(iter(ws)) in byd:
+        w = next(iter(ws))
+        return (w, byd[w], byd[w] == top, True)
+    w, v = max(PROD_WIN, key=lambda x: x[1])
+    return (w, v, True, False)
+
+
+PROD_PEAK = chart_prod_line()
+if not PROD_PEAK:
+    WARNINGS.append("chart: production's real loads per window not found (page_notes.json goal.prod_windows or goal.basis_note); no production line")
+
+
+def short_change(r):
+    """a few words for a chart label: the page_notes.json short label, else the plain name up to its first '(', ':' or ','"""
+    s = LABELS.get(r["id"], {}).get("short") or re.split(r"\s*[(:,;]", r["name"])[0]
+    return lc(s.strip())
+
+
+def mark_title(r):
+    """tooltip of one chart mark"""
+    bits = [stamp(r["at"]), lc(r["name"]), f"{m2(r['load'])} M", f"{r['pass']}/{NMIN} minutes in SLA", r["verdict"].lower(), f"test {r['test']}"]
+    if "@" in str(r["id"]):
+        bits.append("half node (A/B twin)")
+    if r["id"] in FRONT_IDS:
+        bits.append("on the frontier of its test")
+    return " · ".join(bits)
+
+
+def chart_newest():
+    """the newest run the chart rings: the header's newest run when it is a valid run of a bold test, else the newest bold run"""
+    if NEWEST and not NEWEST["invalid"] and NEWEST["test"] in HL:
+        return NEWEST
+    return max((r for r in VALID if r["test"] in HL), key=lambda r: r["at"], default=None)
+
+
+def ab_pairs(t):
+    """A/B twins of one test with a measured change: (control half A, change half B) when B was adopted or rejected and the minutes differ"""
+    by = {}
+    for r in VALID:
+        if r["test"] == t and "@" in str(r["id"]):
+            base, side = str(r["id"]).rsplit("@", 1)
+            by.setdefault(base, {})[side] = r
+    out = []
+    for base, d in by.items():
+        a, b = d.get("A"), d.get("B")
+        if a and b and b["verdict"] in ("Adopted", "Rejected") and a["pass"] != b["pass"]:
+            out.append((a, b))
+    return sorted(out, key=lambda p: p[1]["at"], reverse=True)
+
+
+PROVISIONAL_RX = re.compile(r"side bias|A/A twin|caveat|not established|under review|not confirmed", re.I)
+
+
+def provisional(b):
+    """an A/B result that its own run notes still question: runs_meta.json 'provisional' when set, else words such as 'side bias' or
+    'A/A twin' in its reason or verdict. The chart draws its arrow dashed."""
+    m = META_BY.get(b["id"], {})
+    if "provisional" in m:
+        return bool(m["provisional"])
+    return bool(PROVISIONAL_RX.search(str(m.get("why", "")) + " " + str(m.get("verdict", ""))))
+
+
+def side_swaps(t):
+    """side-swap twins of one test (the same A and B setups on the other engine pairs; tag = twin tag with 'sw' after the change name):
+    [(mean load, minutes apart for A's setup, minutes apart for B's setup, time of the swap)]"""
+    out = []
+    for r in VALID:
+        sid = str(r["id"])
+        if r["test"] != t or not sid.endswith("@A") or not re.search(r"sw(?=_|@)", sid):
+            continue
+        base = re.sub(r"sw(?=_|$)", "", sid[:-2], count=1)
+        if base == sid[:-2]:
+            continue
+        a1, b1, b2 = RUN_BY.get(base + "@A"), RUN_BY.get(base + "@B"), RUN_BY.get(sid[:-2] + "@B")
+        if all(x and not x["invalid"] for x in (a1, b1, b2)):
+            out.append((statistics.mean(x["load"] for x in (a1, b1, r, b2)), abs(a1["pass"] - r["pass"]), abs(b1["pass"] - b2["pass"]), r["at"]))
+    return sorted(out, key=lambda s: s[3])
+
+
+NUDGE_M = 0.05       # largest sideways nudge, M per GPU (the reviewer's cap; 4.7 units on the wide chart, 2.2 on the narrow one)
+NUDGE_MIN = 0.45     # largest vertical nudge in minutes: a nudged mark stays inside its own integer minute
+TIE_TOL = 0.06       # M per GPU: older runs of one test with the same minutes and loads this close share one mark (checkbox view)
+CHART_STATS = {}     # variant -> what the chart drew: runs behind the checkbox drawn or left out, nudges, labels that did not fit
+
+
+def tie_groups(rs):
+    """runs of one test with the same minutes in SLA and loads within TIE_TOL of the group's lowest load -> lists, newest run first"""
+    out = []
+    for r in sorted(rs, key=lambda r: (r["test"], r["pass"], r["load"])):
+        g = out[-1] if out else None
+        if (g and g[0]["test"] == r["test"] and g[0]["pass"] == r["pass"] and r["load"] - g[0]["load"] <= TIE_TOL
+                and not (r["id"] in FRONT_IDS and any(q["id"] in FRONT_IDS for q in g))):
+            g.append(r)
+        else:
+            out.append([r])
+    return [sorted(g, key=lambda r: r["at"], reverse=True) for g in out]
+
+
+def seg_dist(px, py, ax, ay, bx, by):
+    """distance from point p to segment a-b"""
+    dx, dy = bx - ax, by - ay
+    t = 0.0 if dx == dy == 0 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+    return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
 
 
 def chart_svg(variant):
-    """One SVG per variant (wide 720 units, narrow 360). Marks never overlap: our best run per load (ink) and production's stars sit at
-    their measured load; only when a star and an ink dot would cover each other are both nudged apart by half the overlap. The other
-    runs (gray, and the older test behind the checkbox) take the nearest free slot beside their load, 12 units apart. All transparent
-    hit circles are drawn first and every visible mark sits above them in its own link, so each mark owns all of its pixels."""
+    """One SVG per variant (wide 720 units, narrow 360). Colour = test version (the three newest tests; the oldest tests gray and only
+    behind the checkbox). The bold tests (HL: the current test and newer tests with runs) show every run: frontier runs large, other
+    full-node runs smaller, twin halves as open circles, and a bracket arrow from the control half to the change half of each adopted
+    or rejected A/B twin (dashed while its run notes question it). The other tests drawn by default show their frontier runs, small.
+    Behind the checkbox (group v3): the gray tests' frontier runs and every other older run; runs of one test at one spot (same
+    minutes, loads within TIE_TOL) share one mark with a count. A step line joins each test's frontier. The goal and production lines
+    are labelled above the plot, with the PASS key. Every mark sits at its own load and minutes: a mark that would cover another moves
+    at most NUDGE_M sideways and NUDGE_MIN minutes up or down, never onto the goal or production line; a bold mark avoids the
+    frontier lines when it can. An older run with no free spot inside those limits is left out (counted). Labels are laid out twice,
+    for the checkbox off and on, so no label sits on a mark in either view. All transparent hit circles are drawn first and every
+    visible mark sits above them in its own link, so each mark owns all of its pixels."""
     wide = variant == "wide"
-    W, H = (720, 280) if wide else (360, 330)
-    L, R, T, B = (50, 14, 12, 62) if wide else (36, 14, 12, 62)
+    W = 720 if wide else 360
+    L, R, B = (50, 14, 42) if wide else (36, 12, 42)
+    PH = 226 if wide else 320                   # plot height: 14.6 units per minute on the wide chart, 20.6 on the narrow one
     FS = 13 if wide else 14                     # label size in viewBox units (CSS sets the same per variant)
     LH = FS + 2
-    XM, YM = 8.0, 16.3                          # headroom above 15 holds the PASS label inside the wash
-    x0, x1, y0, y1 = L, W - R, T, H - B
-    def X(v): return x0 + (x1 - x0) * v / XM
+    YM = 15.5                                   # headroom above 15: the PASS wash holds the 15/15 marks
+    x0, x1 = L, W - R
+    def tw(s, fs=FS):
+        """estimated text width: per-character widths of a sans font (em), plus 4%"""
+        w = 0.0
+        for c in s:
+            w += (0.56 if c.isdigit() else 0.29 if c in " \u00a0.,:;/|!'()[]ijlftr" else 0.84 if c in "MWmw" else 0.68 if c.isupper()
+                  else 0.53 if c.islower() else 0.95 if c in "→" else 0.6)
+        return w * fs * 1.04
+    loads = [r["load"] for r in VALID if r["load"] is not None]
+    XLO = max(0.0, math.floor((min(loads) - 0.2) * 2) / 2) if loads else 0.0
+    XM = math.ceil((max(loads + [TARGET] + ([PROD_PEAK[1]] if PROD_PEAK else [])) + 0.3) * 2) / 2
+    def X(v): return x0 + (x1 - x0) * (v - XLO) / (XM - XLO)
+    U = (x1 - x0) / (XM - XLO)                  # units per M
+    # ---- rows above the plot: one per reference line (the line further right takes the upper row; each label ends just left of its own
+    # line, which runs down from its label through the rows below), then the PASS key at the left, in the first row with room
+    refs = [("goal", TARGET, [f"Goal {m2(TARGET)} M" + ("" if GOAL_CONFIRMED else s) for s in (" (basis not confirmed)", " (not confirmed)", "")])]
+    if PROD_PEAK:
+        pw, pv, ptop, preplayed = PROD_PEAK
+        ps = sorted({r["ppass"] for r in VALID if r["test"] in HL and replay_window(r) == pw}) if preplayed else []
+        sc = "" if not ps else (f": {ps[0]}/{NMIN} in SLA" if len(ps) == 1 else f": {ps[0]}–{ps[-1]}/{NMIN} in SLA")
+        pk = " peak" if ptop else ""
+        refs.append(("prodpk", pv, [f"Production{pk} {m2(pv)} M ({pw}){sc}", f"Production {m2(pv)} M ({pw}){sc}", f"Production {m2(pv)} M{sc}",
+                                    f"Production {m2(pv)} M"]))
+    rows, top = [], []                          # rows: occupied x intervals per row; top: (row, x, anchor, text, class, line class, value)
+    for cls, v, texts in sorted(refs, key=lambda r: -r[1]):
+        rx = X(v)
+        txt = next((s for s in texts if rx - 5 - tw(s) >= 2), texts[-1])
+        rows.append([(rx - 5 - tw(txt) - 2, rx + 3)])
+        top.append((len(rows) - 1, rx - 5, "end", txt, cls, v))
+    ptxt = f"PASS = all {NMIN} minutes in SLA" if wide else f"PASS = all {NMIN} minutes"
+    pspan = (x0, x0 + 18 + tw(ptxt) + 4)
+    def row_free(j):
+        occ = (rows[j] if j < len(rows) else []) + [(X(v) - 3, X(v) + 3) for row, _, _, _, _, v in top if row < j]
+        return all(pspan[1] <= a or b <= pspan[0] for a, b in occ)
+    prow = next((j for j in range(len(rows) - 1, -1, -1) if row_free(j)), len(rows))   # the lowest row with room, next to the wash
+    nrows = max(len(rows), prow + 1)
+    def row_y(j): return 14 + (FS + 3) * j
+    T = row_y(nrows - 1) + 6
+    H = T + PH + B
+    y0, y1 = T, T + PH
     def Y(v): return y1 - (y1 - y0) * v / YM
-    occ, g, lab = [], [], []
-    def free(b):
-        bx, by, bw, bh = b
-        if bx < x0 + 1 or bx + bw > x1 - 1 or by < y0 or by + bh > y1 - 1:
-            return False
-        return not any(bx < ox + ow and ox < bx + bw and by < oy + oh and oy < by + bh for ox, oy, ow, oh in occ)
-    def seg(xa, ya, xb, yb, pad=3):
-        n = max(1, int(math.hypot(xb - xa, yb - ya) / 4))
-        for i in range(n + 1):
-            t = i / n
-            occ.append((xa + (xb - xa) * t - pad, ya + (yb - ya) * t - pad, 2 * pad, 2 * pad))
-    def label(lines, ax, ay, cands, leader=False, cls="lbl", quiet=False):
-        w = max(len(s) for s in lines) * FS * 0.56
-        h = LH * len(lines)
-        for dx, dy, anc in cands:
-            tx, ty = ax + dx, ay + dy
-            left = tx if anc == "start" else (tx - w if anc == "end" else tx - w / 2)
-            b = (left - 3, ty - FS + 1, w + 6, h + 2)
-            if free(b):
-                occ.append(b)
-                for i, s in enumerate(lines):
-                    lab.append(f'<text class="{cls}" x="{tx:.1f}" y="{ty + LH * i:.1f}" text-anchor="{anc}">{esc(s)}</text>')
-                if leader:
-                    px, py = min(max(ax, b[0]), b[0] + b[2]), min(max(ay, b[1]), b[1] + b[3])
-                    d = math.hypot(px - ax, py - ay)
-                    if d > 12:
-                        lab.append(f'<line class="leader" x1="{ax + (px - ax) * 9 / d:.1f}" y1="{ay + (py - ay) * 9 / d:.1f}" x2="{px:.1f}" y2="{py:.1f}"/>')
-                return True
-        if not quiet:
-            WARNINGS.append(f"chart ({variant}): no free spot for label {lines[0]!r}")
-        return False
-    def around(n, gap=10):
-        up = -gap - 5 - LH * (n - 1)
-        mid = 4 - LH / 2 * (n - 1)
-        c = [(gap, mid, "start"), (-gap, mid, "end"), (gap - 2, up, "start"), (-gap + 2, up, "end"), (0, up - 2, "middle"),
-             (gap - 2, 18, "start"), (-gap + 2, 18, "end"), (0, 20, "middle")]
-        far = gap + 16
-        return c + [(far, mid, "start"), (-far, mid, "end"), (far, up - 6, "start"), (-far, up - 6, "end"), (far, 26, "start"), (-far, 26, "end"),
-                    (0, up - 14, "middle"), (0, 34, "middle")]
-    # ---- frame: PASS wash, grid, ticks, axis titles, goal
-    g.append(f'<rect class="passwash" x="{x0}" y="{Y(YM):.1f}" width="{x1 - x0}" height="{Y(NMIN) - Y(YM):.1f}"/>')
+    V = (y1 - y0) / YM                          # units per minute
+    g, toplab = [], []
+    # ---- frame: PASS wash, grid, ticks, axis titles, reference lines and their labels, PASS key
+    g.append(f'<rect class="passwash" x="{x0}" y="{y0:.1f}" width="{x1 - x0}" height="{Y(NMIN) - y0:.1f}"/>')
     for v in (0, 5, 10):
         g.append(f'<line class="grid" x1="{x0}" x2="{x1}" y1="{Y(v):.1f}" y2="{Y(v):.1f}"/>')
     for v in (0, 5, 10, 15):
         g.append(f'<text class="tick" x="{x0 - 7}" y="{Y(v) + 4:.1f}" text-anchor="end">{v}</text>')
-    for v in range(0, int(XM) + 1, 1 if wide else 2):
-        g.append(f'<line class="grid" x1="{X(v):.1f}" x2="{X(v):.1f}" y1="{Y(YM):.1f}" y2="{y1}"/>')
+    for v in range(math.ceil(XLO), int(XM) + 1):
+        g.append(f'<line class="grid" x1="{X(v):.1f}" x2="{X(v):.1f}" y1="{y0:.1f}" y2="{y1}"/>')
         g.append(f'<text class="tick" x="{X(v):.1f}" y="{y1 + 16}" text-anchor="middle">{v}</text>')
     g.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    run = GPU.get("running") if GPU.get("fresh") else None
-    live_load = next((b["load"] for b in BEST_CUR if run and b["share"] == run.get("share")), None)
-    right = -1e9
-    for b in BEST_CUR + EXTRA:
-        s = share_name(b["share"])
-        cls = "tick sub"
-        if wide and live_load is not None and b["load"] == live_load:
-            s, cls = f"running {m2(live_load)} M", "tick sub live-l"
-        w = len(s) * 12 * 0.56
-        if X(b["load"]) - w / 2 > right + 4:
-            g.append(f'<text class="{cls}" x="{X(b["load"]):.1f}" y="{y1 + 31}" text-anchor="middle">{esc(s)}</text>')
-            right = X(b["load"]) + w / 2
     if wide:
         g.append(f'<text class="ax" transform="rotate(-90)" x="{-(y0 + y1) / 2:.1f}" y="13" text-anchor="middle">Minutes in SLA (of {NMIN})</text>')
     xt = "Load we sent: M TPM per GPU (replayed production requests, not throughput served)" if wide else "Load we sent (M TPM per GPU)"
-    g.append(f'<text class="ax" x="{(x0 + x1) / 2:.1f}" y="{H - 8}" text-anchor="middle">{xt}</text>')
-    gx = X(TARGET)
-    if GOAL_ENG and not GOAL_CONFIRMED:                       # the same goal if it counts like production's engines
-        ga, gb = X(GOAL_ENG[0]), X(GOAL_ENG[1])
-        g.append(f'<rect class="goalband" x="{ga:.1f}" y="{Y(NMIN):.1f}" width="{gb - ga:.1f}" height="{y1 - Y(NMIN):.1f}"><title>'
-                 f'{esc(f"The {m2(TARGET)} M goal if it counts like production engines: {rng2(*GOAL_ENG)} M on this axis (basis not confirmed)")}</title></rect>')
-    g.append(f'<line class="goal" x1="{gx:.1f}" x2="{gx:.1f}" y1="{Y(YM):.1f}" y2="{y1}"/>')
-    occ.append((gx - 3, y0, 6, y1 - y0))
+    g.append(f'<text class="ax" x="{(x0 + x1) / 2:.1f}" y="{H - 5}" text-anchor="middle">{xt}</text>')
     g.append(f'<line class="passline" x1="{x0}" x2="{x1}" y1="{Y(NMIN):.1f}" y2="{Y(NMIN):.1f}"/>')
-    lab.append(f'<text class="lbl" x="{x0 + 6}" y="{Y(NMIN) - 4:.1f}">PASS = all {NMIN} minutes</text>')
-    occ.append((x0, Y(YM) - 1, x1 - x0, Y(NMIN) - Y(YM) + 2))
-    # ---- marks: ink (best per load), stars (production, same requests), extra (our best on an older test where the current one has no run)
-    # outer radius of each visible mark (fill + stroke); every mark also gets a transparent halo 1 unit wider inside its own link,
-    # and marks keep GAP units between outer edges so halos never touch: a click on any visible pixel lands on that mark's link
-    SZ = ({"ink": 5.5, "gray": 4.0, "old": 4.5, "extra": 4.5, "star": 6.6} if wide else
-          {"ink": 4.6, "gray": 3.3, "old": 3.8, "extra": 3.8, "star": 5.8})
-    R_INK, R_GRAY, R_STAR, R_OLD = SZ["ink"] + 1, SZ["gray"] + 1, SZ["star"] + 1.5, SZ["old"] + 0.75
-    GAP = 2.5
-    HR = 12 if wide else 10                                   # hit radius (under every visible mark)
-    marks = []
-    def mk(kind, r, x, y, rad, group=None, href=None, title=""):
-        m = {"kind": kind, "r": r, "x": x, "y": y, "rad": rad, "group": group, "href": href or f"#run-{r['id']}", "title": title}
-        marks.append(m)
+    for row, tx, anc, txt, cls, v in top:
+        g.append(f'<line class="{cls}" x1="{X(v):.1f}" x2="{X(v):.1f}" y1="{row_y(row) - FS + 3:.1f}" y2="{y1}"/>')
+        toplab.append(f'<text class="lbl ref" x="{tx:.1f}" y="{row_y(row):.1f}" text-anchor="{anc}">{esc(txt)}</text>')
+    g.append(f'<line class="passline" x1="{x0 + 1}" x2="{x0 + 15}" y1="{row_y(prow) - 4:.1f}" y2="{row_y(prow) - 4:.1f}"/>')
+    toplab.append(f'<text class="lbl" x="{x0 + 19}" y="{row_y(prow):.1f}">{esc(ptxt)}</text>')
+    refx = [X(v) for _, _, _, _, _, v in top]
+    # ---- marks. kinds: hf = frontier run of a bold test, ho = other full-node run of a bold test, hh = its twin halves (open);
+    # fr = frontier run of an older test (with the runs tied to it); of / oh = a group of older runs at one spot (oh: half-node runs only)
+    SZ = ({"hf": 5.0, "ho": 4.0, "hh": 3.5, "fr": 3.6, "of": 2.6, "oh": 2.6} if wide else
+          {"hf": 4.0, "ho": 3.5, "hh": 3.0, "fr": 3.0, "of": 2.2, "oh": 2.2})
+    OUT = {k: v + 1 for k, v in SZ.items()}     # outer radius: fill + half of the 2-unit stroke
+    GAP = 1.2                                   # between outer edges; the transparent halo of a mark reaches 0.5 past its edge
+    HR = 12 if wide else 10                     # hit radius (under every visible mark)
+    placed, marks, MK, segs, hard = [], [], {}, [], []   # segs: frontier steps (x1, y1, x2, y2, test, bold); hard: arrow segments
+    PREF = {}                                   # run id -> preferred vertical offset (units) when bold runs tie
+    def new_mark(kind, runs, group=None, front=False):
+        m = {"kind": kind, "r": runs[0], "runs": runs, "test": runs[0]["test"], "ex": X(statistics.median(q["load"] for q in runs)),
+             "ey": Y(runs[0]["pass"]), "rad": OUT[kind], "group": group, "front": front, "href": f"#run-{runs[0]['id']}"}
+        m["py"] = m["ey"] + PREF.get(runs[0]["id"], 0.0)       # preferred spot: a tie of bold runs splits up and down
         return m
-    ink = {b["id"]: mk("ink", b, X(b["load"]), Y(b["pass"]), R_INK, title=run_title(b)) for b in BEST_CUR}
-    extra = [mk("extra", b, X(b["load"]), Y(b["pass"]), R_OLD, title=run_title(b)) for b in EXTRA]
-    dots = sorted(list(ink.values()) + extra, key=lambda d: d["x"])   # innoferra 10-03: two ink dots on nearly the same spot: nudge both apart
-    for i, d in enumerate(dots):
-        for e in dots[i + 1:]:
-            need = d["rad"] + e["rad"] + GAP
-            dx, dy = e["x"] - d["x"], e["y"] - d["y"]
-            if abs(dy) < need and math.hypot(dx, dy) < need:
-                half = (math.sqrt(need ** 2 - dy ** 2) - abs(dx)) / 2 + 0.25
-                d["x"] -= half
-                e["x"] += half
-    stars = []
-    for b in BEST_CUR + EXTRA:
-        t = f"Production on the same requests · {m2(b['pload'])} M · {b['ppass']}/{NMIN} minutes in SLA (test {b['test']}) · {PROD_RULE_SHORT}"
-        stars.append(mk("star" if b["test"] == CUR else "starh", b, X(b["pload"]), Y(b["ppass"]), R_STAR, href="#prod", title=t))
-    for s in stars:                                           # a star and an ink dot on the same spot: nudge both apart, half each
-        for d in list(ink.values()) + extra:
-            need = s["rad"] + d["rad"] + GAP
-            dx, dy = s["x"] - d["x"], s["y"] - d["y"]
-            if abs(dy) < need and math.hypot(dx, dy) < need:
-                half = (math.sqrt(need ** 2 - dy ** 2) - abs(dx)) / 2 + 0.25
-                sgn = 1 if dx >= 0 else -1
-                s["x"] += sgn * half
-                d["x"] -= sgn * half
-    placed = list(ink.values()) + extra + stars
-    step = R_INK + R_GRAY + GAP
-    def place(m):
-        bx = m["x"]
-        for k in [0, -1, 1, -2, 2, -3, 3, -4, 4]:
-            x = bx + k * step
-            if x0 + m["rad"] <= x <= x1 - m["rad"] and all(math.hypot(x - p["x"], m["y"] - p["y"]) >= m["rad"] + p["rad"] + GAP for p in placed):
-                m["x"] = x
-                placed.append(m)
-                return
-        m["dropped"] = True                                   # innoferra 10-01: a tie with no free slot is left out (still in the tables)
-    gray = [mk("gray", r, X(r["load"]), Y(r["pass"]), R_GRAY, title=run_title(r)) for r in sorted(CURV, key=lambda r: r["at"], reverse=True) if r["id"] not in ink]
-    old = [mk("old", r, X(r["load"]), Y(r["pass"]), R_OLD, group="v3", title=run_title(r))
-           for r in sorted([r for r in VALID if r["test"] != CUR and not any(r is e for e in EXTRA)], key=lambda r: r["at"])]
-    for m in gray + old:
-        place(m)
-    CHART_DROPPED[variant] = [m["r"]["id"] for m in marks if m.get("dropped")]
-    marks[:] = [m for m in marks if not m.get("dropped")]
-    gray[:] = [m for m in gray if not m.get("dropped")]
-    old[:] = [m for m in old if not m.get("dropped")]
-    shifted = [m for m in marks if m["kind"] in ("ink", "gray", "star", "extra") and abs(m["x"] - X(m["r"]["pload"] if m["kind"] == "star" else m["r"]["load"])) > 0.5]
-    for m in marks:
-        if m["group"] is None:
-            occ.append((m["x"] - m["rad"] - 1, m["y"] - m["rad"] - 1, 2 * m["rad"] + 2, 2 * m["rad"] + 2))
-    # ---- lines joining ink dots and production stars
-    cur_st = sorted([s for s in stars if s["kind"] == "star"], key=lambda s: s["x"])
-    if len(cur_st) > 1:
-        g.append('<polyline class="prodline" points="' + " ".join(f"{s['x']:.1f},{s['y']:.1f}" for s in cur_st) + '"/>')
-        for a, b in zip(cur_st, cur_st[1:]):
-            seg(a["x"], a["y"], b["x"], b["y"], 1)
-    bp = [ink[b["id"]] for b in BEST_CUR]
-    if len(bp) > 1:
-        g.append('<polyline class="ours" points="' + " ".join(f"{m['x']:.1f},{m['y']:.1f}" for m in bp) + '"/>')
-        for a, b in zip(bp, bp[1:]):
-            seg(a["x"], a["y"], b["x"], b["y"])
+    def cost(m, x, y, scale):
+        """None when the spot is not free; else the distance from the mark's own spot, plus a penalty for each frontier line it covers"""
+        rad = m["rad"]
+        if not (x0 + rad <= x <= x1 - rad) or y > y1 + 0.01 or y - rad < y0 - 3:
+            return None
+        for p in placed:
+            if abs(x - p["x"]) < rad + p["rad"] + GAP and math.hypot(x - p["x"], y - p["y"]) < rad + p["rad"] + GAP:
+                return None
+        if abs(x - m["ex"]) > 0.01 and any(abs(x - rx) < rad + 2 for rx in refx):
+            return None                                       # a nudge never puts a mark on the goal or production line
+        if any(seg_dist(x, y, *s) < rad + 2 for s in hard):
+            return None
+        c = 2 * ((x - m["ex"]) / (NUDGE_M * U * scale)) ** 2 + ((y - m["py"]) / (NUDGE_MIN * V * scale)) ** 2
+        for xa, ya, xb, yb, t, bold in segs:
+            if not (m["front"] and t == m["test"]) and seg_dist(x, y, xa, ya, xb, yb) < rad + (2.5 if bold else 1.5):
+                c += 100 if bold else 10
+        return c
+    def put(m, scale=1.0):
+        """the free spot nearest the mark's own spot within the nudge limits (times scale); None when there is none"""
+        best = None
+        dys = [k * NUDGE_MIN * V * scale / 4 for k in (0, 1, -1, 2, -2, 3, -3, 4, -4)] + [m["py"] - m["ey"]]
+        for dy in dys:
+            for kx in (0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 7, -7, 8, -8, 9, -9):
+                x, y = m["ex"] + kx * NUDGE_M * U * scale / 9, m["ey"] + dy
+                c = cost(m, x, y, scale)
+                if c is not None and (best is None or c < best[0]):
+                    best = (c, x, y)
+        if best is None:
+            return None
+        m["x"], m["y"] = best[1], best[2]
+        placed.append(m)
+        marks.append(m)
+        for q in m["runs"]:
+            MK[q["id"]] = m
+        return m
+    def must_put(m):
+        """a bold run is never left out: wider limits, then its own spot, with a build warning"""
+        if put(m):
+            return m
+        if put(m, 2.0):
+            WARNINGS.append(f"chart ({variant}): {m['r']['id']} needed twice the nudge limits")
+            return m
+        m["x"], m["y"] = m["ex"], m["ey"]
+        placed.append(m)
+        marks.append(m)
+        MK[m["r"]["id"]] = m
+        WARNINGS.append(f"chart ({variant}): no free spot for {m['r']['id']}; drawn at its own spot over another mark")
+        return m
+    older = [r for r in VALID if r["test"] not in HL]
+    groups = tie_groups(older)
+    fgrp = {next(q["id"] for q in gp if q["id"] in FRONT_IDS): gp for gp in groups if any(q["id"] in FRONT_IDS for q in gp)}
+    def add_steps(t):
+        pts = [MK[r["id"]] for r in FRONT.get(t, []) if r["id"] in MK]
+        for p, q in zip(pts, pts[1:]):                        # down from each frontier run to the next one's minutes, then right
+            segs.append((p["x"], p["y"], p["x"], q["y"], t, t in HL))
+            segs.append((p["x"], q["y"], q["x"], q["y"], t, t in HL))
+        return pts
+    # 1. frontier runs of the tests drawn by default (bold tests first), with the older runs tied to them; then their step lines
+    for t in sorted(SHOWN, key=lambda t: (t not in HL, -VTESTS.index(t))):
+        for r in FRONT.get(t, []):
+            if t in HL:
+                must_put(new_mark("hf", [r], front=True))
+            else:
+                must_put(new_mark("fr", fgrp.get(r["id"], [r]), front=True))
+    fronts = {t: add_steps(t) for t in SHOWN}
+    # 2. the bold tests' A/B twins with a measured change, each with a bracket arrow on its left from A to B; then their other runs.
+    # Bold runs with the same minutes whose spots overlap (and no frontier run beside them) split evenly up and down inside the minute.
+    hb = sorted([r for r in VALID if r["test"] in HL and r["id"] not in MK], key=lambda r: (r["pass"], r["load"]))
+    near = 2 * OUT["hh"] + GAP
+    i = 0
+    while i < len(hb):
+        j = i + 1
+        while j < len(hb) and hb[j]["pass"] == hb[i]["pass"] and (X(hb[j]["load"]) - X(hb[j - 1]["load"])) < near:
+            j += 1
+        tie = hb[i:j]
+        if len(tie) > 1:
+            span = (X(tie[-1]["load"]) - X(tie[0]["load"]))
+            need = math.sqrt(max(0.0, near ** 2 - (span / max(1, len(tie) - 1)) ** 2))   # vertical room per step between neighbours
+            step = min(2 * NUDGE_MIN * V / (len(tie) - 1), need)
+            for k, q in enumerate(tie):
+                PREF[q["id"]] = (k - (len(tie) - 1) / 2) * step
+        i = j
+    arrows = []
+    for a, b in [p for t in HL for p in ab_pairs(t)]:
+        ma, mb = must_put(new_mark("hh", [a])), must_put(new_mark("hh", [b]))
+        left = min(ma["x"] - ma["rad"], mb["x"] - mb["rad"])
+        lo, hi = sorted((ma["y"], mb["y"]))
+        bx = None
+        for w in (5, 7, 9, 11, 13, 16, 19, 22):
+            xx = left - w
+            if xx > x0 + 2 and all(not (abs(p["x"] - xx) < p["rad"] + 2 and lo - p["rad"] - 2 < p["y"] < hi + p["rad"] + 2)
+                                   for p in placed if p is not ma and p is not mb):
+                bx = xx
+                break
+        if bx is None:
+            bx = left - 5
+            WARNINGS.append(f"chart ({variant}): the A/B arrow of {b['id']} crosses a mark")
+        arrows.append((ma, mb, bx, provisional(b)))
+        hard.extend([(ma["x"] - ma["rad"], ma["y"], bx, ma["y"]), (bx, lo, bx, hi), (bx, mb["y"], mb["x"] - mb["rad"], mb["y"])])
+    hlr = sorted([r for r in VALID if r["test"] in HL and r["id"] not in MK], key=lambda r: ("@" in str(r["id"]), -r["at"].timestamp()))
+    for r in hlr:
+        must_put(new_mark("hh" if "@" in str(r["id"]) else "ho", [r]))
+    # 3. behind the checkbox: the gray tests' frontier runs and step lines, then every other older run, ties merged
+    left_out = []
+    for t in [t for t in VTESTS if t not in SHOWN]:
+        for r in FRONT.get(t, []):
+            if not put(new_mark("fr", fgrp.get(r["id"], [r]), "v3", front=True)):
+                left_out.extend(fgrp.get(r["id"], [r]))
+        fronts[t] = add_steps(t)
+    rest = [gp for gp in groups if not any(q["id"] in FRONT_IDS for q in gp)]
+    for gp in sorted(rest, key=lambda gp: (-VTESTS.index(gp[0]["test"]), -len(gp), -gp[0]["at"].timestamp())):
+        if not put(new_mark("of" if any("@" not in str(q["id"]) for q in gp) else "oh", gp, "v3")):
+            left_out.extend(gp)
+    nudged = any(abs(m["x"] - m["ex"]) > 0.5 or abs(m["y"] - m["ey"]) > 0.5 for m in marks)
+    # ---- frontier step lines (gray tests first, bold tests on top)
+    for t in sorted(fronts, key=lambda t: (t in HL, t in SHOWN, VTESTS.index(t))):
+        pts = fronts[t]
+        if len(pts) < 2:
+            continue
+        d = f"M{pts[0]['x']:.1f},{pts[0]['y']:.1f}" + "".join(f" V{q['y']:.1f} H{q['x']:.1f}" for q in pts[1:])
+        path = f'<path class="front {tv_cls(t)}{" hl" if t in HL else ""}" d="{d}"/>'
+        g.append(path if t in SHOWN else f'<g class="v3">{path}</g>')
+    # ---- A/B arrows: out of A, along the bracket, into B (the head); the stem is dashed while the run notes question the result
+    for ma, mb, bx, prov in arrows:
+        ah = 4 if wide else 3.5
+        tip = mb["x"] - mb["rad"] - 1.5
+        g.append(f'<path class="abarrow {tv_cls(mb["test"])}{" prov" if prov else ""}" d="M{ma["x"] - ma["rad"] - 1.5:.1f},{ma["y"]:.1f} H{bx:.1f} '
+                 f'V{mb["y"]:.1f} H{tip - 1:.1f}"/>')
+        g.append(f'<path class="abarrow {tv_cls(mb["test"])}" d="M{tip - ah:.1f},{mb["y"] - ah:.1f} L{tip:.1f},{mb["y"]:.1f} L{tip - ah:.1f},{mb["y"] + ah:.1f}"/>')
+    run = GPU.get("running") if GPU.get("fresh") else None
+    live_load = next((r["load"] for r in VALID if r["test"] in HL and run and run.get("share") is not None and r["share"] == run.get("share")), None)
     if run and live_load is not None:                         # the live run: a marker under the axis, below every mark
         lx = X(live_load)
         g.append(f'<path class="live" d="M{lx - 5:.1f},{y1 + 7} L{lx + 5:.1f},{y1 + 7} L{lx:.1f},{y1 + 13} Z"><title>'
                  f'{esc("On the GPUs since " + (hm(GPU["since"]) if GPU.get("since") else "?") + ": " + run["name"] + " at " + run["load"])}</title></path>')
-    # ---- hit layer first (lowest priority first), then the visible marks, each in its own link
-    order = {"old": 0, "gray": 1, "extra": 2, "starh": 3, "star": 4, "ink": 5}
-    hits = {None: [], "v3": []}
+    # ---- hit layer first (lowest priority first), then the newest run's ring, then the visible marks, each in its own link
+    order = {"of": 0, "oh": 0, "fr": 1, "ho": 2, "hh": 2, "hf": 3}
+    def title(m):
+        rs, r = m["runs"], m["r"]
+        if len(rs) == 1:
+            return mark_title(r)
+        lo, hi = min(q["load"] for q in rs), max(q["load"] for q in rs)
+        half = sum(1 for q in rs if "@" in str(q["id"]))
+        first = min(q["at"] for q in rs)
+        return " · ".join([f"{len(rs)} runs of test {r['test']} at one spot", f"{m2(lo)}–{m2(hi)} M" if m2(lo) != m2(hi) else f"{m2(lo)} M",
+                           f"{r['pass']}/{NMIN} minutes in SLA"] + ([f"{half} of them half-node"] if half else [])
+                          + [f"{stamp(first)} – {stamp(r['at'])}", f"newest: {lc(r['name'])}"]
+                          + (["on the frontier of its test"] if r["id"] in FRONT_IDS else []))
+    hits, vis = {None: [], "v3": []}, {None: [], "v3": []}
     for m in sorted(marks, key=lambda m: order[m["kind"]]):
         hits[m["group"]].append(f'<a href="{esc(m["href"])}" tabindex="-1" aria-hidden="true"><circle class="hit" cx="{m["x"]:.1f}" cy="{m["y"]:.1f}" r="{HR}"/></a>')
+        shape = f'<circle class="mk {"h" if m["kind"] in ("hh", "oh") else "f"}" cx="{m["x"]:.1f}" cy="{m["y"]:.1f}" r="{SZ[m["kind"]]}"/>'
+        halo = f'<circle class="halo" cx="{m["x"]:.1f}" cy="{m["y"]:.1f}" r="{m["rad"] + 0.5:.2f}"/>'
+        vis[m["group"]].append(f'<a href="{esc(m["href"])}" class="{tv_cls(m["test"])}"><title>{esc(title(m))}</title>{halo}{shape}</a>')
     g.append("".join(hits[None]))
     if hits["v3"]:
         g.append('<g class="v3">' + "".join(hits["v3"]) + "</g>")
-    nr = NEWEST_CUR
-    if nr and wide:
-        _rx = ink[nr["id"]]["x"] if nr["id"] in ink else next((m["x"] for m in gray if m["r"] is nr), None)
-        if _rx is not None:
-            g.append(f'<circle class="ring" cx="{_rx:.1f}" cy="{Y(nr["pass"]):.1f}" r="9"/>')
-    vis = {None: [], "v3": []}
-    for m in sorted(marks, key=lambda m: order[m["kind"]]):
-        x, y = m["x"], m["y"]
-        if m["kind"] in ("star", "starh"):
-            shape = f'<path class="mk star{" hollow" if m["kind"] == "starh" else ""}" d="{star_path(x, y, SZ["star"], SZ["star"] * 0.42)}"/>'
-        else:
-            cls = {"ink": "dot best", "gray": "dot other", "extra": "dot extra", "old": "dot old"}[m["kind"]]
-            shape = f'<circle class="mk {cls}" cx="{x:.1f}" cy="{y:.1f}" r="{SZ[m["kind"]]}"/>'
-        halo = f'<circle class="halo" cx="{x:.1f}" cy="{y:.1f}" r="{m["rad"] + 1:.2f}"/>'
-        vis[m["group"]].append(f'<a href="{esc(m["href"])}"><title>{esc(m["title"])}</title>{halo}{shape}</a>')
+    nr = chart_newest()
+    if nr and nr["id"] in MK:
+        g.append(f'<circle class="ring" cx="{MK[nr["id"]]["x"]:.1f}" cy="{MK[nr["id"]]["y"]:.1f}" r="{MK[nr["id"]]["rad"] + 3.5:.1f}"/>')
     g.append("".join(vis[None]))
     if vis["v3"]:
         g.append('<g class="v3">' + "".join(vis["v3"]) + "</g>")
-    # ---- labels (after all marks; the goal first, then data labels; first free spot wins)
-    glines = ([f"Goal {m2(TARGET)} M"] + ([] if GOAL_CONFIRMED else ["(basis not confirmed)"])) if wide else ["Goal", f"{m2(TARGET)} M"]
-    label(glines, gx, y1 - LH * (len(glines) - 1), [(-6, -7, "end"), (6, -7, "start"), (-6, -7 - LH * 2, "end"), (6, -7 - LH * 2, "start"),
-                                                     (-6, -7 - LH * 4, "end")])
-    if GOAL_ENG and not GOAL_CONFIRMED and wide:            # in the PASS wash, right of the band: no collision with data labels
-        lab.append(f'<text class="lbl" x="{X(GOAL_ENG[1]) + 4:.1f}" y="{Y(NMIN) - 4:.1f}">◂ goal on engine count?</text>')
-    for b in BEST_CUR:
-        m = ink[b["id"]]
-        if b is CLOSEST:
-            one = [f"{b['pass']}/{NMIN} · closest ({hm(b['at'])})"] if wide else [f"{b['pass']}/{NMIN} closest ({hm(b['at'])})"]
-            two = [f"{b['pass']}/{NMIN} · closest", f"({hm(b['at'])})"] if wide else [f"{b['pass']}/{NMIN}", f"closest ({hm(b['at'])})"]
-            c1 = around(1) + [(-60, -14, "start"), (-40, -14, "start"), (-20, -14, "start")]
-            if not label(one, m["x"], m["y"], c1, quiet=True):
-                label(two, m["x"], m["y"], around(2) + [(-14, -30, "end"), (-14, 30, "end"), (14, 34, "start")], leader=True)
-        elif wide and b is not nr:
-            label([f"{b['pass']}/{NMIN}"], m["x"], m["y"], around(1))
-    if cur_st:
-        s = max(cur_st, key=lambda s: s["r"]["pload"])
-        lines = [f"Production {s['r']['ppass']}/{NMIN}", "(same requests)"] if wide else ["Production", f"{s['r']['ppass']}/{NMIN}"]
-        cands = around(len(lines), s["rad"] + 7) + [(0, 22, "middle"), (0, 36, "middle"), (-14, 30, "end"), (14, 30, "start")]
-        label(lines, s["x"], s["y"], cands, leader=True)
-    for e in extra:
-        b = e["r"]
-        lines = [f"Ours {b['pass']}/{NMIN} at {m2(b['load'])} M", f"(older test {b['test']})"] if wide else [f"Ours {b['pass']}/{NMIN}", f"({b['test']})"]
-        label(lines, e["x"], e["y"], around(len(lines), e["rad"] + 7) + [(dx, dy, "start" if dx > 0 else "end") for dy in (-34, -50, -66, -82) for dx in (30, -30, 60, -60)],
-              leader=True)
-    for s in stars:
-        if s["kind"] != "starh":
-            continue
-        b = s["r"]
-        far = [(dx, dy, "start" if dx > 0 else "end") for dx in (16, -16, 40, -40, 70, -70) for dy in (-30, 34, -50, 50)]
-        cands = around(2, s["rad"] + 7) + sorted(far, key=lambda c: abs(c[0]) + abs(c[1]))
-        if wide:
-            label([f"Production {b['ppass']}/{NMIN} at {m2(b['pload'])} M", f"(older test {b['test']})"], s["x"], s["y"], cands, leader=True)
-        elif not label([f"Production {m2(b['pload'])} M:", f"{b['ppass']}/{NMIN} ({b['test']})"], s["x"], s["y"], cands, leader=True, quiet=True):
-            label(["Production", f"{b['ppass']}/{NMIN} ({b['test']})"], s["x"], s["y"], cands, leader=True)
-    if wide and nr and nr is not CLOSEST:
-        m = ink.get(nr["id"]) or next(mm for mm in gray if mm["r"] is nr)
-        res = f"{nr['pass']}/{NMIN} · " + nr["verdict"].lower()
-        words, nl = lc(LABELS.get(nr["id"], {}).get("short") or nr["name"]).split(), [""]
-        for wd in words:
-            if nl[-1] and len(nl[-1]) + 1 + len(wd) > 22:
-                nl.append(wd)
+    # ---- labels, laid out once for the checkbox off and once for it on (the on view adds the older marks to the spots taken);
+    # a label at the same spot in both views is drawn once, the others only in their own view
+    base = [(x0, y0 - 1, x1 - x0, Y(NMIN) - y0 + 2)] + [(rx - 3, y0, 6, y1 - y0) for rx in refx]
+    def seg_boxes(xa, ya, xb, yb, pad=3):
+        n = max(1, int(math.hypot(xb - xa, yb - ya) / 4))
+        return [(xa + (xb - xa) * i / n - pad, ya + (yb - ya) * i / n - pad, 2 * pad, 2 * pad) for i in range(n + 1)]
+    for xa, ya, xb, yb, t, bold in segs:
+        if bold:
+            base += seg_boxes(xa, ya, xb, yb)
+    for s in hard:
+        base += seg_boxes(*s, pad=3)
+    def lay(view):
+        occ = base + [(m["x"] - m["rad"] - 1, m["y"] - m["rad"] - 1, 2 * m["rad"] + 2, 2 * m["rad"] + 2)
+                      for m in marks if m["group"] is None or view == "on"]
+        out, miss = [], []
+        thin = [b for xa, ya, xb, yb, t, bold in segs if not bold and (t in SHOWN or view == "on") for b in seg_boxes(xa, ya, xb, yb, pad=2)]
+        avoid = []                                            # extra boxes for one call: the thin frontier lines when a label can miss them
+        def free(b):
+            bx, by, bw, bh = b
+            if bx < x0 + 1 or bx + bw > x1 - 1 or by < y0 or by + bh > y1 - 1:
+                return False
+            return not any(bx < ox + ow and ox < bx + bw and by < oy + oh and oy < by + bh for ox, oy, ow, oh in occ + avoid)
+        labboxes = []                                         # boxes of the labels placed so far (a leader never crosses one)
+        def clear_line(ax, ay, px, py, own):
+            """a leader from mark own to (px, py) misses every other visible mark, every label and every bold frontier line"""
+            if not all(seg_dist(m["x"], m["y"], ax, ay, px, py) > m["rad"] + 1 for m in marks
+                       if m is not own and (m["group"] is None or view == "on")):
+                return False
+            d = math.hypot(px - ax, py - ay)
+            for k in range(int(d / 2) + 1):
+                t = min(1.0, (own["rad"] + 3 + 2 * k) / d)
+                qx, qy = ax + (px - ax) * t, ay + (py - ay) * t
+                if any(bx - 1 < qx < bx + bw + 1 and by - 1 < qy < by + bh + 1 for bx, by, bw, bh in labboxes):
+                    return False
+                if any(seg_dist(qx, qy, *sg[:4]) < 2.5 for sg in segs if sg[5]):
+                    return False
+            return True
+        def label(lines, ax, ay, cands, leader=None, cls="lbl", fs=FS):
+            w = max(tw(s, fs) for s in lines)
+            lh = fs + 2
+            for dx, dy, anc in cands:
+                tx, ty = ax + dx, ay + dy
+                left = tx if anc == "start" else (tx - w if anc == "end" else tx - w / 2)
+                b = (left - 3, ty - fs + 1, w + 6, lh * len(lines) + 2)
+                if not free(b):
+                    continue
+                px, py = min(max(ax, b[0]), b[0] + b[2]), min(max(ay, b[1]), b[1] + b[3])
+                d = math.hypot(px - ax, py - ay)
+                if leader is not None and d > 12 and not clear_line(ax, ay, px, py, leader):
+                    continue
+                occ.append(b)
+                labboxes.append(b)
+                for i, s in enumerate(lines):
+                    out.append(f'<text class="{cls}" x="{tx:.1f}" y="{ty + lh * i:.1f}" text-anchor="{anc}">{esc(s)}</text>')
+                if leader is not None and d > 12:
+                    out.append(f'<line class="leader" x1="{ax + (px - ax) * (leader["rad"] + 2) / d:.1f}" '
+                               f'y1="{ay + (py - ay) * (leader["rad"] + 2) / d:.1f}" x2="{px:.1f}" y2="{py:.1f}"/>')
+                return True
+            return False
+        def around(n, gap, lh=LH):
+            up = -gap - 5 - lh * (n - 1)
+            mid = 4 - lh / 2 * (n - 1)
+            c = [(gap, mid, "start"), (-gap, mid, "end"), (gap - 2, up, "start"), (-gap + 2, up, "end"), (0, up - 2, "middle"),
+                 (gap - 2, 18, "start"), (-gap + 2, 18, "end"), (0, 20, "middle")]
+            far = gap + 16
+            return c + [(far, mid, "start"), (-far, mid, "end"), (far, up - 6, "start"), (-far, up - 6, "end"), (far, 26, "start"),
+                        (-far, 26, "end"), (0, up - 14, "middle"), (0, 34, "middle")]
+        ring = sorted([(dx, dy, "start" if dx >= 0 else "end") for dy in list(range(16, 100, 6)) + list(range(-14, -100, -6))
+                       for dx in (10, -10, 24, -24, 40, -40, 60, -60, 90, -90)], key=lambda c: (abs(c[0]) + abs(c[1]), c[1] < 0))
+        # the bold tests: best 15/15 run and its distance to the goal (else the best run)
+        for t in HL:
+            fr = [r for r in FRONT.get(t, []) if r["id"] in MK]
+            best = max([r for r in fr if r["pass"] >= NMIN], key=lambda r: r["load"], default=None)
+            pre = f"{t}: " if len(HL) > 1 else ""
+            if best:
+                m, gap = MK[best["id"]], TARGET - best["load"]
+                l1, l2 = f"{NMIN}/{NMIN} up to {m2(best['load'])} M", ([f"{m2(gap)} M to the goal"] if gap > 0 else [])
+                tries = [[pre + l1] + l2, [pre + l1]] + ([[l1] + l2, [l1]] if pre else [])   # the mark's colour names the test when the prefix does not fit
+            elif fr and t == CUR:
+                best = max(fr, key=lambda r: (r["pass"], r["load"]))
+                m, tries = MK[best["id"]], [[f"{pre}best {best['pass']}/{NMIN} at {m2(best['load'])} M"]]
             else:
-                nl[-1] = (nl[-1] + " " + wd).strip()
-        lines = [f"Latest {hm(nr['at'])}: {nr['pass']}/{NMIN}, {nr['verdict'].lower()}"] + nl[:2]
-        up = -14 - LH * (len(lines) - 1)
-        cands = [(dx, dy, "start" if dx > 0 else "end") for dx in (16, -16, 30, -30, 60, -60, 100, -100, 150, -150)
-                 for dy in (30, up, up - 30, -25, 4, 50, up - 60, up - 90)]
-        label(lines, m["x"], m["y"], sorted(cands, key=lambda c: abs(c[0]) + abs(c[1])), leader=True)
-    return (f'<svg class="chart {variant}" viewBox="0 0 {W} {H}" role="group" aria-labelledby="chart-h">'
-            + "".join(g) + "".join(lab) + "</svg>"), bool(shifted)
+                continue
+            k = next((k for k, lines in enumerate(tries)
+                      if label(lines, m["x"], m["y"], around(len(lines), m["rad"] + 7) + ring, leader=m, cls="lbl strong ko")), None)
+            if k is None or len(tries[k]) < len(tries[0]):           # the label without the test prefix still says everything
+                miss.append(("best", ", ".join(tries[0])))
+        # the A/B arrows: the change and its effect on the left of the bracket ('+N' alone when the name does not fit)
+        for ma, mb, bx, prov in arrows:
+            d = mb["r"]["pass"] - ma["r"]["pass"]
+            name = short_change(mb["r"])
+            tries = ([[f"{name} {d:+d}", "not confirmed"]] if prov else []) + [[f"{name} {d:+d}"], [f"{d:+d}"]]
+            ym = (ma["y"] + mb["y"]) / 2
+            right = max(ma["x"] + ma["rad"], mb["x"] + mb["rad"]) + 5
+            k = None
+            for i, lines in enumerate(tries):
+                n = len(lines)
+                cy = ym + 4 - LH * (n - 1) / 2
+                cands = [(-7, cy - ym + o, "end") for o in (0, -LH / 2, LH / 2, -LH, LH, -1.5 * LH, 1.5 * LH)]
+                cands += [(right - bx, cy - ym + o, "start") for o in (0, -LH / 2, LH / 2)]
+                if label(lines, bx, ym, cands, cls="lbl ko"):
+                    k = i
+                    break
+            if k is None or len(tries[k]) < len(tries[0]) or tries[k][0] != tries[0][0]:
+                miss.append(("ab", f"{name}: {ma['r']['pass']} → {mb['r']['pass']} minutes at {m2(mb['r']['load'])} M"
+                             + ("; not confirmed" if prov else "")))
+        # the older tests' names at the end of their own frontier line (the gray tests only with the checkbox)
+        for t in sorted([t for t in fronts if t not in HL and (t in SHOWN or view == "on")], key=lambda t: VTESTS.index(t), reverse=True):
+            pts = fronts[t]
+            if pts:
+                p = pts[-1]
+                cands = around(1, p["rad"] + 4) + [(dx, dy, "start" if dx > 0 else "end") for dy in (-16, 16, -28, 28) for dx in (12, -12, 30, -30)]
+                avoid[:] = thin                                # first try spots off every thin frontier line, then any free spot
+                ok = label([t], p["x"], p["y"], cands + ring, leader=p, cls="lbl tvl ko")
+                avoid[:] = []
+                if not ok:
+                    label([t], p["x"], p["y"], cands + ring, leader=p, cls="lbl tvl ko")
+        # the newest run (wide chart)
+        if wide and nr and nr["id"] in MK:
+            m = MK[nr["id"]]
+            label([f"newest {hm(nr['at'])}"], m["x"], m["y"], around(1, m["rad"] + 8) + ring, leader=m, cls="lbl ko")
+        # with the checkbox: how many runs share each older mark
+        if view == "on":
+            fsc = 12
+            for m in sorted([m for m in marks if len(m["runs"]) > 1], key=lambda m: -len(m["runs"])):
+                gap = m["rad"] + 2
+                label([f"×{len(m['runs'])}"], m["x"], m["y"], [(gap, 4, "start"), (-gap, 4, "end"), (0, -gap - 2, "middle"), (0, gap + 10, "middle"),
+                                                                (gap, -6, "start"), (gap, 13, "start"), (-gap, -6, "end"), (-gap, 13, "end")],
+                      cls="lbl cnt ko", fs=fsc)
+        return out, miss
+    off, miss_off = lay("off")
+    on, miss_on = lay("on")
+    s_on, s_off = set(on), set(off)
+    labs = ("".join(toplab) + "".join(s for s in off if s in s_on)
+            + ('<g class="v3off">' + "".join(s for s in off if s not in s_on) + "</g>" if any(s not in s_on for s in off) else "")
+            + ('<g class="v3">' + "".join(s for s in on if s not in s_off) + "</g>" if any(s not in s_off for s in on) else ""))
+    shown_fr = {r["id"] for t in SHOWN if t not in HL for r in FRONT.get(t, [])}
+    other = [r for r in older if r["id"] not in shown_fr]
+    CHART_STATS[variant] = {"other": len(other), "left_out": len(left_out), "nudged": nudged, "miss_off": miss_off, "miss_on": miss_on,
+                            "marks_v3": sum(1 for m in marks if m["group"] == "v3"), "xlo": XLO}
+    return (f'<svg class="chart {variant}" viewBox="0 0 {W} {H}" role="group" aria-labelledby="chart-h">' + "".join(g) + labs + "</svg>")
+
+
+def legend_html():
+    """one key row above the chart: each test drawn by default (newest first) in its colour, the bold tests with a large swatch, then
+    the open-circle, step-line and arrow keys"""
+    def sw(inner):
+        return '<svg class="sw" viewBox="0 0 16 16" aria-hidden="true">' + inner + "</svg>"
+    items = []
+    for t in sorted(SHOWN, key=tv_start, reverse=True):
+        name = "<b>" + esc(t) + "</b>" + (" current" if t == CUR else (" newer" if t in HL else ""))
+        items.append('<span class="li">' + sw(f'<circle class="lf {tv_cls(t)}" cx="8" cy="8" r="{5.5 if t in HL else 3.5}"/>') + name + "</span>")
+    items.append('<span class="li">' + sw('<circle class="lh" cx="8" cy="8" r="4.5"/>') + "half-node run</span>")
+    items.append('<span class="li">' + sw('<path class="lk" d="M2 3 V9 H14"/>') + "frontier</span>")
+    pairs = [p for t in HL for p in ab_pairs(t)]
+    prov = [provisional(b) for _, b in pairs]
+    if pairs and not all(prov):
+        items.append('<span class="li">' + sw('<path class="lk" d="M13 13 H4 V4 H10 M7.5 1.5 L10 4 L7.5 6.5"/>') + "A/B change</span>")
+    if any(prov):
+        items.append('<span class="li">' + sw('<path class="lk dash" d="M13 13 H4 V4 H10"/><path class="lk" d="M7.5 1.5 L10 4 L7.5 6.5"/>')
+                     + "A/B change, not confirmed</span>")
+    return '<p class="lgd">' + "".join(items) + "</p>"
 
 
 def chart_html():
-    old = [r for r in VALID if r["test"] != CUR and not any(r is e for e in EXTRA)]
-    inv = [r for r in RUNS if r["invalid"] and r["test"] == CUR]
-    toggle = ""
-    if old:
-        toggle = (f'<input type="checkbox" id="v3toggle" class="tgl"><label for="v3toggle" class="tgl-l">Show the other {plural(len(old), "run")} '
-                  f'on the older test ({"/".join(sorted({r["test"] for r in old}))})</label>')
-    first, last = min(r["at"] for r in CURV), max(r["at"] for r in CURV)
-    wide, sh_w = chart_svg("wide")
-    narrow, sh_n = chart_svg("narrow")
-    nr = NEWEST_CUR
+    wide = chart_svg("wide")
+    narrow = chart_svg("narrow")
+    sw_, sn_ = CHART_STATS["wide"], CHART_STATS["narrow"]
+    gray = [t for t in VTESTS if t not in SHOWN]
+    older_ts = [t for t in sorted(VTESTS, key=tv_start, reverse=True) if t not in HL]
+    toggle = key = ""
+    if sw_["other"]:
+        dw, dn = sw_["other"] - sw_["left_out"], sn_["other"] - sn_["left_out"]
+        def cnt(n):
+            return f"the other {n}" if n == sw_["other"] else f"{n} of the other {sw_['other']}"
+        num = cnt(dw) if dw == dn else f'<span class="wide-i">{cnt(dw)}</span><span class="ph-i">{cnt(dn)}</span>'
+        toggle = (f'<input type="checkbox" id="v3toggle" class="tgl"><label for="v3toggle" class="tgl-l">Show {num} runs of the older tests '
+                  f'({"/".join(older_ts)})</label>')
+        key = ('<p class="note v3key">Runs of one test at one spot (same minutes, load within ' + f"{TIE_TOL:g}" + ' M) share one mark. '
+               '×N gives the number of runs where there is room; the tooltip always gives it.' + (f" Test{'s' if len(gray) > 1 else ''} {join_and(gray)} {'are' if len(gray) > 1 else 'is'} gray."
+                                                   if gray else "") + "</p>")
+    hlv = [r for r in VALID if r["test"] in HL]
+    inv = [r for r in RUNS if r["invalid"] and r["test"] in HL]
+    first, last = (min(r["at"] for r in hlv), max(r["at"] for r in hlv)) if hlv else (NOW, NOW)
+    nr = chart_newest()
     run = GPU.get("running") if GPU.get("fresh") else None
-    ph = []
+    pairs = [p for t in HL for p in ab_pairs(t)]
+    for v_, st in CHART_STATS.items():
+        for k, x in st["miss_off"]:
+            if v_ == "wide" or k != "ab":
+                WARNINGS.append(f"chart ({v_}): label did not fit: {x}")
+    ph = [("Best: " + x) for k, x in sn_["miss_off"] if k == "best"]
+    ph += [("Arrow: " + x) for k, x in sn_["miss_off"] if k == "ab"]
+    def note(k, x): return ("Best: " if k == "best" else "Arrow: ") + x
+    # labels that fit only with the checkbox off: a note under the chart, shown with the checkbox on, on the chart width that missed it
+    on_w = [(k, x) for k, x in sw_["miss_on"] if (k, x) not in sw_["miss_off"]]
+    on_n = [(k, x) for k, x in sn_["miss_on"] if (k, x) not in sn_["miss_off"]]
+    ph_on = ([("on-b", note(k, x)) for k, x in on_w if (k, x) in on_n] + [("on-w", note(k, x)) for k, x in on_w if (k, x) not in on_n]
+             + [("on-n", note(k, x)) for k, x in on_n if (k, x) not in on_w])
     if nr:
         ph.append(f"Latest: {hm(nr['at'])} · {short_name(nr)} at {m2(nr['load'])} M · {nr['pass']}/{NMIN} · "
                   + ("closest" if nr is CLOSEST else nr["verdict"].lower()))
     if run:
         ph.append(f"▼ running since {hm(GPU['since']) if GPU.get('since') else '?'}: {lc(run['name'])} at {run['load']}")
-    if GOAL_ENG and not GOAL_CONFIRMED:
-        ph.append(f"Shaded band: the goal if it counts like production's engines ({rng2(*GOAL_ENG)} M on this axis).")
-    more = []
+    bold = f"test {HL[0]} (current)" if len(HL) == 1 and HL[0] == CUR else ("test " if len(HL) == 1 else "tests ") + join_and(HL)
+    cap = [f"Colour shows the test; {bold} {'has' if len(HL) == 1 else 'have'} large marks and a bold line, and older tests have small marks.",
+           "A step line joins the frontier of each test: its full-node runs that no other run beats on both load and minutes."]
+    why = re.search(r"Rows below replay (traces that miss [^(;.,]+?) \(([^)]*)\)", TV.get(CUR, {}).get("divider", ""))
+    cap.append("Compare runs only within one test" + (f": older tests replay {why.group(1)} ({why.group(2)})." if why else "."))
+    wins = sorted({replay_window(r) for r in hlv} - {None})
+    rec = TV.get(CUR, {}).get("recorded")
+    more = [f"Each mark is one {NMIN}-minute replay of production requests on node 0008. "
+            + (f"The {join_and(HL)} runs on this chart replay the {join_and(wins)} production window{'s' if len(wins) > 1 else ''}. " if wins
+               else (f"Test {CUR} replays {rec}. " if rec else ""))
+            + f"The bold runs are from {stamp(first)} to {stamp(last) if first.date() != last.date() else hm(last)} PDT."]
+    for t in HL:
+        fr = FRONT.get(t, [])
+        b15 = max([r for r in fr if r["pass"] >= NMIN], key=lambda r: r["load"], default=None)
+        if b15:
+            n = sum(1 for r in VALID if r["test"] == t and "@" not in str(r["id"]) and r["pass"] >= NMIN and abs(r["load"] - b15["load"]) <= FRONT_TOL)
+            more.append(f"The frontier uses full-node runs with at least one minute in SLA. Test {t} passes all {NMIN} minutes up to {m2(b15['load'])} M "
+                        f"({'one run' if n == 1 else plural(n, 'run')})" + (f"; {m2(TARGET - b15['load'])} M is left to the goal." if TARGET > b15["load"] else "."))
+        withh = [r for r in VALID if r["test"] == t and r.get("verdict") != "Rejected" and r["pass"] > 0]
+        hf_ = [r for r in withh if "@" in str(r["id"])
+               and not any(q is not r and q["pass"] >= r["pass"] and q["load"] >= r["load"] - FRONT_TOL and (q["pass"] > r["pass"] or q["load"] > r["load"]) for q in withh)]
+        if hf_:
+            more.append(f"Half-node A/B runs are not on the frontier, because each one uses half of the node. With them, the {t} frontier would add "
+                        + join_and([f"{r['pass']}/{NMIN} at {m2(r['load'])} M" for r in sorted(hf_, key=lambda r: r["load"])]) + ".")
+    if pairs:
+        more.append("A bracket arrow goes from the control half (A) to the half with the change (B), at the same load. Changes: "
+                    + "; ".join(f"{short_change(b)}, {a['pass']} → {b['pass']} minutes ({hm(b['at'])}"
+                                + (", not confirmed: its run notes name a side bias" if provisional(b) else "") + ")" for a, b in pairs) + ".")
+    for t in HL:
+        sws = side_swaps(t)
+        if sws:
+            lo = min(min(s[1], s[2]) for s in sws)
+            hi = max(max(s[1], s[2]) for s in sws)
+            more.append(f"Engine side matters on test {t}: the same setup on the other engine pair scored {lo}" + (f"–{hi}" if hi != lo else "")
+                        + f" minutes apart at {join_and([m2(s[0]) + ' M' for s in sws])} (side-swap twin{'s' if len(sws) > 1 else ''} "
+                        + ", ".join(hm(s[3]) for s in sws) + "). So one A/B twin is not proof; an A/A twin measures the side bias.")
+    if hlv:
+        pp = sorted({r["ppass"] for r in hlv})
+        pf = Counter(f for r in hlv for f in r["pfails"])
+        def per_run(k):
+            ns = sorted({r["pfails"].get(k, 0) for r in hlv})
+            return f"{ns[0]}" if ns[0] == ns[-1] else f"{ns[0]}–{ns[-1]}"
+        rules = join_and([f"{RULES[k][3]} in {per_run(k)} of {NMIN} minutes" for k, _ in sorted(pf.items(), key=lambda kv: (-kv[1], TIE.get(kv[0], 9)))[:2]]) if pf else ""
+        more.append((f"Production on the same requests scores {pp[0]}/{NMIN} at each load of test {join_and(HL)}" if len(pp) == 1 else
+                     f"Production on the same requests scores {pp[0]}–{pp[-1]}/{NMIN} on test {join_and(HL)}")
+                    + (f". It misses on {rules}." if rules else "."))
+    refl = f"The goal line is {m2(TARGET)} M per GPU" + ("." if GOAL_CONFIRMED else "; the owner has not confirmed its basis.")
+    if PROD_PEAK:
+        pw, pv, ptop, preplayed = PROD_PEAK
+        refl += (f" The production line is production's real load in the window " + ("that these runs replay" if preplayed else "with the most load")
+                 + f" ({pw}): {m2(pv)} M per GPU, from its engine counters. Since the Oct 6 correction, this is the same unit as our load.")
+    more.append(refl)
+    if gray:
+        more.append(f"The chart keeps three colours apart at most, so {'test' if len(gray) == 1 else 'tests'} {join_and(gray)} "
+                    f"{'is' if len(gray) == 1 else 'are'} gray and {'shows' if len(gray) == 1 else 'show'} only with the checkbox.")
     if inv:
         more.append(f"Not plotted: {plural(len(inv), 'invalid run')} (" + "; ".join(f"{hm(r['at'])}, {r['broke']}" for r in sorted(inv, key=lambda r: r['at'])) + ").")
-    more.append("Gray dots: other changes tried at that load. Blue stars: production on the same requests, scored with the same rule; "
-                "hollow marks: older test.")
-    _nd = max((len(v) for v in CHART_DROPPED.values()), default=0)
-    if _nd:
-        more.append(f"{plural(_nd, 'older run')} tied with a newer run at the same spot {'is' if _nd == 1 else 'are'} not drawn; every run is in the tables.")
-    if GOAL_ENG and not GOAL_CONFIRMED:
-        more.append(f"The {m2(TARGET)} M goal's basis is not confirmed; the shaded band ({rng2(*GOAL_ENG)} M) is where it sits if it counts "
-                    "like production's engine counters (How to read, line 6).")
-    spread = " Runs tied at one spot are spread sideways; hover or tap for the exact load." if (sh_w or sh_n) else ""
+    lo_ = max(sw_["left_out"], sn_["left_out"])
+    if lo_:
+        more.append(f"With the checkbox, {'up to ' if sw_['left_out'] != sn_['left_out'] else ''}{plural(lo_, 'older run')} with no free spot near "
+                    f"{'its' if lo_ == 1 else 'their'} own load {'is' if lo_ == 1 else 'are'} not drawn; every run is in the tables.")
+    if sw_["nudged"] or sn_["nudged"]:
+        more.append(f"A mark that would cover another moves at most {NUDGE_MIN:g} minute up or down and at most {NUDGE_M:g} M sideways. "
+                    "Hover or tap a mark for its exact load.")
     return ('<section class="chartcol" id="chart"><h2 id="chart-h">At what load do we pass? Minutes in SLA (of 15) at each load we sent</h2>'
-            + toggle + f'<div class="charts">{wide}{narrow}</div>'
-            + "".join(f'<p class="note ph-only">{esc(x)}</p>' for x in ph)
-            + f'<div class="cap"><p>Each dot is one {NMIN}-minute replay of production requests recorded {esc(TV.get(CUR, {}).get("recorded", ""))} '
-              f'(test {CUR}), run on node 0008 {stamp(first)}–{hm(last)} PDT; ±1 minute run to run.{esc(spread)}</p>'
-              f'<details class="cnote"><summary>More about this chart</summary>{"".join(f"<p>{esc(x)}</p>" for x in more)}'
-              '<p>The SLA is defined in <a href="#howto">How to read this page</a>.</p></details></div></section>')
+            + legend_html() + toggle + key + f'<div class="charts">{wide}{narrow}</div>'
+            + "".join(f'<p class="note {c}">{esc(x)}</p>' for c, x in ph_on) + "".join(f'<p class="note ph-only">{esc(x)}</p>' for x in ph)
+            + '<div class="cap">' + f'<p>{esc(" ".join(cap))}</p>'
+            + f'<details class="cnote"><summary>More about this chart</summary>{"".join(f"<p>{esc(x)}</p>" for x in more)}'
+            '<p>The SLA is defined in <a href="#howto">How to read this page</a>.</p></details></div></section>')
 
 
 # ---------------------------------------------------------------- Overview: 12-hour list
@@ -1541,7 +1985,8 @@ def older_html():
 
 def runs_html():
     rs = [r for r in RUNS if r["test"] == CUR]
-    sub = (f"Replays of production requests recorded {TV.get(CUR, {}).get('recorded', '')}; runs {stamp(min(r['at'] for r in rs))}–{hm(max(r['at'] for r in rs))} PDT. "
+    span = f"runs {stamp(min(r['at'] for r in rs))}–{hm(max(r['at'] for r in rs))} PDT" if rs else "no run yet"   # innoferra 10-06: a new test has no run at first
+    sub = (f"Replays of production requests recorded {TV.get(CUR, {}).get('recorded', '')}; {span}. "
            f"A load passes only at {NMIN}/{NMIN}. Group rows show production on the same requests, scored minute by minute with the same rule.")
     return (f'<section class="panel" id="runs"><h2>Every run on the current test ({CUR}), by load</h2><p class="sub">{esc(sub)}</p>'
             '<p class="note"><a href="#chart">Chart → Overview</a> · Whole-run values are indicative; the minute count is the per-minute truth. '
@@ -1783,9 +2228,9 @@ def launch_html():
 
 # ---------------------------------------------------------------- page assembly
 CSS = """
-:root{--bg:#F3F5F7;--panel:#FFFFFF;--ink:#1B2430;--muted:#5B6B7A;--line:#D5DBE1;--grid:#E6EAEE;--bad:#B42318;--pend:#94A3B8;--tab:#E9EEF3;--wash:#EEF2F6;--prod:#3B5BDB;--goal:#D97A00;--pass:#0ca30c;color-scheme:light}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0F1419;--panel:#171D24;--ink:#E7ECF1;--muted:#9AA8B5;--line:#2B3540;--grid:#232C36;--bad:#F87171;--pend:#64748B;--tab:#1F2731;--wash:#1C242D;--prod:#3987e5;--goal:#d95926;--pass:#0ca30c;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0F1419;--panel:#171D24;--ink:#E7ECF1;--muted:#9AA8B5;--line:#2B3540;--grid:#232C36;--bad:#F87171;--pend:#64748B;--tab:#1F2731;--wash:#1C242D;--prod:#3987e5;--goal:#d95926;--pass:#0ca30c;color-scheme:dark}
+:root{--bg:#F3F5F7;--panel:#FFFFFF;--ink:#1B2430;--muted:#5B6B7A;--line:#D5DBE1;--grid:#E6EAEE;--bad:#B42318;--pend:#94A3B8;--tab:#E9EEF3;--wash:#EEF2F6;--prod:#3B5BDB;--goal:#D97A00;--pass:#0ca30c;--tv0:#4a3aa7;--tv1:#d55181;--tv2:#c98500;--tvx:#595959;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0F1419;--panel:#171D24;--ink:#E7ECF1;--muted:#9AA8B5;--line:#2B3540;--grid:#232C36;--bad:#F87171;--pend:#64748B;--tab:#1F2731;--wash:#1C242D;--prod:#3987e5;--goal:#d95926;--pass:#0ca30c;--tv0:#9085e9;--tv1:#d55181;--tv2:#c98500;--tvx:#a6a6a6;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1419;--panel:#171D24;--ink:#E7ECF1;--muted:#9AA8B5;--line:#2B3540;--grid:#232C36;--bad:#F87171;--pend:#64748B;--tab:#1F2731;--wash:#1C242D;--prod:#3987e5;--goal:#d95926;--pass:#0ca30c;--tv0:#9085e9;--tv1:#d55181;--tv2:#c98500;--tvx:#a6a6a6;color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.45;padding-block:18px;padding-inline:clamp(16px,4vw,40px);max-width:1180px;margin:0 auto;overflow-wrap:break-word}
 h1{font-size:1.45rem;font-weight:600;margin:0 0 2px;text-wrap:balance}
@@ -1830,34 +2275,48 @@ details.panel>summary h2{font-size:1.1rem}
 .cell .lnk{font-size:.85rem;color:var(--muted);margin:0}
 .chartcol{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;min-width:0}
 .chartcol h2{margin-bottom:4px}
+.lgd{display:flex;flex-wrap:wrap;gap:2px 12px;margin:0 0 4px;font-size:.85rem;color:var(--muted)}
+.lgd .li{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.lgd b{color:var(--ink);font-weight:600}
+.lgd .sw{width:16px;height:16px;flex:none}
+.lgd .lh{fill:none;stroke:var(--ink);stroke-width:1.6}
+.lgd .lk{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.lgd .lk.dash{stroke-dasharray:3 2;stroke-linecap:butt}
+.v3key{display:none;margin:2px 0 0}
+.tgl:checked~.v3key{display:block}
+.ph-i,.on-w,.on-n,.on-b{display:none}
+.tgl:checked~.on-w,.tgl:checked~.on-b{display:block}
 .tgl{width:16px;height:16px;vertical-align:-3px;margin:0 6px 0 0}
 .tgl-l{font-size:.85rem}
 .charts{margin-top:4px}
 svg.chart{width:100%;height:auto;display:block;font-family:"IBM Plex Sans",system-ui,sans-serif}
 svg.narrow{display:none;max-width:400px;margin:0 auto}
-svg text,svg .ring,svg .leader,svg .grid,svg .axis,svg .passline,svg .goal,svg .ours,svg .prodline{pointer-events:none}
+svg text,svg .ring,svg .leader,svg .grid,svg .axis,svg .passline,svg .goal,svg .prodpk,svg .front,svg .abarrow{pointer-events:none}
 svg .grid{stroke:var(--grid);stroke-width:1}
 svg .axis{stroke:var(--line);stroke-width:1}
 svg .tick{font-size:12px;fill:var(--muted);font-variant-numeric:tabular-nums}
-svg .tick.live-l{fill:var(--ink)}
 svg .ax{font-size:13px;fill:var(--muted)}
 svg .lbl{font-size:13px;fill:var(--ink)}
+svg .lbl.strong{font-weight:600}
+svg .lbl.tvl{fill:var(--muted)}
+svg .lbl.ko{paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round}
 svg.narrow .tick{font-size:13px}
 svg.narrow .ax,svg.narrow .lbl{font-size:14px}
 svg .passwash{fill:var(--pass);fill-opacity:.12}
 svg .passline{stroke:var(--pass);stroke-width:2}
-svg .goal{stroke:var(--goal);stroke-width:2;stroke-dasharray:6 4}
-svg .goalband{fill:var(--goal);fill-opacity:.10;stroke:var(--goal);stroke-opacity:.5;stroke-width:1;stroke-dasharray:2 3}
-svg .ours{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-svg .prodline{fill:none;stroke:var(--prod);stroke-width:1.5;stroke-dasharray:4 3}
-svg .dot{stroke:var(--panel);stroke-width:2}
-svg .dot.best{fill:var(--ink)}
-svg .dot.other{fill:var(--muted)}
-svg .dot.old{fill:var(--panel);stroke:var(--muted);stroke-width:1.5}
-svg .dot.extra{fill:var(--panel);stroke:var(--ink);stroke-width:1.5}
-svg .star{fill:var(--prod);stroke:var(--panel);stroke-width:3;paint-order:stroke;stroke-linejoin:round}
-svg .star.hollow{fill:var(--panel);stroke:var(--prod);stroke-width:2;paint-order:normal}
-svg .ring{fill:none;stroke:var(--ink);stroke-width:2}
+svg .goal{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:6 4}
+svg .prodpk{stroke:var(--muted);stroke-width:1.5}
+svg .tv0{--c:var(--tv0)}svg .tv1{--c:var(--tv1)}svg .tv2{--c:var(--tv2)}svg .tvx{--c:var(--tvx)}
+svg .mk.f,.lgd .lf{fill:var(--c)}
+svg .mk.f{stroke:var(--panel);stroke-width:2;paint-order:stroke}
+svg .mk.h{fill:var(--panel);stroke:var(--c);stroke-width:2}
+svg .front{fill:none;stroke:var(--c);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+svg .front.hl{stroke-width:3}
+svg .front.tvx{stroke-dasharray:4 3}
+svg .abarrow{fill:none;stroke:var(--c);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+svg .abarrow.prov{stroke-dasharray:3 2.5}
+svg .lbl.cnt,svg.narrow .lbl.cnt{fill:var(--muted);font-size:12px}
+svg .ring{fill:none;stroke:var(--ink);stroke-width:1.5}
 svg .leader{stroke:var(--muted);stroke-width:1}
 svg .live{fill:var(--ink)}
 svg .hit,svg .halo{fill:transparent;pointer-events:all}
@@ -1865,6 +2324,7 @@ svg a:focus{outline:none}
 svg a:focus-visible .mk{stroke:var(--ink);stroke-width:2.5}
 svg .v3{display:none}
 .tgl:checked~.charts .v3{display:inline}
+.tgl:checked~.charts .v3off{display:none}
 .note{color:var(--muted);font-size:.85rem;margin:8px 0 0}
 .cap{color:var(--muted);font-size:.85rem;margin:4px 0 0}
 .cap p{margin:0}
@@ -1973,7 +2433,7 @@ section.lsec{margin:0 0 18px}section.lsec>h2{display:block;margin:6px 0 4px}
 }
 @media (max-width:800px){
  .cells{grid-template-columns:minmax(0,1fr)}
- svg.wide{display:none}svg.narrow{display:block}.ph-only{display:block}
+ svg.wide{display:none}svg.narrow{display:block}.ph-only{display:block}.wide-i{display:none}.ph-i{display:inline}.tgl:checked~.on-w{display:none}.tgl:checked~.on-n{display:block}
 }
 @media (max-width:640px){
  body{padding-inline:16px;padding-block:12px}
@@ -2198,7 +2658,7 @@ def main():
             print("  -", e)
         sys.exit(1)
     dst = opt("--out", os.path.join(D, "progress-page.html"))
-    sp = opt("--standings", os.path.join(D, "STANDINGS.md"))
+    sp = opt("--standings", os.path.join(os.path.dirname(os.path.abspath(dst)), "STANDINGS.md"))   # next to the page: a render to another folder never overwrites STANDINGS.md
     with open(dst, "w", encoding="utf-8") as f:
         f.write(page)
     with open(sp, "w", encoding="utf-8") as f:
