@@ -320,7 +320,7 @@ def glo(k):
 def best_points(test):
     out = []
     for k in sorted([k for k in GROUPS if k[0] == test and k[1] is not None], key=lambda k: k[1]):
-        b = best_of(GROUPS[k])
+        b = best_of([r for r in GROUPS[k] if "@" not in str(r["id"])])   # innoferra 10-06: ink = full-node runs only; twin halves stay gray
         if b:
             out.append(b)
     return out
