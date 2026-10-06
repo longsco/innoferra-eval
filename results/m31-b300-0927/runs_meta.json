@@ -1848,8 +1848,28 @@
    "share": 0.74,
    "name": "window-sized draft KV pool, below the knee (engines 2-3); first of a side-swapped pair",
    "change": "capacity",
-   "verdict": "under review",
-   "why": "13/15 vs 10/15 at 5.95 M/GPU per half; paired first token x0.862 (CI 0.820..0.907), TPS +3.14 tok/s (CI -0.67..+7.58), uncached 17.2 vs 17.9 M, 0 errors. Decision waits for the side-swapped twin v5t_ab_dwin2sw_p60 (pool on engines 0-1)."
+   "verdict": "adopted",
+   "why": "13/15 vs 10/15 at 5.95 M/GPU per half; paired first token x0.862 (CI 0.820..0.907), TPS +3.14 tok/s (CI -0.67..+7.58), uncached 17.2 vs 17.9 M, 0 errors. Decision waits for the side-swapped twin v5t_ab_dwin2sw_p60 (pool on engines 0-1). 13:15: confirmed by the side swap -> adopted."
+  },
+  {
+   "tag": "v5t_ab_dwin2sw_p60@A",
+   "at": "2026-10-06 13:10",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "control half (engines 2-3, side swap): re-pins off, no window pool, Oct 3 peak b00 per half",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "12/15 at 5.95 M/GPU (half node): first token p50 2.21 s, TPS p50 120.4, uncached 17.0 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_dwin2sw_p60@B",
+   "at": "2026-10-06 13:10",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "window-sized draft KV pool, below the knee, engines 0-1 (side swap of v5t_ab_dwin2_p60)",
+   "change": "capacity",
+   "verdict": "adopted",
+   "why": "14/15 vs 12/15; paired first token x0.911 (CI 0.886..0.947), TPS +2.06 (CI -1.99..+5.84). With twin 1 (pool on 2-3: x0.862, +3.14, 13/15 vs 10/15) the side-balanced effect is first token ~x0.89 and TPS ~+2.6 tok/s, +2-3 minutes. RE-ADOPTED 13:15 on every queued line except the Dynamo rung-9 twin. The earlier contradiction came from twins past the knee (A/A noise +-5 tok/s)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

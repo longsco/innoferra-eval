@@ -2278,9 +2278,9 @@
   },
   {
    "name": "Draft KV diet (FP8 draft KV, then a windowed draft pool)",
-   "state": "running",
-   "at": "2026-10-06 10:45",
-   "text": "Per GPU the KV pools hold ~106 GB: target 4-bit KV 68.4, draft KV 20.3 (bf16, 19%), index K 9.5, scales 7.6. The draft attends only to the last 4,096 tokens. Step 1: FP8 draft KV on SM100 (port of MiniMax 024129f; patch hostfix/patch_draft_fp8kv.py applied flag-off) frees ~10 GB/rank for target KV (~+12% tokens); outputs stay identical (target verifies), only acceptance can move. Twins at 1.5x queued. Step 2 (heavier): windowed draft pool (+22% KV, lead sweep +3.7 tok/s central). 10-06 04:13: windowed draft pool smoke P1 PASSED in check mode: identical outputs 120/120 (sequential), 0 check mismatches under stress, acceptance 7.235 vs 7.226, same cache ratio. P2 did not run (a container-name conflict at relaunch; script fixed). Twin v5t_ab_dwin_p74 runs after the 6.0 M knee point: Oct 3 peak, about 7.4 M/GPU per half; B = window pool on, +21.4% device tokens in the same memory. Its B side is the P2 check. Side-swap after F1. FP8 capacity twins (MEMFRAC 0.8365, +11.6% tokens) are queued. 10-06 06:05: windowed draft pool ADOPTED. Twin v5t_ab_dwin_p74 (Oct 3 peak, 7.26 M/GPU per half, B on the slower side): TPS +5.21 tok/s (CI +2.73..+8.49), first token x0.80 (CI 0.76..0.84), 9/15 vs 4/15 minutes, 0 errors; P2 judge PASS. FP8 draft-KV twins dropped (the window pool already shrinks the draft KV to ~3.8 GiB per rank). Side-swap confirmation queued. 08:55: UNDER REVIEW. The side-swap twin (window pool on engines 0-1) gave the opposite result: TPS -16.67 tok/s, first token x1.20, 2/15 vs 7/15. Side-balanced: about -5.7 tok/s. The same config ran 97.9 tok/s on engines 2-3 but 74.9 on 0-1. Next: an A/A twin on the adopted stack, per-engine logs of the 7.66 M run, NUMA placement of the host pools. 10:45: REVERTED from the queue. An A/A twin with identical configs gave -4.83 tok/s between the node halves past the knee, so a single twin there cannot decide; the pool's two twins average -5.7 tok/s. Re-test below the knee (about 6 M per half) as a side-swapped pair.",
+   "state": "adopted",
+   "at": "2026-10-06 13:15",
+   "text": "Per GPU the KV pools hold ~106 GB: target 4-bit KV 68.4, draft KV 20.3 (bf16, 19%), index K 9.5, scales 7.6. The draft attends only to the last 4,096 tokens. Step 1: FP8 draft KV on SM100 (port of MiniMax 024129f; patch hostfix/patch_draft_fp8kv.py applied flag-off) frees ~10 GB/rank for target KV (~+12% tokens); outputs stay identical (target verifies), only acceptance can move. Twins at 1.5x queued. Step 2 (heavier): windowed draft pool (+22% KV, lead sweep +3.7 tok/s central). 10-06 04:13: windowed draft pool smoke P1 PASSED in check mode: identical outputs 120/120 (sequential), 0 check mismatches under stress, acceptance 7.235 vs 7.226, same cache ratio. P2 did not run (a container-name conflict at relaunch; script fixed). Twin v5t_ab_dwin_p74 runs after the 6.0 M knee point: Oct 3 peak, about 7.4 M/GPU per half; B = window pool on, +21.4% device tokens in the same memory. Its B side is the P2 check. Side-swap after F1. FP8 capacity twins (MEMFRAC 0.8365, +11.6% tokens) are queued. 10-06 06:05: windowed draft pool ADOPTED. Twin v5t_ab_dwin_p74 (Oct 3 peak, 7.26 M/GPU per half, B on the slower side): TPS +5.21 tok/s (CI +2.73..+8.49), first token x0.80 (CI 0.76..0.84), 9/15 vs 4/15 minutes, 0 errors; P2 judge PASS. FP8 draft-KV twins dropped (the window pool already shrinks the draft KV to ~3.8 GiB per rank). Side-swap confirmation queued. 08:55: UNDER REVIEW. The side-swap twin (window pool on engines 0-1) gave the opposite result: TPS -16.67 tok/s, first token x1.20, 2/15 vs 7/15. Side-balanced: about -5.7 tok/s. The same config ran 97.9 tok/s on engines 2-3 but 74.9 on 0-1. Next: an A/A twin on the adopted stack, per-engine logs of the 7.66 M run, NUMA placement of the host pools. 10:45: REVERTED from the queue. An A/A twin with identical configs gave -4.83 tok/s between the node halves past the knee, so a single twin there cannot decide; the pool's two twins average -5.7 tok/s. Re-test below the knee (about 6 M per half) as a side-swapped pair. 13:15: RE-ADOPTED. Below the knee (5.95 M per half), as a side-swapped pair: first token x0.86 and x0.91 (both significant), TPS +3.1 and +2.1 (not significant), minutes 13 vs 10 and 14 vs 12. Side-balanced: first token about x0.89, TPS about +2.6.",
    "ref": "hostfix/patch_draft_fp8kv.py · lever_queue v3_ab_dfp8(sw)_cl_15x"
   },
   {
@@ -2889,6 +2889,15 @@
     "ROUTE_REPIN_SLACK": "-1"
    },
    "note": "line word ROUTE_REPIN_SLACK=-1 overrides chainQ base_env (16)"
+  },
+  {
+   "name": "window-sized draft KV pool (draft keeps only its 4,096-token window on the GPU; +21.4% target KV tokens)",
+   "adopted_at": "2026-10-06 13:15",
+   "run": "v5t_ab_dwin2sw_p60@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_DSPARK_DRAFT_WINDOW_POOL=1"
+   },
+   "note": "DEV_SRC = /data01/minimax31/serving/next180/serving/tree/python (live tree + patch_draft_window.py); --hicache-ratio 2.579 keeps the host tokens"
   }
  ],
  "sim": {
