@@ -1880,6 +1880,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "8/15 at 6.51 M/GPU: first token p50 2.85 s vs production 4.31 s; TPS p50 108.0 vs 47.7; hit 94.9% vs 94.6%; 17% paced fallbacks; 0 errors. With the window pool at the same load (v5p_full_cl_gcsv3_69dw_paced): 14/15, 2.13 s, TPS 120.9. Unpaired, but it agrees with the below-knee twins: the pool helps at the knee."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_70dw_paced",
+   "at": "2026-10-06 14:58",
+   "protocol": "v5.1",
+   "share": 0.92,
+   "name": "Oct 3 peak, full node, test v5.1, adopted stack (re-pins off + window pool), 7.33 M/GPU = 0.92x of production's real 8.01 M",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "7/15 at 7.33 M/GPU (minutes 4, 7-12 pass): first token p50 3.59 s vs production 4.30 s on the same requests; TPS p50 96.5 vs 48.0; hit 94.3% vs 94.8%; 23% paced fallbacks; 0 errors. Fails: minutes 0-3 (start, 4.4-6.2 s), 5-6 (3.5-3.8 s), 13-14. Knee: 6.50 M 14/15, 7.33 M 7/15, 7.49 M 2/15."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
