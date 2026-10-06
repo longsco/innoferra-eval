@@ -1870,6 +1870,16 @@
    "change": "capacity",
    "verdict": "adopted",
    "why": "14/15 vs 12/15; paired first token x0.911 (CI 0.886..0.947), TPS +2.06 (CI -1.99..+5.84). With twin 1 (pool on 2-3: x0.862, +3.14, 13/15 vs 10/15) the side-balanced effect is first token ~x0.89 and TPS ~+2.6 tok/s, +2-3 minutes. RE-ADOPTED 13:15 on every queued line except the Dynamo rung-9 twin. The earlier contradiction came from twins past the knee (A/A noise +-5 tok/s)."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_69np_paced",
+   "at": "2026-10-06 14:05",
+   "protocol": "v5.1",
+   "share": 0.81,
+   "name": "Oct 3 peak, full node, test v5.1, re-pins off WITHOUT the window pool, 6.51 M/GPU = 0.81x of production's real 8.01 M",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "8/15 at 6.51 M/GPU: first token p50 2.85 s vs production 4.31 s; TPS p50 108.0 vs 47.7; hit 94.9% vs 94.6%; 17% paced fallbacks; 0 errors. With the window pool at the same load (v5p_full_cl_gcsv3_69dw_paced): 14/15, 2.13 s, TPS 120.9. Unpaired, but it agrees with the below-knee twins: the pool helps at the knee."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
