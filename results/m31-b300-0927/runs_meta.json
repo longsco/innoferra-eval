@@ -1557,6 +1557,35 @@
    "change": "load",
    "verdict": "baseline",
    "why": "13/15 at 6.78 M/GPU (production 6.76 M for the same requests). Minute 0 misses on generation (59.3 tok/s); minute 10 on first token (3.76 s) and generation (58.3). Minutes 4, 5 and 9 pass by under 2 tok/s. Decode p50 70.6 (standard test 80.9-81.7; production 65.6), first token p50 1.82 s (standard 1.35-1.38), hit 94.0% vs 97.1%, 0 errors on 9,703 requests. Full-size images and refused requests cost about 10 tok/s at 1.5x; a twin that splits the two costs is queued."
+  },
+  {
+   "tag": "v4p_full_cl_gcsv3_1x",
+   "at": "2026-10-05 20:38",
+   "protocol": "v3.2",
+   "name": "production day: Oct 3 06:30 PDT peak window, full node, GC off + v3, 1.0× (production's own per-node load at its peak)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "12/15 at 4.21 M/GPU (production 4.27 M on the same requests). Speed passes every minute: decode p50 149.8 vs production 47.8 tok/s, first token p50 1.44 s vs production 4.11 s, hit 94.3% vs 94.5%. The 3 misses are errors only: one HTTP 400 each from a single session whose tool list has an 'enum' written as an object; the engine's schema check rejects every turn, production served them. Gateway fix (TOOL_SCHEMA_FIX_ARRAYS) written and under test."
+  },
+  {
+   "tag": "v4d_cl_gcsv3_p1375x_m175x@A",
+   "at": "2026-10-05 21:37",
+   "protocol": "v3.2",
+   "name": "production day: Oct 3 06:30 PDT peak window, half node (engines 0-1), 5.74 M/GPU",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "3/15 at 5.74 M/GPU (production 5.85 M for the same requests). First token fails in 12 minutes (p50 3.5-7.4 s); TPS p50 88.7 vs production 46.6; hit 90.9% vs 95.2% (uncached 31.2 vs 16.9 M); 3 errors = the tool-schema 400s (gateway fix live from 21:35).",
+   "share": 1.3
+  },
+  {
+   "tag": "v4d_cl_gcsv3_p1375x_m175x@B",
+   "at": "2026-10-05 21:37",
+   "protocol": "v3.2",
+   "name": "production day: Oct 5 08:00 PDT window, half node (engines 2-3), 6.07 M/GPU",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "0/15 at 6.07 M/GPU (production 5.88 M): overloaded. First token p50 7.05 s (p99 408 s), TPS p50 45.4 vs production 55.2, hit 85.9% vs 96.8% (uncached 51.2 vs 11.1 M), send lateness p50 59 s.",
+   "share": 1.38
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

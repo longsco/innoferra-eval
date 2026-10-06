@@ -197,9 +197,6 @@ def badge(v, href=None):
 
 # ---------------------------------------------------------------- runs (runs_v3.json + runs_meta.json)
 def share_of(tag):
-    _ms = (globals().get("META_BY") or {}).get(tag, {}).get("share")   # innoferra 10-05: explicit share for tags without _<n>x (dual-window runs)
-    if _ms is not None:
-        return float(_ms)
     m = re.search(r"_(\d+)x(?=_|$)", tag.split("@")[0])   # innoferra 10-02: tag@A/@B = one group of a twin run
     if not m:
         return None

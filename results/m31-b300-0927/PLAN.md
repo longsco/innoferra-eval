@@ -55,3 +55,27 @@ typical (25-40 peak), 217 tok/s per stream, ~11k uncached prefill tok/s per node
 6. Non-streaming requests (24%): `header_time` is the full response, so TTFT is only recoverable for streaming ones; no per-chunk
    timestamps, so ITL/TPOT come from completion_tokens/(response_time - header_time).
 7. Payload limits: 413s in the log (3/838); our gateway body limit must be at least the log's max line (2.3 MB) for the replay.
+
+## 5. Dynamo integration: parity first (owner 10-05: "target at least on par")
+Goal: the Dynamo-fronted stack is at least on par with our gateway stack on real traffic. After that, Dynamo's knobs tune past it.
+"On par" = all five on a twin (same requests on both halves of the node):
+1. TPS: paired difference inside the side bias (~0.5 tok/s at 1.5x on the 10-05 pairs).
+2. First token: paired ratio <= 1.05.
+3. Cache hit: within 1 point of our gateway.
+4. Minutes in SLA: the same where our stack passes (v3 1.375x and 1.5x; each new production day at its knee).
+5. Outputs: greedy identity = control; 0 errors on real traffic; tool calls and images pass the parity set.
+
+Where we are (Dynamo 1.5.0 = latest release, 2026-09-21): behind our gateway pins, TPS and outputs on par; first token x1.22 (Python chat
+processor; 663 event-loop stalls per 29 min). Dynamo's own KV routing loses affinity on our DP2 engines (hit 71-76% vs 96%).
+
+| Step | What | Gate |
+|---|---|---|
+| 0 (done 10-05 22:00) | Dynamo gateway-B patches on today's gateway code (incl. TOOL_SCHEMA_FIX_ARRAYS) | T1-T4 and C1-C5 pass |
+| 1 (queued) | v3_ab_dyn_pin_cl_15x: A/A at 1.5x on today's full stack, Dynamo executes our pins | TPS in side bias, hit within 1 pt |
+| 2 | First-token parity: 2 frontends with router replica sync (rung 9), then the Rust chat processor with pins (rung 10a = production's path). First fix the Rust path's prompt parity (181/200) on CPU | first token <= x1.05, prompt parity 200/200 |
+| 3 | Routing parity without our pins: Rust processor + session affinity (--router-session-affinity-mode hard, rung 10b); cache-first KV cost (rung 3) | hit within 1 pt, TPS on par |
+| 3b (if 3 fails) | Production's layout: TP2 attention, one cache per worker (DP1). Oct 2 (old stack): first token x0.53, TPS -7.4. The new days are first-token bound | SLA minutes on the new days |
+| 4 | Past parity: soft affinity + custom policy; conditional disaggregation (short requests straight to decode); in-node prefill/decode split for prefill-heavy days; planner SLA profiling | each a twin on the new days |
+
+Rules: our gateway stays the fallback; every new Dynamo release repeats step 1 first; versions pinned per run. Not planned: KVBM
+(deprecated in 1.5.0, removal in 1.6.0; the engine's HiCache tiers replace it). Files: serving/dyn/ (DESIGN.md ladder, README.md).

@@ -2276,6 +2276,12 @@
    "at": "2026-10-05 19:15",
    "text": "Per GPU the KV pools hold ~106 GB: target 4-bit KV 68.4, draft KV 20.3 (bf16, 19%), index K 9.5, scales 7.6. The draft attends only to the last 4,096 tokens. Step 1: FP8 draft KV on SM100 (port of MiniMax 024129f; patch hostfix/patch_draft_fp8kv.py applied flag-off) frees ~10 GB/rank for target KV (~+12% tokens); outputs stay identical (target verifies), only acceptance can move. Twins at 1.5x queued. Step 2 (heavier): windowed draft pool (+22% KV, lead sweep +3.7 tok/s central).",
    "ref": "hostfix/patch_draft_fp8kv.py · lever_queue v3_ab_dfp8(sw)_cl_15x"
+  },
+  {
+   "name": "Dynamo integration: parity first",
+   "state": "running",
+   "at": "2026-10-05 22:05",
+   "text": "Owner 10-05: target at least on par with our gateway stack, then use Dynamo's knobs. On par = TPS inside the side bias, first token <= x1.05, cache hit within 1 point, the same SLA minutes, outputs equal. Now (Dynamo 1.5.0): behind our pins TPS and outputs on par, first token x1.22 (Python chat processor); Dynamo's own routing loses affinity on DP2 engines (hit 71-76% vs 96%). Step 0 done 22:00 (gateway-B patches pass on today's code). Step 1 queued: A/A at 1.5x on today's stack (v3_ab_dyn_pin_cl_15x). Next: 2 frontends, then the Rust chat processor (production's path) for first token; then session affinity for routing without our pins; fallback: production's TP2-attention layout. Plan: PLAN.md section 5."
   }
  ],
  "done": [
