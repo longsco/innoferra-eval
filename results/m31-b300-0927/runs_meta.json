@@ -1790,6 +1790,16 @@
    "change": "capacity",
    "verdict": "under review",
    "why": "CONTRADICTS the first twin: B 2/15 vs A 7/15; paired TPS -16.67 tok/s (CI -19.39..-13.38), first token x1.195 (CI 1.126..1.269), uncached 34.4 vs 25.5 M. The same window-pool config ran TPS 97.9 on engines 2-3 (first twin) but 74.9 on engines 0-1, while the stack without it differs by 1.7. Side-balanced effect about -5.7 tok/s, first token about x0.98: the window-pool gain is NOT established. P2 judge PASS (no correctness issue). Under investigation: A/A twin on the adopted stack queued; per-engine logs of the 7.66 M run; NUMA placement of host pools."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_75dw_paced",
+   "at": "2026-10-06 09:37",
+   "protocol": "v5.1",
+   "share": 0.94,
+   "name": "Oct 3 peak, full node, test v5.1 (send at production's start time + 5 min lead-in), new stack (window pool + re-pins off), 7.49 M/GPU = 0.94x of production's real 8.01 M",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "2/15 at 7.49 M/GPU (minutes 7 and 10 pass): first token p50 5.43 s vs production 4.28 s on the same requests; TPS p50 81.6 vs production 48.1; hit 93.7% vs 94.7%; 0 errors (production: 84 5xx, 0/15 at its real 8.01 M); 29% paced fallbacks. Past the knee, but about production's own level at its peak. Old stack, test v5: 6.56 M gave 0/15 with first token 9.25 s."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
