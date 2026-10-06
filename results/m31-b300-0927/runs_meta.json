@@ -1052,7 +1052,7 @@
    "name": "full node, fair replay (v3.2), every kernel + host cache ratio 3.6, 1.25×",
    "change": "load",
    "verdict": "baseline",
-   "why": "15/15 at 5.57 M/GPU (about 8.0 M on production's engine counters): worst minute 65.8 tok/s (was 58.2), decode p50 76.1 vs production 65.2, first token p50 1.37 s / p99 15.7 s, hit 94.9%, 0 errors. New highest full pass."
+   "why": "15/15 at 5.57 M/GPU: worst minute 65.8 tok/s (was 58.2), decode p50 76.1 vs production 65.2, first token p50 1.37 s / p99 15.7 s, hit 94.9%, 0 errors. New highest full pass. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_full_cl_hc36_1375x",
@@ -1124,7 +1124,7 @@
    "name": "full node, fair replay (v3.2), newest stack (KV 0.80, ratio 3.13, MoE cap v2, every kernel), 1.375×",
    "change": "load",
    "verdict": "baseline",
-   "why": "15/15 at 5.93 M/GPU (about 8.5 M on production's engine counters): worst minute 60.2 tok/s (minute 10, thin margin), decode p50 75.3 vs production 65.1, first token p50 1.43 s / p99 16.0 s, hit 94.1%, 0 errors. New highest full pass (was 11/15 on the old base)."
+   "why": "15/15 at 5.93 M/GPU: worst minute 60.2 tok/s (minute 10, thin margin), decode p50 75.3 vs production 65.1, first token p50 1.43 s / p99 16.0 s, hit 94.1%, 0 errors. New highest full pass (was 11/15 on the old base). [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_full_cl_m80cap_15x",
@@ -1133,7 +1133,7 @@
    "name": "full node, fair replay (v3.2), newest stack (KV 0.80, ratio 3.13, MoE cap v2, every kernel), 1.5×",
    "change": "load",
    "verdict": "baseline",
-   "why": "7/15 at 6.70 M/GPU (about 9.6 M on production's counters; was 1/15 before KV 0.80 and the cap): decode p50 64.4 vs production 65.6, first token p50 2.08 s, hit 93.2%, 0 errors. Failing minutes are prompt-heavy bursts (decode 52-60, one minute TTFT 3.2 s). The knee is between 1.375x (15/15) and 1.5x."
+   "why": "7/15 at 6.70 M/GPU; was 1/15 before KV 0.80 and the cap): decode p50 64.4 vs production 65.6, first token p50 2.08 s, hit 93.2%, 0 errors. Failing minutes are prompt-heavy bursts (decode 52-60, one minute TTFT 3.2 s). The knee is between 1.375x (15/15) and 1.5x. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_ab_hostfixsw_cl_1375x@A",
@@ -1205,7 +1205,7 @@
    "name": "full node, fair replay (v3.2), full adopted stack (incl. H2+H3 and the fused cache load), 1.4375×",
    "change": "load",
    "verdict": "baseline",
-   "why": "14/15 at 6.39 M/GPU (about 9.2 M on production's counters): only minute 10 misses (55.4 tok/s; hit 91.0%, first token p99 47 s - a burst of uncached long prompts); decode p50 73.0 vs production 65.6, first token p50 1.46 s, 0 errors. Minute 10 is the binding minute in every run near the knee."
+   "why": "14/15 at 6.39 M/GPU: only minute 10 misses (55.4 tok/s; hit 91.0%, first token p99 47 s - a burst of uncached long prompts); decode p50 73.0 vs production 65.6, first token p50 1.46 s, 0 errors. Minute 10 is the binding minute in every run near the knee. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_ab_blk5_cl_1375x@A",
@@ -1268,7 +1268,7 @@
    "name": "full node, fair replay (v3.2), full adopted stack (incl. H2+H3 and fused cache load), 1.375×",
    "change": "load",
    "verdict": "baseline",
-   "why": "15/15 at 5.93 M/GPU with margin (about 8.5 M on production's counters): worst minute 66.1 tok/s (+6 above the limit; earlier stack 60.2 / 58.8), decode p50 76.5 vs production 65.1, first token p50 1.33 s, hit 94.2%, 0 errors."
+   "why": "15/15 at 5.93 M/GPU with margin: worst minute 66.1 tok/s (+6 above the limit; earlier stack 60.2 / 58.8), decode p50 76.5 vs production 65.1, first token p50 1.33 s, hit 94.2%, 0 errors. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_ab_mmcpu_cl_1375x@A",
@@ -1295,7 +1295,7 @@
    "name": "full node, fair replay (v3.2), full adopted stack (incl. H2+H3 and fused cache load), 1.5×",
    "change": "load",
    "verdict": "baseline",
-   "why": "12/15 at 6.70 M/GPU (about 9.6 M on production's counters; the older stack gave 7/15 at this load). Misses: minute 0 (decode 57.2), minutes 9-10 (first token p50 3.56 / 4.11 s, decode 46.6 / 51.0) - the prompt-heavy burst. Decode p50 67.1 vs production 65.6, first token p50 1.78 s, hit 93.6% vs production 97.1%, 0 errors. This run did not have the image-transport fix; the repeat with it runs next."
+   "why": "12/15 at 6.70 M/GPU; the older stack gave 7/15 at this load). Misses: minute 0 (decode 57.2), minutes 9-10 (first token p50 3.56 / 4.11 s, decode 46.6 / 51.0) - the prompt-heavy burst. Decode p50 67.1 vs production 65.6, first token p50 1.78 s, hit 93.6% vs production 97.1%, 0 errors. This run did not have the image-transport fix; the repeat with it runs next. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_full_cl_fullmm_15x",
@@ -1304,7 +1304,7 @@
    "name": "full node, fair replay (v3.2), full adopted stack + image transport cpu, 1.5×",
    "change": "load",
    "verdict": "baseline",
-   "why": "11/15 at 6.69 M/GPU (about 9.6 M on production's counters). All 4 misses are generation speed just under the limit (57.6-59.2 tok/s in minutes 0, 9, 10, 11); first token passes in every minute. Worst minute 57.6 (46.6 without the image fix). Decode p50 68.6 vs production 65.6, first token p50 1.56 s / p99 18.0 s (was 1.78 / 33.9), hit 94.4% (was 93.6%) vs production 97.1%, 0 errors."
+   "why": "11/15 at 6.69 M/GPU. All 4 misses are generation speed just under the limit (57.6-59.2 tok/s in minutes 0, 9, 10, 11); first token passes in every minute. Worst minute 57.6 (46.6 without the image fix). Decode p50 68.6 vs production 65.6, first token p50 1.56 s / p99 18.0 s (was 1.78 / 33.9), hit 94.4% (was 93.6%) vs production 97.1%, 0 errors. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_ab_dyn_2tier_cl_1x@A",
@@ -1349,7 +1349,7 @@
    "name": "full node, fair replay (v3.2), full adopted stack + image transport cpu, 1.4375×",
    "change": "load",
    "verdict": "baseline",
-   "why": "14/15 at 6.37 M/GPU (about 9.2 M on production's counters): only minute 0 misses (57.6 tok/s). The burst minutes now pass with margin (minutes 9-11: 72.3, 65.5, 68.3; minute 10 was 55.4 before the image fix). Decode p50 75.0 vs production 65.6, first token p50 1.32 s / p99 13.5 s, hit 94.7% vs 97.1%, 0 errors. Minute 0 misses at 1.4375x and 1.5x in every recent run: the minute-0 fix decides 15/15 here."
+   "why": "14/15 at 6.37 M/GPU: only minute 0 misses (57.6 tok/s). The burst minutes now pass with margin (minutes 9-11: 72.3, 65.5, 68.3; minute 10 was 55.4 before the image fix). Decode p50 75.0 vs production 65.6, first token p50 1.32 s / p99 13.5 s, hit 94.7% vs 97.1%, 0 errors. Minute 0 misses at 1.4375x and 1.5x in every recent run: the minute-0 fix decides 15/15 here. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_full_cl_fullmm_15x_r2",
@@ -1367,7 +1367,7 @@
    "name": "full node, fair replay (v3.2), full stack + image transport cpu, 1.4375× (repeat)",
    "change": "load",
    "verdict": "baseline",
-   "why": "15/15 at 6.39 M/GPU (about 9.2 M on production's counters): new highest full pass. Worst minute 64.9 tok/s (minute 0; 57.6 in the first run). Decode p50 74.4, first token p50 1.42 s / p99 17.4 s, hit 94.6%, 0 errors."
+   "why": "15/15 at 6.39 M/GPU: new highest full pass. Worst minute 64.9 tok/s (minute 0; 57.6 in the first run). Decode p50 74.4, first token p50 1.42 s / p99 17.4 s, hit 94.6%, 0 errors. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_full_cl_fullmm_1375x",
@@ -1493,7 +1493,7 @@
    "name": "full node, fair replay (v3.2), full stack + GC off + sparse-attention verify v3, 1.5×",
    "change": "load",
    "verdict": "baseline",
-   "why": "15/15 at 6.71 M/GPU (about 9.7 M on production's counters): NEW HIGHEST FULL PASS. Worst minute 66.7 tok/s (minute 10; was 57.6 before GC off + v3), minute 0 73.5. Decode p50 81.7 vs production 65.6, first token p50 1.38 s / p99 15.4 s, hit 94.6% vs 97.1%, 0 errors."
+   "why": "15/15 at 6.71 M/GPU: NEW HIGHEST FULL PASS. Worst minute 66.7 tok/s (minute 10; was 57.6 before GC off + v3), minute 0 73.5. Decode p50 81.7 vs production 65.6, first token p50 1.38 s / p99 15.4 s, hit 94.6% vs 97.1%, 0 errors. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_full_cl_gcsv3_15625x",
@@ -1502,7 +1502,7 @@
    "name": "full node, fair replay (v3.2), full stack + GC off + sparse-attention verify v3, 1.5625×",
    "change": "load",
    "verdict": "baseline",
-   "why": "14/15 at 6.90 M/GPU (about 9.9 M on production's counters): only minute 0 misses (58.6 tok/s; first token 2.14 s, hit 92.4% - the warm-up boundary). Burst minutes pass (minute 9 65.3, minute 10 63.8). Decode p50 76.4 vs production 65.5, first token p50 1.47 s, hit 94.1%, 0 errors."
+   "why": "14/15 at 6.90 M/GPU: only minute 0 misses (58.6 tok/s; first token 2.14 s, hit 92.4% - the warm-up boundary). Burst minutes pass (minute 9 65.3, minute 10 63.8). Decode p50 76.4 vs production 65.5, first token p50 1.47 s, hit 94.1%, 0 errors. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_ab_shx_cl_15x@A",
@@ -1547,7 +1547,7 @@
    "name": "full node, GC off + v3, 1.5× (repeat)",
    "change": "load",
    "verdict": "baseline",
-   "why": "15/15 at 6.70 M/GPU again (about 9.6 M on production's counters). Worst minute 69.7 tok/s (minute 0; first run 66.7), decode p50 80.9 vs production 65.6, first token p50 1.35 s, hit 94.5%, 0 errors. 1.5x now passes in 3 of 3 runs (2 tuned + 1 held-out sessions) with 1x1 images."
+   "why": "15/15 at 6.70 M/GPU again. Worst minute 69.7 tok/s (minute 0; first run 66.7), decode p50 80.9 vs production 65.6, first token p50 1.35 s, hit 94.5%, 0 errors. 1.5x now passes in 3 of 3 runs (2 tuned + 1 held-out sessions) with 1x1 images. [10-06: the old 'production counters' (x1.44) number is removed - that factor measured missing lb03 traffic, not a unit.]"
   },
   {
    "tag": "v3_full_cl_gcsv3_fidelity2_15x",

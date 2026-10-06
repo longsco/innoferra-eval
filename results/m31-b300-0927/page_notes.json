@@ -5,8 +5,8 @@
  "goal": {
   "value": 7.6,
   "basis": null,
-  "basis_note": "Owner, Oct 5 08:41 PDT: goal moved from 7.00 M to 7.6 M = production's peak per GPU ('7.6M on peak prod'). Read as production's engine counters it sits at about 5.0-5.3 M on our replay axis (÷1.44-1.52); read on our replay axis it is about 1.70x load. Basis question open with the owner.",
-  "src": "artifact comment thread 77e07f67 (Oct 5) + chat Oct 5"
+  "basis_note": "Owner, Oct 5 08:41 PDT: goal 7.6 M per GPU = production's peak ('7.6M on peak prod'). 10-06 correction: our M TPM/GPU and production's engine counters are the SAME unit - the old x1.44 'production axis' was the missing lb03 traffic. Production's real loads per window (engine counters): Sep 30 6.43, Oct 1 7.37, Oct 2 6.80, Oct 3 peak 8.01, Oct 5 7.76 M/GPU. Our Sep 30 record (15/15 at 6.71 M sent) = ~1.0x of production's real Sep 30 load, on traces missing lb03. The north-star test is now the Oct 3 peak on complete traces (v5) at 6.9 M (logged) and 8.0 M (engines).",
+  "src": "artifact comment thread 77e07f67 (Oct 5) + chat Oct 5; fidelity scorecard next180/FIDELITY-SCORECARD.md (10-06)"
  },
  "sla": {
   "ttft_p50": 3.0,
