@@ -2847,6 +2847,14 @@
    "append": {
     "EXTRA_ENV": " SGLANG_MOE_SHARED_OVERLAP=1"
    }
+  },
+  {
+   "name": "EP8 combine v2 kernel (MoE combine, bit-exact)",
+   "adopted_at": "2026-10-06 01:52",
+   "run": "v3_ab_ep8c_cl_15x@B",
+   "append": {
+    "EXTRA_ENV": " SGLANG_EP8_COMBINE_V2=1 EP8_COMBINE_V2_LARGE=4,1,2048,4,0 EP8_COMBINE_V2_SMALL=1,1,2048,4,0 EP8_COMBINE_V2_SMALL_N=4096"
+   }
   }
  ],
  "sim": {

@@ -1,0 +1,385 @@
+--- sglang/srt/managers/cache_controller.py.pre-draftwin	2026-10-04 06:18:01.990817702 +0000
++++ sglang/srt/managers/cache_controller.py	2026-10-06 07:56:04.678518158 +0000
+@@ -730,10 +730,14 @@
+                 self.mem_pool_device, host_indices, device_indices, self.io_backend
+             )
+             if self.has_draft:
++                _dw_pool, _dw_dev = self.mem_pool_device_draft, device_indices
++                if getattr(self, "draft_window_dpa", None) is not None:  # innoferra 10-06 draft window pool
++                    _dw_pool = self.draft_window_swa_pool
++                    _dw_dev = self.draft_window_dpa.translate(device_indices.to(torch.int64))
+                 self.mem_pool_host_draft.backup_from_device_all_layer(
+-                    self.mem_pool_device_draft,
++                    _dw_pool,
+                     host_indices,
+-                    device_indices,
++                    _dw_dev,
+                     self.io_backend,
+                 )
+             finish_event.record()
+@@ -812,7 +816,11 @@
+                     i,
+                     self.io_backend,
+                 )
+-                if self.has_draft and i < self.mem_pool_host_draft.layer_num:
++                if (
++                    self.has_draft
++                    and i < self.mem_pool_host_draft.layer_num
++                    and getattr(self, "draft_load_enabled", True)  # innoferra 10-06 draft window pool
++                ):
+                     self.mem_pool_host_draft.load_to_device_per_layer(
+                         self.mem_pool_device_draft,
+                         host_indices,
+--- sglang/srt/managers/schedule_batch.py.pre-draftwin	2026-09-25 03:57:31.547408292 +0000
++++ sglang/srt/managers/schedule_batch.py	2026-10-06 07:56:04.703518079 +0000
+@@ -2328,6 +2328,8 @@
+         out_cache_loc, req_pool_indices_tensor, req_pool_indices_cpu = alloc_for_extend(
+             self
+         )
++        if (_dw := getattr(self.tree_cache, "_dw", None)) is not None:  # innoferra 10-06 draft window pool
++            _dw.on_prepare_extend(self.reqs)  # pin + restore the cached part of each draft window
+ 
+         # Set fields
+         input_embeds = []
+--- sglang/srt/managers/schedule_policy.py.pre-draftwin	2026-10-04 06:18:01.991817699 +0000
++++ sglang/srt/managers/schedule_policy.py	2026-10-06 07:56:04.719518028 +0000
+@@ -828,6 +828,10 @@
+         # Snapshot of scheduler waiting_queue length at the start of this
+         # prefill pass. Used by PrefillDelayer's queue-based trigger.
+         self.waiting_queue_len = waiting_queue_len
++        # innoferra 10-06 draft window pool: draft-pool admission gate for this pass
++        self._dw = getattr(tree_cache, "_dw", None)
++        if self._dw is not None:
++            self._dw.begin_pass(self.rem_total_token_offset)
+ 
+     def _init_dllm_meta(self, dllm_config: DllmConfig):
+         self.dllm_block_size = dllm_config.block_size
+@@ -1391,6 +1395,13 @@
+         if total_tokens >= self.rem_total_tokens:
+             return AddReqResult.NO_TOKEN
+ 
++        if getattr(self, "_dw", None) is not None and not self._dw.admit(  # innoferra 10-06 draft window pool
++            extend_tokens=real_input_tokens,
++            chunk_cap=self.rem_chunk_tokens,
++            max_new_tokens=max_new,
++        ):
++            return AddReqResult.NO_TOKEN
++
+         chunk_tokens_limit = _ccc_cap(self.rem_chunk_tokens, prefix_len + req.host_hit_length, self.page_size)   # innoferra chunk cost cap
+         if self.is_hybrid_swa:
+             # host-hit prefix is loaded back, not re-prefilled, so the SWA peak is
+--- sglang/srt/managers/scheduler.py.pre-draftwin	2026-10-05 16:33:15.268308833 +0000
++++ sglang/srt/managers/scheduler.py	2026-10-06 07:56:04.725518009 +0000
+@@ -2933,6 +2933,8 @@
+         self, running_batch: ScheduleBatch, last_batch: Optional[ScheduleBatch]
+     ) -> NextBatchPlan:
+         self.process_pending_chunked_abort()
++        if (_dw := getattr(self.tree_cache, "_dw", None)) is not None:  # innoferra 10-06 draft window pool
++            _dw.tick(running_batch)
+ 
+         if self.enable_fpm:
+             self._fpm_batch_t0 = time.monotonic()
+--- sglang/srt/mem_cache/hiradix_cache.py.pre-draftwin	2026-10-04 06:18:01.991817699 +0000
++++ sglang/srt/mem_cache/hiradix_cache.py	2026-10-06 07:56:04.689518123 +0000
+@@ -934,6 +934,8 @@
+                 node.write_through_pending_id = None
+             # DMA confirmed -- block is now on host.
+             self._record_store_event(node, medium=StorageMedium.CPU)
++            if (_dw := getattr(self, "_dw", None)) is not None:  # innoferra 10-06 draft window pool
++                _dw.on_ack(node)
+         if self.enable_storage:
+             self.write_backup_storage(lock_node, backup_len)
+         if release_lock:
+@@ -1003,6 +1005,14 @@
+     def _inc_hit_count(self, node: TreeNode, chunked=False):
+         # skip the hit count update for chunked requests
+         if self.cache_controller.write_policy == "write_back" or chunked:
++            # innoferra 10-06 draft window pool: back chunked inserts up at once, so their draft pages can be released after the ack
++            if (
++                chunked
++                and getattr(self, "_dw", None) is not None
++                and self.cache_controller.write_policy != "write_back"
++                and not node.backuped
++            ):
++                self.write_backup(node)
+             return
+         node.hit_count += 1
+ 
+@@ -1264,6 +1274,8 @@
+ 
+     def _detach_backuped(self, node: TreeNode) -> int:
+         # detach nodes from tree while keeping device slots, for write-back eviction
++        if (_dw := getattr(self, "_dw", None)) is not None:  # innoferra 10-06 draft window pool
++            _dw.on_detach(node)
+         self._record_remove_event(node, medium=StorageMedium.GPU)
+         num_evicted = len(node.value)
+         assert num_evicted > 0
+@@ -1922,6 +1934,8 @@
+ 
+         if child.backuped:
+             self._replace_pending_write_through_node(child, [new_node, child])
++        if (_dw := getattr(self, "_dw", None)) is not None:  # innoferra 10-06 draft window pool
++            _dw.on_split(child, new_node, split_len)
+ 
+         return new_node
+ 
+@@ -1957,6 +1971,8 @@
+                     # change the reference if the node is evicted
+                     # this often happens in the case of KV cache recomputation
+                     node.value = value[:prefix_len].clone()
++                    if (_dw := getattr(self, "_dw", None)) is not None:  # innoferra 10-06 draft window pool
++                        _dw.on_value_assigned(node)
+                     self.evictable_size_ += len(node.value)
+                     self._update_leaf_status(node)
+                     self._update_host_leaf_status(node)
+@@ -1972,6 +1988,8 @@
+                 new_node.priority = max(new_node.priority, priority)
+                 if new_node.evicted:
+                     new_node.value = value[:prefix_len].clone()
++                    if (_dw := getattr(self, "_dw", None)) is not None:  # innoferra 10-06 draft window pool
++                        _dw.on_value_assigned(new_node)
+                     self.evictable_size_ += len(new_node.value)
+                     self._update_leaf_status(new_node)
+                     self._update_host_leaf_status(new_node)
+--- sglang/srt/mem_cache/hybrid_cache/hicache_fused_load.py.pre-draftwin	2026-10-04 16:53:54.236813848 +0000
++++ sglang/srt/mem_cache/hybrid_cache/hicache_fused_load.py	2026-10-06 07:56:04.684518139 +0000
+@@ -237,7 +237,7 @@
+             index_layers[i] = li
+     draft_layers = 0
+     tok_stride = 0
+-    if ctrl.has_draft:
++    if ctrl.has_draft and getattr(ctrl, "draft_load_enabled", True):  # innoferra 10-06 draft window pool: no draft rows in loads
+         dh, dd = ctrl.mem_pool_host_draft, ctrl.mem_pool_device_draft
+         if type(dh) is not MHATokenToKVPoolHost:
+             return None, f"draft host pool {type(dh).__name__} (needs MHATokenToKVPoolHost)"
+@@ -330,7 +330,8 @@
+     ctrl.mem_pool_host.load_to_device_per_layer(
+         ctrl.mem_pool_device, host_indices, device_indices, i, ctrl.io_backend, pool_transfers=resolved_pool_transfers
+     )
+-    if ctrl.has_draft and host_indices.numel() > 0 and i < ctrl.mem_pool_host_draft.layer_num:
++    if (ctrl.has_draft and host_indices.numel() > 0 and i < ctrl.mem_pool_host_draft.layer_num
++            and getattr(ctrl, "draft_load_enabled", True)):  # innoferra 10-06 draft window pool
+         ctrl.mem_pool_host_draft.load_to_device_per_layer(
+             ctrl.mem_pool_device_draft, host_indices, device_indices, i, ctrl.io_backend
+         )
+--- sglang/srt/mem_cache/hybrid_cache/hybrid_cache_controller.py.pre-draftwin	2026-09-29 00:46:00.021821041 +0000
++++ sglang/srt/mem_cache/hybrid_cache/hybrid_cache_controller.py	2026-10-06 07:56:04.674518171 +0000
+@@ -443,8 +443,14 @@
+                     draft_host_indices, draft_device_indices = self.move_indices(
+                         draft_host_indices, draft_device_indices
+                     )
++                _dw_pool = self.mem_pool_device_draft
++                if getattr(self, "draft_window_dpa", None) is not None:  # innoferra 10-06 draft window pool
++                    _dw_pool = self.draft_window_swa_pool
++                    draft_device_indices = self.draft_window_dpa.translate(
++                        draft_device_indices.to(torch.int64)
++                    )
+                 self.mem_pool_host_draft.backup_from_device_all_layer(
+-                    self.mem_pool_device_draft,
++                    _dw_pool,
+                     draft_host_indices,
+                     draft_device_indices,
+                     self.io_backend,
+@@ -535,6 +541,7 @@
+                     self.has_draft
+                     and host_indices.numel() > 0
+                     and i < self.mem_pool_host_draft.layer_num
++                    and getattr(self, "draft_load_enabled", True)  # innoferra 10-06 draft window pool
+                 ):
+                     self.mem_pool_host_draft.load_to_device_per_layer(
+                         self.mem_pool_device_draft,
+--- sglang/srt/mem_cache/kv_cache_builder.py.pre-draftwin	2026-09-25 03:57:31.555408262 +0000
++++ sglang/srt/mem_cache/kv_cache_builder.py	2026-10-06 07:56:04.672518177 +0000
+@@ -101,6 +101,18 @@
+     from sglang.srt.mem_cache.pool_host.mla import MLATokenToKVPoolHost
+ 
+     pool = draft_kv_pool
++    if _innoferra_dw_is_window_pool(pool):  # innoferra 10-06 draft window pool
++        from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++        _dwm.register_hicache(
++            tree_cache=tree_cache,
++            pool=pool,
++            primary=tree_cache.cache_controller.mem_pool_host,
++            server_args=server_args,
++            page_size=page_size,
++            draft_runner=_innoferra_dw_draft_runner(draft_worker, server_args),
++        )
++        return
+     if isinstance(pool, HybridLinearKVPool):
+         pool = pool.full_kv_pool
+ 
+@@ -344,3 +356,23 @@
+         disable_radix_cache=disable_radix_cache,
+         tree_cache=tree_cache,
+     )
++
++
++# innoferra 10-06 draft window pool (next180 serving track). Flag off -> returns False before importing draft_window.
++def _innoferra_dw_is_window_pool(pool) -> bool:
++    import os as _dw_os
++
++    if _dw_os.environ.get("SGLANG_DSPARK_DRAFT_WINDOW_POOL", "").strip().lower() in ("", "0", "off", "false"):
++        return False
++    from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++    return _dwm.is_window_pool(pool)
++
++
++def _innoferra_dw_draft_runner(draft_worker, server_args):
++    try:
++        if server_args.enable_multi_layer_eagle:
++            return draft_worker.draft_worker.draft_runner_list[0]
++        return draft_worker.draft_worker.draft_runner
++    except Exception:  # noqa: BLE001
++        return None
+--- sglang/srt/mem_cache/kv_cache_configurator.py.pre-draftwin	2026-09-29 00:46:00.020821044 +0000
++++ sglang/srt/mem_cache/kv_cache_configurator.py	2026-10-06 07:56:04.660518215 +0000
+@@ -914,7 +914,13 @@
+                     max_total_num_tokens=sizes.max_total_num_tokens,
+                 )
+         else:
+-            if self.is_hybrid_swa:
++            if _innoferra_dw_draft_pool(self):  # innoferra 10-06 draft window pool
++                from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++                token_to_kv_pool = _dwm.build_draft_pool(
++                    self, max_total_num_tokens=sizes.max_total_num_tokens
++                )
++            elif self.is_hybrid_swa:
+                 token_to_kv_pool = self._build_hybrid_swa_kv_pool(
+                     full_max_total_num_tokens=sizes.full_max_total_num_tokens,
+                     swa_max_total_num_tokens=sizes.swa_max_total_num_tokens,
+@@ -1574,6 +1580,17 @@
+                             kvcache=token_to_kv_pool,
+                             need_sort=need_sort,
+                         )
++                    elif _innoferra_dw_target_alloc(self):  # innoferra 10-06 draft window pool
++                        from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++                        token_to_kv_pool_allocator = _dwm.make_target_allocator(
++                            size=sizes.max_total_num_tokens,
++                            page_size=get_schedule().page_size,
++                            dtype=self.kv_cache_dtype,
++                            device=self.device,
++                            kvcache=token_to_kv_pool,
++                            need_sort=need_sort,
++                        )
+                     else:
+                         token_to_kv_pool_allocator = PagedTokenToKVPoolAllocator(
+                             sizes.max_total_num_tokens * self.server_args.dcp_size,
+@@ -1598,6 +1615,10 @@
+ 
+         else:
+             assert self.is_draft_worker
++            if _innoferra_dw_is_window_pool(token_to_kv_pool):  # innoferra 10-06 draft window pool
++                from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++                _dwm.attach_draft_pool(token_to_kv_pool_allocator, token_to_kv_pool)
+             if self.is_hybrid_swa:
+                 if self.draft_swa_full_capacity:
+                     # Banded depth: the SWA ring is full draft capacity, so use
+@@ -2049,3 +2070,44 @@
+         )
+ 
+     return kv_cache_dim
++
++
++# innoferra 10-06 draft window pool (next180 serving track). Flag off -> every helper returns before importing draft_window.
++def _innoferra_dw_on() -> bool:
++    import os as _dw_os
++
++    return _dw_os.environ.get("SGLANG_DSPARK_DRAFT_WINDOW_POOL", "").strip().lower() not in ("", "0", "off", "false")
++
++
++def _innoferra_dw_draft_pool(kvc) -> bool:
++    if not _innoferra_dw_on():
++        return False
++    from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++    return (
++        kvc.is_draft_worker
++        and kvc.spec_algorithm.is_dflash_family()
++        and not kvc.use_mla_backend
++        and not kvc.is_hybrid_swa
++        and _dwm.active(kvc.server_args)
++    )
++
++
++def _innoferra_dw_target_alloc(kvc) -> bool:
++    if not _innoferra_dw_on():
++        return False
++    from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++    return (
++        not kvc.is_draft_worker
++        and kvc.spec_algorithm.is_dflash_family()
++        and _dwm.active(kvc.server_args)
++    )
++
++
++def _innoferra_dw_is_window_pool(pool) -> bool:
++    if not _innoferra_dw_on():
++        return False
++    from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++    return _dwm.is_window_pool(pool)
+--- sglang/srt/mem_cache/radix_cache.py.pre-draftwin	2026-09-25 03:57:31.558408251 +0000
++++ sglang/srt/mem_cache/radix_cache.py	2026-10-06 07:56:04.699518091 +0000
+@@ -482,6 +482,9 @@
+             ]
+         )
+ 
++        if (_dw := getattr(self, "_dw", None)) is not None:  # innoferra 10-06 draft window pool: drop this request's pins
++            _dw.unpin(req)
++            _dw.end_cache_call()
+         # Remove req slot release the cache lock
+         if req.last_node is not None:
+             self.dec_lock_ref(req.last_node)
+@@ -552,6 +555,9 @@
+             req.prefix_indices = new_indices
+ 
+         req.last_node = new_last_node
++        if (_dw := getattr(self, "_dw", None)) is not None:  # innoferra 10-06 draft window pool: pin the newly tree-owned window
++            _dw.ensure_window(req)
++            _dw.end_cache_call()
+ 
+     def pretty_print(self):
+         self._print_helper(self.root_node, 0)
+--- sglang/srt/model_executor/pool_configurator.py.pre-draftwin	2026-09-25 03:57:31.567408217 +0000
++++ sglang/srt/model_executor/pool_configurator.py	2026-10-06 07:56:04.669518187 +0000
+@@ -162,8 +162,24 @@
+                     * (1 + int(eagle_draft_num_layers) / int(num_layers))
+                 )
+ 
+-        # DFLASH/DSPARK: scale cell_size to account for draft model KV cache
++        # innoferra 10-06 draft window pool: a fixed window pool instead of the (target+draft)/target cell scaling
++        self._innoferra_dw_plan = None
+         if kvc.spec_algorithm.is_dflash_family() and not kvc.is_draft_worker:
++            import os as _dw_os
++
++            if _dw_os.environ.get("SGLANG_DSPARK_DRAFT_WINDOW_POOL", "").strip().lower() not in ("", "0", "off", "false"):
++                from sglang.srt.speculative.dspark_components import draft_window as _dwm
++
++                if _dwm.active(kvc.server_args):
++                    self._innoferra_dw_plan = _dwm.target_plan(
++                        kvc, target_cell=self._cell_size, target_layers=int(num_layers)
++                    )
++        # DFLASH/DSPARK: scale cell_size to account for draft model KV cache
++        if (
++            kvc.spec_algorithm.is_dflash_family()
++            and not kvc.is_draft_worker
++            and self._innoferra_dw_plan is None
++        ):
+             from sglang.srt.speculative.dflash_utils import (
+                 scale_kv_cell_size_per_token_for_dflash,
+             )
+@@ -331,6 +347,8 @@
+     def calculate_pool_sizes(
+         self, available_bytes: int, page_size: int
+     ) -> MemoryPoolConfig:
++        if getattr(self, "_innoferra_dw_plan", None) is not None:  # innoferra 10-06 draft window pool
++            available_bytes = self._innoferra_dw_plan.target_bytes(available_bytes)
+         max_total_num_tokens = (
+             available_bytes // self._cell_size
+             if self._cell_size

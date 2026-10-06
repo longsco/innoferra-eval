@@ -1662,6 +1662,24 @@
    "change": "kernel",
    "verdict": "adopted",
    "why": "Paired TPS +6.67 tok/s (CI +4.99..+8.08), first token x0.922 (CI 0.896..0.950) with B on engines 0-1; the first twin (B on 2-3) gave -0.58 -> side-balanced about +3.0 tok/s, first token ~x0.95. Bit-exact bench; greedy 28/30 = control. Adopted 01:05: SGLANG_MOE_SHARED_OVERLAP=1."
+  },
+  {
+   "tag": "v3_ab_ep8c_cl_15x@A",
+   "at": "2026-10-06 01:50",
+   "protocol": "v3.2",
+   "name": "control half at 1.5x (engines 0-1), EP8 combine v2 twin",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.72 M/GPU (half node), TPS p50 85.0, first token p50 1.21 s, hit 94.9%, 0 errors."
+  },
+  {
+   "tag": "v3_ab_ep8c_cl_15x@B",
+   "at": "2026-10-06 01:50",
+   "protocol": "v3.2",
+   "name": "EP8 combine v2 kernel (engines 2-3)",
+   "change": "kernel",
+   "verdict": "adopted",
+   "why": "Paired TPS +2.46 tok/s (CI +0.89..+4.11), first token x0.971 (CI 0.939..0.997), with B on the slower side; bit-exact bench (x2.35-2.73 at prompt sizes, x2.3 at verify sizes). Adopted 01:52; side-swapped confirmation twin queued."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

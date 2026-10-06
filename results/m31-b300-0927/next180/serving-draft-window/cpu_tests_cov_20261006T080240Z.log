@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/w/test_draft_window.py", line 771, in <module>
+    test_lifecycle()
+  File "/w/test_draft_window.py", line 700, in test_lifecycle
+    assert cov[k] > 0, f"lifecycle sim never exercised {k}"
+           ^^^^^^^^^^
+AssertionError: lifecycle sim never exercised adopt
+ok   A1 allocator: 4000 random alloc/free ops vs reference (fails counted 976, no leak, no duplicate)
+ok   A2 allocator: exhaustion -> dummy page + fail count, idempotent frees, only_if_unmapped, -1 sentinel
+     parity: 2578944 tokens/rank (+21.4%), honest at the same MEMFRAC: 2196352 (+3.4%), window pool 401408 tokens = 3.83 GiB
+     fp8 draft KV alone at parity footprint: 2372224 tokens/rank (+11.6%); as queued (MEMFRAC 0.80, planner unchanged): 2125056 (+0.0%)
+ok   B1 sizing + planner: pool 401,408 tokens; parity keeps today's physical KV bytes; honest/fp8 numbers printed
+ok   B2 flag parsing and the activation guards (HiCache write-through, DSPARK, paged, fa4/fa3/flashinfer, windowed)
+ok   C1 path_runs: node-local page runs cover exactly [lo, hi) on 500 random chains
+     coverage: split=83 loadback_nodes=93 demote=312 drop=0 adopt=0 dup_pages=38 retract=32 finish=1252 chunk_backups=1061 pins=3234 touched=0
