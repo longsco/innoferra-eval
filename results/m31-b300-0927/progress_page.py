@@ -1310,8 +1310,13 @@ def chart_svg(variant):
         arrows.append((ma, mb, bx, provisional(b)))
         hard.extend([(ma["x"] - ma["rad"], ma["y"], bx, ma["y"]), (bx, lo, bx, hi), (bx, mb["y"], mb["x"] - mb["rad"], mb["y"])])
     hlr = sorted([r for r in VALID if r["test"] in HL and r["id"] not in MK], key=lambda r: ("@" in str(r["id"]), -r["at"].timestamp()))
+    hl_left_out = []                                   # innoferra 10-06: bold half-node twin halves are dropped (counted) when no spot is free
     for r in hlr:
-        must_put(new_mark("hh" if "@" in str(r["id"]) else "ho", [r]))
+        if "@" in str(r["id"]):
+            if not (put(new_mark("hh", [r])) or put(new_mark("hh", [r]), 2.0)):
+                hl_left_out.append(r)
+        else:
+            must_put(new_mark("ho", [r]))
     # 3. behind the checkbox: the gray tests' frontier runs and step lines, then every other older run, ties merged
     left_out = []
     for t in [t for t in VTESTS if t not in SHOWN]:
@@ -1511,7 +1516,7 @@ def chart_svg(variant):
             + ('<g class="v3">' + "".join(s for s in on if s not in s_off) + "</g>" if any(s not in s_off for s in on) else ""))
     shown_fr = {r["id"] for t in SHOWN if t not in HL for r in FRONT.get(t, [])}
     other = [r for r in older if r["id"] not in shown_fr]
-    CHART_STATS[variant] = {"other": len(other), "left_out": len(left_out), "nudged": nudged, "miss_off": miss_off, "miss_on": miss_on,
+    CHART_STATS[variant] = {"other": len(other), "left_out": len(left_out), "hl_left_out": len(hl_left_out), "nudged": nudged, "miss_off": miss_off, "miss_on": miss_on,
                             "marks_v3": sum(1 for m in marks if m["group"] == "v3"), "xlo": XLO}
     return (f'<svg class="chart {variant}" viewBox="0 0 {W} {H}" role="group" aria-labelledby="chart-h">' + "".join(g) + labs + "</svg>")
 
@@ -1634,6 +1639,10 @@ def chart_html():
                     f"{'is' if len(gray) == 1 else 'are'} gray and {'shows' if len(gray) == 1 else 'show'} only with the checkbox.")
     if inv:
         more.append(f"Not plotted: {plural(len(inv), 'invalid run')} (" + "; ".join(f"{hm(r['at'])}, {r['broke']}" for r in sorted(inv, key=lambda r: r['at'])) + ").")
+    hlo_ = max(sw_.get("hl_left_out", 0), sn_.get("hl_left_out", 0))
+    if hlo_:
+        more.append(f"{'Up to ' if sw_.get('hl_left_out', 0) != sn_.get('hl_left_out', 0) else ''}{plural(hlo_, 'half-node twin run')} of the "
+                    "current tests had no free spot on the narrow chart and " + ("is" if hlo_ == 1 else "are") + " not drawn there; every run is in the tables.")
     lo_ = max(sw_["left_out"], sn_["left_out"])
     if lo_:
         more.append(f"With the checkbox, {'up to ' if sw_['left_out'] != sn_['left_out'] else ''}{plural(lo_, 'older run')} with no free spot near "
