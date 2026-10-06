@@ -71,8 +71,8 @@ processor; 663 event-loop stalls per 29 min). Dynamo's own KV routing loses affi
 | Step | What | Gate |
 |---|---|---|
 | 0 (done 10-05 22:00) | Dynamo gateway-B patches on today's gateway code (incl. TOOL_SCHEMA_FIX_ARRAYS) | T1-T4 and C1-C5 pass |
-| 1 (queued) | v3_ab_dyn_pin_cl_15x: A/A at 1.5x on today's full stack, Dynamo executes our pins | TPS in side bias, hit within 1 pt |
-| 2 | First-token parity: 2 frontends with router replica sync (rung 9), then the Rust chat processor with pins (rung 10a = production's path). First fix the Rust path's prompt parity (181/200) on CPU | first token <= x1.05, prompt parity 200/200 |
+| 1 (done 10-06 00:11) | v3_ab_dyn_pin_cl_15x: A/A at 1.5x on the full stack, Dynamo executes our pins. Result: both halves 15/15, hit equal (95.2 vs 95.1%), 0 errors; TPS -3.70 tok/s (CI -5.45..-2.12), first token x1.46 (CI 1.41..1.54) -> not on par (Python chat processor) | TPS in side bias, hit within 1 pt |
+| 2 (in progress 10-06 06:20) | First-token parity: 2 frontends with router replica sync (rung 9: v5t_ab_dyn_sync_pin_p60 queued, Oct 3 peak ~6 M/GPU per half, adopted stack with the window pool, strict schedule), then the Rust chat processor with pins (rung 10a = production's path). Rust prompt parity fix (181/200) running on CPU: workflow wf_10535fa6-40d | first token <= x1.05, prompt parity 200/200 |
 | 3 | Routing parity without our pins: Rust processor + session affinity (--router-session-affinity-mode hard, rung 10b); cache-first KV cost (rung 3) | hit within 1 pt, TPS on par |
 | 3b (if 3 fails) | Production's layout: TP2 attention, one cache per worker (DP1). Oct 2 (old stack): first token x0.53, TPS -7.4. The new days are first-token bound | SLA minutes on the new days |
 | 4 | Past parity: soft affinity + custom policy; conditional disaggregation (short requests straight to decode); in-node prefill/decode split for prefill-heavy days; planner SLA profiling | each a twin on the new days |

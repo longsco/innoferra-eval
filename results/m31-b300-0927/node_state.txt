@@ -1,8 +1,10 @@
-# read_utc 2026-10-06T12:59:59Z
+# read_utc 2026-10-06T13:07:21Z
 ## queue
+v5t_ab_norepin_p74 /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl 0.2 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --paced" REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTRA_B=--clos
 v5t_ab_dwin_p74sw /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl 0.2 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jso
 v5d_full_cl_gcsv3_1x_paced /tr/v5/w1002_1000/b00.jsonl,/tr/v5/w1002_1000/b01.jsonl,/tr/v5/w1002_1000/b02.jsonl 0.55 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.80 DEV_SR
 v5p_full_cl_gcsv3_69dw_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.2 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.80 DEV_S
+v5t_ab_dyn_sync_pin_p60 /tr/v5/w1003_1330/b00.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --paced" REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTRA_B=--closed-loop --paced" AB_PLA
 v5p_full_cl_gcsv3_75dw_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.45 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.80 DEV_
 v3_ab_ep8csw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN
 v5s_full_cl_gcsv3_1x_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.80 DEV_SRC=/data01/minimax31/serving/n

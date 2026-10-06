@@ -1217,29 +1217,27 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-05 22:20",
+  "at": "2026-10-06 06:55",
   "items": [
    {
     "rule": "ttft_p50",
-    "title": "New production days: first token at 5.7-6.1 M (cache hit)",
-    "text": "The record (15/15 at 6.71 M/GPU) holds on the Sep 30 test window only. On the Oct 3 06:30 peak window the node passes 3/15 at 5.74 M: first token p50 3.5-7.4 s in 12 minutes, while TPS passes (88.7 vs production 46.6). On Oct 5 08:00 it is overloaded at 6.07 M (0/15). Cause: our cache hit is 90.9% and 85.9% against production's 95.2% and 96.8% on the same requests, so we prefill 1.8x and 4.6x as many uncached tokens. About half the extra comes from follow-up turns inside the window, about a third from sessions the warm-up should have cached. Next: find each day's limit (4.89 / 4.56 / 5.00 M runs tonight) and close the cache-hit gap.",
-    "src": "PROGRESS.md Oct 5 20:38-21:45; runs v4p_full_cl_gcsv3_1x, v4d_cl_gcsv3_p1375x_m175x@A/@B"
+    "title": "Oct 3 peak, complete traces: first token from 5.9 M (KV fills, gateway re-pins)",
+    "text": "On complete traces the node passes 15/15 at 4.92 M, 11/15 at 5.92 M and 0/15 at 6.56 M; production's real load there is 8.01 M. At 5.92 M only first token fails (minutes 0-1, 5 and 7). At 6.56 M device KV fills on every engine, so requests queue. The gateway then re-pins sessions to other ranks (213 times); each re-pin is a full cold prefill of about 140k tokens, 88% of our extra uncached prefill. Fixes: the window-sized draft pool is adopted (+21.4% device tokens; twin 9/15 vs 4/15); a twin with re-pins off runs next.",
+    "src": "PROGRESS.md Oct 6 03:29-06:50; runs v5p_full_cl_gcsv3_51/60/69_paced, v5t_ab_dwin_p74"
    },
    {
     "rule": "decode",
-    "title": "Test window at 1.5625x: minute 0",
-    "text": "On the Sep 30 window 1.5x passes 3 of 3 runs; 1.5625x (6.90 M) misses only minute 0 (58.6 tok/s), a replay-boundary effect: running requests per rank jump from 3-5 to 14-18 and device KV from 30-40% to 100% in that minute. With full-size images and refused requests sent, 1.5x passes 13/15 (TPS -10).",
-    "src": "PROGRESS.md Oct 5 15:49-19:56"
+    "title": "Decode slows as batches grow",
+    "text": "Per-request decode falls from 135 tok/s at 1-4 requests per rank to 62 at 13-16. On real traffic the draft model gets 3.5 tokens accepted per step (7.1 on synthetic prompts), so large batches spend much verify work on rejected tokens. At 6.56 M decode drops to 33-57 tok/s in the late minutes.",
+    "src": "PROGRESS.md Oct 6 05:15; engine batch logs of v5p_full_cl_gcsv3_60_paced"
    },
    {
     "rule": "errors",
-    "title": "Errors: one tool-schema form (fixed)",
-    "text": "Oct 3 peak at 1.0x: 3 minutes failed on one HTTP 400 each, all from one session whose tool schema has an enum written as an object. The engine checks every tool schema and rejects the request; production accepts it. Gateway fix TOOL_SCHEMA_FIX_ARRAYS is live from 21:35.",
-    "src": "PROGRESS.md Oct 5 20:38"
+    "title": "Data: the test traces still miss traffic",
+    "text": "The hub lost whole log parts at busy hours (9-14 s slices of one load balancer): 18% of Oct 1, 14% of Oct 3 and 35% of Oct 5 requests are not in the logs; Sep 30 and Oct 2 are complete. Bodies over 2 MiB are cut in the log (Oct 3: 3.5% of requests, 14.4% of prompt tokens). We rebuild both: --recon-turns for the lost turns, and a rebuild of the cut requests (in progress).",
+    "src": "PROGRESS.md Oct 6 04:55, 06:50; next190/MISSING-TURNS-V5.md"
    }
-  ],
-  "cause_lead": "Why we miss now: the record holds on the Sep 30 test window, not yet on new production days.",
-  "cause_src": "runs_v3.json re-scored on the Oct 1 SLA"
+  ]
  },
  "log": [
   {
@@ -2274,8 +2272,8 @@
   {
    "name": "Dynamo integration: parity first",
    "state": "running",
-   "at": "2026-10-06 00:11",
-   "text": "Owner 10-05: target at least on par with our gateway stack, then use Dynamo's knobs. On par = TPS inside the side bias, first token <= x1.05, cache hit within 1 point, the same SLA minutes, outputs equal. Now (Dynamo 1.5.0): behind our pins TPS and outputs on par, first token x1.22 (Python chat processor); Dynamo's own routing loses affinity on DP2 engines (hit 71-76% vs 96%). Step 0 done 22:00 (gateway-B patches pass on today's code). Step 1 queued: A/A at 1.5x on today's stack (v3_ab_dyn_pin_cl_15x). Next: 2 frontends, then the Rust chat processor (production's path) for first token; then session affinity for routing without our pins; fallback: production's TP2-attention layout. Plan: PLAN.md section 5. 00:11 step 1 result at 1.5x: both halves 15/15, cache hit equal, 0 errors; TPS -3.7 tok/s (CI -5.45..-2.12) and first token x1.46 -> not yet on par (Python chat processor). Next: 2 frontends, then the Rust chat processor."
+   "at": "2026-10-06 06:20",
+   "text": "Owner 10-05: target at least on par with our gateway stack, then use Dynamo's knobs. On par = TPS inside the side bias, first token <= x1.05, cache hit within 1 point, the same SLA minutes, outputs equal. Now (Dynamo 1.5.0): behind our pins TPS and outputs on par, first token x1.22 (Python chat processor); Dynamo's own routing loses affinity on DP2 engines (hit 71-76% vs 96%). Step 0 done 22:00 (gateway-B patches pass on today's code). Step 1 queued: A/A at 1.5x on today's stack (v3_ab_dyn_pin_cl_15x). Next: 2 frontends, then the Rust chat processor (production's path) for first token; then session affinity for routing without our pins; fallback: production's TP2-attention layout. Plan: PLAN.md section 5. 00:11 step 1 result at 1.5x: both halves 15/15, cache hit equal, 0 errors; TPS -3.7 tok/s (CI -5.45..-2.12) and first token x1.46 -> not yet on par (Python chat processor). Next: 2 frontends, then the Rust chat processor. 10-06 06:20: step 2 started. Rung 9 queued (v5t_ab_dyn_sync_pin_p60: two frontends with router replica sync, our pins, Oct 3 peak about 6 M/GPU per half, adopted stack with the window pool on both sides). Rung 10a (Rust chat processor, production's path) waits for a CPU fix of its prompt parity (181/200 identical prompt ids); workflow wf_10535fa6-40d is on it."
   }
  ],
  "done": [
