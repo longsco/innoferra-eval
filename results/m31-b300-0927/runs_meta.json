@@ -1820,6 +1820,16 @@
    "change": "calibration",
    "verdict": "calibration",
    "why": "0/15 at 7.18 M/GPU; IDENTICAL configs, yet paired TPS -4.83 tok/s (CI -7.67..-2.34), first token x0.959 (CI 0.881..1.025), uncached 29.2 vs 29.4 M. Past the knee, twins carry ~+-5 tok/s of side noise. Consequence: window pool reverted (its two twins average -5.7 tok/s side-balanced); re-pins off kept (+14.2 >> noise, clear mechanism); lever twins now run below the knee as side-swapped pairs."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_69dw_paced",
+   "at": "2026-10-06 11:29",
+   "protocol": "v5.1",
+   "share": 0.81,
+   "name": "Oct 3 peak, full node, test v5.1, stack with re-pins off + window pool, 6.50 M/GPU = 0.81x of production's real 8.01 M",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "14/15 at 6.50 M/GPU (only minute 13 misses: first token 3.1 s). First token p50 2.13 s vs production 4.31 s; TPS p50 120.9 vs 47.7; hit 94.9% vs 94.6% (parity); 13% paced fallbacks; 0 errors. Old stack (test v5) at 6.56 M: 0/15, 9.25 s. Knee now between 6.50 M (14/15) and 7.49 M (2/15). Same load without the window pool is queued (v5p_full_cl_gcsv3_69np_paced) and a protocol bridge twin, to split the gain."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
