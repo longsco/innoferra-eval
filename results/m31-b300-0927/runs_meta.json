@@ -1539,6 +1539,15 @@
    "change": "load",
    "verdict": "invalid (engine crash)",
    "why": "Engine 2 ran out of GPU memory during the window: the tokenizer process runs the fast image processor on the engine's first GPU, where MEMFRAC 0.80 leaves ~0.35 GiB free; full-size images need 0.2-0.6 GiB per batch. The 1x1 images of every earlier run hid this. Rerun with image preprocessing on the CPU (hostfix/patch_mm_preproc_device.py) is next."
+  },
+  {
+   "tag": "v3_full_cl_gcsv3_15x_r2",
+   "at": "2026-10-05 19:03",
+   "protocol": "v3.2",
+   "name": "full node, GC off + v3, 1.5× (repeat)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "15/15 at 6.70 M/GPU again (about 9.6 M on production's counters). Worst minute 69.7 tok/s (minute 0; first run 66.7), decode p50 80.9 vs production 65.6, first token p50 1.35 s, hit 94.5%, 0 errors. 1.5x now passes in 3 of 3 runs (2 tuned + 1 held-out sessions) with 1x1 images."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
