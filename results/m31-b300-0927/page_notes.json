@@ -1109,6 +1109,22 @@
   "v4p_full_cl_gcsv3_125x": {
    "name": "NEW WINDOW 10-03 06:30 PDT (production peak), full node, GC off + v3, 1.25×",
    "short": "peak window 1.25×"
+  },
+  "v3_ab_dfp8_cl_15x@A": {
+   "name": "control half (bf16 draft KV)",
+   "short": "control"
+  },
+  "v3_ab_dfp8_cl_15x@B": {
+   "name": "FP8 draft KV (FA4 on SM100)",
+   "short": "FP8 draft KV"
+  },
+  "v3_ab_dfp8sw_cl_15x@A": {
+   "name": "control half (swapped sides)",
+   "short": "control"
+  },
+  "v3_ab_dfp8sw_cl_15x@B": {
+   "name": "FP8 draft KV (swapped sides)",
+   "short": "FP8 draft KV sw"
   }
  },
  "plain_words": [
@@ -2245,6 +2261,13 @@
    "at": "2026-10-05 16:50",
    "text": "Favourable to us: images replaced by 1x1 pixels (624 requests, 4,690 images: 2.78 M prompt tokens = 0.8% and the vision encoder skipped); requests production shed with 429 are not sent (~140 heavy cold prompts); first-token target 3 s vs production's actual p50 0.34 s; tuning and status runs use the same 15-minute window. Against us: cache hit 94-95% vs production 97%; the minute-0 reload burst. Runs queued: held-out sessions (b04-b06) at 1.5x; fidelity run (full-size images + shed requests) at 1.5x; same-window repeat. 16:50: building 4 more production windows from S3 (traffic/v4): 10-03 06:30 PDT (the observed 8.3 M peak), 10-05 08:00, 10-01 08:00 and 10-02 03:00 PDT (peak plateau hours; our v3 window, 09-30 13:10 PDT, sits in the daily low). Each: 5 h of logs (~270 GB), 8 half-node buckets. Runs at each window's own 1.0x and at 1.5x follow. 17:40: held-out sessions (b04-b06) at 1.5x: 15/15 at 6.28 M/GPU, decode p50 81.3 vs 81.7 on the tuned sessions: no sign of overfitting to the tuned sessions. 18:14: fidelity run INVALID - engine 2 OOM in the tokenizer's GPU image preprocessing (full-size images; 0.35 GiB free at MEMFRAC 0.80). Real gap hidden by 1x1 images. Fix: fast image processor on the CPU (patch applied flag-off); rerun first in the queue. 18:30: 10-03 06:30 PDT peak window built (traffic/v4/w1003_1330): fleet 4.88 M/GPU (log axis) vs 4.20 M in the v3 window, half the requests at twice the length (~165k tokens each), production's own TTFT p50 3.79 s. Runs at 1.0x (production's per-node load) and 1.25x queued after the fidelity rerun.",
    "ref": "replay_v2_cl.py (--img, --skip-prod-shed, new --send-prod-shed)"
+  },
+  {
+   "name": "Draft KV diet (FP8 draft KV, then a windowed draft pool)",
+   "state": "running",
+   "at": "2026-10-05 19:15",
+   "text": "Per GPU the KV pools hold ~106 GB: target 4-bit KV 68.4, draft KV 20.3 (bf16, 19%), index K 9.5, scales 7.6. The draft attends only to the last 4,096 tokens. Step 1: FP8 draft KV on SM100 (port of MiniMax 024129f; patch hostfix/patch_draft_fp8kv.py applied flag-off) frees ~10 GB/rank for target KV (~+12% tokens); outputs stay identical (target verifies), only acceptance can move. Twins at 1.5x queued. Step 2 (heavier): windowed draft pool (+22% KV, lead sweep +3.7 tok/s central).",
+   "ref": "hostfix/patch_draft_fp8kv.py · lever_queue v3_ab_dfp8(sw)_cl_15x"
   }
  ],
  "done": [
