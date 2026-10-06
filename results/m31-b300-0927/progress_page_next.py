@@ -1018,8 +1018,8 @@ def chart_svg(variant):
     free spot nearest its load (bold frontier runs first), GAP units between outer edges. All transparent hit circles are drawn first
     and every visible mark sits above them in its own link, so each mark owns all of its pixels."""
     wide = variant == "wide"
-    W, H = (720, 292) if wide else (360, 344)
-    L, R, T, B = (50, 14, 40, 46) if wide else (36, 12, 40, 46)
+    W, H = (720, 282) if wide else (360, 334)
+    L, R, T, B = (50, 14, 34, 42) if wide else (36, 12, 34, 42)
     FS = 13 if wide else 14                     # label size in viewBox units (CSS sets the same per variant)
     LH = FS + 2
     YM = 16.3                                   # headroom above 15 holds the PASS label inside the wash
@@ -1081,7 +1081,7 @@ def chart_svg(variant):
     if wide:
         g.append(f'<text class="ax" transform="rotate(-90)" x="{-(y0 + y1) / 2:.1f}" y="13" text-anchor="middle">Minutes in SLA (of {NMIN})</text>')
     xt = "Load we sent: M TPM per GPU (replayed production requests, not throughput served)" if wide else "Load we sent (M TPM per GPU)"
-    g.append(f'<text class="ax" x="{(x0 + x1) / 2:.1f}" y="{H - 6}" text-anchor="middle">{xt}</text>')
+    g.append(f'<text class="ax" x="{(x0 + x1) / 2:.1f}" y="{H - 5}" text-anchor="middle">{xt}</text>')
     g.append(f'<line class="passline" x1="{x0}" x2="{x1}" y1="{Y(NMIN):.1f}" y2="{Y(NMIN):.1f}"/>')
     lab.append(f'<text class="lbl" x="{x0 + 6}" y="{Y(NMIN) - 4:.1f}">PASS = all {NMIN} minutes</text>')
     occ.append((x0, Y(YM) - 1, x1 - x0, Y(NMIN) - Y(YM) + 2))
@@ -1091,7 +1091,7 @@ def chart_svg(variant):
     if PROD_PEAK:                                             # production's busiest real load (engine counters), see prod_windows()
         refs.append(("prodpk", PROD_PEAK[1], f"Production peak {m2(PROD_PEAK[1])} M" + (f" ({PROD_PEAK[0]})" if wide else "")))
     for i, (cls, v, txt) in enumerate(sorted(refs, key=lambda r: -r[1])):
-        rx, ry = X(v), T - 24 + 17 * i
+        rx, ry = X(v), T - 20 + 16 * i
         g.append(f'<line class="{cls}" x1="{rx:.1f}" x2="{rx:.1f}" y1="{ry - FS + 3:.1f}" y2="{y1}"/>')
         lab.append(f'<text class="lbl ref" x="{rx - 5:.1f}" y="{ry:.1f}" text-anchor="end">{esc(txt)}</text>')
         occ.append((rx - 3, y0, 6, y1 - y0))
@@ -1102,10 +1102,11 @@ def chart_svg(variant):
     OUT = {k: v + 1 for k, v in SZ.items()}                  # outer radius: fill + half of the 2-unit stroke
     GAP = 2.5
     HR = 12 if wide else 10                                   # hit radius (under every visible mark)
-    marks, placed, MK = [], [], {}
+    marks, placed, MK, bars = [], [], {}, []                 # bars: (x, top, bottom) of each A/B arrow, kept clear of later marks
     def fits(m, x, y):
         return (x0 + m["rad"] <= x <= x1 - m["rad"]
-                and all(math.hypot(x - p["x"], y - p["y"]) >= m["rad"] + p["rad"] + GAP for p in placed if abs(y - p["y"]) < m["rad"] + p["rad"] + GAP))
+                and all(math.hypot(x - p["x"], y - p["y"]) >= m["rad"] + p["rad"] + GAP for p in placed if abs(y - p["y"]) < m["rad"] + p["rad"] + GAP)
+                and not any(abs(x - bx) < m["rad"] + 3 and lo < y < hi for bx, lo, hi in bars))
     def put(kind, r, group=None, reach=None, x=None):
         """the free spot nearest the run's load (0.5-unit steps, left and right); None when nothing is free within reach"""
         m = {"kind": kind, "r": r, "y": Y(r["pass"]), "rad": OUT[kind], "group": group, "href": f"#run-{r['id']}"}
@@ -1143,6 +1144,7 @@ def chart_svg(variant):
                 ma, mbb = put("hh", a, x=hit, reach=0), put("hh", b, x=hit, reach=0)
                 if ma and mbb:
                     arrows.append((ma, mbb))
+                    bars.append((hit, min(ma["y"], mbb["y"]), max(ma["y"], mbb["y"])))
                 break
     for r in hlr:
         if r["id"] not in MK:
@@ -1223,11 +1225,13 @@ def chart_svg(variant):
             m, tries = MK[best["id"]], [[f"{pre}best {best['pass']}/{NMIN} at {m2(best['load'])} M"]]
         else:
             continue
+        full = False
         for k, lines in enumerate(tries):
             if label(lines, m["x"], m["y"], near + around(len(lines), m["rad"] + 7), leader=True, cls="lbl strong ko", quiet=True):
+                full = k == 0
                 break
-        else:
-            unl.append(", ".join(tries[0]))
+        if not full:
+            unl.append(", ".join(tries[0]))                   # the full label did not fit: the narrow page prints it under the chart
     xs = [ma["x"] for ma, _ in arrows]
     for ma, mb in arrows:                     # +N at the head of each arrow, else beside it on the outer side of its group of arrows
         d = mb["r"]["pass"] - ma["r"]["pass"]
@@ -1259,13 +1263,13 @@ def legend_html():
     items = []
     for t in sorted(VTESTS, key=tv_start, reverse=True):
         cls = "lf " + tv_cls(t) + ("" if t in HL else " pale")
-        name = "<b>" + esc(t) + "</b>" + (" current test" if t == CUR else (" newer test" if t in HL else ""))
+        name = "<b>" + esc(t) + "</b>" + (" current" if t == CUR else (" newer" if t in HL else ""))
         items.append('<span class="li">' + sw('<circle class="' + cls + '" cx="8" cy="8" r="5"/>') + name + "</span>")
-    items.append('<span class="li">' + sw('<circle class="lh" cx="8" cy="8" r="4.5"/>') + "half-node A/B run</span>")
+    items.append('<span class="li">' + sw('<circle class="lh" cx="8" cy="8" r="4.5"/>') + "half-node run</span>")
     items.append('<span class="li">' + sw('<path class="lk" d="M2 3 V9 H14"/>') + "frontier</span>")
     if any(ab_pairs(t) for t in HL):
         items.append('<span class="li">' + sw('<path class="lk" d="M8 14 V3 M4.5 6.5 L8 3 L11.5 6.5"/>') + "A/B change</span>")
-    return '<p class="lgd" aria-label="Chart key">' + "".join(items) + "</p>"
+    return '<p class="lgd">' + "".join(items) + "</p>"
 
 
 def chart_html():
@@ -1959,7 +1963,7 @@ details.panel>summary h2{font-size:1.1rem}
 .cell .lnk{font-size:.85rem;color:var(--muted);margin:0}
 .chartcol{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;min-width:0}
 .chartcol h2{margin-bottom:4px}
-.lgd{display:flex;flex-wrap:wrap;gap:2px 14px;margin:0 0 4px;font-size:.85rem;color:var(--muted)}
+.lgd{display:flex;flex-wrap:wrap;gap:2px 12px;margin:0 0 4px;font-size:.85rem;color:var(--muted)}
 .lgd .li{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .lgd b{color:var(--ink);font-weight:600}
 .lgd .sw{width:16px;height:16px;flex:none}
