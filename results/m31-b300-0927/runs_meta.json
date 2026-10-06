@@ -1626,6 +1626,24 @@
    "change": "load",
    "verdict": "baseline",
    "why": "13/15 at 4.80 M/GPU (engines 0-1 gave 10/15 on the same load). Misses: minutes 1 and 9 (first token 4.76 / 4.30 s). First token p50 1.90 s vs production 4.25 s; TPS 134 vs 46.4; hit 93.0% vs 94.9% (working set / cache 0.98); 0 errors."
+  },
+  {
+   "tag": "v3_ab_dyn_pin_cl_15x@A",
+   "at": "2026-10-06 00:11",
+   "protocol": "v3.2",
+   "name": "control half at 1.5x (our gateway, engines 0-1), Dynamo parity step 1",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.70 M/GPU (half node), TPS p50 88.1, first token p50 1.13 s, hit 95.1% vs production 97.1%, 0 errors."
+  },
+  {
+   "tag": "v3_ab_dyn_pin_cl_15x@B",
+   "at": "2026-10-06 00:11",
+   "protocol": "v3.2",
+   "name": "Dynamo 1.5.0 executing our gateway pins + parity set (engines 2-3), 1.5x",
+   "change": "routing",
+   "verdict": "no clear change",
+   "why": "15/15 at 6.72 M/GPU, same as our gateway. Paired TPS -3.70 tok/s (CI -5.45..-2.12; side bias at 1.5x ~0.5), first token x1.46 (CI 1.41..1.54; 10-04 at 1.0x: x1.22), hit 95.2% vs 95.1%, 0 errors. Not yet on par: the Python chat processor costs first token and ~4% TPS at this load. Next: 2 frontends, then the Rust chat processor."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
