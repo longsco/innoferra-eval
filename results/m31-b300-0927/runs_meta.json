@@ -1586,6 +1586,26 @@
    "verdict": "baseline",
    "why": "0/15 at 6.07 M/GPU (production 5.88 M): overloaded. First token p50 7.05 s (p99 408 s), TPS p50 45.4 vs production 55.2, hit 85.9% vs 96.8% (uncached 51.2 vs 11.1 M), send lateness p50 59 s.",
    "share": 1.38
+  },
+  {
+   "tag": "v4d_cl_gcsv3_p49_m46@A",
+   "at": "2026-10-05 22:29",
+   "protocol": "v3.2",
+   "share": 1.09,
+   "name": "production day: Oct 3 06:30 PDT peak window, half node (engines 0-1), 4.80 M/GPU = production's own load per GPU at that peak",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "10/15 at 4.80 M/GPU (production 4.87 M for the same requests). The 5 misses are first token 3.06-3.69 s; TPS p50 130 vs production 46.4; first token p50 2.01 s vs production 4.25 s; hit 92.9% vs 94.9% (working set / cache 0.98, uncached 1.37x production); 0 errors."
+  },
+  {
+   "tag": "v4d_cl_gcsv3_p49_m46@B",
+   "at": "2026-10-05 22:29",
+   "protocol": "v3.2",
+   "share": 1.1,
+   "name": "production day: Oct 5 08:00 PDT window, half node (engines 2-3), 4.82 M/GPU",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "5/15 at 4.82 M/GPU (production 4.68 M). Minutes 8-13 overloaded (first token 4.2-7.0 s, TPS down to 46); hit 88.6% vs 96.8% (working set / cache 1.16, uncached 3.69x production); first turns of sessions the 1-hour warm-up does not cover carry 24% of the extra."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

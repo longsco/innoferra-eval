@@ -1,9 +1,9 @@
-# read_utc 2026-10-06T04:58:08Z
+# read_utc 2026-10-06T05:31:47Z
 ## queue
-v4d_cl_gcsv3_o50_p49sw /tr/v4/w1001_1500/b00.jsonl,/tr/v4/w1001_1500/b01.jsonl 0.2 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1001_1500/b00.jsonl,/tr/v4/w1001_1500/b0
 v3_ab_dyn_pin_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLA
+v4t_ab_dfp8_p49 /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 0.13 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.json
+v4t_ab_dfp8sw_p49 /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 0.13 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.js
 v3_ab_dfp8_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/
-v3_ab_dfp8sw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN
 v3_ab_shxsw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=
 v3_ab_ep8c_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/
 v3_ab_ep8csw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN
@@ -12,12 +12,10 @@ v3_full_cl_gcsv3_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875
 v3_ab_fidsplit_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --send-prod-shed" REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTRA_B
 v3_full_cl_gcsv3_fidelity_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --img 1064x1024 --send-prod-shed" MEMFRAC=0.80 TOKW=8 
 ## done
-03:38:57 v4d_cl_gcsv3_p1375x_m175x /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 0.375 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4
 04:37:11 v4d_cl_gcsv3_p67_m67 /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 0.56 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003
 04:40:24 v4d_cl_gcsv3_p49_m46 /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 0.13 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003
+05:29:28 v4d_cl_gcsv3_o50_p49sw /tr/v4/w1001_1500/b00.jsonl,/tr/v4/w1001_1500/b01.jsonl 0.2 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1001_1500/b00.jsonl,/tr/v4/w100
 ## markers
-01:14:14 ===== lever v3_full_cl_gcsv3_fidelity_15x done
-01:14:14 ===== lever v3_full_cl_gcsv3_15x_r2: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--clo
 02:03:27 ===== lever v3_full_cl_gcsv3_15x_r2 done
 02:03:27 ===== lever v3_full_cl_gcsv3_fidelity2_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTR
 02:56:36 ===== lever v3_full_cl_gcsv3_fidelity2_15x done
@@ -28,3 +26,5 @@ v3_full_cl_gcsv3_fidelity_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.js
 04:37:11 ===== lever v4d_cl_gcsv3_p67_m67: traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl frac 0.56; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_
 04:40:18 ===== lever v4d_cl_gcsv3_p67_m67 ABORTED by operator (loads above the new days knee; replaced by knee-search duals)
 04:40:24 ===== lever v4d_cl_gcsv3_p49_m46: traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl frac 0.13; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_
+05:29:28 ===== lever v4d_cl_gcsv3_p49_m46 done
+05:29:28 ===== lever v4d_cl_gcsv3_o50_p49sw: traces /tr/v4/w1001_1500/b00.jsonl,/tr/v4/w1001_1500/b01.jsonl frac 0.2; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA
