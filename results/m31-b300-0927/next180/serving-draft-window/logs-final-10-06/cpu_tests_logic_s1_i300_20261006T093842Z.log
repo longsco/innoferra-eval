@@ -1,0 +1,20 @@
+ok   A1 allocator: 4000 random alloc/free ops vs reference (fails counted 883, no leak, no duplicate)
+ok   A2 allocator: exhaustion -> dummy page + fail count, idempotent frees, only_if_unmapped, -1 sentinel
+ok   A3 allocator: need mask of alloc_for_target_pages, check-mode stale mask (set where needed, cleared on release and clear), overlap counter reset
+     parity: 2578944 tokens/rank (+21.4%), honest at the same MEMFRAC: 2196352 (+3.4%), window pool 401408 tokens = 3.83 GiB
+     fp8 draft KV alone at parity footprint: 2372224 tokens/rank (+11.6%); as queued (MEMFRAC 0.80, planner unchanged): 2125056 (+0.0%)
+     window + fp8 draft at parity: 2631808 tokens/rank (+23.8%)
+     largest restore: 32 pages = 4096 tokens = 41.9 MB (bf16 draft)
+ok   B1 sizing + planner: pool 401,408 tokens; parity keeps today's physical KV bytes; honest/fp8 numbers printed; restore <= 32 pages
+ok   B2 flag parsing and the activation guards (HiCache write-through, DSPARK, paged, fa4/fa3/flashinfer, windowed)
+ok   B3 adoption keep cap: default a quarter of the pool (100,352 tokens), page floor, 0 allowed, malformed refused
+ok   C1 path_runs: node-local page runs cover exactly [lo, hi) on 500 random chains
+     coverage base: split=33 loadback_nodes=29 demote=50 drop=0 adopt=7 dup_pages=28 retract=7 finish=659 chunk_backups=685 adopt_window_rows=452 adopt_reload=0 stale_rows=0 pins=1646 touched=7 adopt_kept_pages=8 adopt_dropped_pages=0 restore_pages=181 released_pages=2438
+     coverage churn: split=19 loadback_nodes=177 demote=700 drop=0 adopt=146 dup_pages=12 retract=48 finish=252 chunk_backups=288 adopt_window_rows=3040 adopt_reload=23 stale_rows=0 pins=755 touched=146 adopt_kept_pages=236 adopt_dropped_pages=135 restore_pages=122 released_pages=1103
+ok   D1 lifecycle sim, 2 mixes x 12 seeds x 300 events, recompute bytes differ per computation: window bytes == today's engine after every event, host rows == today's, kept adopted nodes hold today's bytes, no lost page, no leak after the drain (base: 7 adoptions, 452 window-row checks on adopted pages, 0 reloads of adopted nodes; churn: 146 adoptions, 3040 window-row checks on adopted pages, 23 reloads of adopted nodes; 303 pages restored from host, 3541 released)
+ok   D1m mutation check (churn mix): the same simulator catches the rejected adoption rules: release-at-end-of-call (pre-fix code): 5/12 seeds fail ("window bytes differ from today's engine at pos 0 (target page 68)"); re-write host rows (review option a): 11/12 seeds fail ("host draft rows of node 4680 differ from today's engine")
+ok   D1c keep cap 1 page: over-cap adoptions fall back to stale; every byte difference is on a counted stale page (adopt_stale_pages=210, stale_restore_pages=10, masked window-row checks=856), no leak
+ok   D4 adoption scenario (A computes P; P demoted; B recomputes + adopts P; C reads P on device; P demoted; D loads P back): keep rule exact at every step; pre-fix rule fails at 'C reads adopted P' (old host bytes), host re-write fails at 'D after demotion + load-back' (and at B on the host-row check); cap 0 -> only counted stale rows; a restore never overwrites a mapped page (counted)
+ok   D2 exhaustion: a 6-page pool under load stays consistent (no duplicate / leak / out-of-range page); 1563 page requests fell back to the dummy page and were counted
+ok   D3 free-page estimate (pessimistic, snapshot per tick), the admission gate arithmetic, flush reset
+ALL 13 CPU TESTS PASSED (seed 1, iters 300)

@@ -1680,6 +1680,16 @@
    "change": "kernel",
    "verdict": "adopted",
    "why": "Paired TPS +2.46 tok/s (CI +0.89..+4.11), first token x0.971 (CI 0.939..0.997), with B on the slower side; bit-exact bench (x2.35-2.73 at prompt sizes, x2.3 at verify sizes). Adopted 01:52; side-swapped confirmation twin queued."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_69_paced",
+   "at": "2026-10-06 02:43",
+   "protocol": "v3.2",
+   "share": 0.82,
+   "name": "COMPLETE traces (v5, lb01-03): Oct 3 06:30 PDT peak, full node, strict schedule (--paced), 6.56 M/GPU = 0.82x of production's real load (8.01 M)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "0/15 at 6.56 M/GPU: overloaded - first token p50 9.25 s rising from 5.6 s (minute 0) to 16 s (minute 14), p99 167 s; TPS p50 50.6 vs production 47.6; hit 90.0% vs production 94.8%; 0 errors. 41% of requests went out before our previous answer finished and carried production's answer (strict schedule), which our cache does not hold. Production on the same requests: first token p50 4.12 s."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

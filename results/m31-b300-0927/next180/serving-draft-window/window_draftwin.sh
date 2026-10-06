@@ -2,7 +2,8 @@
 # window_draftwin.sh <after_tag> (innoferra 10-06, next180 serving track) -- GPU smoke of the window-sized DSpark draft KV pool,
 # in a HOLD window. PREPARED, NOT RUN. Needs serving/HOLD set beforehand (arm_window_draftwin.sh does it safely).
 # After lever <after_tag> is done, on engines 2 and 3 only (GPUs 4-7; engines 0-1 stay as the lever left them):
-#   P0  refuse unless the next180 COPY is patched (patch_draft_window.py --check rc 0) and its CPU tests pass.
+#   P0  refuse unless the next180 COPY is patched (patch_draft_window.py --check rc 0), its sglang-level CPU tests (E1-E4)
+#       pass here, and run_cpu_tests.sh left a pass stamp (logs/cpu_tests_ok.md5) that matches the current module + tests.
 #   P1  engine 2 (GPUs 4,5, :19391) = CONTROL: the live tree, flag off. engine 3 (GPUs 6,7, :19491) = WINDOW CHECK: the patched
 #       copy, SGLANG_DSPARK_DRAFT_WINDOW_POOL=check (window pool + a full-size shadow pool compared bitwise every 25 steps),
 #       budget honest at MEMFRAC 0.78 (the shadow costs today's draft memory on top). Same adopted stack otherwise.
@@ -10,12 +11,17 @@
 #          control-vs-control rerun after /flush_cache (calibrates kernel non-determinism). Pass: window == control on every
 #          output and every spec_verify_ct (identical draft numerics => identical verify counts), or the same rate as
 #          control-vs-control.
-#       b) stress: mt_driver.py concurrent (96 sessions x 6 turns, 64 in flight, ~45k-token docs: overflows the device pool ->
-#          HiCache demotes / load-backs, chunked prefill, restores) on both. Pass: 0 errors, DraftWindowDiag check_mismatch=0,
-#          alloc_fail_pages=0, bookkeeping=0, restore_pages>0, released_pages>0; accept length within 2% of control.
+#       b) stress: mt_driver.py concurrent (96 sessions x 6 turns, 48 in flight, ~45k-token docs: overflows the device pool ->
+#          HiCache demotes / load-backs, chunked prefill, restores, possibly recompute adoptions) on both. Pass: 0 errors and
+#          "P1b VERDICT PASS" from smoke_judge.py --check-mode on the newest DraftWindowDiag line of every DP rank:
+#          check_mismatch=0, check_stale_rows=0, alloc_fail_pages=0, bookkeeping=0, restore_overlap_pages=0,
+#          adopt_stale_pages=0, stale_restore_pages=0 (no adopted node over the keep cap -> every draft byte == today's),
+#          check_runs>0, restore_pages>0, released_pages>0; accept length within 2% of control. Info: touched = recompute
+#          adoptions (0 is possible: load-back never failed in 30 production-shaped runs 10-05/06; the CPU tests cover it).
 #   P2  engine 3 relaunched in production mode: SGLANG_DSPARK_DRAFT_WINDOW_POOL=1, budget parity at MEMFRAC 0.80 and
 #       --hicache-ratio 2.579 (host pool kept at today's 6.65 M tokens/rank: RAM is full). Pass: boots; max_total_num_tokens
-#       ~2.58 M (+21%); free GPU memory after graph capture within 1 GB of control; stress (b) again: 0 errors, diag clean.
+#       ~2.58 M (+21%); free GPU memory after graph capture within 1 GB of control; stress (b) again: 0 errors and
+#       "P2 VERDICT PASS" (smoke_judge.py, same zero criteria without the check counters).
 # Logs: logs/window_draftwin.log (+ chain log), driver outputs and engine logs under serving/next180/serving/logs/.
 # Releases HOLD on every exit path (trap) and after 100 min (guard). Engines 2-3 are replaced again by the next lever's launch.
 set -uo pipefail
@@ -33,11 +39,12 @@ trap 'release trap' EXIT
 
 # ---- P0: the copy must be patched and its CPU tests must pass
 python3 $W/patch_draft_window.py --check $W/tree/python > $WL/check.txt 2>&1 || { log "P0 FAIL: copy not patched: $(tr '\n' ' ' < $WL/check.txt | cut -c1-300)"; exit 1; }
-timeout 1500 sudo -n docker run --rm --network none --cpus 2 --memory 12g -e CUDA_VISIBLE_DEVICES= -e TRITON_INTERPRET=1 \
+( cd $W && md5sum -c --quiet logs/cpu_tests_ok.md5 ) > $WL/stamp.txt 2>&1 || { log "P0 FAIL: no matching CPU-test pass stamp (run run_cpu_tests.sh first): $(tr '\n' ' ' < $WL/stamp.txt | cut -c1-300)"; exit 1; }
+timeout 1500 sudo -n docker run --rm --network none --cpus 2 --memory 12g -e NVIDIA_VISIBLE_DEVICES=void -e CUDA_VISIBLE_DEVICES= -e TRITON_INTERPRET=1 \
   -v $W/tree/python:/opt/0922-sglang/python:ro -v $W:/w:ro --entrypoint python3 minimax-m31-sglang:demo-bef87f4 \
   /w/test_draft_window_sglang.py > $WL/cpu_tests.txt 2>&1
 grep -q "SGLANG-LEVEL CPU TESTS PASSED" $WL/cpu_tests.txt || { log "P0 FAIL: CPU tests ($(tail -2 $WL/cpu_tests.txt | tr '\n' ' '))"; exit 1; }
-log "P0 ok: copy patched, CPU tests pass"
+log "P0 ok: copy patched, CPU tests pass (sglang-level here, logic tests by stamp $(head -c 8 $W/logs/cpu_tests_ok.md5))"
 
 # ---- the adopted stack (status run words of 10-06; refresh from the newest status line before arming)
 BB="SGLANG_Q8KV4_SORT_MIN_LANES=1000000000000 SGLANG_DSPARK_M31_BIDIR_DRAFT=1 SGLANG_TOKENIZE_PREFIX_CACHE=1 SGLANG_CHUNKED_REQ_SHARE=1.0"
@@ -90,6 +97,7 @@ drv --url http://127.0.0.1:19491 $CON --out $WL/p1_con_window.jsonl &
 wait
 log "P1b stress control vs window: $(python3 $W/mt_compare.py $WL/p1_con_control.jsonl $WL/p1_con_window.jsonl --loose | tr '\n' ' ')"
 log "P1b window diag: $(diag m31-tp2-3 3 | tr '\n' '|')"
+log "P1b $(sudo -n docker logs m31-tp2-3 2>&1 | python3 $W/smoke_judge.py --label P1b --check-mode)"
 log "P1b control HiCacheDiag: $(diag m31-tp2-2 1 | tr '\n' '|')"
 sudo -n docker logs m31-tp2-3 > $WL/engine3-p1.log 2>&1; sudo -n docker logs m31-tp2-2 > $WL/engine2-p1.log 2>&1
 
@@ -106,5 +114,6 @@ log "P2 free GPU memory after capture: window (parity, 0.80) $(sudo -n docker lo
 drv --url http://127.0.0.1:19491 $CON --seed 29 --out $WL/p2_con_window.jsonl
 log "P2 stress window (parity): $(python3 $W/mt_compare.py $WL/p2_con_window.jsonl $WL/p2_con_window.jsonl --loose | sed -n '1p;3p' | tr '\n' ' ')"
 log "P2 window diag: $(diag m31-tp2-3 3 | tr '\n' '|')"
+log "P2 $(sudo -n docker logs m31-tp2-3 2>&1 | python3 $W/smoke_judge.py --label P2)"
 sudo -n docker logs m31-tp2-3 > $WL/engine3-p2.log 2>&1
 log "draftwin window done after lever $TAG (logs $WL)"

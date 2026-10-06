@@ -1,0 +1,5 @@
+ok   E1 flag off: 10 patched modules import, hook helpers return False without importing draft_window; scheduler imports
+ok   E2 DraftWindowKVPool: mapped writes (raw + KVWriteLoc), prefix-valid commit, shadow == window, dummy for unmapped; K/V bytes (np.int64(66560), np.int64(66560))
+ok   E3 DraftWindowPagedAllocator (Triton interpreter): lockstep draft pages on alloc_extend / alloc_decode, none on alloc(), released by free / free_segment / free groups, clear() resets
+ok   E4 real HiRadixCache code paths: ack releases draft pages; a demoted node re-filled from a recompute (full-match and split branch of insert) keeps its OLD host copy and gets no new backup, the manager keeps its draft pages (exact), across an ack and a split; demotion drops the mark and the pages; no leak
+ALL 4 SGLANG-LEVEL CPU TESTS PASSED

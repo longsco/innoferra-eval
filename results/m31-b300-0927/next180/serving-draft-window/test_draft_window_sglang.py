@@ -6,10 +6,16 @@ engine image, no GPU, no network). TRITON_INTERPRET=1 lets the paged allocator's
      prefix-valid commit path, the shadow pool equals the window pool on mapped slots; the FA backend's translate call
   E3 DraftWindowPagedAllocator: alloc_extend / alloc_decode map a draft page per new target page (lockstep, page-consistent),
      free / free_page_aligned / free_segment / free groups release them, alloc() (HiCache load) takes none
+  E4 the REAL patched HiRadixCache code (insert, _split_node via match_prefix, _finish_write_through_ack, write-through
+     evict) with the real lockstep allocator and a stub controller: write-through ack releases draft pages; a demoted node
+     re-filled by insert() from a recompute (both insert branches: full match and split) is adopted with its OLD host copy
+     and no new backup, the manager keeps its draft pages (also across a split and an ack), and demotion drops them
 usage (inside the engine image): TRITON_INTERPRET=1 python3 test_draft_window_sglang.py
 """
 import os
 import sys
+import types
+from array import array
 
 os.environ.setdefault("TRITON_INTERPRET", "1")
 os.environ.pop("SGLANG_DSPARK_DRAFT_WINDOW_POOL", None)
@@ -190,8 +196,161 @@ def test_allocator():
     os.environ.pop("SGLANG_DSPARK_DRAFT_WINDOW_POOL", None)
 
 
+def test_real_hiradix_adoption():
+    os.environ["SGLANG_DSPARK_DRAFT_WINDOW_POOL"] = "1"
+    from sglang.srt.mem_cache.base_prefix_cache import EvictParams, InsertParams, MatchPrefixParams
+    from sglang.srt.mem_cache.cache_init_params import CacheInitParams
+    from sglang.srt.mem_cache.hiradix_cache import HiRadixCache
+    from sglang.srt.mem_cache.radix_cache import RadixCache, RadixKey
+    from sglang.srt.speculative.dspark_components import draft_window as dw
+
+    ps, n_pages = 4, 64
+    alloc = dw.make_target_allocator(size=n_pages * ps, page_size=ps, dtype=torch.bfloat16, device="cpu", kvcache=None,
+                                     need_sort=False)
+    dpa = dw.DraftPageAllocator(num_pages=32, page_size=ps, target_size=alloc.size, device="cpu")
+    alloc.attach_draft_allocator(dpa)
+
+    class Ctrl:  # the parts of the HiCache controller that insert / backup / evict call
+        write_policy = "write_through"
+
+        def __init__(self):
+            self.next_host = 0
+            self.mem_pool_device_allocator = alloc
+            self.writes = 0
+
+        def reset(self):
+            pass
+
+        def write(self, device_indices, priority=None, node_id=-1, **kw):
+            n = len(device_indices)
+            h = torch.arange(self.next_host, self.next_host + n, dtype=torch.int64)
+            self.next_host += n
+            self.writes += 1
+            return h
+
+        def evict_device(self, device_indices):
+            alloc.free(device_indices)
+            return len(device_indices)
+
+        def evict_host(self, host_indices, backup_only=True):
+            return len(host_indices)
+
+    hc = object.__new__(HiRadixCache)
+    hc.cache_controller = Ctrl()
+    hc.token_to_kv_pool_host = types.SimpleNamespace(clear=lambda: None)
+    hc.prefetch_loaded_tokens_by_reqid = {}
+    hc.evictable_host_leaves = set()
+    hc.ongoing_write_through, hc.ongoing_load_back, hc.ongoing_prefetch, hc.ongoing_backup = {}, {}, {}, {}
+    hc.write_through_threshold = 1
+    hc.load_back_threshold = 10
+    hc.enable_storage = hc.enable_storage_metrics = False
+    hc.kv_cache = None
+    hc.metrics_collector = None
+    RadixCache.__init__(hc, CacheInitParams(disable=False, req_to_token_pool=None, token_to_kv_pool_allocator=alloc,
+                                            page_size=ps))
+
+    class Host:
+        layer_num = 1
+
+        def __init__(self):
+            self.k = torch.zeros(4096)
+            self.v = torch.zeros(4096)
+
+        def load_to_device_per_layer(self, device_pool, host_indices, device_indices, layer, io_backend):
+            device_pool.k_buffer[layer][device_indices] = self.k[host_indices]
+            device_pool.v_buffer[layer][device_indices] = self.v[host_indices]
+
+    swa = types.SimpleNamespace(k_buffer=[torch.zeros(33 * ps)], v_buffer=[torch.zeros(33 * ps)], layer_num=1)
+    mgr = dw.DraftWindowManager(tree_cache=hc, allocator=alloc, dpa=dpa,
+                                pool=types.SimpleNamespace(swa_kv_pool=swa, shadow_pool=None), host_pool=Host(),
+                                ctrl=hc.cache_controller, window_left=11, page_size=ps, io_backend="direct", check=False)
+    mgr.adopt_cap = 10 ** 6
+    hc._dw = mgr
+
+    def key(t):
+        return RadixKey(token_ids=array("q", t))
+
+    def req_pages(n_tokens):  # a request's fresh pages from scratch: lockstep draft pages
+        prefix, seq = torch.tensor([0]), torch.tensor([n_tokens])
+        out = alloc.alloc_extend(prefix, prefix.clone(), seq, seq.clone(), torch.tensor([-1]), n_tokens)
+        assert out is not None
+        return out.to(torch.int64)
+
+    def mapped(vals):
+        return (dpa.current_pages(torch.div(vals[::ps], ps, rounding_mode="floor")) > 0).tolist()
+
+    def ack_all():
+        for nid in list(hc.ongoing_write_through):
+            hc._finish_write_through_ack(nid, release_lock=True)
+
+    P = list(range(1, 25))
+    # A computes P: insert -> write-through backup in flight (draft pages kept) -> ack releases them
+    va = req_pages(24)
+    assert hc.insert(InsertParams(key=key(P), value=va)).prefix_len == 0
+    mgr.end_cache_call()
+    node = next(iter(hc.root_node.children.values()))
+    assert node.write_through_pending_id is not None and all(mapped(va))
+    host_old = node.host_value.clone()
+    ack_all()
+    assert not any(mapped(va)) and mgr.stats["ack_released"] == 6
+    # demote P (write-through eviction): host copy only
+    hc.evict(EvictParams(num_tokens=24))
+    assert node.value is None and torch.equal(node.host_value, host_old)
+    # B recomputes P (load-back skipped): insert() adopts B's fresh pages into the evicted node, keeps the OLD host copy,
+    # issues no new backup; the manager keeps the draft pages (exact), across an unrelated ack too
+    writes0 = hc.cache_controller.writes
+    vb = req_pages(24)
+    res = hc.insert(InsertParams(key=key(P), value=vb))
+    assert res.prefix_len == 0 and torch.equal(node.value, vb) and torch.equal(node.host_value, host_old)
+    assert node.write_through_pending_id is None and hc.cache_controller.writes == writes0, "target path re-backed up"
+    assert mgr._touched == [node] and mgr.stats["touched"] == 1
+    mgr.end_cache_call()
+    assert all(mapped(vb)), "the adopted node's fresh draft pages were released (later restores would read the old host copy)"
+    assert getattr(node, "_dw_keep", False) and mgr.adopt_kept_tokens == 24
+    mgr.on_ack(node)
+    assert all(mapped(vb))
+    # a split (match_prefix ending inside the node) carries the keep mark to both halves
+    m = hc.match_prefix(MatchPrefixParams(key=key(P[:16] + [99] * 4)))
+    head = m.last_device_node
+    assert head is not node and head.parent is hc.root_node and len(head.key) == 16 and len(node.key) == 8
+    assert getattr(head, "_dw_keep", False) and getattr(node, "_dw_keep", False) and mgr.adopt_kept_tokens == 24
+    assert all(mapped(vb))
+    # the split branch of insert(): a demoted node is adopted only up to the match length
+    hc.inc_lock_ref(node)  # a running request holds P: keep it on the device
+    Q = list(range(50, 62))
+    vq = req_pages(12)
+    hc.insert(InsertParams(key=key(Q), value=vq))
+    mgr.end_cache_call()
+    ack_all()
+    hc.evict(EvictParams(num_tokens=12))
+    nq = [c for c in hc.root_node.children.values() if c is not head][0]
+    assert nq.value is None and nq.backuped
+    vq2 = req_pages(12)
+    hc.insert(InsertParams(key=key(Q[:8] + [70, 71, 72, 73]), value=vq2))
+    nq_head = [c for c in hc.root_node.children.values() if c is not head][0]
+    assert len(nq_head.key) == 8 and torch.equal(nq_head.value, vq2[:8]) and nq_head.backuped
+    mgr.end_cache_call()
+    assert getattr(nq_head, "_dw_keep", False) and mgr.adopt_kept_tokens == 32 and all(mapped(vq2[:8]))
+    tail = [c for c in nq_head.children.values() if c.value is None]
+    assert len(tail) == 1 and not getattr(tail[0], "_dw_keep", False)  # Q[8:12] stays a host-only node
+    # demote everything: kept nodes drop their marks and, with their target pages, their draft pages
+    hc.dec_lock_ref(node)
+    ack_all()
+    hc.evict(EvictParams(num_tokens=10 ** 6))
+    assert all(n.value is None for n in (head, node, nq_head))
+    assert mgr.adopt_kept_tokens == 0 and mgr.stats["adopt_dropped_pages"] == 8
+    assert not any(getattr(n, "_dw_keep", False) for n in (head, node, nq_head))
+    assert int(dpa.top[0]) == dpa.num_pages, "draft pages leaked"
+    assert mgr.stats["bookkeeping"] == 0 and int(dpa.overlap[0]) == 0
+    ok("E4 real HiRadixCache code paths: ack releases draft pages; a demoted node re-filled from a recompute (full-match "
+       "and split branch of insert) keeps its OLD host copy and gets no new backup, the manager keeps its draft pages "
+       "(exact), across an ack and a split; demotion drops the mark and the pages; no leak")
+    os.environ.pop("SGLANG_DSPARK_DRAFT_WINDOW_POOL", None)
+
+
 if __name__ == "__main__":
     test_flag_off()
     test_pool()
     test_allocator()
+    test_real_hiradix_adoption()
     print(f"ALL {len(PASS)} SGLANG-LEVEL CPU TESTS PASSED")

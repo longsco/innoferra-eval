@@ -13,10 +13,22 @@ pool holds bf16 K/V for every cached token (10,240 B/token, 20.3 GB per rank = 2
 pages only where a draft read can need them:
   * the window of every running request (pinned),
   * request-owned pages (prefill chunk pages and decode pages) until their radix node is backed up to the HiCache host tier,
-and restores a window from the HiCache host copy (H2D, <= 34 pages = 43 MB per request) when a request starts on a cached
+and restores a window from the HiCache host copy (H2D, <= 32 pages = 41.9 MB per request) when a request starts on a cached
 prefix whose draft pages were released. The draft reads exactly the same K/V values as today (the host copy is a byte copy of
-the device page it was taken from, and pages are only released after that copy exists), so draft numerics are bit-identical;
-the target verifies every draft token anyway, so outputs can not change even if a page were wrong (only acceptance could).
+the device page it was taken from, and pages are only released after that copy exists), so draft numerics are bit-identical.
+The target verifies every draft token anyway: greedy outputs can not change even if a page were wrong, and sampled outputs
+keep the same distribution (only acceptance, and with it the realized sample path, could change).
+
+Recompute adoption (10-06 fix). HiRadixCache.insert gives an EVICTED node (host copy only) the request's freshly recomputed
+device pages and keeps the node's OLD host copy ("KV cache recomputation"); it writes no new backup. Today's engine therefore
+holds two versions of such a node: the fresh device bytes (read while the node stays on the device) and the old host bytes
+(read after its next demotion + load-back, which loads target AND draft rows from the host). The draft mirrors exactly that:
+an adopted node keeps every draft page as long as it keeps the adopted device pages (its draft-page lifetime is the target
+page lifetime, as in today's full pool), and its old host draft rows stay untouched for the period after demotion. A per-rank
+cap (SGLANG_DSPARK_DRAFT_WINDOW_ADOPT_KEEP_TOKENS, default a quarter of the pool) bounds the kept pages; over the cap the node
+is marked stale instead: its pages are released, later restores of them are counted (stale_restore_pages, acceptance-only)
+and check mode masks and counts those rows (check_stale_rows). Re-writing the host draft rows from the fresh pages would
+NOT be exact: after the next demotion today's engine loads the OLD draft rows with the OLD target rows.
 
 Device side (reuses SGLang's hybrid-SWA machinery, no attention-kernel change):
   * DraftWindowKVPool is an SWAKVPool with 0 full layers and the 5 draft layers as SWA layers; its SWA sub-pool has
@@ -30,8 +42,10 @@ Device side (reuses SGLang's hybrid-SWA machinery, no attention-kernel change):
     are idempotent (an unmapped page is skipped on the device); an exhausted stack maps the page to the dummy page and counts
     it (acceptance-only effect, never memory-unsafe).
 Host side (CPU bookkeeping, DraftWindowManager): per radix node an int32 pin count per page; per request one pinned position
-range. Release rule: a tree page's draft page is released when its pin count is 0, its node is backed up and its write-through
-is acknowledged. Invariant: a node that is not backed up (or whose backup is in flight) keeps every draft page mapped.
+range. Release rule: a tree page's draft page is released when its pin count is 0, its node is backed up, its write-through
+is acknowledged and the node is not a kept recompute-adopted node. Invariants: a node that is not backed up (or whose backup
+is in flight) keeps every draft page mapped; so does a kept adopted node while it keeps its adopted device value; a restore
+never overwrites a mapped page (restore_overlap_pages counts the attempts, expected 0).
 
 Memory planner (target, DefaultPoolConfigurator): the old rule scaled the target cell by (60+5)/60, i.e. budgeted 3,240
 B/token for the draft while the bf16 draft really takes 10,240 B/token; the engine therefore runs 15 GB above its budget.
@@ -60,9 +74,10 @@ ENV_BUDGET = "SGLANG_DSPARK_DRAFT_WINDOW_BUDGET"
 ENV_CHECK_EVERY = "SGLANG_DSPARK_DRAFT_WINDOW_CHECK_EVERY"
 ENV_DIAG_S = "SGLANG_DSPARK_DRAFT_WINDOW_DIAG_S"
 ENV_ADMIT = "SGLANG_DSPARK_DRAFT_WINDOW_ADMIT"
+ENV_ADOPT_KEEP = "SGLANG_DSPARK_DRAFT_WINDOW_ADOPT_KEEP_TOKENS"  # cap on draft tokens kept for recompute-adopted nodes
 ENV_WINDOW = "SGLANG_DSPARK_M31_DRAFT_WINDOW"  # the draft model's own knob (window_left); read only
 ENV_FP8 = "SGLANG_DRAFT_FA4_FP8_KV"  # the 10-05 fp8 draft KV lever; read only (draft dtype for the planner)
-ENV_NAMES = (ENV, ENV_TOKENS, ENV_DECODE, ENV_BUDGET, ENV_CHECK_EVERY, ENV_DIAG_S, ENV_ADMIT)
+ENV_NAMES = (ENV, ENV_TOKENS, ENV_DECODE, ENV_BUDGET, ENV_CHECK_EVERY, ENV_DIAG_S, ENV_ADMIT, ENV_ADOPT_KEEP)
 
 DEFAULT_DECODE_TOKENS_32 = 216 * 1024  # p999 of retained decode tokens at 32 running (prod answers, Oct 3 peak bucket)
 DEFAULT_RESERVE_TOKENS = 8192
@@ -221,6 +236,18 @@ def pool_tokens(server_args, page_size: int, window_left: int, environ=None) -> 
     return page_ceil(total, page_size)
 
 
+def adopt_keep_tokens(window_pool_tokens: int, page_size: int, environ=None) -> int:
+    """Per-rank cap on the draft tokens kept for recompute-adopted radix nodes (DraftWindowManager.end_cache_call).
+    Default: a quarter of the window pool (100,352 tokens at the default pool). A value >= the pool never falls back;
+    0 always falls back (the pre-fix behaviour, counted as stale)."""
+    v = _int_env(ENV_ADOPT_KEEP, None, environ)
+    if v is None:
+        v = int(window_pool_tokens) // 4
+    if v < 0:
+        raise ValueError(f"{ENV_ADOPT_KEEP}={v} must be >= 0")
+    return (int(v) // int(page_size)) * int(page_size)
+
+
 def draft_cell_bytes(num_draft_layers: int, kv_heads: int, head_dim: int, v_head_dim: Optional[int] = None,
                      elem: Optional[int] = None) -> int:
     """Real per-token bytes of the draft KV: bf16 (the fa4 override) or fp8 when SGLANG_DRAFT_FA4_FP8_KV=1."""
@@ -334,6 +361,9 @@ class DraftPageAllocator:
     stack[0 .. top) are the free draft page ids (1..num_pages; page 0 is the dummy page); top is a 1-element device tensor.
     mapping[target_slot] = draft_slot (0 = unmapped: the dummy page absorbs reads and writes), whole pages at a time:
     mapping[t*ps + o] = d*ps + o. One extra trailing entry maps -1 to -1 (the SWA convention for last_loc = -1).
+    overlap counts restore pages that were still mapped (bookkeeping anomaly; the restore then leaves them untouched).
+    stale (check mode only, built on first use): per target page, True while its draft page holds bytes restored from a
+    stale host copy (recompute-adopted node over the keep cap); cleared when the draft page is released.
     """
 
     def __init__(self, num_pages: int, page_size: int, target_size: int, device):
@@ -347,6 +377,8 @@ class DraftPageAllocator:
         self.stack = torch.zeros(self.num_pages + 1, dtype=torch.int64, device=device)
         self.top = torch.zeros(1, dtype=torch.int64, device=device)
         self.fail = torch.zeros(1, dtype=torch.int64, device=device)
+        self.overlap = torch.zeros(1, dtype=torch.int64, device=device)
+        self.stale: Optional[torch.Tensor] = None
         self.mapping = torch.zeros(self.target_size + self.page_size + 1, dtype=torch.int64, device=device)
         self.host_alloc_requests = 0  # host-side count of page allocation requests (upper bound of pages taken)
         self.clear()
@@ -356,6 +388,9 @@ class DraftPageAllocator:
         self.stack[self.num_pages] = 0
         self.top.fill_(self.num_pages)
         self.fail.zero_()
+        self.overlap.zero_()
+        if self.stale is not None:
+            self.stale.zero_()
         self.mapping.zero_()
         self.mapping[-1] = -1
         self.host_alloc_requests = 0
@@ -372,12 +407,14 @@ class DraftPageAllocator:
         return self.mapping[target_locs]
 
     # -- alloc / free
-    def alloc_for_target_pages(self, tpages: torch.Tensor, only_if_unmapped: bool = True) -> None:
+    def alloc_for_target_pages(self, tpages: torch.Tensor, only_if_unmapped: bool = True,
+                               return_need: bool = False) -> Optional[torch.Tensor]:
         """Map a draft page to every target page in tpages (unique ids, int64, on the device). Pages that already have one
-        keep it when only_if_unmapped. Out of draft pages -> the page maps to the dummy page and fail counts it."""
+        keep it when only_if_unmapped. Out of draft pages -> the page maps to the dummy page and fail counts it.
+        return_need: also return the device bool mask of the pages that had no draft page before this call."""
         n = int(tpages.numel())
         if n == 0:
-            return
+            return torch.zeros(0, dtype=torch.bool, device=self.device) if return_need else None
         tpages = tpages.to(device=self.device, dtype=torch.int64).view(-1)
         cur = self.current_pages(tpages)
         if only_if_unmapped:
@@ -397,6 +434,7 @@ class DraftPageAllocator:
         self.top.sub_(taken)
         self.fail.add_((need & ~valid).to(torch.int64).sum().view(1))
         self.host_alloc_requests += n
+        return need if return_need else None
 
     def free_for_target_pages(self, tpages: torch.Tensor) -> None:
         """Release the draft page of every target page in tpages (unique ids). Idempotent: unmapped pages are skipped."""
@@ -413,6 +451,22 @@ class DraftPageAllocator:
         self.mapping.index_put_((self._page_tokens(tpages),), torch.zeros(n * self.page_size, dtype=torch.int64,
                                                                            device=self.device))
         self.stack[self.num_pages] = 0  # keep the absorbing slot clean
+        if self.stale is not None:
+            self.stale[tpages] = False
+
+    def mark_stale(self, tpages: torch.Tensor, flags: Optional[torch.Tensor] = None,
+                   where: Optional[torch.Tensor] = None) -> None:
+        """Check mode: set the stale flag of tpages (unique ids) to `flags` (default True) where `where` is True (default
+        everywhere). Device ops only (no data-dependent shapes, no host sync)."""
+        if int(tpages.numel()) == 0:
+            return
+        if self.stale is None:
+            self.stale = torch.zeros(self.target_size // self.page_size + 2, dtype=torch.bool, device=self.device)
+        tp = tpages.to(device=self.device, dtype=torch.int64).view(-1)
+        val = torch.ones_like(tp, dtype=torch.bool) if flags is None else flags.view(-1)
+        if where is not None:
+            val = torch.where(where.view(-1), val, self.stale[tp])
+        self.stale[tp] = val
 
     def free_pages_device(self) -> torch.Tensor:
         return self.top
@@ -531,6 +585,9 @@ def _classes():
             super().clear()
             if getattr(self, "dw", None) is not None:
                 self.dw.clear()
+            m = getattr(self, "dw_manager", None)
+            if m is not None:  # flush_cache: the tree is reset with the pools -> drop the manager's per-tree state
+                m.on_clear()
 
         def draft_available_size(self) -> int:
             m = getattr(self, "dw_manager", None)
@@ -603,7 +660,7 @@ class _Run:
         self.node, self.p0, self.p1 = node, p0, p1
 
 
-def _node_refs(node, ps: int) -> np.ndarray:
+def _node_refs(node, ps: int, stats: Optional[Dict[str, int]] = None) -> np.ndarray:
     refs = getattr(node, "_dw_ref", None)
     n = len(node.key) // ps if node.key is not None else 0
     if refs is None or len(refs) != n:
@@ -612,6 +669,8 @@ def _node_refs(node, ps: int) -> np.ndarray:
         if old is not None:  # length drift is a bookkeeping bug: keep what overlaps, count it
             m = min(len(old), n)
             refs[:m] = old[:m]
+            if stats is not None:
+                stats["bookkeeping"] += 1
         node._dw_ref = refs
     return refs
 
@@ -641,7 +700,14 @@ def path_runs(last_node, root, lo: int, hi: int, ps: int) -> List[_Run]:
 
 
 class DraftWindowManager:
-    """Per scheduler rank: pins, releases, restores, admission estimate, diagnostics and check mode."""
+    """Per scheduler rank: pins, releases, restores, admission estimate, diagnostics and check mode.
+
+    Release rule: a tree page drops its draft page when its pin count is 0, its node is backed up, the write-through ack
+    has come and the node is not a kept recompute-adopted node (_dw_keep). Node marks (attributes on the radix node):
+      _dw_ref    int32 pin count per page
+      _dw_keep   recompute-adopted: device bytes differ from the host copy -> keep every draft page until demotion
+      _dw_stale  recompute-adopted over the keep cap: pages released; restores read the stale host copy (counted)
+    """
 
     def __init__(self, *, tree_cache, allocator, dpa: DraftPageAllocator, pool, host_pool, ctrl, window_left: int,
                  page_size: int, io_backend: str, check: bool):
@@ -660,24 +726,39 @@ class DraftWindowManager:
         self.check_every = max(1, _int_env(ENV_CHECK_EVERY, DEFAULT_CHECK_EVERY))
         self.diag_s = float(os.environ.get(ENV_DIAG_S, DEFAULT_DIAG_S) or DEFAULT_DIAG_S)
         self.admit_on = str(os.environ.get(ENV_ADMIT, "1")).strip() != "0"
+        self.adopt_cap = adopt_keep_tokens(dpa.num_pages * self.ps, self.ps)
+        self.adopt_kept_tokens = 0  # tokens of kept recompute-adopted nodes that still hold their device value
         self._touched: List[Any] = []
         self._pass_reserved = 0
         self._pass_offset = 0.0
-        # async free-page estimate: (snapshot event, pinned top, host_alloc_requests at snapshot)
+        # async free-page estimate: (snapshot event, pinned [top, fail, overlap], host_alloc_requests at snapshot)
         dev = dpa.device
-        self._pin_top = torch.zeros(2, dtype=torch.int64, pin_memory=torch.cuda.is_available() and str(dev) != "cpu")
+        self._pin_top = torch.zeros(3, dtype=torch.int64, pin_memory=torch.cuda.is_available() and str(dev) != "cpu")
         self._snap_event = None
         self._snap_req = 0
         self._last_top = dpa.num_pages
         self._last_fail = 0
+        self._last_overlap = 0
         self._last_req = 0
         self._t_diag = time.monotonic()
         self._steps = 0
         self.stats = dict(pins=0, unpins=0, restore_pages=0, restore_reqs=0, released_pages=0, ack_released=0,
-                          touched=0, admit_refused=0, check_runs=0, check_pages=0, check_mismatch=0, bookkeeping=0)
+                          touched=0, adopt_kept_pages=0, adopt_stale_pages=0, adopt_dropped_pages=0,
+                          stale_restore_pages=0, admit_refused=0, check_runs=0, check_pages=0, check_mismatch=0,
+                          check_stale_rows=0, bookkeeping=0)
         allocator.dw_manager = self
-        logger.info("%s: manager on (window_left %d, page %d, %d window-pool pages, io %s, check %s, admission gate %s)",
-                    TAG, self.window_left, self.ps, dpa.num_pages, io_backend, check, self.admit_on)
+        logger.info("%s: manager on (window_left %d, page %d, %d window-pool pages, io %s, check %s, admission gate %s, "
+                    "adopted-node keep cap %d tokens)", TAG, self.window_left, self.ps, dpa.num_pages, io_backend, check,
+                    self.admit_on, self.adopt_cap)
+
+    def _refs(self, node) -> np.ndarray:
+        return _node_refs(node, self.ps, self.stats)
+
+    def _releasable(self, node, touched_ids=()) -> bool:
+        """The release rule's node part (the page part is pin count 0)."""
+        return (node.value is not None and node.key is not None and node.backuped
+                and node.write_through_pending_id is None and not getattr(node, "_dw_keep", False)
+                and id(node) not in touched_ids)
 
     # ---------------------------------------------------------------- positions
     def window_start(self, end_len: int) -> int:
@@ -715,15 +796,18 @@ class DraftWindowManager:
         touched = set(id(n) for n in self._touched)
         for run in self._runs_for(req, lo, hi):
             node = run.node
-            refs = _node_refs(node, self.ps)
+            refs = self._refs(node)
             prev = refs[run.p0:run.p1].copy()
             refs[run.p0:run.p1] += 1
             self.stats["pins"] += run.p1 - run.p0
             if node.value is None:  # pinned on an evicted node: bookkeeping bug (the request holds a lock on its path)
                 self.stats["bookkeeping"] += 1
                 continue
-            if not node.backuped or node.write_through_pending_id is not None or id(node) in touched:
-                continue  # invariant: not backed up / backup in flight / just adopted -> its draft pages are mapped
+            if (not node.backuped or node.write_through_pending_id is not None or id(node) in touched
+                    or getattr(node, "_dw_keep", False)):
+                # invariant: not backed up / backup in flight / adoption decided at the end of this cache call / kept
+                # recompute-adopted node (its device bytes are newer than its host copy) -> its draft pages are mapped
+                continue
             # restore pages that nobody pinned before (pinned pages are mapped)
             p = run.p0
             while p < run.p1:
@@ -748,15 +832,16 @@ class DraftWindowManager:
         if hi <= lo:
             return
         rel: List[Tuple[Any, int, int]] = []
+        touched = set(id(n) for n in self._touched)
         for run in self._runs_for(req, lo, hi):
             node = run.node
-            refs = _node_refs(node, self.ps)
+            refs = self._refs(node)
             seg = refs[run.p0:run.p1]
             if (seg <= 0).any():
                 self.stats["bookkeeping"] += 1
             np.maximum(seg - 1, 0, out=seg)
             self.stats["unpins"] += run.p1 - run.p0
-            if node.value is not None and node.backuped and node.write_through_pending_id is None:
+            if self._releasable(node, touched):
                 rel.extend(self._zero_runs(node, run.p0, run.p1))
         self._release(rel)
 
@@ -765,7 +850,7 @@ class DraftWindowManager:
         """Maximal runs of unpinned pages in [p0, p1) of `node` (vectorized: nodes can hold hundreds of pages)."""
         if p1 <= p0:
             return []
-        z = _node_refs(node, self.ps)[p0:p1] == 0
+        z = self._refs(node)[p0:p1] == 0
         if z.all():
             return [(node, p0, p1)]
         edges = np.flatnonzero(np.diff(np.concatenate(([0], z.view(np.int8), [0]))))
@@ -786,7 +871,7 @@ class DraftWindowManager:
 
     def on_ack(self, node) -> None:
         """Write-through of `node` acknowledged: its unpinned draft pages have a host copy now -> release them."""
-        if node.value is None or node.key is None or not node.backuped or node.write_through_pending_id is not None:
+        if not self._releasable(node, set(id(n) for n in self._touched)):
             return
         n = len(node.key) // self.ps
         runs = self._zero_runs(node, 0, n)
@@ -794,54 +879,102 @@ class DraftWindowManager:
         self._release(runs)
 
     def on_value_assigned(self, node) -> None:
-        """insert() gave an evicted (host-backed) node the request's freshly computed pages (mapped, valid draft)."""
+        """insert() gave an evicted (host-backed) node the request's freshly computed pages ("KV cache recomputation";
+        mapped, valid draft). Its host copy is OLDER than these pages and stays as it is (no new backup), exactly as for the
+        target KV. Keep or stale is decided in end_cache_call, after splits and duplicate frees of the same call."""
         self._touched.append(node)
         self.stats["touched"] += 1
 
     def end_cache_call(self) -> None:
-        """End of cache_finished_req / cache_unfinished_req: release unpinned pages of the nodes insert() adopted."""
+        """End of cache_finished_req / cache_unfinished_req: decide the nodes insert() adopted in this call.
+        Keep (default, exact): today's engine reads the adopted FRESH device bytes until the node is demoted and its OLD
+        host bytes after that (the load-back copies target + draft rows from the host). So the node keeps every draft page
+        while it keeps its adopted device value (released with the target pages at demotion: on_detach + the allocator);
+        its old host draft rows stay valid for the period after demotion. Re-writing the host rows from the fresh pages
+        would be wrong after the next demotion. Over the cap: stale (pages released, later restores counted)."""
         if not self._touched:
             return
         rel = []
+        seen = set()
         for node in self._touched:
-            if node.value is not None and node.backuped and node.write_through_pending_id is None and node.key is not None:
-                rel.extend(self._zero_runs(node, 0, len(node.key) // self.ps))
+            if id(node) in seen:
+                continue
+            seen.add(id(node))
+            if node.value is None or node.key is None:
+                continue
+            if getattr(node, "_dw_keep", False) or getattr(node, "_dw_stale", False):
+                continue  # decided in an earlier call
+            n = len(node.key) // self.ps
+            if self.adopt_kept_tokens + n * self.ps <= self.adopt_cap:
+                node._dw_keep = True
+                self.adopt_kept_tokens += n * self.ps
+                self.stats["adopt_kept_pages"] += n
+            else:
+                node._dw_stale = True
+                self.stats["adopt_stale_pages"] += n
+                if self._releasable(node):
+                    rel.extend(self._zero_runs(node, 0, n))
         self._touched = []
         self._release(rel)
 
     def on_detach(self, node) -> None:
         """A node loses its device value (eviction to host): its pin record must be empty (it was unlocked). The allocator
         already released the draft pages with the target pages. A non-zero count here is a bookkeeping bug: count it and
-        clear it, so a later load-back restores those pages instead of trusting a stale pin."""
+        clear it, so a later load-back restores those pages instead of trusting a stale pin. A kept / stale adopted node
+        becomes an ordinary host node: its (old) host copy is again exactly what today's engine would load back."""
         refs = getattr(node, "_dw_ref", None)
         if refs is not None:
             if refs.any():
                 self.stats["bookkeeping"] += 1
             node._dw_ref = None
+        if getattr(node, "_dw_keep", False):
+            n = len(node.key) // self.ps if node.key is not None else 0
+            self.adopt_kept_tokens = max(0, self.adopt_kept_tokens - n * self.ps)
+            self.stats["adopt_dropped_pages"] += n
+            node._dw_keep = False
+        if getattr(node, "_dw_stale", False):
+            node._dw_stale = False
 
     def on_split(self, child, new_node, split_len: int) -> None:
-        """_split_node: new_node takes child's first split_len tokens."""
+        """_split_node: new_node takes child's first split_len tokens (and its keep / stale mark: same device value)."""
         refs = getattr(child, "_dw_ref", None)
-        if refs is None:
-            return
-        k = split_len // self.ps
-        new_node._dw_ref = refs[:k].copy()
-        child._dw_ref = refs[k:].copy()
+        if refs is not None:
+            k = split_len // self.ps
+            new_node._dw_ref = refs[:k].copy()
+            child._dw_ref = refs[k:].copy()
+        for mark in ("_dw_keep", "_dw_stale"):
+            if getattr(child, mark, False):
+                setattr(new_node, mark, True)
         if any(n is child for n in self._touched):
             self._touched.append(new_node)
 
+    def on_clear(self) -> None:
+        """flush_cache: tree and pools are reset together (DraftWindowPagedAllocator.clear)."""
+        self._touched = []
+        self.adopt_kept_tokens = 0
+        self._snap_event = None
+        self._last_top, self._last_fail, self._last_overlap, self._last_req = self.dpa.num_pages, 0, 0, 0
+
     # ---------------------------------------------------------------- restore (host -> window pool)
     def _restore(self, runs: Sequence[Tuple[Any, int, int]]) -> None:
-        dev_parts, host_parts = [], []
-        npages = 0
+        """Map and fill the draft pages of `runs` from the HiCache host copy. Only pages that had no draft page are written:
+        a page that is still mapped keeps its device bytes (its rows go to the dummy page) and is counted in overlap."""
+        dev_parts, host_parts, stale_flags = [], [], []
+        npages = nstale = 0
         for node, p0, p1 in runs:
             dev_parts.append(node.value[p0 * self.ps:p1 * self.ps])
             host_parts.append(node.host_value[p0 * self.ps:p1 * self.ps])
             npages += p1 - p0
+            st = bool(getattr(node, "_dw_stale", False))
+            nstale += (p1 - p0) if st else 0
+            stale_flags.extend([st] * (p1 - p0))
         tgt = dev_parts[0] if len(dev_parts) == 1 else torch.cat(dev_parts)
         tgt = tgt.to(torch.int64)
-        self.dpa.alloc_for_target_pages(torch.div(tgt[:: self.ps], self.ps, rounding_mode="floor"), only_if_unmapped=True)
+        tpages = torch.div(tgt[:: self.ps], self.ps, rounding_mode="floor")
+        need = self.dpa.alloc_for_target_pages(tpages, only_if_unmapped=True, return_need=True)
         dst = self.dpa.translate(tgt)
+        dst = torch.where(need.view(-1, 1).expand(-1, self.ps).reshape(-1), dst, dst % self.ps)
+        self.dpa.overlap.add_((~need).to(torch.int64).sum().view(1))
         host = host_parts[0] if len(host_parts) == 1 else torch.cat(host_parts)
         host = host.to(torch.int64)
         if self.io_backend == "kernel" and not host.is_cuda and str(self.dpa.device) != "cpu":
@@ -850,6 +983,11 @@ class DraftWindowManager:
             self.host_pool.load_to_device_per_layer(self.swa_pool, host, dst, layer, self.io_backend)
         self.stats["restore_pages"] += npages
         self.stats["restore_reqs"] += 1
+        if nstale:
+            self.stats["stale_restore_pages"] += nstale
+            if self.check:  # mask these rows in the bitwise check (pages this restore actually wrote)
+                flags = torch.tensor(stale_flags, dtype=torch.bool).to(self.dpa.device, non_blocking=True)
+                self.dpa.mark_stale(tpages, flags=flags, where=need)
 
     # ---------------------------------------------------------------- scheduler-facing
     def on_prepare_extend(self, reqs) -> None:
@@ -866,17 +1004,20 @@ class DraftWindowManager:
         if ev is not None and ev.query():
             self._last_top = int(self._pin_top[0])
             self._last_fail = int(self._pin_top[1])
+            self._last_overlap = int(self._pin_top[2])
             self._last_req = self._snap_req
             self._snap_event = None
         if self._snap_event is None and torch.cuda.is_available() and str(self.dpa.device) != "cpu":
             self._pin_top[0:1].copy_(self.dpa.top, non_blocking=True)
             self._pin_top[1:2].copy_(self.dpa.fail, non_blocking=True)
+            self._pin_top[2:3].copy_(self.dpa.overlap, non_blocking=True)
             self._snap_req = self.dpa.host_alloc_requests
             self._snap_event = torch.cuda.Event()
             self._snap_event.record()
         elif str(self.dpa.device) == "cpu":
             self._last_top, self._last_fail, self._last_req = int(self.dpa.top[0]), int(self.dpa.fail[0]), \
                 self.dpa.host_alloc_requests
+            self._last_overlap = int(self.dpa.overlap[0])
         self._steps += 1
         if self.check and running_batch is not None and self._steps % self.check_every == 0:
             try:
@@ -886,8 +1027,10 @@ class DraftWindowManager:
         now = time.monotonic()
         if now - self._t_diag >= self.diag_s:
             self._t_diag = now
-            logger.warning("DraftWindowDiag: free_pages=%d/%d alloc_fail_pages=%d %s", self._last_top, self.dpa.num_pages,
-                           self._last_fail, " ".join(f"{k}={v}" for k, v in self.stats.items()))
+            logger.warning("DraftWindowDiag: free_pages=%d/%d alloc_fail_pages=%d restore_overlap_pages=%d "
+                           "adopt_kept_tokens_now=%d/%d last_pass_offset=%d %s", self._last_top, self.dpa.num_pages,
+                           self._last_fail, self._last_overlap, self.adopt_kept_tokens, self.adopt_cap,
+                           int(self._pass_offset), " ".join(f"{k}={v}" for k, v in self.stats.items()))
 
     # admission: one PrefillAdder pass
     def begin_pass(self, running_offset_tokens: float) -> None:
@@ -912,7 +1055,9 @@ class DraftWindowManager:
 
     # ---------------------------------------------------------------- check mode
     def check_running(self, batch) -> None:
-        """Bitwise window pool vs shadow pool on the committed window pages of the running requests (one host sync)."""
+        """Bitwise window pool vs shadow pool on the committed window pages of the running requests (one host sync).
+        Counts are (token row x layer x K/V) units. Rows on pages restored from a stale host copy (adopted node over the
+        keep cap) are expected to differ: they are masked and counted in check_stale_rows, not in check_mismatch."""
         if self.shadow is None or batch is None or not getattr(batch, "reqs", None):
             return
         r2t = batch.req_to_token_pool.req_to_token
@@ -929,7 +1074,10 @@ class DraftWindowManager:
             return
         t = torch.cat(locs)
         d = self.dpa.translate(t)
-        bad = torch.zeros(1, dtype=torch.int64, device=t.device)
+        stale_rows = None
+        if self.dpa.stale is not None:
+            stale_rows = self.dpa.stale[torch.div(t, self.ps, rounding_mode="floor")]
+        bad = torch.zeros(2, dtype=torch.int64, device=t.device)  # [mismatch, stale]
         for layer in range(self.swa_pool.layer_num):
             for a, b in ((self.swa_pool.k_buffer[layer], self.shadow.k_buffer[layer]),
                          (self.swa_pool.v_buffer[layer], self.shadow.v_buffer[layer])):
@@ -939,14 +1087,18 @@ class DraftWindowManager:
                 elif x.element_size() == 1:
                     x, y = x.view(torch.uint8), y.view(torch.uint8)
                 ne = (x != y).reshape(t.numel(), -1).any(dim=1)
-                bad += ne.to(torch.int64).sum()
-        nbad = int(bad.item())
+                if stale_rows is not None:
+                    bad[1:2] += (ne & stale_rows).to(torch.int64).sum().view(1)
+                    ne = ne & ~stale_rows
+                bad[0:1] += ne.to(torch.int64).sum().view(1)
+        nbad, nstale = (int(v) for v in bad.tolist())
         self.stats["check_runs"] += 1
         self.stats["check_pages"] += int(t.numel()) // self.ps
         self.stats["check_mismatch"] += nbad
+        self.stats["check_stale_rows"] += nstale
         if nbad:
-            logger.warning("%s: CHECK MISMATCH %d token rows (of %d) between the window pool and the shadow", TAG, nbad,
-                           int(t.numel()))
+            logger.warning("%s: CHECK MISMATCH %d (row x layer x K/V) between the window pool and the shadow (%d token rows "
+                           "checked)", TAG, nbad, int(t.numel()))
 
 
 # ------------------------------------------------------------------------------------------------ HiCache registration
