@@ -1684,7 +1684,7 @@
   {
    "tag": "v5p_full_cl_gcsv3_69_paced",
    "at": "2026-10-06 02:43",
-   "protocol": "v5",
+   "protocol": "v3.2",
    "share": 0.82,
    "name": "COMPLETE traces (v5, lb01-03): Oct 3 06:30 PDT peak, full node, strict schedule (--paced), 6.56 M/GPU = 0.82x of production's real load (8.01 M)",
    "change": "load",
