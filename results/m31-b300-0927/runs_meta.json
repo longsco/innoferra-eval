@@ -1729,7 +1729,7 @@
    "name": "window-sized draft KV pool (+21.4% device tokens at the same memory), engines 2-3",
    "change": "capacity",
    "verdict": "under review",
-   "why": "9/15 vs 4/15 at 7.27 M/GPU per half; paired TPS +5.21 tok/s (CI +2.73..+8.49), first token x0.799 (CI 0.759..0.840), uncached 27.0 vs 27.9 M, 0 errors, with B on the slower side. KV tokens 2,579,072 vs 2,125,056 per rank, same free GPU memory, same host tokens (ratio 2.579). P2 judge PASS on both B engines (0 allocation failures). Adopted 06:05 (DEV_SRC = patched copy tree + SGLANG_DSPARK_DRAFT_WINDOW_POOL=1 + --hicache-ratio 2.579); side-swap confirmation queued. 08:55: adoption UNDER REVIEW - the side-swap twin gave the opposite sign (-16.67 tok/s with B on engines 0-1)."
+   "why": "9/15 vs 4/15 at 7.27 M/GPU per half; paired TPS +5.21 tok/s (CI +2.73..+8.49), first token x0.799 (CI 0.759..0.840), uncached 27.0 vs 27.9 M, 0 errors, with B on the slower side. KV tokens 2,579,072 vs 2,125,056 per rank, same free GPU memory, same host tokens (ratio 2.579). P2 judge PASS on both B engines (0 allocation failures). Adopted 06:05 (DEV_SRC = patched copy tree + SGLANG_DSPARK_DRAFT_WINDOW_POOL=1 + --hicache-ratio 2.579); side-swap confirmation queued. 08:55: adoption UNDER REVIEW - the side-swap twin gave the opposite sign (-16.67 tok/s with B on engines 0-1). 10:45: REVERTED from the queue after the A/A twin; re-test below the knee (v5t_ab_dwin2_p60 + side swap)."
   },
   {
    "tag": "v5t_ab_fidproto_p60@A",
@@ -1789,7 +1789,7 @@
    "name": "window-sized draft KV pool on engines 0-1 (side swap of v5t_ab_dwin_p74)",
    "change": "capacity",
    "verdict": "under review",
-   "why": "CONTRADICTS the first twin: B 2/15 vs A 7/15; paired TPS -16.67 tok/s (CI -19.39..-13.38), first token x1.195 (CI 1.126..1.269), uncached 34.4 vs 25.5 M. The same window-pool config ran TPS 97.9 on engines 2-3 (first twin) but 74.9 on engines 0-1, while the stack without it differs by 1.7. Side-balanced effect about -5.7 tok/s, first token about x0.98: the window-pool gain is NOT established. P2 judge PASS (no correctness issue). Under investigation: A/A twin on the adopted stack queued; per-engine logs of the 7.66 M run; NUMA placement of host pools."
+   "why": "CONTRADICTS the first twin: B 2/15 vs A 7/15; paired TPS -16.67 tok/s (CI -19.39..-13.38), first token x1.195 (CI 1.126..1.269), uncached 34.4 vs 25.5 M. The same window-pool config ran TPS 97.9 on engines 2-3 (first twin) but 74.9 on engines 0-1, while the stack without it differs by 1.7. Side-balanced effect about -5.7 tok/s, first token about x0.98: the window-pool gain is NOT established. P2 judge PASS (no correctness issue). Under investigation: A/A twin on the adopted stack queued; per-engine logs of the 7.66 M run; NUMA placement of host pools. 10:45: REVERTED from the queue after the A/A twin; re-test below the knee (v5t_ab_dwin2_p60 + side swap)."
   },
   {
    "tag": "v5p_full_cl_gcsv3_75dw_paced",
@@ -1800,6 +1800,26 @@
    "change": "load",
    "verdict": "baseline",
    "why": "2/15 at 7.49 M/GPU (minutes 7 and 10 pass): first token p50 5.43 s vs production 4.28 s on the same requests; TPS p50 81.6 vs production 48.1; hit 93.7% vs 94.7%; 0 errors (production: 84 5xx, 0/15 at its real 8.01 M); 29% paced fallbacks. Past the knee, but about production's own level at its peak. Old stack, test v5: 6.56 M gave 0/15 with first token 9.25 s."
+  },
+  {
+   "tag": "v5t_ab_aa_adopted_p74@A",
+   "at": "2026-10-06 10:35",
+   "protocol": "v5.1",
+   "share": 0.9,
+   "name": "A/A calibration, side A (engines 0-1): adopted stack (window pool + re-pins off), Oct 3 peak 7.19 M/GPU per half",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "1/15 at 7.19 M/GPU (half node): first token p50 5.95 s, TPS p50 79.1, uncached 29.4 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_aa_adopted_p74@B",
+   "at": "2026-10-06 10:35",
+   "protocol": "v5.1",
+   "share": 0.9,
+   "name": "A/A calibration, side B (engines 2-3): the same config as side A",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "0/15 at 7.18 M/GPU; IDENTICAL configs, yet paired TPS -4.83 tok/s (CI -7.67..-2.34), first token x0.959 (CI 0.881..1.025), uncached 29.2 vs 29.4 M. Past the knee, twins carry ~+-5 tok/s of side noise. Consequence: window pool reverted (its two twins average -5.7 tok/s side-balanced); re-pins off kept (+14.2 >> noise, clear mechanism); lever twins now run below the knee as side-swapped pairs."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
