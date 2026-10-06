@@ -1,12 +1,15 @@
-# read_utc 2026-10-06T10:31:00Z
+# read_utc 2026-10-06T11:18:57Z
 ## queue
+v5t_ab_dwin_p74 /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl 0.2 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl
+v5t_ab_fidproto_p60 /tr/v5/w1003_1330/b00.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --paced --fid-report" REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTRA_B=--closed-loop --pace
+v5t_ab_dwin_p74sw /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl 0.2 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jso
 v3_ab_ep8csw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN
 v5s_full_cl_gcsv3_1x_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enab
 v5s_full_cl_gcsv3_114x_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl 0.25 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.80 TOKW
 v5t_ab_dfp8_p74 /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl 0.2 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl
 v5t_ab_dfp8sw_p74 /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl 0.2 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jso
 v5s_full_cl_gcsv3_127x_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl 0.5 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.80 TOKW=
-v5s_full_cl_gcsv3_fidelity_1x /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --img 1064x1024 --send-prod-shed" MEMFRAC=0.80 TOKW=8 
+v5s_full_cl_gcsv3_fidelity_1x /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --img 616x616 --send-prod-shed --fid-report" M
 ## done
 09:43:41 v5p_full_cl_gcsv3_80_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.58 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.
 09:45:10 v5p_full_cl_gcsv3_51_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl 0.7 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced" MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XAR
