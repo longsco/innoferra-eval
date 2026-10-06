@@ -1644,6 +1644,24 @@
    "change": "routing",
    "verdict": "no clear change",
    "why": "15/15 at 6.72 M/GPU, same as our gateway. Paired TPS -3.70 tok/s (CI -5.45..-2.12; side bias at 1.5x ~0.5), first token x1.46 (CI 1.41..1.54; 10-04 at 1.0x: x1.22), hit 95.2% vs 95.1%, 0 errors. Not yet on par: the Python chat processor costs first token and ~4% TPS at this load. Next: 2 frontends, then the Rust chat processor."
+  },
+  {
+   "tag": "v3_ab_shxsw_cl_15x@A",
+   "at": "2026-10-06 00:41",
+   "protocol": "v3.2",
+   "name": "control half at 1.5x (engines 2-3, side swap), shared-expert overlap pair",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.71 M/GPU (half node), TPS p50 80.8, first token p50 1.26 s, hit 95.1%, 0 errors."
+  },
+  {
+   "tag": "v3_ab_shxsw_cl_15x@B",
+   "at": "2026-10-06 00:41",
+   "protocol": "v3.2",
+   "name": "shared expert beside the router chain (MegaMoE), engines 0-1 (side swap)",
+   "change": "kernel",
+   "verdict": "adopted",
+   "why": "Paired TPS +6.67 tok/s (CI +4.99..+8.08), first token x0.922 (CI 0.896..0.950) with B on engines 0-1; the first twin (B on 2-3) gave -0.58 -> side-balanced about +3.0 tok/s, first token ~x0.95. Bit-exact bench; greedy 28/30 = control. Adopted 01:05: SGLANG_MOE_SHARED_OVERLAP=1."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

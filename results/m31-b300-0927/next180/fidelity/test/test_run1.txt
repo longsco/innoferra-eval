@@ -1,0 +1,39 @@
+PASS T1 identity [closed loop v3.2]: exit codes | 0/0
+PASS T1 identity [closed loop v3.2]: records equal (timing masked) | 37 vs 37 records
+PASS T1 identity [closed loop v3.2]: requests succeed against the mock | 37 of 37 ok
+PASS T1 identity [closed loop v3.2]: closed loop substitutes our answers | cl full 21
+PASS T1 identity [closed loop v3.2]: report equal (numbers masked)
+PASS T1 identity [v3.1 open-prime]: exit codes | 0/0
+PASS T1 identity [v3.1 open-prime]: records equal (timing masked) | 37 vs 37 records
+PASS T1 identity [v3.1 open-prime]: requests succeed against the mock | 37 of 37 ok
+PASS T1 identity [v3.1 open-prime]: report equal (numbers masked)
+PASS T1 identity [paced]: exit codes | 0/0
+PASS T1 identity [paced]: records equal (timing masked) | 37 vs 37 records
+PASS T1 identity [paced]: requests succeed against the mock | 37 of 37 ok
+PASS T1 identity [paced]: closed loop substitutes our answers | cl full 21
+PASS T1 identity [paced]: report equal (numbers masked)
+PASS T2 lead-in: exit 0
+PASS T2 lead-in: lead requests replayed at real time before the window | lead 3 sched [-25.0, -15.0, -5.0]
+PASS T2 lead-in: lead sent on schedule (late < 1 s) | [0.0, 0.0, 0.0]
+PASS T2 lead-in: warm-up holds only turns before T_LEAD=70 | [50.0, 60.0]
+PASS T2 lead-in: measured follow-up of a lead request carries our answer | full
+PASS T2 lead-in: lead lines in the report, measured count unchanged | measured 33 vs 33
+PASS T3 paced-grace: exit 0
+PASS T3 paced-grace: lateness bounded by the grace (+0.5 s scheduler) | max late 1.01
+PASS T3 paced-grace: slow predecessors fall back to production's answer | fallbacks 12
+PASS T3 paced-grace: grace never adds fallbacks vs strict --paced | grace 12 vs strict 12
+PASS T4 recon-turns: exit 0
+PASS T4 recon-turns: 3 unlogged turns rebuilt (2 in session 1, 1 in session 2) | recon 3: [('01', 108.0), ('01', 114.0), ('02', 118.0)]
+PASS T4 recon-turns: the logged successor carries our answer (cl full) | full
+PASS T4 recon-turns: our answers carried at every rebuilt position | [2, 4, 6]
+PASS T4 recon-turns: report lines
+PASS T4 control (flag off): production's unlogged answers stay in the prompt | [2]
+FAIL T5 recon-warm: exit 0
+FAIL T5 recon-warm: prefixes for session 3 (through an earlier answer) and session 4 (system head) | []
+PASS T5 recon-warm: session 3 prefix = longest prefix through an answer within production's cached share, prefill-only | sent [5] expected 5 (share 0.97)
+PASS T5 recon-warm: warm records carry no production numbers
+PASS T6 engine-ratio: production-equivalent line
+PASS T6 engine-ratio: no other fidelity lines without --fid-report
+PASS T6 guard: --recon-turns without its base flag is rejected
+PASS T6 guard: --paced-grace 1 without its base flag is rejected
+== 36/38 checks pass

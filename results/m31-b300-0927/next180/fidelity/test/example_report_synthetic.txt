@@ -1,0 +1,27 @@
+warm-up budget 60 M tokens: 2 of 2 sessions, last turns from t=50s
+recon-warm (innoferra 10-06 fidelity, cached share >= 0.3): +2 warm prefixes (1 through an earlier answer, 1 system/tools head; 8 skipped: no prefix within production's cached share)
+recon-turns (innoferra 10-06 fidelity): 3 unlogged turns rebuilt inside 2 logged follow-ups (0 follow-ups do not extend their predecessor: left as logged)
+traces 1 half-buckets; warm-up: 4 sessions' last turns from t=40..100s; measured: 40 requests t=100..160s (25 wait for an earlier turn; 22 primed)
+closed loop (v3.2): 25 measured requests continue a measured request and 1 their session's warm-up turn (those 1 warm turns generate, max_tokens = min(production's, 8192)) - they carry our answer where the shape allows; 14 have no replayed predecessor; 0 of 14 measured sessions' clients carry reasoning; primes off
+flush http://127.0.0.1:18998: 200 {"ok":true}
+warm-up done: 4 sessions' last turns in 0s, prompt 0.0 M tokens, hit 49.9%, errors 0
+closed loop (v3.2): 1 warm turns generated the answer their session's first measured request carries (1 ok, 0.00 M completion tokens); 3 prefill-only
+== replay_v2 load 0.5x a node's share (1 half-buckets), measured 1 min, 34 requests, wall 50s, closed-loop sessions (v3.2), natural output length
+   errors on production-200 requests: 0/33 (0.00%)
+   TPM node 0.01 M = 0.00 M/GPU over 8 GPUs (production for the same requests: 0.01 M = 0.00 M/GPU)
+   cache hit ours 49.9% vs production 43.0% (same requests); prompt tokens ours/prod 1.027; completion ours/prod 0.165
+   TTFT ours p50/p90/p99 0.31/0.31/0.31 | production 0.30/0.30/0.30
+   decode per stream p50 ours - | production 29.41 tok/s; send lateness p50/p99 0.00/0.00 s
+   primes 0 (0 ok), prime prompt tokens 0.0 M (excluded from TPM)
+   paced (strict schedule): 0 of 34 measured requests carried production's answer (ours not complete at their production send time); send lateness = scheduler delay only
+   closed loop (v3.2): our answer carried full 22 / partial 0 / none 0 (n/a 12: no replayed predecessor); no partial/none; answer chars ours/production p50 1.87 (n=22)
+   fidelity: production's real load in this window = 4.20 M/GPU logged x 1.53 = 6.43 M/GPU (engine counters); this run sends 0.00 M/GPU logged requests = 0.00 of it, 0.00 M/GPU incl. rebuilt turns = 0.00 of it
+   fidelity: send lateness p50/p90 by scheduled minute (s): 0.0/0
+   fidelity: offered TPM/GPU by actual send minute: 0.00 0.00 | 0.0% of the measured tokens left after the window
+   fidelity: lead-in 30 s: 3 requests at real time before the window (3 ok, unscored)
+   fidelity: recon-warm prefixes 2 (2 ok), prompt 0.0 M tokens
+   fidelity: rebuilt unlogged turns 3 (3 in the window, 3 ok, 0 failed), prompt 0.0 M, hit 49.7%, completion 0.00 M, TTFT p50 0.31; paced fallbacks 0
+   fidelity: SLA v2 (TTFT p50 < 3 s, decode p50 > 60, 0 errors) logged requests 1/1 minutes; incl. rebuilt turns 1/1
+   minute | req | err | TPM/GPU | hit | TTFT p50 / p99 | decode p50 | SLA
+       0 |   34 |   0 |   0.00 |  49.9% |  0.31 /   0.31 |      - | pass
+   SLA (TTFT p50 <= 1 s, p99 <= 15 s, decode p50 >= 60 tok/s, errors <= 0.1%): 1/1 minutes pass -> PASS at 0.5x = 0.00 M/GPU

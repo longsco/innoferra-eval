@@ -1,0 +1,10 @@
+PASS T3 paced-grace: exit 0
+PASS T3 paced-grace: lateness bounded by the grace (+0.5 s scheduler) | max late 1.01
+PASS T3 paced-grace: slow predecessors fall back to production's answer | fallbacks 12
+PASS T3 paced-grace: grace never adds fallbacks vs strict --paced | grace 12 vs strict 12
+PASS T3 paced-grace: a 2 s grace removes the fallbacks of 3-s-apart turns (4.5 s service) and keeps lateness <= 2.5 s | grace 2 s 6 vs strict 12, max late 2.00
+PASS T5 recon-warm: exit 0
+PASS T5 recon-warm: prefixes for session 3 (through an earlier answer) and session 4 (system head) | ['ck:sess03', 'ck:sess04']
+PASS T5 recon-warm: session 3 prefix = longest prefix through an answer within production's cached share, prefill-only | sent [5] expected 5 (share 0.97)
+PASS T5 recon-warm: warm records carry no production numbers
+== 9/9 checks pass
