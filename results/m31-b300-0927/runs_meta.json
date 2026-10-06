@@ -1890,6 +1890,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "7/15 at 7.33 M/GPU (minutes 4, 7-12 pass): first token p50 3.59 s vs production 4.30 s on the same requests; TPS p50 96.5 vs 48.0; hit 94.3% vs 94.8%; 23% paced fallbacks; 0 errors. Fails: minutes 0-3 (start, 4.4-6.2 s), 5-6 (3.5-3.8 s), 13-14. Knee: 6.50 M 14/15, 7.33 M 7/15, 7.49 M 2/15."
+  },
+  {
+   "tag": "v5r_full_cl_gcsv3_65dw_paced",
+   "at": "2026-10-06 15:50",
+   "protocol": "v5.1r",
+   "share": 0.77,
+   "name": "Oct 3 peak, full node, test v5.1r (v5.1 + the hub-cut >2 MiB requests rebuilt), adopted stack, 6.14 M/GPU = 0.77x of production's real 8.01 M",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "5/15 at 6.14 M/GPU: first token p50 3.22 s vs production 4.41 s; TPS p50 114.0 vs 47.7; hit 94.4% vs 94.5%; 19% paced fallbacks; 0 errors. Most misses are 3.0-4.7 s; minute 14 6.2 s. Without the rebuilt requests (v5.1) 6.50 M passed 14/15: the 3.5% of requests that carry 14.4% of prompt tokens (~170k+ tokens each) lower the knee by filling each rank's KV pool."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
