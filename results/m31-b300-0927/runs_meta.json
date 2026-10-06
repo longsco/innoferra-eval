@@ -1830,6 +1830,26 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 6.50 M/GPU (only minute 13 misses: first token 3.1 s). First token p50 2.13 s vs production 4.31 s; TPS p50 120.9 vs 47.7; hit 94.9% vs 94.6% (parity); 13% paced fallbacks; 0 errors. Old stack (test v5) at 6.56 M: 0/15, 9.25 s. Knee now between 6.50 M (14/15) and 7.49 M (2/15). Same load without the window pool is queued (v5p_full_cl_gcsv3_69np_paced) and a protocol bridge twin, to split the gain."
+  },
+  {
+   "tag": "v5t_ab_dwin2_p60@A",
+   "at": "2026-10-06 12:19",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "control half (engines 0-1): re-pins off, no window pool, Oct 3 peak b00 per half (below the knee)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "10/15 at 5.95 M/GPU (half node): first token p50 2.57 s, TPS p50 114.1, uncached 17.9 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_dwin2_p60@B",
+   "at": "2026-10-06 12:19",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "window-sized draft KV pool, below the knee (engines 2-3); first of a side-swapped pair",
+   "change": "capacity",
+   "verdict": "under review",
+   "why": "13/15 vs 10/15 at 5.95 M/GPU per half; paired first token x0.862 (CI 0.820..0.907), TPS +3.14 tok/s (CI -0.67..+7.58), uncached 17.2 vs 17.9 M, 0 errors. Decision waits for the side-swapped twin v5t_ab_dwin2sw_p60 (pool on engines 0-1)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
