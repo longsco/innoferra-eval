@@ -1,7 +1,7 @@
 {
- "at": "2026-10-02 12:15",
- "intro": "What moved the numbers on real traffic (requests production served Sep 30 13:10–13:25 PDT, replayed on node 0008), what exactly we changed, and what we learned. Gains are ranked by effect; loads are M TPM per GPU sent (2.23 M = half a production node's traffic). Under the Oct 1 SLA the remaining limit is generation speed at 3.34 M.",
- "note": "Written Oct 1 22:05 PDT: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then every number fact-checked by 5 more (130 corrections). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
+ "at": "2026-10-05 20:45",
+ "intro": "What moved the numbers on real traffic (requests production served Sep 30 13:10–13:25 PDT, replayed on node 0008), what exactly we changed, and what we learned. Loads are M TPM per GPU sent on our replay axis (1.0× = 4.40 M = production's per-node load in that window; production's engine counters read 1.44× this axis). As of Oct 5: 1.5× (6.71 M) passes all 15 minutes on the standard test in 3 of 3 runs; with full-size images and production-refused requests sent it passes 13/15.",
+ "note": "Oct 1 entries: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then fact-checked by 5 more (130 corrections). Oct 2–5 entries: written from PROGRESS.md and runs_meta (last added Oct 5 20:45 PDT). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
  "entries": [
   {
    "title": "Root cause: the multimodal model type made the engine tokenise every prompt twice",
@@ -2326,6 +2326,380 @@
    "sources": [
     "PROGRESS.md Oct 4 11:59 PDT",
     "serving/next150/RANKING.md #1"
+   ]
+  },
+  {
+   "title": "Verify attention kernel v3: +9.1 tok/s (+12%) at 1.5×, bit-exact",
+   "kind": "gain",
+   "rank": 14.9,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "A pipelined sparse-attention kernel for verify steps, 1.33–1.92× faster per call than v2, adds +9.1 tok/s at 1.5× with identical outputs.",
+   "before_after": [
+    {
+     "metric": "paired generation at 1.5× (B on engines 2-3)",
+     "before": "control (v2)",
+     "after": "+9.11 tok/s (CI +7.61..+10.99); first token ×0.940",
+     "source": "twin v3_ab_sv3_cl_15x"
+    },
+    {
+     "metric": "paired generation at 1.5× (B on engines 0-1)",
+     "before": "control (v2)",
+     "after": "+9.02 tok/s (CI +7.30..+10.53); first token ×0.979",
+     "source": "twin v3_ab_sv3sw_cl_15x"
+    },
+    {
+     "metric": "verify sparse attention per call, live mix",
+     "before": "b24 127 µs, b32 173 µs",
+     "after": "b24 68 µs, b32 90 µs",
+     "source": "GPU bench window, Oct 5 11:30 PDT"
+    },
+    {
+     "metric": "single stream at 60k+ context",
+     "before": "194 tok/s",
+     "after": "236 tok/s",
+     "source": "PROGRESS.md Oct 5 13:22 PDT"
+    }
+   ],
+   "change_what": "SGLANG_SATTN_VERIFY_V3=1 with 3 CTAs per SM, no fusion (kernels/sattn/patch_sattn_verify_v3.py).",
+   "change_detail": "SGLANG_SATTN_VERIFY_V3=1 SATTN_VERIFY_V3_TM1=1 SATTN_VERIFY_V3_FUSE=0 SATTN_VERIFY_V3_CTAS_PER_SM=3 SATTN_VERIFY_V3_MAXNREG=168",
+   "when": "Oct 5 13:22 and 14:15 PDT",
+   "mechanism": "Overlapping loads and math in a pipelined kernel takes about 3.5–5 ms off a ~56 ms verify step (bench: 1.33–1.92× per call).",
+   "learnings": [
+    "After a large kernel win, profile again: the same op can still be the largest slice of the new, shorter step.",
+    "Check every variant bitwise against v2 and the fork under CUDA-graph replay, then run a greedy identity check (28/30 = control 28/30)."
+   ],
+   "caveats": [
+    "Both twins used the standard test (1×1 images)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 5 11:30, 13:22, 14:15 PDT",
+    "runs_meta v3_ab_sv3_cl_15x, v3_ab_sv3sw_cl_15x"
+   ]
+  },
+  {
+   "title": "Python GC thresholds in every engine process: +1.8 tok/s at 1.5×",
+   "kind": "gain",
+   "rank": 14.8,
+   "theme": "measurement and operations",
+   "headline": "Turning automatic full GC off in the tokenizer, scheduler and detokenizer processes adds +1.8 tok/s side-balanced and first token ×0.96.",
+   "before_after": [
+    {
+     "metric": "paired generation at 1.5× (B on engines 2-3)",
+     "before": "control",
+     "after": "+1.58 tok/s (CI +0.40..+3.01); first token ×0.951",
+     "source": "twin v3_ab_gcth_cl_15x"
+    },
+    {
+     "metric": "paired generation at 1.5× (B on engines 0-1)",
+     "before": "control",
+     "after": "+2.10 tok/s (CI +0.68..+3.44); first token ×0.966",
+     "source": "twin v3_ab_gcthsw_cl_15x"
+    },
+    {
+     "metric": "long GC pauses",
+     "before": "0.6–1.5 s, about once a minute per engine (tokenizer process)",
+     "after": "long-GC pause time about −30%",
+     "source": "engine GC logs, Oct 5"
+    }
+   ],
+   "change_what": "GC thresholds 700, 10, 100000 in every engine process (hostfix/patch_gc_tuning.py).",
+   "change_detail": "XARGS --gc-threshold 700 10 100000; EXTRA_ENV SGLANG_SCHED_GC_THRESHOLD=700,10,100000 (SGLANG_SCHED_GC_WARN=0.3 logs long passes)",
+   "when": "Oct 5 12:20 PDT",
+   "mechanism": "Full collections of 1.1–1.5 M objects stopped a process for up to 1.5 s; a paused tokenizer or scheduler stalls its whole engine.",
+   "learnings": [
+    "Log long pauses in every process first: stock logs do not show scheduler GC, and the pauses were in the tokenizer.",
+    "One /freeze_gc call after warm-up did not help (side-balanced about −0.5 tok/s): it never reached the tokenizer process."
+   ],
+   "caveats": [
+    "The effect is small (about 2% of TPS); it was adopted on two side-swapped twins."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 5 08:35, 10:05, 11:08, 12:20 PDT"
+   ]
+  },
+  {
+   "title": "Image features over CPU transport: +2.4 tok/s, uncached prompt −12%",
+   "kind": "gain",
+   "rank": 14.7,
+   "theme": "cache, routing and admission",
+   "headline": "CUDA-IPC image pools leaked under DP attention, changed image hashes and broke cache matches; CPU transport fixes it (+2.37 tok/s at 1.375×).",
+   "before_after": [
+    {
+     "metric": "paired generation at 1.375×",
+     "before": "79.4 tok/s (control)",
+     "after": "+2.37 tok/s (CI +0.87..+3.93); first token ×0.975",
+     "source": "twin v3_ab_mmcpu_cl_1375x"
+    },
+    {
+     "metric": "uncached prompt tokens (half node, 15 min)",
+     "before": "19.6 M",
+     "after": "17.3 M (−12%)",
+     "source": "twin v3_ab_mmcpu_cl_1375x"
+    },
+    {
+     "metric": "minute 10 generation at 1.4375×",
+     "before": "55.4 tok/s",
+     "after": "65.5 tok/s",
+     "source": "v3_full_cl_newest_14375x vs v3_full_cl_fullmm_14375x"
+    }
+   ],
+   "change_what": "--mm-feature-transport cpu.",
+   "when": "Oct 4 17:21 PDT",
+   "mechanism": "Under DP attention the CUDA-IPC pools got one ack per slice instead of two, so they filled 5–12 minutes into a run. Images then hashed on the CPU path, radix matches stopped at the first image, and image turns re-prefilled their history.",
+   "learnings": [
+    "Split cache misses by request type: image turns carried 74–83% of the continuation misses in the burst minute."
+   ],
+   "caveats": [
+    "Measured with 1×1 images; full-size images add vision-encoder load (see the fidelity entry)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 4 16:05 and 19:06 PDT",
+    "runs_meta v3_ab_mmcpu_cl_1375x"
+   ]
+  },
+  {
+   "title": "Fairness checks: held-out sessions pass; full-size images and refused requests cost ~10 tok/s",
+   "kind": "finding",
+   "rank": 13.5,
+   "theme": "measurement and operations",
+   "headline": "1.5× passes 3 of 3 standard runs, including sessions never used for tuning. With full-size images and production-refused requests sent it passes 13/15.",
+   "before_after": [
+    {
+     "metric": "held-out sessions b04-b06 at 1.5×",
+     "before": "tuned sessions: 15/15, TPS p50 81.7",
+     "after": "15/15 at 6.28 M; TPS p50 81.3",
+     "source": "v3_full_cl_gcsv3_heldout_15x"
+    },
+    {
+     "metric": "repeat at 1.5×",
+     "before": "15/15 at 6.71 M",
+     "after": "15/15 at 6.70 M",
+     "source": "v3_full_cl_gcsv3_15x_r2"
+    },
+    {
+     "metric": "full-size images (CPU preprocessing) + refused requests sent, 1.5×",
+     "before": "standard test: 15/15, TPS p50 80.9–81.7, first token 1.35–1.38 s",
+     "after": "13/15 at 6.78 M; TPS p50 70.6; first token 1.82 s; 0 errors",
+     "source": "v3_full_cl_gcsv3_fidelity2_15x"
+    }
+   ],
+   "change_what": "Test only: replay_v2_cl.py --img 1064x1024 --send-prod-shed; image preprocessing on the CPU (SGLANG_FAST_IMAGE_PROCESSOR_DEVICE=cpu, hostfix/patch_mm_preproc_device.py).",
+   "when": "Oct 5 17:40–19:56 PDT",
+   "mechanism": "The standard test sends 1×1 images (624 image requests, 4,690 images; 2.78 M prompt tokens, 0.8%, missing) and skips ~140 requests production refused. Real images add vision-encoder and preprocessing work to the same engines.",
+   "learnings": [
+    "Synthetic shortcuts hide failures: with full-size images the tokenizer's GPU preprocessing ran out of memory at MEMFRAC 0.80 (0.35 GiB free).",
+    "Minutes 0 and 10 fail first under the harder test, the same minutes that bind on the standard test."
+   ],
+   "caveats": [
+    "The image cost and the refused-request cost are not yet separated; a split twin is queued."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 5 16:20, 17:40, 18:14, 19:03 PDT",
+    "chain log 02:56 UTC Oct 6"
+   ]
+  },
+  {
+   "title": "Minute 0 is a replay-boundary effect",
+   "kind": "finding",
+   "rank": 13.4,
+   "theme": "measurement and operations",
+   "headline": "The measured window starts 5.5 min after warm-up with ranks nearly idle; in minute 0 running requests and KV jump together and long sessions reload KV from host at once.",
+   "before_after": [
+    {
+     "metric": "running requests per rank",
+     "before": "3–5 before minute 0",
+     "after": "14–18 in minute 0",
+     "source": "engine metrics, Oct 5"
+    },
+    {
+     "metric": "device KV use",
+     "before": "30–40%",
+     "after": "100%",
+     "source": "engine metrics, Oct 5"
+    },
+    {
+     "metric": "minute 0 from 1.375× up",
+     "before": "—",
+     "after": "misses at random; 57.2–58.8 tok/s when it misses",
+     "source": "runs_meta Oct 4-5"
+    }
+   ],
+   "change_what": "Nothing yet; it explains why minute 0 binds from 1.375× up.",
+   "when": "Oct 5 16:00 PDT",
+   "mechanism": "Production never sees this step: its load is continuous. The replay starts from warm-up last turns and then turns the full load on.",
+   "learnings": [
+    "Judge the steady minutes and minute 0 separately; a fix for minute 0 may be a test fix, not a serving fix."
+   ],
+   "caveats": [],
+   "sources": [
+    "PROGRESS.md Oct 5 16:00 PDT"
+   ]
+  },
+  {
+   "title": "Production's peak window is different traffic",
+   "kind": "finding",
+   "rank": 13.3,
+   "theme": "measurement and operations",
+   "headline": "At the Oct 3 06:30 PDT peak the fleet sent 4.88 M per GPU (log axis) with half the requests, each about 2× longer; production's own first token p50 was 3.79 s.",
+   "before_after": [
+    {
+     "metric": "fleet TPM per GPU (log axis)",
+     "before": "test window 4.20 M",
+     "after": "peak window 4.88 M",
+     "source": "traffic/v4 build, Oct 5 18:30 PDT"
+    },
+    {
+     "metric": "fleet requests per minute (p50)",
+     "before": "10,498",
+     "after": "5,662",
+     "source": "traffic/v4 build"
+    },
+    {
+     "metric": "production first token p50",
+     "before": "0.32 s",
+     "after": "3.79 s (fails the 3 s target)",
+     "source": "traffic/v4 build"
+    }
+   ],
+   "change_what": "New traces: 10-03 06:30 and 10-05 08:00 PDT windows built from S3 (8 buckets each); 10-01 and 10-02 windows downloading.",
+   "when": "Oct 5 18:30 PDT",
+   "mechanism": "The test window (Sep 30 13:10 PDT) sits in the daily low; the peak brings longer prompts (~165k tokens per request).",
+   "learnings": [
+    "Tune on one window, then confirm on several days; the peak stresses prompt work and cache far more."
+   ],
+   "caveats": [
+    "The first runs on these windows start Oct 5 19:56 PDT."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 5 16:50 and 18:30 PDT"
+   ]
+  },
+  {
+   "title": "The profiler inflated the graph-launch gap 73–143×",
+   "kind": "finding",
+   "rank": 13.2,
+   "theme": "measurement and operations",
+   "headline": "A 3.4–6.2 ms launch gap in the profiled verify step was profiler overhead; unprofiled, the launch takes 49–50 µs and the GPU is 95.5% busy.",
+   "before_after": [
+    {
+     "metric": "target CUDA-graph launch (CPU)",
+     "before": "3.6–7.1 ms profiled",
+     "after": "49–50 µs unprofiled",
+     "source": "graph-launch window, Oct 4 22:37 PDT"
+    },
+    {
+     "metric": "GPU idle during the graph launch",
+     "before": "3.4–6.2 ms per step (profiled)",
+     "after": "0.05 ms; 1.4–1.5 ms idle per 33 ms step in all (95.5% busy)",
+     "source": "graph-launch window"
+    }
+   ],
+   "change_what": "Nothing adopted; the launch-path track was closed.",
+   "when": "Oct 4 22:00–22:37 PDT",
+   "mechanism": "CUPTI instruments each of the ~2,022 kernels in the target graph, and Kineto never detaches during the run.",
+   "learnings": [
+    "Confirm every profiler-only finding with unprofiled timers before building a fix."
+   ],
+   "caveats": [],
+   "sources": [
+    "PROGRESS.md Oct 4 22:00 and 22:37 PDT"
+   ]
+  },
+  {
+   "title": "Dynamo's own KV routing loses cache affinity on our engines",
+   "kind": "negative",
+   "rank": 41.5,
+   "theme": "cache, routing and admission",
+   "headline": "Three Dynamo 1.5.0 routing settings dropped cache hit to 71–76% or cost −23 tok/s; Dynamo behind our pins is at TPS parity with first token ×1.22.",
+   "before_after": [
+    {
+     "metric": "cache hit, default cost",
+     "before": "96.1% (our pins)",
+     "after": "71.0% (guard stopped B)",
+     "source": "twin v3_ab_dyn_kv_cl_1x"
+    },
+    {
+     "metric": "cache hit, two-tier policy",
+     "before": "96.1%",
+     "after": "75.6% (guard stopped B)",
+     "source": "twin v3_ab_dyn_2tier_cl_1x"
+    },
+    {
+     "metric": "paired generation, no decode-load term",
+     "before": "control",
+     "after": "−23.0 tok/s (CI −25.4..−20.1); uncached 2.7×",
+     "source": "twin v3_ab_dyn_kvnd_cl_1x"
+    },
+    {
+     "metric": "Dynamo executing our pins",
+     "before": "control",
+     "after": "−1.35 tok/s (inside side bias); first token ×1.22",
+     "source": "twin v3_ab_dyn_pin_cl_1x"
+    }
+   ],
+   "change_what": "Kept our gateway pins in front of Dynamo; Dynamo stays a long-term direction behind them.",
+   "when": "Oct 4 12:42–20:34 PDT",
+   "mechanism": "Each engine has two DP-rank caches; a follow-up turn must reach the exact rank that holds its history. Dynamo's cost lets load or decode blocks outweigh that overlap.",
+   "learnings": [
+    "Test any router on cache hit per rank first; a guard that stops a twin at a 15-point hit gap saves the run."
+   ],
+   "caveats": [
+    "Dynamo's first-token cost is its frontend preprocessing (stream interval 4 did not change it)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 4 12:42, 15:03, 15:50, 19:50, 20:34 PDT"
+   ]
+  },
+  {
+   "title": "Shared-expert overlap: −1 ms per verify pass in the bench, inside noise live",
+   "kind": "negative",
+   "rank": 41.4,
+   "theme": "numerics, kernels and speculative decoding",
+   "headline": "Running the shared expert beside the routed experts is bit-exact and saves 0.93–1.15 ms per pass in the bench, but the twin shows −0.58 tok/s (CI −1.99..+0.72).",
+   "before_after": [
+    {
+     "metric": "paired generation at 1.5× (B on engines 2-3)",
+     "before": "85.1 tok/s (control)",
+     "after": "−0.58 tok/s (CI −1.99..+0.72); first token ×0.981",
+     "source": "twin v3_ab_shx_cl_15x"
+    }
+   ],
+   "change_what": "Not adopted; a side-swapped repeat is queued.",
+   "when": "Oct 5 16:39 PDT",
+   "mechanism": "Unresolved: B ran on the slower side (about −3 tok/s), so the true effect may be small and positive.",
+   "learnings": [
+    "A bench saving of ~2% of a step needs a side-swapped pair to resolve."
+   ],
+   "caveats": [
+    "Greedy outputs unchanged (28/30 = control)."
+   ],
+   "sources": [
+    "PROGRESS.md Oct 5 15:05, 16:39, 16:50 PDT"
+   ]
+  },
+  {
+   "title": "Keep the run queue at least 8 hours deep",
+   "kind": "method",
+   "rank": 41.3,
+   "theme": "measurement and operations",
+   "headline": "The queue ran empty after the Oct 5 00:20 PDT run and the B300s idled until 08:34 PDT.",
+   "before_after": [
+    {
+     "metric": "GPU idle time",
+     "before": "—",
+     "after": "about 8 h (Oct 5 00:20–08:34 PDT)",
+     "source": "chain log"
+    }
+   ],
+   "change_what": "The queue now holds overnight work (twins, status runs, new production windows) before any long pause.",
+   "when": "Oct 5 08:35 PDT",
+   "mechanism": "chainQ exits when the queue is empty; the idle guard only alerts.",
+   "learnings": [
+    "Before a long pause, count the queued hours, not the queued lines."
+   ],
+   "caveats": [],
+   "sources": [
+    "PROGRESS.md Oct 5 00:20 PDT"
    ]
   }
  ]

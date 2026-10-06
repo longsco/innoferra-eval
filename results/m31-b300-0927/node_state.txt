@@ -1,7 +1,7 @@
-# read_utc 2026-10-06T02:06:23Z
+# read_utc 2026-10-06T03:20:43Z
 ## queue
-v4p_full_cl_gcsv3_1x /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-
-v4p_full_cl_gcsv3_125x /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl,/tr/v4/w1003_1330/b02.jsonl 0.5 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4
+v4d_cl_gcsv3_p125x_m1x /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 0.25 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b
+v4d_cl_gcsv3_p15x_m175x /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 0.5 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b
 v3_ab_dfp8_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=/
 v3_ab_dfp8sw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN
 v3_ab_shxsw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN=
@@ -9,13 +9,13 @@ v3_ab_ep8c_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_
 v3_ab_ep8csw_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop REPLAY_FILE_B=replay_v2_cl.py REPLAY_EXTRA_B=--closed-loop AB_PLAN
 v3_full_cl_gcsv3_1625x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl,/tr/v3/b03.jsonl 0.25 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enabl
 v3_full_cl_gcsv3_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierarchical-
+v3_ab_fidsplit_cl_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --send-prod-shed" REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTRA_B
+v3_full_cl_gcsv3_fidelity_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --img 1064x1024 --send-prod-shed" MEMFRAC=0.80 TOKW=8 
 ## done
-00:40:25 v3_full_cl_gcsv3_fidelity_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --img 1064x1024 --send-prod-shed" MEMFRAC=0.80 TOK
 01:14:14 v3_full_cl_gcsv3_15x_r2 /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hierar
 02:03:27 v3_full_cl_gcsv3_fidelity2_15x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --img 1064x1024 --send-prod-shed" MEMFRAC=0.80 TO
+02:56:36 v4p_full_cl_gcsv3_1x /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--closed-loop MEMFRAC=0.80 TOKW=8 DRAFT_ATTN=fa4 "XARGS=--enable-hier
 ## markers
-21:57:56 ===== lever v3_full_cl_gcsv3_15x done
-21:57:56 ===== lever v3_full_cl_gcsv3_15625x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl,/tr/v3/b03.jsonl frac 0.125; REPLAY_FILE=replay_v2_cl.py
 22:49:27 ===== lever v3_full_cl_gcsv3_15625x done
 22:49:27 ===== lever v3_ab_shx_cl_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed
 23:39:40 ===== lever v3_ab_shx_cl_15x done
@@ -26,3 +26,5 @@ v3_full_cl_gcsv3_14375x /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl 0.875
 01:14:14 ===== lever v3_full_cl_gcsv3_15x_r2: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--clo
 02:03:27 ===== lever v3_full_cl_gcsv3_15x_r2 done
 02:03:27 ===== lever v3_full_cl_gcsv3_fidelity2_15x: traces /tr/v3/b00.jsonl,/tr/v3/b01.jsonl,/tr/v3/b02.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTR
+02:56:36 ===== lever v3_full_cl_gcsv3_fidelity2_15x done
+02:56:36 ===== lever v4p_full_cl_gcsv3_1x: traces /tr/v4/w1003_1330/b00.jsonl,/tr/v4/w1003_1330/b01.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXTRA=--c

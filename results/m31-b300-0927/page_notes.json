@@ -1125,6 +1125,14 @@
   "v3_ab_dfp8sw_cl_15x@B": {
    "name": "FP8 draft KV (swapped sides)",
    "short": "FP8 draft KV sw"
+  },
+  "v4m_full_cl_gcsv3_1x": {
+   "name": "NEW WINDOW 10-05 08:00 PDT (Monday), full node, GC off + v3, 1.0× (production's own load)",
+   "short": "10-05 window 1.0×"
+  },
+  "v4m_full_cl_gcsv3_175x": {
+   "name": "NEW WINDOW 10-05 08:00 PDT (Monday), full node, GC off + v3, 1.75×",
+   "short": "10-05 window 1.75×"
   }
  },
  "plain_words": [
