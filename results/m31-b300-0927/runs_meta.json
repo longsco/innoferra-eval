@@ -1521,6 +1521,15 @@
    "change": "kernel",
    "verdict": "no clear change",
    "why": "15/15. Paired generation -0.58 tok/s (CI -1.99..+0.72) with B on the slower side; first token ×0.981. The overlap was on (first fork at capture). Bench predicted about +2 tok/s; side-swapped repeat decides."
+  },
+  {
+   "tag": "v3_full_cl_gcsv3_heldout_15x",
+   "at": "2026-10-05 17:40",
+   "protocol": "v3.2",
+   "name": "held-out sessions (buckets b04-b06), full node, GC off + v3, 1.5×",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "15/15 at 6.28 M/GPU on sessions never used for tuning (production 6.40 M for the same requests; these buckets carry ~6% less load). Worst minute 69.8 tok/s, decode p50 81.3 (tuned buckets 81.7), first token p50 1.27 s, hit 94.4% vs 96.8%, 0 errors. Completion ours/prod 0.944. No sign of overfitting to the tuned sessions."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
