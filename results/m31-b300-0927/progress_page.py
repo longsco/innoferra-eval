@@ -1523,9 +1523,9 @@ def legend_html():
         return '<svg class="sw" viewBox="0 0 16 16" aria-hidden="true">' + inner + "</svg>"
     items = []
     for t in sorted(SHOWN, key=tv_start, reverse=True):
-        name = "<b>" + esc(t) + "</b>" + (" current" if t == CUR else (" newer" if t in HL else ""))
+        name = "<b>" + esc(t) + "</b>" + (" current" if t == CUR else "")
         items.append('<span class="li">' + sw(f'<circle class="lf {tv_cls(t)}" cx="8" cy="8" r="{5.5 if t in HL else 3.5}"/>') + name + "</span>")
-    items.append('<span class="li">' + sw('<circle class="lh" cx="8" cy="8" r="4.5"/>') + "half-node run</span>")
+    items.append('<span class="li">' + sw('<circle class="lh" cx="8" cy="8" r="4.5"/>') + "half node</span>")
     items.append('<span class="li">' + sw('<path class="lk" d="M2 3 V9 H14"/>') + "frontier</span>")
     pairs = [p for t in HL for p in ab_pairs(t)]
     prov = [provisional(b) for _, b in pairs]
@@ -1533,7 +1533,7 @@ def legend_html():
         items.append('<span class="li">' + sw('<path class="lk" d="M13 13 H4 V4 H10 M7.5 1.5 L10 4 L7.5 6.5"/>') + "A/B change</span>")
     if any(prov):
         items.append('<span class="li">' + sw('<path class="lk dash" d="M13 13 H4 V4 H10"/><path class="lk" d="M7.5 1.5 L10 4 L7.5 6.5"/>')
-                     + "A/B change, not confirmed</span>")
+                     + "A/B, unconfirmed</span>")
     return '<p class="lgd">' + "".join(items) + "</p>"
 
 
