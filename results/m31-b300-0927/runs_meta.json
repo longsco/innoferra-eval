@@ -1700,6 +1700,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "15/15 at 4.92 M/GPU - first pass on complete peak traffic under the strict schedule. Worst minute first token 2.60 s (minute 0); first token p50 1.40 s vs production 4.08 s; TPS p50 150 vs production 47.2; hit 96.4% vs production 94.8%; 0 errors; 9% paced fallbacks. 6.56 M on the same traces was 0/15 -> knee between 4.92 and 6.56 M."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_60_paced",
+   "at": "2026-10-06 04:59",
+   "protocol": "v5",
+   "share": 0.74,
+   "name": "COMPLETE traces (v5): Oct 3 06:30 PDT peak, full node, strict schedule, 5.92 M/GPU = 0.74x of production's real load (8.01 M)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "11/15 at 5.92 M/GPU; only first token fails: minutes 0-1 (4.49, 4.11 s: replay start, no carry-in), 5 (5.00 s) and 7 (3.82 s). TPS p50 114.5 (every minute 77-138) vs production 47.8; first token p50 2.71 s vs production 4.23 s; hit 94.0% vs production 94.6% (parity); 0 errors; 18% paced fallbacks. Knee on the Oct 3 peak: 4.92 M 15/15, 5.92 M 11/15, 6.56 M 0/15."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
