@@ -2063,9 +2063,9 @@
   },
   {
    "name": "Attention over both GPUs (our own patch)",
-   "state": "planned",
-   "at": "2026-10-02 00:55",
-   "text": "production runs attention split over the two GPUs of a worker (no lockstep); our training-compatible numerics force attention onto one GPU. A max-type index score can be merged across GPUs exactly, so our own patch could lift that guard (estimate +6–15% generation speed at 3.34 M; large effort, GSM8K check needed)",
+   "state": "parked",
+   "at": "2026-10-06 17:10",
+   "text": "production runs attention split over the two GPUs of a worker (no lockstep); our training-compatible numerics force attention onto one GPU. A max-type index score can be merged across GPUs exactly, so our own patch could lift that guard (estimate +6–15% generation speed at 3.34 M; large effort, GSM8K check needed) 10-06: re-examined: the Oct 2 TP2 gain was mostly the missing prefill delayer on its TP2 side; pooling alone ~0. On hold until the delayer twin.",
    "ref": "PROGRESS.md Oct 2 00:55"
   },
   {
@@ -2301,6 +2301,13 @@
    "at": "2026-10-06 07:45",
    "text": "At the 6.56 M knee the extra uncached prefill was whole-session re-prefills that coincide with gateway re-pins (230 near-cold follow-ups vs 213 re-pins). Twin at 7.26 M per half on the adopted stack: re-pins off gave TPS +14.15 tok/s (CI +11.4..+16.2), first token x0.79, 5/15 vs 2/15, uncached -19%, 0 errors, B on the slower side. Adopted on every queued run.",
    "ref": "twin v5t_ab_norepin_p74 · next190/FIDELITY-V5.md (+ .verify.md) · PROGRESS.md Oct 6 07:45"
+  },
+  {
+   "name": "Prefill delayer off (DP-attention admission hold)",
+   "state": "running",
+   "at": "2026-10-06 17:10",
+   "text": "The prefill delayer (adopted Oct 2) holds a rank's prompt admissions for up to 30 passes (~1 s) when its DP partner is idle or full. Skeptics measured 0.1-0.8 s of each 7.33 M minute's first-token median in that hold, and it explains most of the Oct 2 TP2 first-token gain. Side-swapped twin pair below the knee queued.",
+   "ref": "next200/LEAD-START.verify.md, LEAD-TP2.verify.md"
   }
  ],
  "done": [
