@@ -1900,6 +1900,26 @@
    "change": "load",
    "verdict": "baseline",
    "why": "5/15 at 6.14 M/GPU: first token p50 3.22 s vs production 4.41 s; TPS p50 114.0 vs 47.7; hit 94.4% vs 94.5%; 19% paced fallbacks; 0 errors. Most misses are 3.0-4.7 s; minute 14 6.2 s. Without the rebuilt requests (v5.1) 6.50 M passed 14/15: the 3.5% of requests that carry 14.4% of prompt tokens (~170k+ tokens each) lower the knee by filling each rank's KV pool."
+  },
+  {
+   "tag": "v5t_ab_tstart_p60@A",
+   "at": "2026-10-06 16:39",
+   "protocol": "v5",
+   "share": 0.75,
+   "name": "protocol bridge, side A: test v5 (end-time schedule) on the adopted stack, Oct 3 peak b00 per half",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "12/15 at 6.02 M/GPU (half node): first token p50 1.82 s, TPS p50 122.0, uncached 17.4 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_tstart_p60@B",
+   "at": "2026-10-06 16:39",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "protocol bridge, side B: test v5.1 (production's start times + 5-minute lead-in), same stack",
+   "change": "protocol",
+   "verdict": "no clear change",
+   "why": "13/15 vs 12/15 at 5.95 M/GPU per half; paired TPS +3.68 tok/s (CI -0.27..+8.15), first token x0.983 (CI 0.940..1.020), uncached 16.0 vs 17.4 M. The start-time fix does not inflate results: today's knee movement (about 5.5 -> 6.5-7.3 M) comes from the stack, not the protocol."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
