@@ -1,7 +1,7 @@
 {
- "at": "2026-10-05 20:45",
+ "at": "2026-10-05 20:20",
  "intro": "What moved the numbers on real traffic (requests production served Sep 30 13:10–13:25 PDT, replayed on node 0008), what exactly we changed, and what we learned. Loads are M TPM per GPU sent on our replay axis (1.0× = 4.40 M = production's per-node load in that window; production's engine counters read 1.44× this axis). As of Oct 5: 1.5× (6.71 M) passes all 15 minutes on the standard test in 3 of 3 runs; with full-size images and production-refused requests sent it passes 13/15.",
- "note": "Oct 1 entries: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then fact-checked by 5 more (130 corrections). Oct 2–5 entries: written from PROGRESS.md and runs_meta (last added Oct 5 20:45 PDT). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
+ "note": "Oct 1 entries: drafted by 5 agents from PROGRESS.md, the per-minute run records and the patch code, then fact-checked by 5 more (130 corrections). Oct 2–5 entries: written from PROGRESS.md and runs_meta (last added Oct 5 20:20 PDT). Older run notes quote the old SLA (TTFT p50 ≤ 1 s, p99 ≤ 15 s).",
  "entries": [
   {
    "title": "Root cause: the multimodal model type made the engine tokenise every prompt twice",
