@@ -30,7 +30,7 @@
   }
  },
  "layout_notice": {
-  "text": "Oct 7 14:41 PDT: by owner request, M3.1 tests now use only GPUs 6 and 7 of node 0008. Full-node runs stopped; next results come from one engine (quarter node) at the same load per GPU.",
+  "text": "Oct 7: tests now use only GPUs 6-7 (one engine, same load per GPU).",
   "until": "2026-10-14 00:00"
  },
  "test_versions": {
