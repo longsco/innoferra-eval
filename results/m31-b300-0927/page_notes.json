@@ -31,7 +31,7 @@
  },
  "layout_notice": {
   "text": "Oct 7: tests now use only GPUs 6-7 (one engine, same load per GPU).",
-  "until": "2026-10-14 00:00"
+  "until": "2026-10-07 00:00"
  },
  "test_versions": {
   "v3.1": {
@@ -2012,6 +2012,13 @@
   "2026-10-01 04:50"
  ],
  "engineering": [
+  {
+   "name": "Test setup: GPUs 6-7 only (owner request)",
+   "state": "running",
+   "at": "2026-10-07 14:45",
+   "text": "Oct 7 14:41 PDT: by owner request our tests use only GPUs 6 and 7 of node 0008. The full-node chain, its watchdog, all engines and the gateway were stopped (nvidia-smi: all GPUs free). Next results come from one engine (quarter node) at the same load per GPU; A/B tests become sequential pairs on the same requests. Harness build: workflow wf_915777ef-68f.",
+   "ref": "PROGRESS.md Oct 7 14:45; next230/G67-HARNESS.md"
+  },
   {
    "name": "Faster sparse attention (generation steps and prompt chunks, bitwise equal)",
    "state": "adopted",
