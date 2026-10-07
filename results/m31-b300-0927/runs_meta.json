@@ -1938,8 +1938,8 @@
    "share": 0.74,
    "name": "prefill delayer OFF (engines 2-3); first of a side-swapped pair",
    "change": "scheduler",
-   "verdict": "under review",
-   "why": "14/15 vs 14/15; paired first token x0.777 (CI 0.726..0.824) but TPS -21.94 tok/s (CI -24.67..-18.34, x0.824); uncached equal. A trade: prompts admitted sooner, more decode interruption. At the knee decode was 62-78 tok/s in the peak minutes, so -18% could fail them on decode. Decision after the side swap; a token-usage watermark is the middle setting. 18:30: side swap agrees (x0.768, -19.9); decision at the knee."
+   "verdict": "rejected",
+   "why": "14/15 vs 14/15; paired first token x0.777 (CI 0.726..0.824) but TPS -21.94 tok/s (CI -24.67..-18.34, x0.824); uncached equal. A trade: prompts admitted sooner, more decode interruption. At the knee decode was 62-78 tok/s in the peak minutes, so -18% could fail them on decode. Decision after the side swap; a token-usage watermark is the middle setting. 18:30: side swap agrees (x0.768, -19.9); decision at the knee. 20:20: REJECTED at the knee (full node 7.34 M: 1/15 vs 7/15)."
   },
   {
    "tag": "v5t_ab_nodelaysw_p60@A",
@@ -1958,8 +1958,8 @@
    "share": 0.74,
    "name": "prefill delayer OFF, engines 0-1 (side swap of v5t_ab_nodelay_p60)",
    "change": "scheduler",
-   "verdict": "under review",
-   "why": "14/15 vs 14/15; first token x0.768 (CI 0.726..0.798), TPS -19.90 tok/s (x0.841). Side-balanced with twin 1: first token ~x0.77, TPS ~x0.83. Below the knee both settings pass; the decision moves to the knee: full-node 7.33 M runs with the delayer off, with max 10 passes, and a repeat with today's setting."
+   "verdict": "rejected",
+   "why": "14/15 vs 14/15; first token x0.768 (CI 0.726..0.798), TPS -19.90 tok/s (x0.841). Side-balanced with twin 1: first token ~x0.77, TPS ~x0.83. Below the knee both settings pass; the decision moves to the knee: full-node 7.33 M runs with the delayer off, with max 10 passes, and a repeat with today's setting. 20:20: REJECTED at the knee (full node 7.34 M: 1/15 vs 7/15)."
   },
   {
    "tag": "v5d_full_cl_gcsv3_1x_paced",
@@ -1970,6 +1970,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 6.44 M/GPU (minute 11 misses: first token 3.5 s), 0 errors. First token p50 1.42 s vs production 0.34 s on the same requests; TPS p50 89.0 vs 75.7; hit 94.6% vs 95.5%; 22% paced fallbacks. First near-pass at ~1.0x of production's real load on a complete busy window (short contexts, ~35k mean)."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_70nd_paced",
+   "at": "2026-10-06 20:18",
+   "protocol": "v5.1",
+   "share": 0.92,
+   "name": "prefill delayer OFF at the knee: Oct 3 peak, full node, 7.34 M/GPU, otherwise the adopted stack",
+   "change": "scheduler",
+   "verdict": "rejected",
+   "why": "1/15 at 7.34 M/GPU vs 7/15 with the delayer (v5p_full_cl_gcsv3_70dw_paced, 7.33 M): first token p50 6.07 vs 3.59 s, TPS p50 53.4 vs 96.5, 37% vs 23% fallbacks, 0 errors. Below the knee delayer-off gave first token x0.77 at TPS x0.83; at the knee the lost decode pairing makes requests stay longer, KV fills and first token gets worse too. Delayer kept."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

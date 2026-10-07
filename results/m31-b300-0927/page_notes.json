@@ -2304,9 +2304,9 @@
   },
   {
    "name": "Prefill delayer off (DP-attention admission hold)",
-   "state": "running",
-   "at": "2026-10-06 17:10",
-   "text": "The prefill delayer (adopted Oct 2) holds a rank's prompt admissions for up to 30 passes (~1 s) when its DP partner is idle or full. Skeptics measured 0.1-0.8 s of each 7.33 M minute's first-token median in that hold, and it explains most of the Oct 2 TP2 first-token gain. Side-swapped twin pair below the knee queued.",
+   "state": "rejected",
+   "at": "2026-10-06 20:20",
+   "text": "The prefill delayer (adopted Oct 2) holds a rank's prompt admissions for up to 30 passes (~1 s) when its DP partner is idle or full. Skeptics measured 0.1-0.8 s of each 7.33 M minute's first-token median in that hold, and it explains most of the Oct 2 TP2 first-token gain. Side-swapped twin pair below the knee queued. 20:20: REJECTED. Below the knee: first token x0.77, TPS x0.83 (side-swapped pair, 14/15 both). At the knee (full node 7.34 M): 1/15 vs 7/15 with the delayer, first token 6.07 vs 3.59 s, TPS 53 vs 97. Without the pairing decode collapses under load. A 10-pass setting runs as a dose check.",
    "ref": "next200/LEAD-START.verify.md, LEAD-TP2.verify.md"
   }
  ],
