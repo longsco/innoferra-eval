@@ -857,8 +857,9 @@ def cells_html():
     if PASS_TOP:
         c1 = ('<div class="cell yes"><p class="q">Do we pass the SLA at any load?</p>'
               f'<p class="lead hero"><span class="ok">✓</span> Yes, up to {m2(PASS_TOP["load"])} M</p>'
-              + (lambda held, nxt: f'<p class="body">{NMIN}/{NMIN} at ' + " and ".join(f"{m2(x)} M" for x in held)
-                 + f' in every run on test {CUR}.' + (f' {m2(nxt["load"])} M fails: best {nxt["pass"]}/{NMIN}.' if nxt else "") + '</p>')(
+              + (lambda held, nxt: (f'<p class="body">{NMIN}/{NMIN} at ' + " and ".join(f"{m2(x)} M" for x in held) + f' in every run on test {CUR}.'
+                                    if held else f'<p class="body">{NMIN}/{NMIN} at {m2(PASS_TOP["load"])} M on test {CUR} (adopted stack; other setups at that load scored lower).')
+                 + (f' {m2(nxt["load"])} M fails: best {nxt["pass"]}/{NMIN}.' if nxt else "") + '</p>')(
                   sorted({round(r["load"], 2) for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected"
                           and all(q["pass"] >= NMIN for q in CURV if abs(q["load"] - r["load"]) < 0.05)})[-2:],
                   max([q for q in CURV if q["load"] > PASS_TOP["load"] + 0.3], key=lambda q: (q["pass"], q["at"]), default=None))
