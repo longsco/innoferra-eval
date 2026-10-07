@@ -2000,6 +2000,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "3/15 at 7.33 M/GPU vs 7/15 in the first run: first token p50 4.53 vs 3.59 s, TPS 88.6 vs 96.5, 0 errors. Run-to-run noise at the knee is up to 4 minutes. NUMA placement of the host KV pools differed: 49% of ranks' pool on the other socket vs 28%. Across four 7.33 M runs, minutes fall as remote placement rises (28% -> 7/15, 40% -> 4/15, 49% -> 3/15, 60% -> 1/15)."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_70m82_paced",
+   "at": "2026-10-06 23:07",
+   "protocol": "v5.1",
+   "share": 0.92,
+   "name": "MEMFRAC 0.82 (+6.6% device KV tokens: 2,750,336 per rank; 16.9 GB free after capture) at the knee: Oct 3 peak, full node, 7.33 M/GPU",
+   "change": "capacity",
+   "verdict": "rejected",
+   "why": "4/15 at 7.33 M/GPU (first token p50 4.00 s, TPS 86.5) - inside the 3-7/15 noise band of the MEMFRAC 0.80 runs, with ~43% of the host KV on the other socket - and 3 HTTP 500 errors; engine 1's log showed out-of-memory/CUDA errors before its container was replaced. No clear gain, less memory headroom: MEMFRAC stays 0.80."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
