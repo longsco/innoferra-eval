@@ -1679,7 +1679,7 @@
    "name": "EP8 combine v2 kernel (engines 2-3)",
    "change": "kernel",
    "verdict": "adopted",
-   "why": "Paired TPS +2.46 tok/s (CI +0.89..+4.11), first token x0.971 (CI 0.939..0.997), with B on the slower side; bit-exact bench (x2.35-2.73 at prompt sizes, x2.3 at verify sizes). Adopted 01:52; side-swapped confirmation twin queued."
+   "why": "Paired TPS +2.46 tok/s (CI +0.89..+4.11), first token x0.971 (CI 0.939..0.997), with B on the slower side; bit-exact bench (x2.35-2.73 at prompt sizes, x2.3 at verify sizes). Adopted 01:52; side-swapped confirmation twin queued. 10-07 04:00: the side-swapped confirmation gave -2.23 tok/s; side-balanced about +0.1 tok/s, so the gain claim is withdrawn (patch kept, bit-exact)."
   },
   {
    "tag": "v5p_full_cl_gcsv3_69_paced",
@@ -2060,6 +2060,24 @@
    "change": "calibration",
    "verdict": "calibration",
    "why": "10/15 vs 13/15 at 5.96 M/GPU with IDENTICAL configs; paired TPS -0.36 tok/s (CI -4.62..+4.60), first token x0.991 (CI 0.955..1.026), hit 95.0%, 0 errors. Below the knee the paired metrics show no side bias, but minute counts still differ by 3 between identical halves: decide on paired metrics, not on minute counts. This is the floor for the Dynamo rung-10a twin (same stack and plan)."
+  },
+  {
+   "tag": "v3_ab_ep8csw_cl_15x@A",
+   "at": "2026-10-07 03:54",
+   "protocol": "v3.2",
+   "name": "control half (engines 2-3): adopted stack WITHOUT EP8 combine v2, test v3 at 1.5x (6.70 M/GPU per half)",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "15/15 at 6.70 M/GPU (half node, test v3): first token p50 1.08 s, TPS p50 92.4, uncached 18.5 M, 0 errors."
+  },
+  {
+   "tag": "v3_ab_ep8csw_cl_15x@B",
+   "at": "2026-10-07 03:54",
+   "protocol": "v3.2",
+   "name": "EP8 combine v2, side-swapped confirmation (B on engines 0-1)",
+   "change": "kernel",
+   "verdict": "no clear change",
+   "why": "15/15 both; paired TPS -2.23 tok/s (CI -3.97..-0.90), first token x1.018 (CI 0.987..1.047), uncached 19.7 vs 18.5 M, 0 errors. The first twin (B on engines 2-3) gave +2.46: side-balanced effect about +0.1 tok/s, first token about x0.99. No measurable gain; the patch stays (bit-exact) but the adoption claim is withdrawn."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",

@@ -2222,8 +2222,8 @@
   {
    "name": "Verify bundle: shared-expert overlap + logits all-gather blocks + EP8 combine v2",
    "state": "adopted",
-   "at": "2026-10-06 01:52",
-   "text": "Shared-expert overlap: GPU bench PASS (bit-exact bs 1-32, -0.93..-1.15 ms/pass); twins running. EP8 combine v2: GPU bench PASS 15:51 (bit-exact; x2.35-2.73 at prompt sizes, x2.3 at verify sizes); patch applied flag-off; twins queued. Logits gather blocks: pending (log fix). Minute-0 cache harvest: needs a path-rewrite fix. 10-06 01:05: shared-expert overlap ADOPTED (side-balanced about +3.0 tok/s, first token about x0.95, bit-exact). 01:52: EP8 combine v2 ADOPTED (+2.46 tok/s, CI +0.89..+4.11, first token x0.971). A side-swapped EP8 confirmation twin is queued. Logits gather blocks: still pending.",
+   "at": "2026-10-07 04:00",
+   "text": "Shared-expert overlap: GPU bench PASS (bit-exact bs 1-32, -0.93..-1.15 ms/pass); twins running. EP8 combine v2: GPU bench PASS 15:51 (bit-exact; x2.35-2.73 at prompt sizes, x2.3 at verify sizes); patch applied flag-off; twins queued. Logits gather blocks: pending (log fix). Minute-0 cache harvest: needs a path-rewrite fix. 10-06 01:05: shared-expert overlap ADOPTED (side-balanced about +3.0 tok/s, first token about x0.95, bit-exact). 01:52: EP8 combine v2 ADOPTED (+2.46 tok/s, CI +0.89..+4.11, first token x0.971). A side-swapped EP8 confirmation twin is queued. Logits gather blocks: still pending. 10-07 04:00: side-swapped EP8 confirmation (B with EP8 combine v2 on engines 0-1, 6.70 M/GPU per half, v3): paired TPS -2.23 tok/s (CI -3.97..-0.90), first token x1.018. With the first twin (+2.46) the side-balanced effect is about +0.1 tok/s and first token about x0.99: no measurable gain. Kept (bit-exact, cheaper prompt passes in the bench), claim withdrawn.",
    "ref": "serving/next170/LEADS.md · workflow wf_9ccb26b7-34e"
   },
   {

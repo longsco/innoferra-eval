@@ -1,6 +1,6 @@
 # TOKMEDIA-PROFILE: where the tokenization time of M3.1 image requests goes (CPU profile)
 
-Node 0008, 2026-10-07 02:20-03:15 PDT. CPU only. Throwaway `tm-prof-*` containers from the engine image, removed after each run.
+Node 0008, 2026-10-07 02:15-03:15 PDT. CPU only. Throwaway `tm-prof-*` containers from the engine image, removed after each run.
 No GPU, no live file, no running container, no live cache dir, no trace was changed. Aggregates only.
 Tags: [measured] = this profile measured it; [code: file:line] = live tree `/data01/minimax31/serving/next180/serving/tree/python/
 sglang/srt/...` (short paths) or transformers 5.12.1 in the image (`tf/...`); [inferred, HIGH|MED|LOW] = our conclusion.
@@ -26,7 +26,8 @@ TokTimeStats line.
    So production runs the image path 10-25% slower than one idle harness core. [measured]
 6. **The tail is the CPU path, not waiting.** An event-loop model of the run (8 tokenizer workers per engine, the harness costs,
    all 8,386 requests at their real send times) gives, at >= 150k with images: p50 2.80-3.09 s (measured 2.94), p90 4.6-5.0 s
-   (5.50), mean 2.9-3.2 s (3.35). Wait inside the interval: 3-6% of it. [model on measured inputs, MED-HIGH; section 5]
+   (5.50), mean 2.9-3.2 s (3.35). Wait inside the interval: 3% of it at >= 150k (6% at 50-150k). [model on measured inputs,
+   MED-HIGH; section 5]
 7. **Hidden cost on OTHER requests.** An image request blocks its worker's event loop for seconds. Requests that arrive on that
    worker wait BEFORE the "created" stamp, so TokTimeStats does not show it, but TTFT does. Measured wait before the handler,
    no-image requests: p99 1.34 s, p99.9 3.76 s. The model gives 1.76 s / 3.24 s. With the fix in item 8 it gives 0.07 s / 0.19 s.
@@ -41,7 +42,8 @@ TokTimeStats line.
    scheduler. [measured; section 6]
 10. **Not measured:** the live engines run the image processor on `cuda:<base_gpu_id>` inside the tokenizer process
    [code: multimodal/processors/base_processor.py:506, :579]; the harness runs it on the CPU (13 ms at 1x1). The residual
-   (measured - harness) bounds the extra cost of the GPU path and of everything else not modelled: p50 +0.45 s at >= 150k. [inferred, MED]
+   (measured - harness) bounds the extra cost of the GPU path and of everything else not modelled: p50 +0.45 to +0.60 s at
+   >= 150k (two harness runs). [inferred, MED]
 
 ---------------------------------------------------------------------------------------------------------------------------
 ## 1. Data and method
@@ -201,15 +203,16 @@ Wait BEFORE the handler ("created" - replay send - 5 ms), all measured requests:
 | image requests | 0.065 / 0.149 / 1.461 / 3.558 | 0.006 / 0.012 / 1.466 / 2.793 | 0.006 / 0.010 / 0.049 / 0.156 |
 
 - The model reproduces p50 within 5% and the mean within 13% (F 1.0), and p50 / mean / p90 within 5-9% at F 1.1. So the measured
-  tokenization tail of image requests is the CPU cost of the path, about 10% slower in production than in the harness. Waiting
-  inside the interval is small. [model on measured inputs, MED-HIGH]
+  tokenization tail of image requests is the CPU cost of the path, 10-25% slower in production than in the harness (F 1.1 with
+  the costs of the first run; the repeat run's costs need about 1.2). Waiting inside the interval is small. [model on measured
+  inputs, MED-HIGH]
 - The measured p50 / p90 of the wait before the handler (40-120 ms) is network, gateway and HTTP receive; the model leaves it
   out. The p99 / p99.9 (1.3 / 3.8 s) is head-of-line blocking behind image requests; the model reproduces it, and the fix
   removes it. This wait is in TTFT but not in TokTimeStats, so the knee model of PREFILL-BREAKDOWN 8.2 (which caps the
   TokTimeStats interval) does not count it. [measured; model, MED]
 
 ---------------------------------------------------------------------------------------------------------------------------
-## 6. Real-size images (616x616, the fidelity mode)
+## 6. Real-size images (616x616 = the fidelity mode, and 1064x1024)
 
 Setup: the same 121 image requests, `--img 616x616` (the fidelity runs' setting, 484 tokens per image) and `--img 1064x1024`
 (the replay default; run `v3_full_cl_gcsv3_fidelity2_15x` used it). The PNG is the replay's synthetic screenshot-like image. The image
@@ -330,7 +333,8 @@ Knobs: `--img WxH`, `--cache prev|cold|keep`, `--reps`, `--only img,noimg,lt50k,
 - The image processor runs on the CPU in the harness; the standard live runs use the GPU (cuda) in the tokenizer process. At 1x1
   the CPU step is 13 ms; the GPU step (context init per worker, kernels that share the GPU with the model) is not measured.
 - The closed loop: the trace carries production's earlier answers, the run carried ours (token counts within 0.1-0.9%).
-- Harness CPU: one core, nice 19, cpu/wall 1.00. Production ran about 10% slower on the same path (sections 4, 5).
+- Harness CPU: one core, nice 19, cpu/wall 1.00. Production ran 10-25% slower on the same path (sections 4, 5); two harness runs
+  35 minutes apart differ by up to 6% per request.
 - The event-loop model ignores the streaming-output work of each worker and the gateway; it reproduces the measured tails,
   so these are second order. [inferred, MED]
 - Bins < 50k with images have few measured requests (28).
