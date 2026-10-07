@@ -1,16 +1,13 @@
-# read_utc 2026-10-07T12:52:46Z
+# read_utc 2026-10-07T13:31:21Z
 ## queue
-v5s_full_cl_gcsv3_127x_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl 0.5 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --t-s
 v5s_full_cl_gcsv3_1x_nonuma_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --t-start --lead-in 300" MEM
 v5p_full_cl_gcsv3_70d60_r2_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.33 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced 
 v5s_full_cl_gcsv3_fidelity_1x /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --img 616x616 --send-prod-shed -
 ## done
-10:54:04 v5t_ab_dyn_rust_pin_p60 /tr/v5/w1003_1330/b00.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --paced --t-start --lead-in 300" REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTR
 11:43:51 v5s_full_cl_gcsv3_1x_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --t-start --lead-in 300" MEMFRAC=0.80 DE
 12:36:46 v5s_full_cl_gcsv3_114x_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl 0.25 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --p
+13:30:21 v5s_full_cl_gcsv3_127x_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl 0.5 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --pa
 ## markers
-07:54:17 ===== lever v5p_full_cl_gcsv3_70numa_r2_paced done
-07:54:17 ===== lever v5p_full_cl_gcsv3_70d60_paced: traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl frac 0.33; REPLAY
 08:48:40 ===== lever v5p_full_cl_gcsv3_70d60_paced done
 08:48:40 ===== lever v5t_ab_dyn_sync_pin_p60: traces /tr/v5/w1003_1330/b00.jsonl frac 1.0; REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop --paced --
 09:39:56 ===== lever v5t_ab_dyn_sync_pin_p60 done
@@ -21,3 +18,5 @@ v5s_full_cl_gcsv3_fidelity_1x /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.
 11:43:51 ===== lever v5s_full_cl_gcsv3_1x_paced: traces /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl frac 1.0; REPLAY_FILE=replay_v2_cl.py REPLAY_EXT
 12:36:46 ===== lever v5s_full_cl_gcsv3_1x_paced done
 12:36:46 ===== lever v5s_full_cl_gcsv3_114x_paced: traces /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl frac 0.25; NUMA_PR
+13:30:21 ===== lever v5s_full_cl_gcsv3_114x_paced done
+13:30:21 ===== lever v5s_full_cl_gcsv3_127x_paced: traces /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl frac 0.5; NUMA_PRE

@@ -2108,6 +2108,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "15/15 at 6.53 M/GPU (1.02x of Sep 30's real 6.43 M): first token p50 1.02 s (production 0.37 s on the same requests), TPS p50 101.7 (production 64.5), hit 96.5% vs 97.0%, 0 errors, 12% paced fallbacks. Sep 30 is a lighter day than the Oct 3 peak: the same stack passes it with margin. NUMA_PREFER=1 had leaked into this run; a NUMA-off repeat is queued."
+  },
+  {
+   "tag": "v5s_full_cl_gcsv3_114x_paced",
+   "at": "2026-10-07 06:30",
+   "protocol": "v5.1",
+   "share": 1.15,
+   "name": "Sep 30 13:10 window at 1.15x production's real load, full node, adopted stack (NUMA off)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "15/15 at 7.41 M/GPU (1.15x of Sep 30's real 6.43 M; production served 7.71 M/GPU on these requests): first token p50 1.12 s (worst minute 1.6 s; production 0.36 s), TPS p50 90.0 (worst minute 77; production 65.1), hit 96.4% vs 97.0%, 0 errors, 15% paced fallbacks. First real-traffic window above 7 M/GPU that passes every minute. Host KV sat 59-100% on the other socket in this boot."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
