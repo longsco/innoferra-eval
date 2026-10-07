@@ -1237,25 +1237,25 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-06 06:55",
+  "at": "2026-10-06 21:30",
   "items": [
    {
     "rule": "ttft_p50",
-    "title": "Oct 3 peak, complete traces: first token from 5.9 M (KV fills, gateway re-pins)",
-    "text": "On complete traces the node passes 15/15 at 4.92 M, 11/15 at 5.92 M and 0/15 at 6.56 M; production's real load there is 8.01 M. At 5.92 M only first token fails (minutes 0-1, 5 and 7). At 6.56 M device KV fills on every engine, so requests queue. The gateway then re-pins sessions to other ranks (213 times); each re-pin is a full cold prefill of about 140k tokens, 88% of our extra uncached prefill. Fixes: the window-sized draft pool is adopted (+21.4% device tokens; twin 9/15 vs 4/15); a twin with re-pins off runs next.",
-    "src": "PROGRESS.md Oct 6 03:29-06:50; runs v5p_full_cl_gcsv3_51/60/69_paced, v5t_ab_dwin_p74"
+    "title": "Oct 3 peak at 7.33 M: first token in the peak minutes",
+    "text": "At 7.33 M (0.92x of production's real load) 7/15 minutes pass and our first token p50 (3.59 s) beats production's (4.30 s) on the same requests. Minutes 0-3 are the window's real peak (8.1 M offered); production fails them too. There device KV fills on most ranks and requests queue. Removing the prefill delayer made it worse (1/15: decode collapsed), so the delayer stays. Next: more device KV (MEMFRAC 0.82) and a longer delayer hold (60 passes).",
+    "src": "PROGRESS.md Oct 6 15:05-21:20; runs v5p_full_cl_gcsv3_70dw/70nd/70d10_paced; next200/LEAD-START.md"
    },
    {
     "rule": "decode",
-    "title": "Decode slows as batches grow",
-    "text": "Per-request decode falls from 135 tok/s at 1-4 requests per rank to 62 at 13-16. On real traffic the draft model gets 3.5 tokens accepted per step (7.1 on synthetic prompts), so large batches spend much verify work on rejected tokens. At 6.56 M decode drops to 33-57 tok/s in the late minutes.",
-    "src": "PROGRESS.md Oct 6 05:15; engine batch logs of v5p_full_cl_gcsv3_60_paced"
+    "title": "Decode saturates per rank at high concurrency",
+    "text": "Per-request decode falls from 135 tok/s at 1-4 requests per rank to 62 at 13-16; a rank's total decode flattens near 870-1,000 tok/s. The draft model gets 3.5 tokens accepted per step on real traffic. A batch-adaptive draft block would not pay (closed).",
+    "src": "PROGRESS.md Oct 6 05:15, 17:10; next200/LEAD-ADAPTIVE.md"
    },
    {
     "rule": "errors",
-    "title": "Data: the test traces still miss traffic",
-    "text": "The hub lost whole log parts at busy hours (9-14 s slices of one load balancer): 18% of Oct 1, 14% of Oct 3 and 35% of Oct 5 requests are not in the logs; Sep 30 and Oct 2 are complete. Bodies over 2 MiB are cut in the log (Oct 3: 3.5% of requests, 14.4% of prompt tokens). We rebuild both: --recon-turns for the lost turns, and a rebuild of the cut requests (in progress).",
-    "src": "PROGRESS.md Oct 6 04:55, 06:50; next190/MISSING-TURNS-V5.md"
+    "title": "The most faithful test is harder: rebuilt big requests",
+    "text": "With the requests the hub log cut at 2 MiB rebuilt (test v5.1r), 6.14 M passes only 5/15. These requests are 3.5% of requests but 14.4% of prompt tokens (about 170k+ tokens each), and each fills a large share of a rank's KV pool. Lost hub log parts (Oct 1/3/5) are rebuilt with --recon-turns.",
+    "src": "PROGRESS.md Oct 6 16:00; next190/TRUNCATED-BODIES-FIX.md"
    }
   ]
  },
