@@ -2064,8 +2064,8 @@
   {
    "name": "Attention over both GPUs (our own patch)",
    "state": "running",
-   "at": "2026-10-07 02:20",
-   "text": "production runs attention split over the two GPUs of a worker (no lockstep); our training-compatible numerics force attention onto one GPU. A max-type index score can be merged across GPUs exactly, so our own patch could lift that guard (estimate +6–15% generation speed at 3.34 M; large effort, GSM8K check needed) 10-06: re-examined: the Oct 2 TP2 gain was mostly the missing prefill delayer on its TP2 side; pooling alone ~0. On hold until the delayer twin. 10-07: the prefill-routes study (verified PARTLY) ranks TP2 as the only layout route past x1.25: about x1.3 prefill net, first token about 3.0-3.2 s at 7.33 M. The delayer stays at 30, so a TP2 test must compare against DP2 with the 30-pass delayer. 02:20: un-parked; CPU prep workflow wf_94c26045-580 (twin words, 2-head fused load, window pool, chunk 32k, smoke script).",
+   "at": "2026-10-07 05:30",
+   "text": "production runs attention split over the two GPUs of a worker (no lockstep); our training-compatible numerics force attention onto one GPU. A max-type index score can be merged across GPUs exactly, so our own patch could lift that guard (estimate +6–15% generation speed at 3.34 M; large effort, GSM8K check needed) 10-06: re-examined: the Oct 2 TP2 gain was mostly the missing prefill delayer on its TP2 side; pooling alone ~0. On hold until the delayer twin. 10-07: the prefill-routes study (verified PARTLY) ranks TP2 as the only layout route past x1.25: about x1.3 prefill net, first token about 3.0-3.2 s at 7.33 M. The delayer stays at 30, so a TP2 test must compare against DP2 with the 30-pass delayer. 02:20: un-parked; CPU prep workflow wf_94c26045-580 (twin words, 2-head fused load, window pool, chunk 32k, smoke script). 05:30: prep done and verified (twin words, 2-head fused load byte-exact on CPU, window pool on TP2, chunk 32k patch, smoke script). Smoke armed after the Sep 30 1.14x run: boot, outputs, GSM8K and the decode-step ratio TP2/DP2 decide the twin pair.",
    "ref": "PROGRESS.md Oct 2 00:55"
   },
   {

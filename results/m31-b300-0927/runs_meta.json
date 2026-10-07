@@ -2038,8 +2038,8 @@
    "share": 0.92,
    "name": "prefill delayer max 60 passes (was 30) at the knee: Oct 3 peak, full node, 7.32 M/GPU",
    "change": "scheduler",
-   "verdict": "no clear change",
-   "why": "4/15 at 7.32 M/GPU: first token p50 4.19 s, TPS p50 98.3 (the best decode at this load so far), 1 request without a first token. Inside the 3-7/15 band of the 30-pass runs; delayer stays at 30. Dose-response at the knee: 0 passes 1/15, 10 passes 4/15, 30 passes 3-7/15, 60 passes 4/15."
+   "verdict": "under review",
+   "why": "4/15 at 7.32 M/GPU: first token p50 4.19 s, TPS p50 98.3 (the best decode at this load so far), 1 request without a first token. Inside the 3-7/15 band of the 30-pass runs; delayer stays at 30. Dose-response at the knee: 0 passes 1/15, 10 passes 4/15, 30 passes 3-7/15, 60 passes 4/15. 10-07 05:25: NUMA_PREFER=1 leaked into this run from the 70numa lines (chainQ did not reset it), so it ran NUMA bound. Against the two NUMA-bound 30-pass runs (1/15, 1/15) the 60-pass delayer looks better; a clean repeat (v5p_full_cl_gcsv3_70d60_r2_paced, NUMA off) is queued."
   },
   {
    "tag": "v5t_ab_dyn_sync_pin_p60@A",
@@ -2049,7 +2049,7 @@
    "name": "A/A calibration below the knee, side A (engines 0-1): pre-window-pool stack (host ratio 3.13), re-pins off, Oct 3 peak b00 per half",
    "change": "calibration",
    "verdict": "calibration",
-   "why": "13/15 at 5.94 M/GPU (half node): first token p50 2.05 s, TPS p50 122.9, hit 95.1%, 0 errors. This slot was Dynamo rung 9; our wrapper refused it (pins with two frontends), so both halves ran the same plain stack."
+   "why": "13/15 at 5.94 M/GPU (half node): first token p50 2.05 s, TPS p50 122.9, hit 95.1%, 0 errors. This slot was Dynamo rung 9; our wrapper refused it (pins with two frontends), so both halves ran the same plain stack. 10-07 05:25: NUMA_PREFER=1 leaked into this twin (engines NUMA bound); the paired comparison is still like for like."
   },
   {
    "tag": "v5t_ab_dyn_sync_pin_p60@B",
@@ -2059,7 +2059,7 @@
    "name": "A/A calibration below the knee, side B (engines 2-3): the same config as side A",
    "change": "calibration",
    "verdict": "calibration",
-   "why": "10/15 vs 13/15 at 5.96 M/GPU with IDENTICAL configs; paired TPS -0.36 tok/s (CI -4.62..+4.60), first token x0.991 (CI 0.955..1.026), hit 95.0%, 0 errors. Below the knee the paired metrics show no side bias, but minute counts still differ by 3 between identical halves: decide on paired metrics, not on minute counts. This is the floor for the Dynamo rung-10a twin (same stack and plan)."
+   "why": "10/15 vs 13/15 at 5.96 M/GPU with IDENTICAL configs; paired TPS -0.36 tok/s (CI -4.62..+4.60), first token x0.991 (CI 0.955..1.026), hit 95.0%, 0 errors. Below the knee the paired metrics show no side bias, but minute counts still differ by 3 between identical halves: decide on paired metrics, not on minute counts. This is the floor for the Dynamo rung-10a twin (same stack and plan). 10-07 05:25: NUMA_PREFER=1 leaked into this twin (engines NUMA bound); the paired comparison is still like for like."
   },
   {
    "tag": "v3_ab_ep8csw_cl_15x@A",
@@ -2068,7 +2068,7 @@
    "name": "control half (engines 2-3): adopted stack WITHOUT EP8 combine v2, test v3 at 1.5x (6.70 M/GPU per half)",
    "change": "calibration",
    "verdict": "calibration",
-   "why": "15/15 at 6.70 M/GPU (half node, test v3): first token p50 1.08 s, TPS p50 92.4, uncached 18.5 M, 0 errors."
+   "why": "15/15 at 6.70 M/GPU (half node, test v3): first token p50 1.08 s, TPS p50 92.4, uncached 18.5 M, 0 errors. 10-07 05:25: NUMA_PREFER=1 leaked into this twin (engines NUMA bound); the paired comparison is still like for like."
   },
   {
    "tag": "v3_ab_ep8csw_cl_15x@B",
@@ -2077,7 +2077,7 @@
    "name": "EP8 combine v2, side-swapped confirmation (B on engines 0-1)",
    "change": "kernel",
    "verdict": "no clear change",
-   "why": "15/15 both; paired TPS -2.23 tok/s (CI -3.97..-0.90), first token x1.018 (CI 0.987..1.047), uncached 19.7 vs 18.5 M, 0 errors. The first twin (B on engines 2-3) gave +2.46: side-balanced effect about +0.1 tok/s, first token about x0.99. No measurable gain; the patch stays (bit-exact) but the adoption claim is withdrawn."
+   "why": "15/15 both; paired TPS -2.23 tok/s (CI -3.97..-0.90), first token x1.018 (CI 0.987..1.047), uncached 19.7 vs 18.5 M, 0 errors. The first twin (B on engines 2-3) gave +2.46: side-balanced effect about +0.1 tok/s, first token about x0.99. No measurable gain; the patch stays (bit-exact) but the adoption claim is withdrawn. 10-07 05:25: NUMA_PREFER=1 leaked into this twin (engines NUMA bound); the paired comparison is still like for like."
   },
   {
    "tag": "v5t_ab_dyn_rust_pin_p60@A",
@@ -2087,7 +2087,7 @@
    "name": "control half (engines 0-1): our gateway path, pre-pool stack, Oct 3 peak b00 per half; Dynamo rung-10a twin",
    "change": "calibration",
    "verdict": "calibration",
-   "why": "12/15 at 5.95 M/GPU (half node): first token p50 1.96 s, TPS p50 122.1, hit 95.5%, uncached 16.1 M, 0 errors."
+   "why": "12/15 at 5.95 M/GPU (half node): first token p50 1.96 s, TPS p50 122.1, hit 95.5%, uncached 16.1 M, 0 errors. 10-07 05:25: NUMA_PREFER=1 leaked into this twin (engines NUMA bound); the paired comparison is still like for like."
   },
   {
    "tag": "v5t_ab_dyn_rust_pin_p60@B",
@@ -2097,7 +2097,7 @@
    "name": "Dynamo 1.5.0 with the Rust chat processor (production's path) executing our pins, engines 2-3 (rung 10a)",
    "change": "dynamo",
    "verdict": "rejected",
-   "why": "2/15 vs 12/15 at 5.95 M/GPU per half; paired first token x1.98 (CI 1.82..2.20), first streamed chunk x1.78, total latency x1.49; prompts identical (0 of 198 outside 0.1%), hit 94.8 vs 95.5%, 0 errors. Not on par (target first token <= x1.05; A/A floor x0.99). The frontend adds only ~0.04 s (its TTFT equals the worker round trip), and the engine queue + prefill p50 is about equal on both sides, so the delay sits in the Dynamo SGLang worker path between the request plane and the scheduler, or on the way back. Diagnosis next."
+   "why": "2/15 vs 12/15 at 5.95 M/GPU per half; paired first token x1.98 (CI 1.82..2.20), first streamed chunk x1.78, total latency x1.49; prompts identical (0 of 198 outside 0.1%), hit 94.8 vs 95.5%, 0 errors. Not on par (target first token <= x1.05; A/A floor x0.99). The frontend adds only ~0.04 s (its TTFT equals the worker round trip), and the engine queue + prefill p50 is about equal on both sides, so the delay sits in the Dynamo SGLang worker path between the request plane and the scheduler, or on the way back. Diagnosis next. 10-07 05:25: NUMA_PREFER=1 leaked into this twin (engines NUMA bound); the paired comparison is still like for like."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
