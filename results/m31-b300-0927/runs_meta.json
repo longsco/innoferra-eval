@@ -2040,6 +2040,26 @@
    "change": "scheduler",
    "verdict": "no clear change",
    "why": "4/15 at 7.32 M/GPU: first token p50 4.19 s, TPS p50 98.3 (the best decode at this load so far), 1 request without a first token. Inside the 3-7/15 band of the 30-pass runs; delayer stays at 30. Dose-response at the knee: 0 passes 1/15, 10 passes 4/15, 30 passes 3-7/15, 60 passes 4/15."
+  },
+  {
+   "tag": "v5t_ab_dyn_sync_pin_p60@A",
+   "at": "2026-10-07 02:40",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "A/A calibration below the knee, side A (engines 0-1): pre-window-pool stack (host ratio 3.13), re-pins off, Oct 3 peak b00 per half",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "13/15 at 5.94 M/GPU (half node): first token p50 2.05 s, TPS p50 122.9, hit 95.1%, 0 errors. This slot was Dynamo rung 9; our wrapper refused it (pins with two frontends), so both halves ran the same plain stack."
+  },
+  {
+   "tag": "v5t_ab_dyn_sync_pin_p60@B",
+   "at": "2026-10-07 02:40",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "A/A calibration below the knee, side B (engines 2-3): the same config as side A",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "10/15 vs 13/15 at 5.96 M/GPU with IDENTICAL configs; paired TPS -0.36 tok/s (CI -4.62..+4.60), first token x0.991 (CI 0.955..1.026), hit 95.0%, 0 errors. Below the knee the paired metrics show no side bias, but minute counts still differ by 3 between identical halves: decide on paired metrics, not on minute counts. This is the floor for the Dynamo rung-10a twin (same stack and plan)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
