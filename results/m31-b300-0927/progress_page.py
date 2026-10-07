@@ -1301,7 +1301,14 @@ def chart_svg(variant):
                 PREF[q["id"]] = (k - (len(tie) - 1) / 2) * step
         i = j
     arrows = []
-    for a, b in [p for t in HL for p in ab_pairs(t)]:
+    ab_list, seen_ab = [], set()
+    for t in HL:
+        for a, b in ab_pairs(t):   # newest first
+            k = (round(a["load"], 1), a["pass"], round(b["load"], 1), b["pass"])
+            if k not in seen_ab:   # innoferra 10-07: a side-swapped pair at the same spots shares the newest pair's arrow
+                seen_ab.add(k)
+                ab_list.append((a, b))
+    for a, b in ab_list:
         ma, mb = must_put(new_mark("hh", [a])), must_put(new_mark("hh", [b]))
         left = min(ma["x"] - ma["rad"], mb["x"] - mb["rad"])
         lo, hi = sorted((ma["y"], mb["y"]))
