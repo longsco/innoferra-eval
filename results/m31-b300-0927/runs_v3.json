@@ -75950,6 +75950,434 @@
 ]
 },
 {
+"tag": "v5p_full_cl_gcsv3_75tp2_paced",
+"partial": false,
+"done_utc": "21:14:01",
+"requests": 6014,
+"errors": 0,
+"prod_non200": 3,
+"tpm_gpu": 7.493,
+"prod_tpm_gpu": 7.661,
+"hit": 0.9309,
+"prod_hit": 0.9467,
+"ttft": [
+2.5849256159272045,
+10.678195633925498,
+30.82166246511042
+],
+"prod_ttft": [
+4.126,
+10.168,
+10.572
+],
+"decode_p50": 54.77502190954617,
+"prod_decode_p50": 47.9818780889621,
+"passed": 1,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 516,
+"err": 0,
+"ttft_p50": 4.585281127132475,
+"ttft_p99": 97.58935049013235,
+"decode_p50": 37.654609405195266,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 441,
+"err": 0,
+"ttft_p50": 4.079083184013143,
+"ttft_p99": 51.85086337197572,
+"decode_p50": 45.390375745638146,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 471,
+"err": 0,
+"ttft_p50": 2.957477736985311,
+"ttft_p99": 23.924224384129047,
+"decode_p50": 36.60982196292043,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 430,
+"err": 0,
+"ttft_p50": 3.4758667259011418,
+"ttft_p99": 20.248653092887253,
+"decode_p50": 44.045470192576644,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 393,
+"err": 0,
+"ttft_p50": 1.7520927919540554,
+"ttft_p99": 19.267182164127007,
+"decode_p50": 54.67242205304241,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 5,
+"n": 404,
+"err": 0,
+"ttft_p50": 2.7964075971394777,
+"ttft_p99": 24.05485730408691,
+"decode_p50": 56.09064732386284,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 6,
+"n": 342,
+"err": 0,
+"ttft_p50": 2.044687047135085,
+"ttft_p99": 18.50280854688026,
+"decode_p50": 61.58487853554445,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 7,
+"n": 363,
+"err": 0,
+"ttft_p50": 0.9403160461224616,
+"ttft_p99": 12.825476201949641,
+"decode_p50": 74.39540326116989,
+"pass": true,
+"fails": []
+},
+{
+"min": 8,
+"n": 378,
+"err": 0,
+"ttft_p50": 2.0953179001808167,
+"ttft_p99": 19.965542308054864,
+"decode_p50": 60.692621278844754,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 9,
+"n": 318,
+"err": 0,
+"ttft_p50": 1.634878046112135,
+"ttft_p99": 15.531716341152787,
+"decode_p50": 68.6032791689549,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 10,
+"n": 351,
+"err": 0,
+"ttft_p50": 1.027736651012674,
+"ttft_p99": 15.477212328929454,
+"decode_p50": 77.4878203994504,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 11,
+"n": 358,
+"err": 0,
+"ttft_p50": 2.079884788952768,
+"ttft_p99": 18.454217967111617,
+"decode_p50": 62.712010424423866,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 12,
+"n": 402,
+"err": 0,
+"ttft_p50": 2.026926673948765,
+"ttft_p99": 16.63048550998792,
+"decode_p50": 62.377826312050836,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 13,
+"n": 443,
+"err": 0,
+"ttft_p50": 2.431679245084524,
+"ttft_p99": 29.134080895222723,
+"decode_p50": 42.98850673454166,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 14,
+"n": 404,
+"err": 0,
+"ttft_p50": 3.8338660581503063,
+"ttft_p99": 32.206170357065275,
+"decode_p50": 48.18052548002367,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 516,
+"err": 0,
+"ttft_p50": 3.827,
+"ttft_p99": 10.588,
+"decode_p50": 50.19123666375898,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 441,
+"err": 0,
+"ttft_p50": 6.68,
+"ttft_p99": 10.605,
+"decode_p50": 41.28819157720891,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 471,
+"err": 0,
+"ttft_p50": 4.758,
+"ttft_p99": 10.572,
+"decode_p50": 41.0505928480325,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 430,
+"err": 0,
+"ttft_p50": 6.506,
+"ttft_p99": 10.367,
+"decode_p50": 46.336005966809616,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 393,
+"err": 0,
+"ttft_p50": 5.057,
+"ttft_p99": 10.6,
+"decode_p50": 45.305228579249935,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 5,
+"n": 404,
+"err": 0,
+"ttft_p50": 4.301,
+"ttft_p99": 10.778,
+"decode_p50": 50.252359008119384,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 6,
+"n": 342,
+"err": 1,
+"ttft_p50": 3.82,
+"ttft_p99": 10.509,
+"decode_p50": 50.45007326774125,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode",
+"errors"
+]
+},
+{
+"min": 7,
+"n": 363,
+"err": 0,
+"ttft_p50": 2.915,
+"ttft_p99": 10.421,
+"decode_p50": 51.79504279204179,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 8,
+"n": 378,
+"err": 0,
+"ttft_p50": 2.194,
+"ttft_p99": 10.515,
+"decode_p50": 54.101838755304094,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 9,
+"n": 318,
+"err": 0,
+"ttft_p50": 3.034,
+"ttft_p99": 10.372,
+"decode_p50": 52.74791955617198,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 10,
+"n": 351,
+"err": 1,
+"ttft_p50": 2.626,
+"ttft_p99": 10.883,
+"decode_p50": 52.746406570841884,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode",
+"errors"
+]
+},
+{
+"min": 11,
+"n": 358,
+"err": 0,
+"ttft_p50": 2.779,
+"ttft_p99": 10.74,
+"decode_p50": 48.88023369036028,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 12,
+"n": 402,
+"err": 0,
+"ttft_p50": 3.721,
+"ttft_p99": 10.614,
+"decode_p50": 45.81507571135393,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 13,
+"n": 443,
+"err": 1,
+"ttft_p50": 3.49,
+"ttft_p99": 10.473,
+"decode_p50": 45.283852440910096,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode",
+"errors"
+]
+},
+{
+"min": 14,
+"n": 404,
+"err": 0,
+"ttft_p50": 4.439,
+"ttft_p99": 10.763,
+"decode_p50": 44.07713498622589,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+]
+},
+{
 "tag": "v5r_full_cl_gcsv3_65dw_paced",
 "partial": false,
 "done_utc": "22:50:17",
