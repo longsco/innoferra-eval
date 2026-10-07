@@ -2218,6 +2218,16 @@
    "change": "tokenization",
    "verdict": "adopted",
    "why": "15/15 vs 13/15 at 5.94 M/GPU per half; paired first token x0.849 (CI 0.774..0.916), paired TPS +0.73 tok/s (CI -3.29..+4.39), 0 errors. Side-balanced with twin 1: first token x0.85, TPS +3.6 tok/s, 15/15 against 13/15 in both halves. ADOPTED in principle; it goes live with fixes F1/F2 and after a GPU verify smoke (verify_diff 0)."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_70tp2_r2_paced",
+   "at": "2026-10-07 13:20",
+   "protocol": "v5.1",
+   "share": 0.92,
+   "name": "attention TP2 on all four engines at the knee, repeat: Oct 3 peak, full node, 7.32 M/GPU",
+   "change": "layout",
+   "verdict": "under review",
+   "why": "11/15 at 7.32 M/GPU (first run 12/15; DP2 at 7.33 M: 1-7/15): first token p50 1.53 s, TPS p50 75.4, hit 93.5%, 0 errors. All misses are decode below 60 tok/s in the start burst (minutes 0-3; minute 0 also first token 3.4 s). The TP2 gain on the hardest window is confirmed; adoption waits for 7.49 M and a Sep 30 check (lighter day, decode-bound at high load)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
