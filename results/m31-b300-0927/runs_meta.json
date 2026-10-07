@@ -2147,7 +2147,27 @@
    "name": "attention TP2 (production's layout: one KV pool per engine, no delayer, 2-head fused load) on engines 2-3; first of a side-swapped pair",
    "change": "layout",
    "verdict": "under review",
-   "why": "14/15 vs 13/15 at 5.94 M/GPU per half; paired first token x0.608 (CI 0.563..0.659), paired TPS -33.4 tok/s (x0.738, CI -37.5..-30.0), hit 94.8 vs 95.3%, uncached 18.6 vs 16.6 M, 0 errors; B's minute 0 TPS 58 (below 60). A large first-token gain for a large decode cost - twice the bench's prediction (decode step x1.14). Decision waits for the side swap and a full-node knee point."
+   "why": "14/15 vs 13/15 at 5.94 M/GPU per half; paired first token x0.608 (CI 0.563..0.659), paired TPS -33.4 tok/s (x0.738, CI -37.5..-30.0), hit 94.8 vs 95.3%, uncached 18.6 vs 16.6 M, 0 errors; B's minute 0 TPS 58 (below 60). A large first-token gain for a large decode cost - twice the bench's prediction (decode step x1.14). Decision waits for the side swap and a full-node knee point. Side swap 09:54: first token x0.547, TPS x0.813 -> side-balanced first token about x0.58, TPS about x0.78."
+  },
+  {
+   "tag": "v5t_ab_tp2sw_p60@A",
+   "at": "2026-10-07 09:54",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "control half (engines 2-3, side swap): adopted DP2 stack, delayer 30, Oct 3 peak b00 per half; TP2 twin 2",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "14/15 at 5.95 M/GPU (half node): first token p50 1.64 s, TPS p50 130.3, uncached 17.4 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_tp2sw_p60@B",
+   "at": "2026-10-07 09:54",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "attention TP2 (production's layout) on engines 0-1, side swap of the TP2 pair",
+   "change": "layout",
+   "verdict": "under review",
+   "why": "15/15 vs 14/15 at 5.95 M/GPU per half; paired first token x0.547 (CI 0.495..0.597), paired TPS -24.4 tok/s (x0.813, CI -28.8..-20.4), first token p50 0.66 vs 1.64 s, worst-minute TPS 77, 0 errors. Side-balanced with twin 1: first token about x0.58, TPS about x0.78; TP2 passed more minutes in both twins (14 vs 13, 15 vs 14). The full-node knee point at 7.33 M decides."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
