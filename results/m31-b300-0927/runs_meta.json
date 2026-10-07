@@ -1939,7 +1939,27 @@
    "name": "prefill delayer OFF (engines 2-3); first of a side-swapped pair",
    "change": "scheduler",
    "verdict": "under review",
-   "why": "14/15 vs 14/15; paired first token x0.777 (CI 0.726..0.824) but TPS -21.94 tok/s (CI -24.67..-18.34, x0.824); uncached equal. A trade: prompts admitted sooner, more decode interruption. At the knee decode was 62-78 tok/s in the peak minutes, so -18% could fail them on decode. Decision after the side swap; a token-usage watermark is the middle setting."
+   "why": "14/15 vs 14/15; paired first token x0.777 (CI 0.726..0.824) but TPS -21.94 tok/s (CI -24.67..-18.34, x0.824); uncached equal. A trade: prompts admitted sooner, more decode interruption. At the knee decode was 62-78 tok/s in the peak minutes, so -18% could fail them on decode. Decision after the side swap; a token-usage watermark is the middle setting. 18:30: side swap agrees (x0.768, -19.9); decision at the knee."
+  },
+  {
+   "tag": "v5t_ab_nodelaysw_p60@A",
+   "at": "2026-10-06 18:25",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "control half (engines 2-3, side swap): adopted stack with the prefill delayer",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "14/15 at 5.94 M/GPU (half node): first token p50 1.64 s, TPS p50 125.0, uncached 16.4 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_nodelaysw_p60@B",
+   "at": "2026-10-06 18:25",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "prefill delayer OFF, engines 0-1 (side swap of v5t_ab_nodelay_p60)",
+   "change": "scheduler",
+   "verdict": "under review",
+   "why": "14/15 vs 14/15; first token x0.768 (CI 0.726..0.798), TPS -19.90 tok/s (x0.841). Side-balanced with twin 1: first token ~x0.77, TPS ~x0.83. Below the knee both settings pass; the decision moves to the knee: full-node 7.33 M runs with the delayer off, with max 10 passes, and a repeat with today's setting."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
