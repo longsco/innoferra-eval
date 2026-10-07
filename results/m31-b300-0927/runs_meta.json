@@ -2128,6 +2128,26 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 8.28 M/GPU (1.29x of Sep 30's real 6.43 M; production served 8.58 M/GPU on these requests): only minute 10 misses (first token 3.2 s); first token p50 1.44 s, TPS p50 81.0 (production 65.2), hit 96.2% vs 97.0%, 0 HTTP errors (2 streams ended without visible content), 21% paced fallbacks. On Sep 30's traffic the stack holds above production's Oct 3 peak load (8.01 M); the Oct 3 traffic mix is the hard part."
+  },
+  {
+   "tag": "v5t_ab_tp2_p60@A",
+   "at": "2026-10-07 09:02",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "control half (engines 0-1): adopted DP2 stack, delayer 30, Oct 3 peak b00 per half; TP2 twin 1",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "13/15 at 5.95 M/GPU (half node): first token p50 1.86 s, TPS p50 127.7, hit 95.3%, uncached 16.6 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_tp2_p60@B",
+   "at": "2026-10-07 09:02",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "attention TP2 (production's layout: one KV pool per engine, no delayer, 2-head fused load) on engines 2-3; first of a side-swapped pair",
+   "change": "layout",
+   "verdict": "under review",
+   "why": "14/15 vs 13/15 at 5.94 M/GPU per half; paired first token x0.608 (CI 0.563..0.659), paired TPS -33.4 tok/s (x0.738, CI -37.5..-30.0), hit 94.8 vs 95.3%, uncached 18.6 vs 16.6 M, 0 errors; B's minute 0 TPS 58 (below 60). A large first-token gain for a large decode cost - twice the bench's prediction (decode step x1.14). Decision waits for the side swap and a full-node knee point."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
