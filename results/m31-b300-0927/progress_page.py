@@ -1312,12 +1312,15 @@ def chart_svg(variant):
         hard.extend([(ma["x"] - ma["rad"], ma["y"], bx, ma["y"]), (bx, lo, bx, hi), (bx, mb["y"], mb["x"] - mb["rad"], mb["y"])])
     hlr = sorted([r for r in VALID if r["test"] in HL and r["id"] not in MK], key=lambda r: ("@" in str(r["id"]), -r["at"].timestamp()))
     hl_left_out = []                                   # innoferra 10-06: bold half-node twin halves are dropped (counted) when no spot is free
+    full_hl = []
     for r in hlr:
         if "@" in str(r["id"]):
             if not (put(new_mark("hh", [r])) or put(new_mark("hh", [r]), 2.0)):
                 hl_left_out.append(r)
         else:
-            must_put(new_mark("ho", [r]))
+            full_hl.append(r)
+    for gp in tie_groups(full_hl):                      # innoferra 10-07: full-node bold runs at one spot share one mark (xN), never drawn over each other
+        must_put(new_mark("ho", gp))
     # 3. behind the checkbox: the gray tests' frontier runs and step lines, then every other older run, ties merged
     left_out = []
     for t in [t for t in VTESTS if t not in SHOWN]:
