@@ -2030,6 +2030,16 @@
    "change": "placement",
    "verdict": "rejected",
    "why": "1/15 at 7.33 M/GPU: first token p50 4.82 s, TPS 82.1, 0 errors, host pools almost all local. Both NUMA runs scored 1/15 against a median of ~3.5/15 for random placement (7, 3, 4, 4 of 15). Local memory does not help, and the scheduler CPU pinning that comes with this binding may hurt. NUMA_PREFER stays off (flag kept, default off)."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_70d60_paced",
+   "at": "2026-10-07 01:48",
+   "protocol": "v5.1",
+   "share": 0.92,
+   "name": "prefill delayer max 60 passes (was 30) at the knee: Oct 3 peak, full node, 7.32 M/GPU",
+   "change": "scheduler",
+   "verdict": "no clear change",
+   "why": "4/15 at 7.32 M/GPU: first token p50 4.19 s, TPS p50 98.3 (the best decode at this load so far), 1 request without a first token. Inside the 3-7/15 band of the 30-pass runs; delayer stays at 30. Dose-response at the knee: 0 passes 1/15, 10 passes 4/15, 30 passes 3-7/15, 60 passes 4/15."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
