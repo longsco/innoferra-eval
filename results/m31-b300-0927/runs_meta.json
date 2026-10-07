@@ -1920,6 +1920,26 @@
    "change": "protocol",
    "verdict": "no clear change",
    "why": "13/15 vs 12/15 at 5.95 M/GPU per half; paired TPS +3.68 tok/s (CI -0.27..+8.15), first token x0.983 (CI 0.940..1.020), uncached 16.0 vs 17.4 M. The start-time fix does not inflate results: today's knee movement (about 5.5 -> 6.5-7.3 M) comes from the stack, not the protocol."
+  },
+  {
+   "tag": "v5t_ab_nodelay_p60@A",
+   "at": "2026-10-06 17:31",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "control half (engines 0-1): adopted stack with the prefill delayer, Oct 3 peak b00 per half",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "14/15 at 5.95 M/GPU (half node): first token p50 1.74 s, TPS p50 124.6, uncached 17.3 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_nodelay_p60@B",
+   "at": "2026-10-06 17:31",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "prefill delayer OFF (engines 2-3); first of a side-swapped pair",
+   "change": "scheduler",
+   "verdict": "under review",
+   "why": "14/15 vs 14/15; paired first token x0.777 (CI 0.726..0.824) but TPS -21.94 tok/s (CI -24.67..-18.34, x0.824); uncached equal. A trade: prompts admitted sooner, more decode interruption. At the knee decode was 62-78 tok/s in the peak minutes, so -18% could fail them on decode. Decision after the side swap; a token-usage watermark is the middle setting."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
