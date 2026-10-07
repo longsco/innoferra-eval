@@ -1,6 +1,6 @@
 # TP2-PREP-SMOKE: E4, the attention-TP2 smoke and the decode-step (fd) bench
 
-Date: 2026-10-07, 03:20 PDT. Node 0008. Agent dir: `/data01/minimax31/serving/next210/tp2/e4/`.
+Date: 2026-10-07, 04:05 PDT. Node 0008. Agent dir: `/data01/minimax31/serving/next210/tp2/e4/`.
 Scope: CPU only. I used no GPU. I did not touch lever_queue.txt, chainQ.sh, HOLD, the live tree, the replay, the gateways,
 the traces or any running container. I started only CPU-only containers (`t2-e4-*`: `--network none`,
 `NVIDIA_VISIBLE_DEVICES=void`, `--cpu-shares 128`, `ionice -c3 nice -n 19`, `--rm`). Aggregates only.
@@ -11,7 +11,7 @@ Tags: [measured] = I read or ran it today. [code: file:line] = source read. [inf
 ## 0. Answer first
 
 1. **The smoke is ready to arm. Nobody ran it on a GPU.** Script: `next210/tp2/smoke_tp2.sh`. Arming helper:
-   `next210/tp2/e4/arm_smoke_tp2.sh`. CPU checks: `bash -n` on every script, 50 of 50 mock scenarios pass, 34 of 34 Python checks
+   `next210/tp2/e4/arm_smoke_tp2.sh`. CPU checks: `bash -n` on every script, 51 of 51 mock scenarios pass, 38 of 38 Python checks
    pass [measured].
 2. **One HOLD window runs six gates.** Engines 2-3 (GPUs 4-7) become two TP2 engines. Engines 0-1 stay as the DP2 reference
    (DP attention, delayer 30). Gates: S1 boot, S2 greedy tokens, S3 GSM8K, S4 fused HiCache load, S5 window pool on TP2,
@@ -21,8 +21,8 @@ Tags: [measured] = I read or ran it today. [code: file:line] = source read. [inf
    32/24/16/8. The step comes from the engines' own "Decode batch" lines. The smoke prints one line:
    `FD DECISION: GO | GREY | STOP | INCONCLUSIVE` with the rule GO <= 1.08, STOP >= 1.15 (LEAD-TP2.verify 4c).
 4. **The check "greedy outputs equal to DP2" cannot pass as written.** Attention TP2 changes the o_proj reduction order
-   [code: serving/patch_training_attn_tp.py:7, "not bit-exact"]. A numerics change of this kind gave 3 of 30 identical turns on
-   10-01 (TRAINING_COMPAT 0 vs 1) [measured: chain log]. So the default gate (`GREEDY_MODE=tol`) asks for: TP2 as deterministic
+   [code: serving/patch_training_attn_tp.py:7, "not bit-exact"]. A larger numerics change (TRAINING_COMPAT 0 vs 1) gave 3 of 30
+   identical turns on 10-01 [measured: chain log]. So the default gate (`GREEDY_MODE=tol`) asks for: TP2 as deterministic
    as DP2 (engine 3 equals engine 2), and no early divergence from DP2. `GREEDY_MODE=strict` gives the literal check.
 5. **Two hazards from the other agents are now gates.**
    - E3: the window-pool admission gate can split the two TP ranks [code: next210/tp2/patch_e3_window_tp_sync.py docstring].
@@ -51,8 +51,8 @@ Tags: [measured] = I read or ran it today. [code: file:line] = source read. [inf
 | `e4/fd_report.py` | 172 | FD: steps from the engine logs, fd per cell, summary and decision |
 | `e4/twin_line_tp2.e4-candidate.txt` | 7 | a fallback TP2 line (A = 70dw stack, B = LEAD-TP2 E1). Use E1's file first |
 | `e4/test/run_mock.sh` | 24 | starts the mock or the Python tests in a CPU-only container |
-| `e4/test/mock_smoke_tp2.sh`, `e4/test/mockworld_tp2.py` | 234, 580 | the control-flow mock (section 6) |
-| `e4/test/test_py.sh`, `e4/test/fake_engine.py` | 148, 182 | the Python tests against fake engines |
+| `e4/test/mock_smoke_tp2.sh`, `e4/test/mockworld_tp2.py` | 235, 580 | the control-flow mock (section 6); results `e4/test/mock.out` |
+| `e4/test/test_py.sh`, `e4/test/fake_engine.py` | 155, 182 | the Python tests against fake engines; results `e4/test/py_run.log` |
 
 Reused, read only: `kernels/glaunch/synth_decode_load.py` (prompts and requests), `kernels/hcload/hosthit_greedy.py` (S4),
 `next180/serving/mt_driver.py`, `mt_compare.py`, `smoke_judge.py` (S5), `gsm8k_bounded.py` (S3), `e2_fusedload/run_gate_hcload_kvh.sh`
@@ -79,7 +79,7 @@ The guard (`GUARD_S`, 6,600 s) stops the smoke and releases HOLD. The next lever
 
 | gate | what | PASS rule (knob, default) | source |
 |---|---|---|---|
-| S1 | engine 2 boot (final log) | tp 2, dp 1, no DP attention; no prefill delayer; KV tokens >= 4.6 M (`KV_MIN`); free GPU memory after graph capture >= 15 GB (`FREE_MIN_GB`); window pool "ACTIVE (mode on)"; every adopted flag's on-line on both TP ranks; "admission gate False" when the line has ADMIT=0; with E2 active "hicache fused load on" on both ranks; 0 tracebacks; 0 `routed_dp_rank ... out of range` lines | task; LEAD-TP2 7; TP2-PREP-LAUNCH 6 |
+| S1 | engine 2 boot (final log) | tp 2, dp 1, no DP attention; no prefill delayer; KV tokens >= 4.6 M (`KV_MIN`); free GPU memory after graph capture >= 15 GB (`FREE_MIN_GB`); window pool "ACTIVE (mode on)"; every adopted flag's on-line on both TP ranks (`STACK_CHECK=warn`: a missing one is only reported); "admission gate False" when the line has ADMIT=0; with E2 active "hicache fused load on" on both ranks; 0 tracebacks; 0 `routed_dp_rank ... out of range` lines | task; LEAD-TP2 7; TP2-PREP-LAUNCH 6 |
 | S1 | engine 3 boot (final log) | window pool "ACTIVE (mode check)" on both ranks, its admission words honoured, on-lines, 0 tracebacks | TP2-PREP-LAUNCH 6 |
 | S2 | greedy tokens, 30 real turns (prompt >= 30k), 64 tokens, cold, the same token ids on every engine | `tol`: engine 1 == engine 0 on >= n - 2 turns (`GREEDY_TOL`); engine 3 == engine 2 on >= that count; engine 2 vs engine 0: first divergence median >= 8 tokens (`GREEDY_MIN_DIV`), divergence in the first 4 tokens on <= 6 turns (`GREEDY_MAX_EARLY`). `strict`: engine 2 == engine 0 on every turn | task; [code: patch_training_attn_tp.py:7] |
 | S3 | GSM8K bounded, 1,319, c64 | engine 2 errors 0, accuracy >= 0.960 (`S3_MIN`) and >= engine 0's - 0.010 (`S3_TOL`) | LEAD-TP2 7 |
@@ -145,7 +145,7 @@ Before the window (CPU, any time):
    applies `e2_fusedload/patch_hcload_kvh.py --tree tree/python` (`--check` exit 0). The smoke then runs E2's GPU gate on GPU 6.
 3. Keep the copy fresh. If a live-tree file changes after 09:13 UTC, refresh the copy and apply the patchers again. The smoke
    refuses a stale copy.
-4. Run the CPU checks: `bash e4/test/run_mock.sh py` and `bash e4/test/run_mock.sh mock s-pass` (CPU-only containers, about 2 min).
+4. Run the CPU checks: `bash e4/test/run_mock.sh py` and `bash e4/test/run_mock.sh mock s-pass` (CPU-only containers, about 3 min).
 5. Choose the after-lever. Its engines 0-1 must run the A words of `v5t_ab_tp2_p60`: the adopted DP2 stack, delayer 30, window pool,
    MEMFRAC 0.80, `--hicache-ratio 2.579`, the next180 live tree, **no `--numa-node`**. A Dynamo twin does not qualify.
    The queued `v5s_full_cl_gcsv3_1x_paced`, `_114x_paced`, `_127x_paced` and the done `v5p_full_cl_gcsv3_70dw_paced` have the same
@@ -175,19 +175,21 @@ During and after:
 ## 6. CPU checks done [measured]
 
 - `bash -n` on all shell scripts; `ast.parse` on all Python files: pass.
-- Python tests (`e4/test/test_py.sh`, CPU-only container): 34 of 34 pass.
+- Python tests (`e4/test/test_py.sh`, CPU-only container): 38 of 38 pass.
   - boot_facts.py: pass, low KV, low free memory, missing on-line (fail or pending), DP prefix under tp2, delayer on, E2 on/off,
-    check mode, traceback.
+    check mode, traceback, admission gate False / True / pending, a `routed_dp_rank` out-of-range line.
   - fd_report.py: exact synthetic steps give GO / GREY / STOP / INCONCLUSIVE; rejected lines do not move fd.
   - fd_bench.py + fd_report.py against four fake engines (DP2 x2, TP2 x2 with a 1.10 / 1.13 step multiplier): fd 1.099
     end to end, decision GREY; calibration puts the prompts at P; the KV rule drops levels that do not fit.
   - tp2_greedy.py against fake engines: identical and diverging pairs, the pair option, no prompt text in the output.
-- Mock (`e4/test/mock_smoke_tp2.sh`, CPU-only container, shimmed docker / curl / nvidia-smi / ps / sleep / date): 50 of 50
-  scenarios pass. The real launcher copy boots the after-lever engines. The real `launch.sh`, `boot_facts.py`, `fd_report.py`
-  and `smoke_judge.py` run.
+- Mock (`e4/test/mock_smoke_tp2.sh`, CPU-only container, shimmed docker / curl / nvidia-smi / ps / sleep / date): 51 of 51
+  scenarios pass [measured: e4/test/mock.out]. An earlier run had 1 failure: a wrong test expectation (engine 3 boots beside
+  engine 2 when E2 is off), now fixed. The real launcher copy boots the after-lever engines. The real `launch.sh`, `boot_facts.py`,
+  `fd_report.py`, `mt_compare.py` and `smoke_judge.py` run.
   - Identity: engine 2 of the smoke has the same docker argv and env as engine 2 of the same twin line launched by the launcher
     (group B), except the inert `T2SMOKE_ID`.
-  - Pass paths: GO, GREY, E2 active, patchers listed, slow teardown, a dropped FD level, `STACK_CHECK=warn`.
+  - Pass paths: GO, GREY, E2 active, `REF_DIFFER_OK=1`, armed while the lever runs, slow teardown, a dropped FD level,
+    `STACK_CHECK=warn`.
   - Refusals (HOLD released or untouched as specified, engines untouched): no HOLD, busy window, bad knob, unknown tag,
     not a TP2 line, swapped line, line-word differ, NUMA leak, not running, deadlock, megamoe patch missing or in conflict,
     admission gate on, stale copy.
@@ -211,11 +213,11 @@ During and after:
    prefix median 72 chars) from "broken" (divergence at once) [inferred, MED]. GSM8K is the real quality gate.
 6. Engine 3 runs MEMFRAC 0.78 (check mode). Its KV and free memory are not gated [code: smoke_tp2.sh S1]. The check mode never
    ran under TP2; a boot failure of engine 3 fails S1, S4 and S5 but not S2, S3 or FD [measured: mock s-boot-fail3].
-6a. The live engine watchdog stands down while a launcher waits at HOLD (`pgrep -f "bash launch_tp2x4_old.sh"`), so it does not
+7. The live engine watchdog stands down while a launcher waits at HOLD (`pgrep -f "bash launch_tp2x4_old.sh"`), so it does not
    restart the smoke's engines [code: serving/engine_watchdog.sh:10].
-7. The fd bench uses temperature 1.0 like track G. Acceptance therefore differs from production. fd uses the step, so this
+8. The fd bench uses temperature 1.0 like track G. Acceptance therefore differs from production. fd uses the step, so this
    changes only the TPS ratio [inferred, HIGH].
-8. The mock's fast clock also counts shim CPU time, so mock runs lift the guard except in the guard scenario [measured].
+9. The mock's fast clock also counts shim CPU time, so mock runs lift the guard except in the guard scenario [measured].
 
 What would prove this smoke wrong: a GPU run where the FD A/A noise exceeds 3 % with every line counted, or where a TP2 engine
 prints Decode lines on TP1, or where engine 2's argv differs from the chain's group-B argv for the same line.

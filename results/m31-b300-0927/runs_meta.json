@@ -2078,6 +2078,26 @@
    "change": "kernel",
    "verdict": "no clear change",
    "why": "15/15 both; paired TPS -2.23 tok/s (CI -3.97..-0.90), first token x1.018 (CI 0.987..1.047), uncached 19.7 vs 18.5 M, 0 errors. The first twin (B on engines 2-3) gave +2.46: side-balanced effect about +0.1 tok/s, first token about x0.99. No measurable gain; the patch stays (bit-exact) but the adoption claim is withdrawn."
+  },
+  {
+   "tag": "v5t_ab_dyn_rust_pin_p60@A",
+   "at": "2026-10-07 04:44",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "control half (engines 0-1): our gateway path, pre-pool stack, Oct 3 peak b00 per half; Dynamo rung-10a twin",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "12/15 at 5.95 M/GPU (half node): first token p50 1.96 s, TPS p50 122.1, hit 95.5%, uncached 16.1 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_dyn_rust_pin_p60@B",
+   "at": "2026-10-07 04:44",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "Dynamo 1.5.0 with the Rust chat processor (production's path) executing our pins, engines 2-3 (rung 10a)",
+   "change": "dynamo",
+   "verdict": "rejected",
+   "why": "2/15 vs 12/15 at 5.95 M/GPU per half; paired first token x1.98 (CI 1.82..2.20), first streamed chunk x1.78, total latency x1.49; prompts identical (0 of 198 outside 0.1%), hit 94.8 vs 95.5%, 0 errors. Not on par (target first token <= x1.05; A/A floor x0.99). The frontend adds only ~0.04 s (its TTFT equals the worker round trip), and the engine queue + prefill p50 is about equal on both sides, so the delay sits in the Dynamo SGLang worker path between the request plane and the scheduler, or on the way back. Diagnosis next."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
