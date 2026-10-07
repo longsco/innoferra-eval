@@ -2196,8 +2196,28 @@
    "share": 0.74,
    "name": "image-request tokenization fast path (SGLANG_MM_PASS_IDS_WITH_MEDIA=1: tokenize once, expand image tokens in id space) on engines 2-3",
    "change": "tokenization",
-   "verdict": "under review",
-   "why": "15/15 vs 13/15 at 5.96 M/GPU per half; paired first token x0.853 (CI 0.794..0.909), paired TPS +6.52 tok/s (CI +2.60..+9.44), hit 95.1 vs 95.6%, 0 errors. Both rules improve: image requests skip 2-3 s of tokenization, and the tokenizer processes stop stalling other requests. Decision waits for the side swap."
+   "verdict": "adopted",
+   "why": "15/15 vs 13/15 at 5.96 M/GPU per half; paired first token x0.853 (CI 0.794..0.909), paired TPS +6.52 tok/s (CI +2.60..+9.44), hit 95.1 vs 95.6%, 0 errors. Both rules improve: image requests skip 2-3 s of tokenization, and the tokenizer processes stop stalling other requests. Decision waits for the side swap. Side swap 12:28: x0.849, +0.73 tok/s -> side-balanced first token x0.85, TPS +3.6; adopted in principle (live after F1/F2 + GPU verify smoke)."
+  },
+  {
+   "tag": "v5t_ab_mmidssw_p60@A",
+   "at": "2026-10-07 12:28",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "control half (engines 2-3, side swap): adopted DP2 stack on the copy tree, flag off; image fast-path twin 2",
+   "change": "calibration",
+   "verdict": "calibration",
+   "why": "13/15 at 5.94 M/GPU (half node): first token p50 1.57 s, TPS p50 130.1, uncached 16.2 M, 0 errors."
+  },
+  {
+   "tag": "v5t_ab_mmidssw_p60@B",
+   "at": "2026-10-07 12:28",
+   "protocol": "v5.1",
+   "share": 0.74,
+   "name": "image-request tokenization fast path on engines 0-1 (side swap)",
+   "change": "tokenization",
+   "verdict": "adopted",
+   "why": "15/15 vs 13/15 at 5.94 M/GPU per half; paired first token x0.849 (CI 0.774..0.916), paired TPS +0.73 tok/s (CI -3.29..+4.39), 0 errors. Side-balanced with twin 1: first token x0.85, TPS +3.6 tok/s, 15/15 against 13/15 in both halves. ADOPTED in principle; it goes live with fixes F1/F2 and after a GPU verify smoke (verify_diff 0)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
