@@ -1,17 +1,14 @@
-# read_utc 2026-10-07T17:46:58Z
+# read_utc 2026-10-07T18:38:04Z
 ## queue
-v5t_ab_mmidssw_p60 /tr/v5/w1003_1330/b00.jsonl 1.0 NUMA_PREFER=0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --paced --t-start --lead-in 300" REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTR
 v5p_full_cl_gcsv3_70tp2_r2_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.33 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --t-start --le
 v5p_full_cl_gcsv3_75tp2_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.45 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --t-start --lead-
 v5s_full_cl_gcsv3_fidelity_1x /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --img 616x616 --send-prod-shed -
 v5p_full_cl_gcsv3_70d60_r2_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.33 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced 
 ## done
-16:02:31 v5t_ab_tp2sw_p60 /tr/v5/w1003_1330/b00.jsonl 1.0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --paced --t-start --lead-in 300" REPLAY_FILE_B=replay_v2_cl.py "REPLAY_EXTRA_B=--c
 16:54:10 v5p_full_cl_gcsv3_70tp2_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.33 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --t-star
 17:45:30 v5t_ab_mmids_p60 /tr/v5/w1003_1330/b00.jsonl 1.0 NUMA_PREFER=0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --paced --t-start --lead-in 300" REPLAY_FILE_B=replay_v2_cl.py "REPL
+18:37:06 v5t_ab_mmidssw_p60 /tr/v5/w1003_1330/b00.jsonl 1.0 NUMA_PREFER=0 REPLAY_FILE_A=replay_v2_cl.py "REPLAY_EXTRA_A=--closed-loop --paced --t-start --lead-in 300" REPLAY_FILE_B=replay_v2_cl.py "RE
 ## markers
-12:36:46 ===== lever v5s_full_cl_gcsv3_1x_paced done
-12:36:46 ===== lever v5s_full_cl_gcsv3_114x_paced: traces /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl frac 0.25; NUMA_PR
 13:30:21 ===== lever v5s_full_cl_gcsv3_114x_paced done
 13:30:21 ===== lever v5s_full_cl_gcsv3_127x_paced: traces /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl frac 0.5; NUMA_PRE
 15:12:12 ===== lever v5s_full_cl_gcsv3_127x_paced done
@@ -22,3 +19,5 @@ v5p_full_cl_gcsv3_70d60_r2_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b
 16:54:10 ===== lever v5p_full_cl_gcsv3_70tp2_paced: traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl frac 0.33; REPLAY
 17:45:30 ===== lever v5p_full_cl_gcsv3_70tp2_paced done
 17:45:30 ===== lever v5t_ab_mmids_p60: traces /tr/v5/w1003_1330/b00.jsonl frac 1.0; NUMA_PREFER=0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop --p
+18:37:06 ===== lever v5t_ab_mmids_p60 done
+18:37:06 ===== lever v5t_ab_mmidssw_p60: traces /tr/v5/w1003_1330/b00.jsonl frac 1.0; NUMA_PREFER=0 REPLAY_FILE_A=replay_v2_cl.py REPLAY_EXTRA_A=--closed-loop -
