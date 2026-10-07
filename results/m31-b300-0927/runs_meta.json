@@ -2098,6 +2098,16 @@
    "change": "dynamo",
    "verdict": "rejected",
    "why": "2/15 vs 12/15 at 5.95 M/GPU per half; paired first token x1.98 (CI 1.82..2.20), first streamed chunk x1.78, total latency x1.49; prompts identical (0 of 198 outside 0.1%), hit 94.8 vs 95.5%, 0 errors. Not on par (target first token <= x1.05; A/A floor x0.99). The frontend adds only ~0.04 s (its TTFT equals the worker round trip), and the engine queue + prefill p50 is about equal on both sides, so the delay sits in the Dynamo SGLang worker path between the request plane and the scheduler, or on the way back. Diagnosis next. 10-07 05:25: NUMA_PREFER=1 leaked into this twin (engines NUMA bound); the paired comparison is still like for like."
+  },
+  {
+   "tag": "v5s_full_cl_gcsv3_1x_paced",
+   "at": "2026-10-07 05:36",
+   "protocol": "v5.1",
+   "share": 1.02,
+   "name": "Sep 30 13:10 window at production's real load, full node, adopted stack (NUMA bound by the leak)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "15/15 at 6.53 M/GPU (1.02x of Sep 30's real 6.43 M): first token p50 1.02 s (production 0.37 s on the same requests), TPS p50 101.7 (production 64.5), hit 96.5% vs 97.0%, 0 errors, 12% paced fallbacks. Sep 30 is a lighter day than the Oct 3 peak: the same stack passes it with margin. NUMA_PREFER=1 had leaked into this run; a NUMA-off repeat is queued."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
