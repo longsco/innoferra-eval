@@ -79013,6 +79013,170 @@
 ]
 },
 {
+"tag": "v5t_ab_dyn_sync_pin_p60@A",
+"partial": true,
+"done_utc": null,
+"requests": 236,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 0.623,
+"prod_tpm_gpu": 0.635,
+"hit": 0.9553,
+"prod_hit": 0.9358,
+"ttft": [
+4.763720578979701,
+17.723285370972008,
+28.112162047997117
+],
+"prod_ttft": [
+5.153,
+10.226,
+10.602
+],
+"decode_p50": 101.05147749437072,
+"prod_decode_p50": 44.48473016315717,
+"passed": 0,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 192,
+"err": 0,
+"ttft_p50": 4.614074984798208,
+"ttft_p99": 30.264492051908746,
+"decode_p50": 96.4595686657783,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 1,
+"n": 44,
+"err": 0,
+"ttft_p50": 5.020440623164177,
+"ttft_p99": 16.60442378697917,
+"decode_p50": 109.97616024477429,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 192,
+"err": 0,
+"ttft_p50": 4.784,
+"ttft_p99": 10.602,
+"decode_p50": 46.39094197200817,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 44,
+"err": 0,
+"ttft_p50": 7.069,
+"ttft_p99": 10.95,
+"decode_p50": 37.0003957261575,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+]
+},
+{
+"tag": "v5t_ab_dyn_sync_pin_p60@B",
+"partial": true,
+"done_utc": null,
+"requests": 223,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 0.584,
+"prod_tpm_gpu": 0.593,
+"hit": 0.9547,
+"prod_hit": 0.9343,
+"ttft": [
+4.51367922895588,
+14.884493624093011,
+55.3657285051886
+],
+"prod_ttft": [
+4.896,
+10.216,
+10.588
+],
+"decode_p50": 84.795247806227,
+"prod_decode_p50": 44.48473016315717,
+"passed": 0,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 191,
+"err": 0,
+"ttft_p50": 4.325618109898642,
+"ttft_p99": 57.77400065190159,
+"decode_p50": 83.72876647343614,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 1,
+"n": 32,
+"err": 0,
+"ttft_p50": 6.267922463826835,
+"ttft_p99": 18.09465662506409,
+"decode_p50": 85.62969580717865,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 191,
+"err": 0,
+"ttft_p50": 4.784,
+"ttft_p99": 10.602,
+"decode_p50": 46.13695883283347,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 32,
+"err": 0,
+"ttft_p50": 6.22,
+"ttft_p99": 10.355,
+"decode_p50": 37.35632183908046,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+]
+},
+{
 "tag": "v5t_ab_fidproto_p60@A",
 "partial": false,
 "done_utc": null,
