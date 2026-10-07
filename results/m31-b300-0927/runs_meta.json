@@ -1990,6 +1990,16 @@
    "change": "scheduler",
    "verdict": "rejected",
    "why": "4/15 at 7.34 M/GPU: first token p50 4.20 s, TPS p50 73.4, 27% fallbacks, 0 errors. Dose-response at the knee: 0 passes 1/15 (6.07 s, TPS 53), 10 passes 4/15, 30 passes 7/15 (3.59 s, TPS 97). More pairing wins at the knee; 60 passes queued."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_70dw_r2_paced",
+   "at": "2026-10-06 22:10",
+   "protocol": "v5.1",
+   "share": 0.92,
+   "name": "same-day repeat of the adopted 7.33 M run (Oct 3 peak, full node, identical config and traces)",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "3/15 at 7.33 M/GPU vs 7/15 in the first run: first token p50 4.53 vs 3.59 s, TPS 88.6 vs 96.5, 0 errors. Run-to-run noise at the knee is up to 4 minutes. NUMA placement of the host KV pools differed: 49% of ranks' pool on the other socket vs 28%. Across four 7.33 M runs, minutes fall as remote placement rises (28% -> 7/15, 40% -> 4/15, 49% -> 3/15, 60% -> 1/15)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
