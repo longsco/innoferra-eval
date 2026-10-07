@@ -1304,9 +1304,9 @@ def chart_svg(variant):
     ab_list, seen_ab = [], set()
     for t in HL:
         for a, b in ab_pairs(t):   # newest first
-            k = (round(a["load"], 1), a["pass"], round(b["load"], 1), b["pass"])
-            if k not in seen_ab:   # innoferra 10-07: a side-swapped pair at the same spots shares the newest pair's arrow
-                seen_ab.add(k)
+            ka, kb = ("A", round(a["load"] * 4) / 4, a["pass"]), ("B", round(b["load"] * 4) / 4, b["pass"])
+            if ka not in seen_ab and kb not in seen_ab:   # innoferra 10-07: a pair whose A or B spot is taken shares the newest pair's arrow
+                seen_ab.update((ka, kb))
                 ab_list.append((a, b))
     for a, b in ab_list:
         ma, mb = must_put(new_mark("hh", [a])), must_put(new_mark("hh", [b]))
