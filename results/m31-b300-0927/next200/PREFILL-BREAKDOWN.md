@@ -1,6 +1,6 @@
 # PREFILL-BREAKDOWN: where the first token goes at the knee, and what a 1.5x faster prompt path buys at 7.33 M
 
-Date: 2026-10-07, 01:35 PDT. Node 0008, CPU only (`nice -n 19 ionice -c3`, one process at a time). I did not touch the GPUs,
+Date: 2026-10-07, 02:05 PDT. Node 0008, CPU only (`nice -n 19 ionice -c3`, one process at a time). I did not touch the GPUs,
 lever_queue.txt, chainQ.sh, HOLD, containers, gateways, the live trees, the live replay or the traces. All inputs were read only.
 Scripts and raw outputs: node 0008 `/data01/minimax31/serving/next200/prefill/` (section 10). Aggregates only: no prompt text,
 no request ids and no session keys appear in any output.
@@ -23,8 +23,9 @@ minute m (the SLA binning). SLA v2 = first token p50 < 3 s, decode p50 > 60 tok/
 | `70d10` | 7.33 M | delayer 10 passes | Oct 6 20:18-21:16 | 4/15 |
 | `70nd` | 7.33 M | delayer off | Oct 6 19:21-20:18 | 3/15 (dashboard note: 1/15; section 9) |
 | `69dw` | 6.50 M | - | Oct 6 10:35-11:29 | 15/15 |
+| `70d60` | 7.33 M | delayer 60 passes | Oct 7 00:54-01:48 | 4/15 |
 
-The 60-pass delayer run (`70d60`) started at 00:54 PDT and was not finished when I wrote this. Section 7 gives the model's prediction.
+I predicted the 60-pass run with the model before it finished. Section 7 compares the prediction with the result.
 
 ---------------------------------------------------------------------------------------------------------------------------
 ## 0. Answer first
@@ -48,9 +49,9 @@ The 60-pass delayer run (`70d60`) started at 00:54 PDT and was not finished when
    and 1 us per token per 100k of context (weak and not well identified: 0-3 us per 100k fit equally). Per new token: 24 us at
    short context, 25 us at 100k, 27 us at 300k. Token work is 50-67% of extend time; the per-pass base is the rest. [measured]
 6. **What-if, per-token prefill cost / 1.5, at 7.33 M, with feedback:** minutes passing rise from 1-7 (median 3) to 8-14 (median
-   10-11) across the six runs with the delayer on. First token p50 over the window falls x0.54-0.68 (median x0.64): 3.4-4.6 s ->
+   11) across the seven runs with the delayer on. First token p50 over the window falls x0.54-0.68 (median x0.65): 3.4-4.6 s ->
    2.2-2.9 s. Decode p50 rises 11-22 tok/s. Over all calibrations and a high-base cost variant, the range is 7-14 minutes.
-   (70m82 cannot exceed 12: it has errors in 3 minutes.) [model, MED; validated on 9 runs, section 6.2]
+   (70m82 cannot exceed 12: it has errors in 3 minutes.) [model, MED; validated on 10 runs, section 6.2]
 7. **The gain is almost all feedback.** Without feedback (only the request's own token compute shrinks) no run gains a minute. In
    the model, 1.5x cuts extend wall from 0.54-0.59 to 0.45-0.49 of the rank. Decode gets that time (+27% decode passes), requests
    finish 22-31% sooner, KV drains, and the KV-full wait per request falls 3.31 s -> 0.51 s in minutes 0-3 (0.80 -> 0.20 s later).
@@ -59,9 +60,14 @@ The 60-pass delayer run (`70d60`) started at 00:54 PDT and was not finished when
    1.25x gives 5-12 of 15; 2x gives 12-15; 1.5x on the whole pass (base too) gives 11-15. 6.50 M stays 15/15. [model, MED]
 9. **Other levers in the same model and data:** an attention-only kernel (x1.15 token work, the MSA case) adds 0-5 minutes
    (median 3 -> 5-6); removing the eager penalty of load-back passes adds 0-3 minutes; delayer 10
-   instead of 30 adds 0-2 minutes on top of 1.5x; delayer 60 trades +0.2-0.4 s first token for +3-6 tok/s decode. Outside the GPU,
+   instead of 30 adds 0-2 minutes on top of 1.5x; delayer 60 trades +0.1-0.4 s first token for +3-6 tok/s decode. Outside the GPU,
    tokenization of >= 150k-token prompts (p90 3.1-3.8 s at every load) costs 0.6-0.7 s of the median-setting first token; capping
    it at 50 ms adds 2-6 minutes at 7.33 M on its own (first order). [model; measured]
+10. **The 60-pass delayer run matched the prediction made before it finished:** 4/15 (predicted 1-7), first token p50 4.06 s
+    (predicted 3.75-4.71 s), decode p50 94.8 (predicted 86-94; it lands at the top edge). Against delayer 30 on the same arrivals, the
+    model gives +0.16 s first token, +4.8 tok/s decode and the same minutes. Its median-setting requests wait 0.61 s on the delayer in
+    minutes 4-14 (0.32-0.35 s with 30 passes), and five minutes fail by 0.15-0.49 s. At x1.5 tokens it would pass 11/15.
+    [measured; model]
 
 ---------------------------------------------------------------------------------------------------------------------------
 ## 1. Data and method
@@ -288,11 +294,12 @@ The what-if divides the token work of every extend pass by 1.5. Base, eager pena
 | 70m82 7.33 M (pool 2.75 M) | 3 / 3 | -0.032 / 0.081 | 0.073 |
 | 70d10 7.33 M (delayer 10) | 4 / 5 | -0.013 / 0.109 | 0.093 |
 | 70nd 7.33 M (delayer off) | 3 / 3 | -0.128 / 0.198 | 0.113 |
+| 70d60 7.33 M (delayer 60; finished after the fit) | 4 / 5 | +0.019 / 0.086 | 0.075 |
 | 75dw 7.49 M | 2 / 2 | -0.066 / 0.109 | 0.073 |
 | 69dw 6.50 M | 15 / 15 | -0.003 / 0.051 | 0.055 |
 
-[measured vs model] The model reproduces the knee from 6.50 to 7.49 M, the delayer at 10 / 30 / off, and the bigger pool: 5-14% per
-minute (20% without the delayer). Its extend share per minute tracks the device timer: 70dw 0.42-0.68 vs 0.41-0.65, 7.49 M 0.44-0.68
+[measured vs model] The model reproduces the knee from 6.50 to 7.49 M, the delayer at 10 / 30 / 60 / off, and the bigger pool: 5-14%
+per minute (20% without the delayer). Its extend share per minute tracks the device timer: 70dw 0.42-0.68 vs 0.41-0.65, 7.49 M 0.44-0.68
 vs 0.43-0.68, 6.50 M 0.32-0.54 vs 0.30-0.49. Two other calibrations on the same fit ridge (B: eager base 200 ms, CPU 0; C: CPU 4 ms,
 decode base 17.1 ms) validate within +-1 minute. [model]
 
@@ -307,6 +314,7 @@ decode base 17.1 ms) validate within +-1 minute. [model]
 | 70m82 (errors cap at 12) | 3 | 5 / 5 | **10 / 9** | 12 / 12 | 12 / 11 | 3.84 -> 2.56 s | 84 -> 106 |
 | 70d10 | 4 | 11 / 12 | **14 / 14** | 15 / 15 | 15 / 15 | 4.01 -> 2.17 s | 71 -> 88 |
 | 70nd (no delayer) | 3 | 7 / 6 | **10 / 10** | 13 / 11 | 13 / 12 | 5.76 -> 2.65 s | 52 -> 72 |
+| 70d60 (delayer 60) | 4 | | **11 / 11** | | | 4.06 -> 2.62 s | 95 -> 107 |
 | 7.49 M (75dw) | 2 | 5 / 4 | **9 / 6** | 13 / 11 | 13 / 11 | 5.23 -> 3.14 s | 78 -> 98 |
 | 6.50 M (69dw) | 15 | 15 / 15 | **15 / 15** | 15 / 15 | 15 / 15 | 2.00 -> 1.67 s | 117 -> 123 |
 
@@ -315,8 +323,8 @@ Over all three calibrations and a high-base cost variant (base 150 / 200 ms, 22 
 70numa 9-12, 70m82 7-10, 70d10 12-14 of 15. KV sharing 0.80-0.90 instead of 0.85, or the host part x0.5-1.5, gives 70dw 12-14,
 70dw_r2 8-10, 70numa 10-12. [model]
 
-**Answer: at 7.33 M, the six runs with the delayer pass 1-7 minutes today (median 3). At 1.5x token speed they pass 8-14 (median
-10-11; 7-14 over all calibrations). First token p50 over the window falls x0.54-0.68 (median x0.64), from 3.4-4.6 s to 2.2-2.9 s.**
+**Answer: at 7.33 M, the seven runs with the delayer pass 1-7 minutes today (median 3). At 1.5x token speed they pass 8-14 (median
+11; 7-14 over all calibrations). First token p50 over the window falls x0.54-0.68 (median x0.65), from 3.4-4.6 s to 2.2-2.9 s.**
 Decode stays far above 60 and rises 11-22 tok/s, so first token stays the binding rule. [model, MED]
 
 Per minute, 70dw (measured -> x1.5, measured x ratio): 0: 4.67 -> 3.15 (fail), 1: 5.95 -> 2.84, 2: 4.18 -> 2.37, 3: 4.62 -> 3.46
@@ -327,7 +335,7 @@ failing the start minutes: 70dw_r2 fails 0-3, 11 and 14 (3.1-5.2 s); 70numa fail
 ### 6.4 Where the gain comes from
 
 No-feedback first order (each request's own token compute / 1.5; nothing else moves): 70dw 7 -> 7, 70dw_r2 3 -> 3, 70numa 1 -> 1,
-70numa_r2 2 -> 2, 70m82 3 -> 3, 70d10 4 -> 4. [measured + cost model] The whole gain is the feedback through the queue and decode.
+70numa_r2 2 -> 2, 70m82 3 -> 3, 70d10 4 -> 4, 70d60 4 -> 4. [measured + cost model] The whole gain is the feedback through the queue and decode.
 
 Model queue components, mean seconds per measured request, five 7.33 M runs with the delayer (70dw, 70dw_r2, 70numa, 70m82, 70d10):
 
@@ -358,14 +366,60 @@ top-k v2 (6.8-10x), attention is about 24% of the token work. A 2.2x attention k
 work by about 13%: x1.15. Reaching x1.5 needs MoE and GEMM work too (they are about half of the token work).
 
 ---------------------------------------------------------------------------------------------------------------------------
-## 7. The 60-pass delayer run: model prediction (check when `70d60` finishes, about 01:50 PDT)
+## 7. The 60-pass delayer run (`70d60`): prediction, result, decomposition
 
-The model on five 7.33 M arrival sets (70dw, 70dw_r2, 70numa, 70numa_r2, 70m82) with max_delay_passes 60 instead of 30:
-- first token p50 over the window 3.75-4.71 s (delayer 30: 3.39-4.57 s), i.e. +0.1..+0.4 s;
-- decode p50 86-94 tok/s (delayer 30: 80-89), i.e. +3..+6 tok/s;
-- minutes passing 1-7 (central 1); at x1.5 tokens 6-12 (delayer 30 at x1.5: 8-13).
-[model, MED] What would show the model wrong: the 60-pass run passes >= 6 minutes with first token p50 <= 3.4 s, or its decode p50 is
-not above the 30-pass runs (79-94). Identical 7.33 M runs differ by up to 6 minutes, so one run decides little. [inferred, MED]
+### 7.1 Prediction (made at 01:15 PDT, before the run finished) vs result
+
+| | model prediction (five other 7.33 M arrival sets, delayer 60) | measured |
+|---|---|---|
+| minutes passing | 1-7 (central 1) | **4/15** |
+| first token p50 over the window | 3.75-4.71 s (delayer 30 on the same sets: 3.39-4.57 s) | **4.06 s** |
+| decode p50 | 86-94 tok/s (delayer 30: 80-89) | **94.8** |
+
+[measured: run records; model] Minutes and first token sit inside the predicted ranges; decode lands at the top edge (0.8 tok/s above).
+The refutation rule I wrote before the run (>= 6 minutes with first token <= 3.4 s, or decode not above the 30-pass runs) did not
+trigger. [measured]
+On the run's own arrivals the model gives 5/15 (TTFT abs log error 0.086). The same arrivals with delayer 30 give 5/15, first token
+-0.16 s, decode -4.8 tok/s. So 60 passes buys decode with first token and does not move the minutes. [model, MED]
+
+### 7.2 Decomposition (share of summed first-token time, %)
+
+| | pre | KV full | chunk | other prefill | hold | other decode | prefill window | engine out+stream | hidden text |
+|---|---|---|---|---|---|---|---|---|---|
+| minutes 0-14 | 11.8 | 21.3 | 10.7 | 6.4 | 7.2 | 2.7 | 13.9 | 2.7 | 24.6 |
+| minutes 0-3 | 8.2 | 32.1 | 11.4 | 10.7 | 6.1 | 4.7 | 10.9 | 2.2 | 14.8 |
+| minutes 4-14 | 14.8 | 12.4 | 10.2 | 2.8 | 8.1 | 1.1 | 16.2 | 3.1 | 32.6 |
+| 70dw (delayer 30), minutes 0-14 | 13.0 | 21.3 | 8.5 | 4.5 | 6.5 | 1.7 | 14.7 | 2.9 | 27.9 |
+
+[measured: pf_decomp.py] Median-setting requests, minutes 4-14: first token 3.20 s, of which delayer hold 0.61 s (70dw 0.32 s, 70dw_r2
+0.35 s), hidden text 0.48 s, tokenization 0.53 s. Minutes 0-3: 6.41 s, of which KV full 1.23 s, chunk 0.53 s, hold 0.30 s, hidden text
+1.43 s. [measured]
+
+Per minute (first token p50, s): 0: 7.21, 1: 6.90, 2: 4.09, 3: 6.75, 4: 3.15, 5: 4.53, 6: 3.86, 7: 3.33, 8: 2.61, 9: 2.78, 10: 2.54,
+11: 2.57, 12: 3.24, 13: 3.49, 14: 3.38. Minutes 4, 7, 12, 13 and 14 fail by 0.15-0.49 s, about the size of the longer hold. [measured]
+GPU budget: extend 0.58-0.65 of the rank in minutes 0-3, 0.42-0.53 later; engine 2 ran 0.61 extend over the window (others 0.44-0.48).
+[measured: pf_budget.py]
+
+### 7.3 Per DP rank (first token p50; mean seconds of KV full / chunk / hold)
+
+| rank | min 0-3 | min 4-6 | min 7-10 | min 11-14 |
+|---|---|---|---|---|
+| e0DP0 | 6.04; 2.74 / 0.59 / 0.49 | 2.15; 0.00 / 0.21 / 0.41 | 3.20; 0.00 / 0.14 / 0.39 | 2.91; 0.20 / 0.18 / 0.39 |
+| e0DP1 | 3.87; 2.02 / 0.50 / 0.34 | 1.70; 0.00 / 0.24 / 0.42 | 2.12; 0.28 / 1.16 / 0.49 | 1.94; 0.11 / 0.32 / 0.32 |
+| e1DP0 | 7.42; 4.21 / 0.60 / 0.85 | 6.51; 2.53 / 0.89 / 1.30 | 3.05; 0.81 / 0.54 / 0.63 | 3.38; 2.01 / 0.48 / 0.32 |
+| e1DP1 | 3.85; 0.26 / 0.64 / 0.46 | 3.26; 0.00 / 0.00 / 0.22 | 1.46; 0.00 / 0.02 / 0.26 | 3.32; 0.64 / 1.75 / 0.67 |
+| e2DP0 | 17.28; 9.88 / 3.90 / 1.10 | 4.85; 0.25 / 1.74 / 0.48 | 5.41; 0.19 / 0.41 / 0.30 | 3.07; 0.44 / 0.39 / 0.29 |
+| e2DP1 | 7.48; 0.54 / 2.93 / 0.27 | 6.88; 1.60 / 0.54 / 0.21 | 5.99; 1.50 / 1.02 / 0.54 | 4.36; 1.80 / 0.79 / 0.37 |
+| e3DP0 | 7.49; 6.08 / 0.36 / 0.58 | 6.18; 2.53 / 1.46 / 0.45 | 2.22; 0.00 / 0.17 / 0.50 | 3.38; 0.43 / 0.40 / 0.65 |
+| e3DP1 | 4.24; 1.23 / 0.41 / 0.91 | 3.74; 1.13 / 0.26 / 0.22 | 2.38; 0.02 / 0.18 / 0.37 | 2.96; 0.04 / 0.25 / 0.33 |
+
+[measured: pf_rankmin.py] Engine 2 is the hot engine in this run. In minutes 0-3 e2DP0 waits 9.9 s KV full, 3.9 s on chunks and 6.7 s
+on other prefills (mostly its partner's). Both engine-2 ranks show 2.2-3.7 s of hidden-text decode in every minute group. The hot rank
+changes from run to run (7.49 M: e2DP1 and e3DP1). [measured]
+
+### 7.4 What-if on this run
+x1.5 token speed with delayer 60: 4 -> 11/15 (model and measured x ratio), first token 4.06 -> 2.62 s, decode 95 -> 107. With delayer 30
+on the same arrivals and x1.5: 12/15 (model), 11/15 (measured x ratio). [model, MED]
 
 ---------------------------------------------------------------------------------------------------------------------------
 ## 8. Side findings
@@ -407,7 +461,7 @@ on single gaps. [measured; code: scheduler.py event_loop_overlap]
 - What would refute the x1.5 answer: a real 1.5x token-work change (or any change that cuts extend wall to about 0.47 of the rank)
   at 7.33 M that leaves the KV-full share above 20% of the first token in minutes 0-3, or that passes fewer than 8 of 15 minutes on two
   repeats. A cheaper check: the model says delayer 10 at today's speed gives 4-5/15 (measured 4/15).
-- Not checked: the 70d60 run (running); a per-kernel split of the 24 us/token on today's stack (MoE vs GEMM vs attention vs indexer).
+- Not checked: a per-kernel split of the 24 us/token on today's stack (MoE vs GEMM vs attention vs indexer).
   That split decides how much of x1.5 MSA or other kernels can deliver. Production's per-token cost is unknown.
 
 ---------------------------------------------------------------------------------------------------------------------------
@@ -421,5 +475,9 @@ on single gaps. [measured; code: scheduler.py event_loop_overlap]
 | `pf_devfit.py`, `pf_devfit2.py`, `pf_decfit.py` | extend and decode cost fits on the device timer (`logs/devfit*.log`, `logs/decfit.log`) |
 | `pf_decomp.py` (+ `host` / `nopersist` variants), `pf_rankmin.py`, `pf_pre.py` | first-token decomposition (`logs/decomp_<run>*.log`, `logs/rankmin_75dw.log`, `logs/pre.log`) |
 | `pf_siminput.py`, `pf_sim.py`, `pf_compare.py`, `pf_qcat.py` | node model, what-if runs, comparisons (`logs/sim_*.log`, `logs/cmp_*.log`) |
-| `run_whatif.sh`, `run_extra.sh` | the scenario sets in sections 6-7 |
+| `run_whatif.sh`, `run_extra.sh`, `run_d60.sh` | the scenario sets in sections 6-7; the 60-pass run pipeline (`logs/*70d60*`) |
 | `pf_tokfix.py`, `probe*.py` | tokenization first-order check; diagnostics (pass jitter, KV classifier, accept, KV sharing) |
+
+The intermediate pickles that held request ids for joins (`out/parsed_*`, `out/engine_*`, `out/decomp_*`) are deleted. Rerun
+`pf_parse.py` -> `pf_anchor.py` -> `pf_engine.py` -> `pf_decomp.py` to rebuild them. The kept pickles (`anchored_`, `metrics_`, `budget_`,
+`minbudget_`, `passes_`, `siminput_`, `sim_`) hold no ids or keys. A scan of `logs/` finds no 32-hex request id.

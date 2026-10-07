@@ -1237,13 +1237,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-06 21:30",
+  "at": "2026-10-07 02:15",
   "items": [
    {
     "rule": "ttft_p50",
     "title": "Oct 3 peak at 7.33 M: first token in the peak minutes",
-    "text": "At 7.33 M (0.92x of production's real load) 7/15 minutes pass and our first token p50 (3.59 s) beats production's (4.30 s) on the same requests. Minutes 0-3 are the window's real peak (8.1 M offered); production fails them too. There device KV fills on most ranks and requests queue. Removing the prefill delayer made it worse (1/15: decode collapsed), so the delayer stays. Next: more device KV (MEMFRAC 0.82) and a longer delayer hold (60 passes).",
-    "src": "PROGRESS.md Oct 6 15:05-21:20; runs v5p_full_cl_gcsv3_70dw/70nd/70d10_paced; next200/LEAD-START.md"
+    "text": "At 7.33 M (0.92x of production's real load), six runs passed 1-7 of 15 minutes (median 3-4); 6.50 M passes 15/15. In minutes 0-3, device KV fills and requests queue: the admission queue is 61% of the first token. Prompt passes fill 52-68% of GPU time, and each one stops decode on both GPUs of its engine. MEMFRAC 0.82, NUMA binding and a 60-pass delayer gave no clear change. Requests with images wait 1.6-2.9 s (median) in tokenization, because the engine tokenizes their text twice. A bit-exact fix is in build.",
+    "src": "PROGRESS.md Oct 6 15:05 - Oct 7 02:15; next200/PREFILL-BREAKDOWN.md, PREFILL-ROUTES(.verify).md; next210/"
    },
    {
     "rule": "decode",
@@ -2064,8 +2064,8 @@
   {
    "name": "Attention over both GPUs (our own patch)",
    "state": "parked",
-   "at": "2026-10-06 17:10",
-   "text": "production runs attention split over the two GPUs of a worker (no lockstep); our training-compatible numerics force attention onto one GPU. A max-type index score can be merged across GPUs exactly, so our own patch could lift that guard (estimate +6–15% generation speed at 3.34 M; large effort, GSM8K check needed) 10-06: re-examined: the Oct 2 TP2 gain was mostly the missing prefill delayer on its TP2 side; pooling alone ~0. On hold until the delayer twin.",
+   "at": "2026-10-07 02:15",
+   "text": "production runs attention split over the two GPUs of a worker (no lockstep); our training-compatible numerics force attention onto one GPU. A max-type index score can be merged across GPUs exactly, so our own patch could lift that guard (estimate +6–15% generation speed at 3.34 M; large effort, GSM8K check needed) 10-06: re-examined: the Oct 2 TP2 gain was mostly the missing prefill delayer on its TP2 side; pooling alone ~0. On hold until the delayer twin. 10-07: the prefill-routes study (verified PARTLY) ranks TP2 as the only layout route past x1.25: about x1.3 prefill net, first token about 3.0-3.2 s at 7.33 M. The delayer stays at 30, so a TP2 test must compare against DP2 with the 30-pass delayer.",
    "ref": "PROGRESS.md Oct 2 00:55"
   },
   {
@@ -2095,6 +2095,13 @@
    "at": "2026-10-01 20:41",
    "text": "for requests without images the engine passes our cached tokens through instead of decoding them to text and re-tokenising (identical tokens); with the shared cache, median first token at 2.23 M 0.85 → 0.54 s",
    "ref": "serving/minimax-m3.1/patch_mm_pass_ids.py · mm_ids_verify.py · PROGRESS.md Oct 1 19:20"
+  },
+  {
+   "name": "Tokenise image requests once",
+   "state": "running",
+   "at": "2026-10-07 02:15",
+   "text": "Measured on the 7.33 M run (5,858 requests): prompts of 150k+ tokens WITH images wait 2.94 s median (p90 5.50 s) in tokenization; WITHOUT images 0.10 s. Our ids pass-through skips the second full tokenization only for requests without media. A model of the knee gives +2-6 SLA minutes at 7.33 M if tokenization stays under 50 ms. Workflow wf_ba8cdf10-827 builds a bit-exact fast path (env SGLANG_MM_PASS_IDS_WITH_MEDIA, default off) on CPU; two skeptics check it before a twin.",
+   "ref": "next210/ (TOKMEDIA-*.md) · serving/next210/tok_media.py · next200/PREFILL-BREAKDOWN.md section 8.2"
   },
   {
    "name": "Decode step after each prefill",
@@ -2292,8 +2299,8 @@
   {
    "name": "Dynamo integration: parity first",
    "state": "running",
-   "at": "2026-10-06 09:30",
-   "text": "Owner 10-05: target at least on par with our gateway stack, then use Dynamo's knobs. On par = TPS inside the side bias, first token <= x1.05, cache hit within 1 point, the same SLA minutes, outputs equal. Now (Dynamo 1.5.0): behind our pins TPS and outputs on par, first token x1.22 (Python chat processor); Dynamo's own routing loses affinity on DP2 engines (hit 71-76% vs 96%). Step 0 done 22:00 (gateway-B patches pass on today's code). Step 1 queued: A/A at 1.5x on today's stack (v3_ab_dyn_pin_cl_15x). Next: 2 frontends, then the Rust chat processor (production's path) for first token; then session affinity for routing without our pins; fallback: production's TP2-attention layout. Plan: PLAN.md section 5. 00:11 step 1 result at 1.5x: both halves 15/15, cache hit equal, 0 errors; TPS -3.7 tok/s (CI -5.45..-2.12) and first token x1.46 -> not yet on par (Python chat processor). Next: 2 frontends, then the Rust chat processor. 10-06 06:20: step 2 started. Rung 9 queued (v5t_ab_dyn_sync_pin_p60: two frontends with router replica sync, our pins, Oct 3 peak about 6 M/GPU per half, adopted stack with the window pool on both sides). Rung 10a (Rust chat processor, production's path) waits for a CPU fix of its prompt parity (181/200 identical prompt ids); workflow wf_10535fa6-40d is on it. 09:30: Rust chat processor prompt parity found and fixed on CPU: the Rust renderer joins multi-part text with a newline, the engine without one. Gateway fix + a patched Rust core give 200/200 identical prompts on fresh samples. Before the rung-10a twin: wire the patches, add the last-assistant-message fix, and build an output-side smoke."
+   "at": "2026-10-07 02:00",
+   "text": "Owner 10-05: target at least on par with our gateway stack, then use Dynamo's knobs. On par = TPS inside the side bias, first token <= x1.05, cache hit within 1 point, the same SLA minutes, outputs equal. Now (Dynamo 1.5.0): behind our pins TPS and outputs on par, first token x1.22 (Python chat processor); Dynamo's own routing loses affinity on DP2 engines (hit 71-76% vs 96%). Step 0 done 22:00 (gateway-B patches pass on today's code). Step 1 queued: A/A at 1.5x on today's stack (v3_ab_dyn_pin_cl_15x). Next: 2 frontends, then the Rust chat processor (production's path) for first token; then session affinity for routing without our pins; fallback: production's TP2-attention layout. Plan: PLAN.md section 5. 00:11 step 1 result at 1.5x: both halves 15/15, cache hit equal, 0 errors; TPS -3.7 tok/s (CI -5.45..-2.12) and first token x1.46 -> not yet on par (Python chat processor). Next: 2 frontends, then the Rust chat processor. 10-06 06:20: step 2 started. Rung 9 queued (v5t_ab_dyn_sync_pin_p60: two frontends with router replica sync, our pins, Oct 3 peak about 6 M/GPU per half, adopted stack with the window pool on both sides). Rung 10a (Rust chat processor, production's path) waits for a CPU fix of its prompt parity (181/200 identical prompt ids); workflow wf_10535fa6-40d is on it. 09:30: Rust chat processor prompt parity found and fixed on CPU: the Rust renderer joins multi-part text with a newline, the engine without one. Gateway fix + a patched Rust core give 200/200 identical prompts on fresh samples. Before the rung-10a twin: wire the patches, add the last-assistant-message fix, and build an output-side smoke. 10-07 02:00: rung 9 SKIPPED. Our wrapper refuses pins with two frontends, and production runs 1 frontend per 2 workers (48 for 96), the same ratio as step 1. The slot ran as a plain A/A at ~6 M/GPU per half: the side-bias floor for rung 10a. The Rust-path smoke (rung 10a) is armed after it (A reference matches); the rung-10a twin follows a smoke PASS."
   },
   {
    "name": "Gateway re-pins off",
