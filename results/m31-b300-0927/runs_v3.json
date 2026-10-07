@@ -70549,6 +70549,433 @@
 ]
 },
 {
+"tag": "v5p_full_cl_gcsv3_70d10_paced",
+"partial": false,
+"done_utc": "04:16:15",
+"requests": 5858,
+"errors": 0,
+"prod_non200": 3,
+"tpm_gpu": 7.34,
+"prod_tpm_gpu": 7.492,
+"hit": 0.9399,
+"prod_hit": 0.9481,
+"ttft": [
+4.038895800942555,
+18.279240067815408,
+51.1200740118511
+],
+"prod_ttft": [
+4.158,
+10.171,
+10.552
+],
+"decode_p50": 70.7796016861453,
+"prod_decode_p50": 47.91126983727774,
+"passed": 0,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 503,
+"err": 0,
+"ttft_p50": 7.930179776856676,
+"ttft_p99": 118.84015121613629,
+"decode_p50": 53.79628000177633,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 435,
+"err": 0,
+"ttft_p50": 7.8350083800032735,
+"ttft_p99": 63.19786620000377,
+"decode_p50": 49.179447856260815,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 460,
+"err": 0,
+"ttft_p50": 4.816870176000521,
+"ttft_p99": 41.010095931822434,
+"decode_p50": 53.672683610009344,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 420,
+"err": 0,
+"ttft_p50": 5.603571427986026,
+"ttft_p99": 39.32256509293802,
+"decode_p50": 50.948474045360214,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 383,
+"err": 0,
+"ttft_p50": 3.045903727179393,
+"ttft_p99": 36.79347384814173,
+"decode_p50": 83.41280564486752,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 5,
+"n": 395,
+"err": 0,
+"ttft_p50": 4.340726563939825,
+"ttft_p99": 26.555046272929758,
+"decode_p50": 64.81404387650188,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 6,
+"n": 333,
+"err": 0,
+"ttft_p50": 3.7386163058690727,
+"ttft_p99": 23.869817934930325,
+"decode_p50": 71.1680511428083,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 7,
+"n": 356,
+"err": 0,
+"ttft_p50": 1.2101267899852246,
+"ttft_p99": 31.247814043890685,
+"decode_p50": 101.72414139653318,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 8,
+"n": 372,
+"err": 0,
+"ttft_p50": 3.325473221950233,
+"ttft_p99": 37.37514329794794,
+"decode_p50": 80.70600087204099,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 9,
+"n": 314,
+"err": 0,
+"ttft_p50": 2.69052423001267,
+"ttft_p99": 33.844763823086396,
+"decode_p50": 82.31978837725397,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 10,
+"n": 339,
+"err": 0,
+"ttft_p50": 2.568555169040337,
+"ttft_p99": 33.66247474402189,
+"decode_p50": 92.1906112405172,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 11,
+"n": 349,
+"err": 0,
+"ttft_p50": 2.8193055940791965,
+"ttft_p99": 31.22218915587291,
+"decode_p50": 80.74806931485584,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 12,
+"n": 383,
+"err": 0,
+"ttft_p50": 3.6446893298998475,
+"ttft_p99": 22.473016692092642,
+"decode_p50": 66.42032566744503,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 13,
+"n": 424,
+"err": 0,
+"ttft_p50": 3.272669465979561,
+"ttft_p99": 28.26408181898296,
+"decode_p50": 69.73638250654288,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 14,
+"n": 392,
+"err": 0,
+"ttft_p50": 4.280121613992378,
+"ttft_p99": 26.176774621009827,
+"decode_p50": 71.84377568819082,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 503,
+"err": 0,
+"ttft_p50": 3.907,
+"ttft_p99": 10.588,
+"decode_p50": 49.32047347654538,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 435,
+"err": 0,
+"ttft_p50": 6.706,
+"ttft_p99": 10.605,
+"decode_p50": 41.682173427614444,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 460,
+"err": 0,
+"ttft_p50": 4.818,
+"ttft_p99": 10.572,
+"decode_p50": 40.93938432243731,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 420,
+"err": 0,
+"ttft_p50": 6.506,
+"ttft_p99": 10.367,
+"decode_p50": 46.336005966809616,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 383,
+"err": 0,
+"ttft_p50": 5.096,
+"ttft_p99": 10.6,
+"decode_p50": 45.454545454545425,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 5,
+"n": 395,
+"err": 0,
+"ttft_p50": 4.341,
+"ttft_p99": 10.778,
+"decode_p50": 49.87531172069826,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 6,
+"n": 333,
+"err": 1,
+"ttft_p50": 3.82,
+"ttft_p99": 10.509,
+"decode_p50": 50.04906771344457,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode",
+"errors"
+]
+},
+{
+"min": 7,
+"n": 356,
+"err": 0,
+"ttft_p50": 3.134,
+"ttft_p99": 10.421,
+"decode_p50": 51.79504279204179,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 8,
+"n": 372,
+"err": 0,
+"ttft_p50": 2.202,
+"ttft_p99": 10.515,
+"decode_p50": 54.101838755304094,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 9,
+"n": 314,
+"err": 0,
+"ttft_p50": 3.067,
+"ttft_p99": 10.372,
+"decode_p50": 52.69922879177378,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 10,
+"n": 339,
+"err": 1,
+"ttft_p50": 2.667,
+"ttft_p99": 10.883,
+"decode_p50": 52.58583224684919,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode",
+"errors"
+]
+},
+{
+"min": 11,
+"n": 349,
+"err": 0,
+"ttft_p50": 2.779,
+"ttft_p99": 10.541,
+"decode_p50": 49.053227970776796,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 12,
+"n": 383,
+"err": 0,
+"ttft_p50": 3.725,
+"ttft_p99": 10.605,
+"decode_p50": 45.913682277318635,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 13,
+"n": 424,
+"err": 1,
+"ttft_p50": 3.336,
+"ttft_p99": 10.424,
+"decode_p50": 45.283852440910096,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode",
+"errors"
+]
+},
+{
+"min": 14,
+"n": 392,
+"err": 0,
+"ttft_p50": 4.439,
+"ttft_p99": 10.667,
+"decode_p50": 44.724272687798525,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+]
+},
+{
 "tag": "v5p_full_cl_gcsv3_70dw_paced",
 "partial": false,
 "done_utc": "21:58:33",

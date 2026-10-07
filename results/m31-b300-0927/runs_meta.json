@@ -1980,6 +1980,16 @@
    "change": "scheduler",
    "verdict": "rejected",
    "why": "1/15 at 7.34 M/GPU vs 7/15 with the delayer (v5p_full_cl_gcsv3_70dw_paced, 7.33 M): first token p50 6.07 vs 3.59 s, TPS p50 53.4 vs 96.5, 37% vs 23% fallbacks, 0 errors. Below the knee delayer-off gave first token x0.77 at TPS x0.83; at the knee the lost decode pairing makes requests stay longer, KV fills and first token gets worse too. Delayer kept."
+  },
+  {
+   "tag": "v5p_full_cl_gcsv3_70d10_paced",
+   "at": "2026-10-06 21:16",
+   "protocol": "v5.1",
+   "share": 0.92,
+   "name": "prefill delayer max 10 passes (was 30) at the knee: Oct 3 peak, full node, 7.34 M/GPU",
+   "change": "scheduler",
+   "verdict": "rejected",
+   "why": "4/15 at 7.34 M/GPU: first token p50 4.20 s, TPS p50 73.4, 27% fallbacks, 0 errors. Dose-response at the knee: 0 passes 1/15 (6.07 s, TPS 53), 10 passes 4/15, 30 passes 7/15 (3.59 s, TPS 97). More pairing wins at the knee; 60 passes queued."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
