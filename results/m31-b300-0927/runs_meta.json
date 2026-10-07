@@ -1960,6 +1960,16 @@
    "change": "scheduler",
    "verdict": "under review",
    "why": "14/15 vs 14/15; first token x0.768 (CI 0.726..0.798), TPS -19.90 tok/s (x0.841). Side-balanced with twin 1: first token ~x0.77, TPS ~x0.83. Below the knee both settings pass; the decision moves to the knee: full-node 7.33 M runs with the delayer off, with max 10 passes, and a repeat with today's setting."
+  },
+  {
+   "tag": "v5d_full_cl_gcsv3_1x_paced",
+   "at": "2026-10-06 19:21",
+   "protocol": "v5.1",
+   "share": 0.95,
+   "name": "Oct 2 03:00 PDT window (complete: 99.5% of production's engine requests), full node, test v5.1, adopted stack, 6.44 M/GPU = 0.95x of production's real 6.80 M",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "14/15 at 6.44 M/GPU (minute 11 misses: first token 3.5 s), 0 errors. First token p50 1.42 s vs production 0.34 s on the same requests; TPS p50 89.0 vs 75.7; hit 94.6% vs 95.5%; 22% paced fallbacks. First near-pass at ~1.0x of production's real load on a complete busy window (short contexts, ~35k mean)."
   }
  ],
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
