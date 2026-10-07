@@ -2099,8 +2099,8 @@
   {
    "name": "Tokenise image requests once",
    "state": "running",
-   "at": "2026-10-07 02:15",
-   "text": "Measured on the 7.33 M run (5,858 requests): prompts of 150k+ tokens WITH images wait 2.94 s median (p90 5.50 s) in tokenization; WITHOUT images 0.10 s. Our ids pass-through skips the second full tokenization only for requests without media. The knee model gives +1-2 SLA minutes at 7.33 M alone (+2-6 before feedback) and +1-6 on top of faster prefill. Workflow wf_ba8cdf10-827 builds a bit-exact fast path (env SGLANG_MM_PASS_IDS_WITH_MEDIA, default off) on CPU; two skeptics check it before a twin. 06:05: the Dynamo diagnosis found the same cost freezing the Dynamo worker; on our path, image requests wait 5.22 s (median first token) against 1.96 s for all requests.",
+   "at": "2026-10-07 08:00",
+   "text": "Measured on the 7.33 M run (5,858 requests): prompts of 150k+ tokens WITH images wait 2.94 s median (p90 5.50 s) in tokenization; WITHOUT images 0.10 s. Our ids pass-through skips the second full tokenization only for requests without media. The knee model gives +1-2 SLA minutes at 7.33 M alone (+2-6 before feedback) and +1-6 on top of faster prefill. Workflow wf_ba8cdf10-827 builds a bit-exact fast path (env SGLANG_MM_PASS_IDS_WITH_MEDIA, default off) on CPU; two skeptics check it before a twin. 06:05: the Dynamo diagnosis found the same cost freezing the Dynamo worker; on our path, image requests wait 5.22 s (median first token) against 1.96 s for all requests. 08:00: build PASS: identical tokenized requests on 1,763 real image requests, 300 multi-image and 5,052 parallel runs; at 150k+ tokens tokenization falls from 2.91 to 0.12 s (median). Side-swapped twin pair queued after the TP2 pair.",
    "ref": "next210/ (TOKMEDIA-*.md) · serving/next210/tok_media.py · next200/PREFILL-BREAKDOWN.md section 8.2"
   },
   {
