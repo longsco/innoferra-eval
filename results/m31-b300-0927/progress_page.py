@@ -330,6 +330,11 @@ CURV = [r for r in VALID if r["test"] == CUR]
 CLOSEST = max(CURV, key=lambda r: (r["pass"], r["load"], r["at"])) if CURV else None
 PASS_TOP = max([r for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected" and "@" not in str(r.get("id", ""))],
                key=lambda r: (r["load"], r["at"]), default=None)   # innoferra 10-04: headline = full-node runs only (twin halves are half-node replays)
+WIN_OF = {"v5s": "Sep 30", "v5p": "Oct 3 peak", "v5t": "Oct 3 peak", "v5r": "Oct 3 peak (v5.1r)", "v5d": "Oct 2"}   # innoferra 10-07: traffic window by tag prefix
+def win_of(r):
+    return WIN_OF.get(str(r.get("id", ""))[:3])
+PASS_HARD = max([r for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected" and "@" not in str(r.get("id", ""))
+                 and str(r.get("id", "")).startswith("v5p")], key=lambda r: (r["load"], r["at"]), default=None)   # innoferra 10-07: north-star window
 PASS_PREV = None if PASS_TOP else max([r for r in VALID if r["test"] == "v3.1" and r["pass"] >= NMIN and r.get("verdict") != "Rejected"],
                                        key=lambda r: (r["load"], r["at"]), default=None)   # innoferra 10-02: v3.2 current, quote the v3.1 pass
 NEWEST = RUNS[0] if RUNS else None
@@ -624,7 +629,9 @@ GPU = gpu_state()
 def status_text():
     s = f"Status ({stamp(NOW)} PDT): "
     if PASS_TOP:
-        s += f"passes the SLA up to {m2(PASS_TOP['load'])} M TPM/GPU sent (test {CUR}, {stamp(PASS_TOP['at'])})."
+        s += f"passes the SLA up to {m2(PASS_TOP['load'])} M TPM/GPU sent" + (f" on the {win_of(PASS_TOP)} window" if win_of(PASS_TOP) else "") + f" (test {CUR}, {stamp(PASS_TOP['at'])})."
+        if PASS_HARD and PASS_HARD is not PASS_TOP:
+            s += f" On the Oct 3 peak, the hardest window, it passes up to {m2(PASS_HARD['load'])} M ({stamp(PASS_HARD['at'])})."
     else:
         s += f"no load passes the SLA on test {CUR} yet." + (f" On the older test {PASS_PREV['test']} it passed up to {m2(PASS_PREV['load'])} M TPM/GPU sent ({stamp(PASS_PREV['at'])})." if PASS_PREV else "")
     if CLOSEST and not PASS_TOP:

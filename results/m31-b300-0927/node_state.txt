@@ -1,4 +1,4 @@
-# read_utc 2026-10-07T13:31:21Z
+# read_utc 2026-10-07T13:32:41Z
 ## queue
 v5s_full_cl_gcsv3_1x_nonuma_paced /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl 1.0 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --t-start --lead-in 300" MEM
 v5p_full_cl_gcsv3_70d60_r2_paced /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.33 NUMA_PREFER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced 
