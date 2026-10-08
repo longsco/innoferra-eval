@@ -2432,6 +2432,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "7/15 at 7.94 M/GPU (production 0/15 on these requests). Oct 3 ladder of this stack: 7.47 M 12/15 (twice), 7.94 M 7/15, 8.30 M 3/15. 35 follow-ups prefilled their whole session again after 2.5-15 minutes idle. Production served them from cache. They carry 4.9 M of our 5.0 M extra uncached tokens (+45%)."
+  },
+  {
+   "tag": "g67_tp2mm_d1p8_s30_127x_q0",
+   "at": "2026-10-08 08:11",
+   "protocol": "v5.1q",
+   "share": 1.31,
+   "name": "one engine (GPUs 6,7): TP2 + fast path + D1 with 8 passes (was 12) + G1, Sep 30 at 1.29x (8.43 M/GPU)",
+   "change": "scheduler",
+   "verdict": "rejected",
+   "why": "8/15 vs 11/15 and 9/15 with 12 passes (production 13/15). Every miss is decode. Paired with 12 passes: TPS -3.2 tok/s (CI -3.9..-2.3, outside the A/A noise), first token x0.942. The delayer keeps 12 passes; 8 passes helped first token only on Oct 3."
   }
  ],
  "g67_rule": {

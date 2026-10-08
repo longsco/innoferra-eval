@@ -1295,8 +1295,8 @@
    {
     "rule": "ttft_p50",
     "title": "Oct 3 at 7.5-7.9 M: idle conversations lose their cache after about 4 minutes",
-    "text": "One engine with production's layout (TP2) and our best settings passes 12/15 at 7.47 M and 7/15 at 7.94 M. The misses sit in the busy minutes 0-4 and 13-14. In those runs, 22 and 35 follow-ups processed their whole prompt again. About 4 minutes after our last answer, their cached prefix was gone. Production served the same requests at least 80% from cache. These re-prefills are nearly all of our extra prompt processing (+24% and +45% over production). Our cache is full. Its size equals production's per worker (17.1 M vs 16.8 M tokens). So the open question is how many conversations share one engine. A test with 15% more cache is queued.",
-    "src": "PROGRESS.md Oct 8 07:30"
+    "text": "One engine with production's layout (TP2) and our best settings passes 12/15 at 7.47 M and 7/15 at 7.94 M. The misses sit in the busy minutes 0-4 and 13-14. In those runs, 22 and 35 follow-ups processed their whole prompt again. About 4 minutes after our last answer, their cached prefix was gone. Production served the same requests at least 80% from cache. These re-prefills are nearly all of our extra prompt processing (+24% and +45% over production). Our cache is full: the host pool holds the whole cache (12.2 M tokens), about the same as production's (12.6 M). So production must carry fewer conversations per engine. A test with a 19% larger host pool is running.",
+    "src": "PROGRESS.md Oct 8 07:30, 08:20"
    },
    {
     "rule": "ttft_p50",
@@ -2079,10 +2079,10 @@
    "ref": "PROGRESS.md Oct 7 14:45; next230/G67-HARNESS.md; PROGRESS.md Oct 7 16:40"
   },
   {
-   "name": "Host KV cache ratio 3.0 (was 2.51): 15% more total cache than production",
-   "state": "queued",
+   "name": "Host KV cache ratio 3.0 (was 2.51): 15% above production's host pool",
+   "state": "running",
    "at": "2026-10-08 07:30",
-   "text": "Oct 8 07:30 PDT: on Oct 3, any conversation idle for about 4 minutes loses its cache on our engine. Production serves the same follow-ups from cache. Our total cache already equals production's per worker (17.1 M vs 16.8 M tokens). Ratio 3.0 adds 2.4 M host tokens (+82 GB host memory). The run at the Oct 3 knee (7.47 M), paired with ratio 2.51, shows how much more cache helps. It follows the Sep 30 check.",
+   "text": "Oct 8 08:20 PDT: write-through keeps a host copy of every GPU entry, so the host pool is the whole cache. Ours holds 12.2 M tokens, production's 12.6 M. An idle conversation survives about 4 minutes at the Oct 3 knee. Ratio 3.0 gives 14.6 M tokens (about 130 GB more host memory per engine). A simulation predicts 31-37% less uncached prefill. The run at the Oct 3 knee (7.47 M), paired with ratio 2.51, started 08:11.",
    "ref": "PROGRESS.md Oct 8 07:30"
   },
   {
