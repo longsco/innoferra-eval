@@ -2462,6 +2462,16 @@
    "change": "cache",
    "verdict": "rejected",
    "why": "10/15 vs 12/15 with plain LRU (production 0/15). Paired: TPS +0.1 tok/s (flat), first token x1.053 (CI 1.034..1.073). The cache did not change: 21 whole-session re-prefills (LRU 22) and 13.9 M uncached tokens (LRU 13.8 M; host ratio 3.0: 10.2 M). Capacity is the lever, not eviction order."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_knee749_q0",
+   "at": "2026-10-08 10:34",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine (GPUs 6,7): TP2 + fast path + D1 (12 passes) + G1 + host KV ratio 3.0, Oct 3 knee 7.47 M/GPU",
+   "change": "cache",
+   "verdict": "adopted",
+   "why": "13/15 at 7.47 M/GPU vs 12/15 with ratio 2.51 (production 0/15). Paired: TPS +9.8 tok/s (CI +7.9..+11.6), first token x0.867 (CI 0.844..0.889); the 8-pass pair gave +8.9 tok/s and x0.942, so the gain repeats. Uncached 10.1 M vs production 11.1 M. Misses: minute 0 at TPS 60.0 (rule: above 60) and minute 13 by one gateway 502 (keep-alive race, harness bug, fixed for the next runs). Adopted for single-engine tests; a full node fits about ratio 2.85."
   }
  ],
  "g67_rule": {

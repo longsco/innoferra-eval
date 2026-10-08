@@ -2079,10 +2079,10 @@
    "ref": "PROGRESS.md Oct 7 14:45; next230/G67-HARNESS.md; PROGRESS.md Oct 7 16:40"
   },
   {
-   "name": "Host KV cache ratio 3.0 (was 2.51): +8.9 tok/s, Oct 3 knee 14/15",
-   "state": "under review",
-   "at": "2026-10-08 09:05",
-   "text": "Oct 8 09:05 PDT: at the Oct 3 knee (7.49 M), ratio 3.0 passes 14/15 (ratio 2.51: 12/15). Paired: generation +8.9 tok/s, first token x0.94. Our uncached prompt tokens fall below production's (10.2 M vs 11.1 M). Re-confirming with the adopted delayer (12 passes) on Oct 3 at 7.47 M and 7.94 M and on Sep 30 at 7.47 M and 8.4 M. Limit: 779 GB host memory per engine; a full node fits about ratio 2.85.",
+   "name": "Host KV cache ratio 3.0 (was 2.51): adopted for single-engine tests",
+   "state": "adopted",
+   "at": "2026-10-08 10:35",
+   "text": "Oct 8 10:35 PDT: two paired runs at the Oct 3 knee (7.47 M) give generation +8.9 and +9.8 tok/s and first token x0.94 and x0.87. The knee passes 14/15 and 13/15 (ratio 2.51: 12/15; production 0/15). Our uncached prompt tokens fall below production's (10.1 M vs 11.1 M). Limit: 779 GB host memory per engine, so a full node fits about ratio 2.85 unless each token's host copy gets smaller. Segmented-LRU eviction gave nothing (rejected).",
    "ref": "PROGRESS.md Oct 8 07:30"
   },
   {
