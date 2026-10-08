@@ -2512,6 +2512,16 @@
    "change": "cache",
    "verdict": "comparison",
    "why": "12/15 at 8.41 M/GPU vs 11/15 and 9/15 with ratio 2.51 (production 13/15). Paired: first token x0.909 (CI 0.887..0.929), TPS +1.4 tok/s (inside the A/A noise). Sep 30 keeps idle conversations for 6-7 minutes even at ratio 2.51, so the cache adds little here. The misses are decode minutes (TPS 52-59)."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_s30_114x_q0",
+   "at": "2026-10-08 15:05",
+   "protocol": "v5.1q",
+   "share": 1.17,
+   "name": "one engine (GPUs 6,7): best stack with host cache ratio 3.0, Sep 30 at 1.17x real load (7.52 M/GPU)",
+   "change": "cache",
+   "verdict": "comparison",
+   "why": "14/15 at 7.52 M/GPU vs 15/15 with ratio 2.51 (production 13/15). The miss is minute 0 at TPS 58 (ratio 2.51: 66). Paired: TPS -2.0 tok/s (CI -2.8..-1.0, at the edge of the A/A noise), first token x1.030. On this decode-bound day the larger host pool is neutral; it stays adopted for its large Oct 3 gain."
   }
  ],
  "g67_rule": {
