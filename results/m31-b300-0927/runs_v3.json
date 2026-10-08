@@ -92844,6 +92844,437 @@
 "done_epoch": 1791449809
 },
 {
+"tag": "g67_tp2mm_d1g1_knee80_q0",
+"partial": false,
+"done_utc": "10:30:39",
+"requests": 1681,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 8.304,
+"prod_tpm_gpu": 8.528,
+"hit": 0.9234,
+"prod_hit": 0.9549,
+"ttft": [
+2.6332532099913806,
+12.748320169979706,
+128.71249399101362
+],
+"prod_ttft": [
+4.359,
+10.173,
+10.515
+],
+"decode_p50": 47.227762101385586,
+"prod_decode_p50": 48.2680934947902,
+"passed": 0,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 140,
+"err": 0,
+"ttft_p50": 4.236536722863093,
+"ttft_p99": 170.8009193551261,
+"decode_p50": 50.77158832255827,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 128,
+"err": 0,
+"ttft_p50": 4.550243258941919,
+"ttft_p99": 159.87187496898696,
+"decode_p50": 45.20566910866711,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 125,
+"err": 0,
+"ttft_p50": 2.6176082629244775,
+"ttft_p99": 143.97075324691832,
+"decode_p50": 42.26436467446855,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 121,
+"err": 0,
+"ttft_p50": 4.989396512042731,
+"ttft_p99": 120.51789846201427,
+"decode_p50": 33.655854180865745,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 102,
+"err": 0,
+"ttft_p50": 5.363411077996716,
+"ttft_p99": 105.76796248508617,
+"decode_p50": 25.862869106467173,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 5,
+"n": 100,
+"err": 0,
+"ttft_p50": 4.263348654145375,
+"ttft_p99": 56.5349877148401,
+"decode_p50": 25.333807516046857,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 6,
+"n": 92,
+"err": 0,
+"ttft_p50": 3.429908843943849,
+"ttft_p99": 16.05754879885353,
+"decode_p50": 33.80029923377584,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 7,
+"n": 106,
+"err": 0,
+"ttft_p50": 4.057997300056741,
+"ttft_p99": 13.641819590004161,
+"decode_p50": 47.18010291345189,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 8,
+"n": 101,
+"err": 0,
+"ttft_p50": 1.0307853880804032,
+"ttft_p99": 9.533627954078838,
+"decode_p50": 82.65677879742611,
+"pass": false,
+"fails": [
+"ttft_p50"
+]
+},
+{
+"min": 9,
+"n": 89,
+"err": 0,
+"ttft_p50": 1.139218111988157,
+"ttft_p99": 7.021950087044388,
+"decode_p50": 55.587812385081484,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 10,
+"n": 104,
+"err": 0,
+"ttft_p50": 1.0594443979207426,
+"ttft_p99": 22.21920867403969,
+"decode_p50": 57.80613724670111,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 11,
+"n": 108,
+"err": 0,
+"ttft_p50": 1.6646482341457158,
+"ttft_p99": 15.892224067123607,
+"decode_p50": 61.439342336697635,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 12,
+"n": 119,
+"err": 0,
+"ttft_p50": 2.8657158149871975,
+"ttft_p99": 16.401110925944522,
+"decode_p50": 62.27754018264433,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 13,
+"n": 130,
+"err": 0,
+"ttft_p50": 1.7630728969816118,
+"ttft_p99": 8.839473687810823,
+"decode_p50": 52.44719294138005,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 14,
+"n": 116,
+"err": 0,
+"ttft_p50": 2.350553742144257,
+"ttft_p99": 19.77595169399865,
+"decode_p50": 52.38496035510631,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 140,
+"err": 0,
+"ttft_p50": 4.685,
+"ttft_p99": 10.735,
+"decode_p50": 48.63040889241763,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 128,
+"err": 0,
+"ttft_p50": 6.835,
+"ttft_p99": 10.678,
+"decode_p50": 41.08280254777069,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 125,
+"err": 0,
+"ttft_p50": 5.178,
+"ttft_p99": 10.412,
+"decode_p50": 41.02493266109538,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 121,
+"err": 0,
+"ttft_p50": 5.913,
+"ttft_p99": 10.349,
+"decode_p50": 44.5293677826701,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 102,
+"err": 0,
+"ttft_p50": 5.033,
+"ttft_p99": 10.531,
+"decode_p50": 49.301242236024834,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 5,
+"n": 100,
+"err": 0,
+"ttft_p50": 4.918,
+"ttft_p99": 10.416,
+"decode_p50": 48.364215260801686,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 6,
+"n": 92,
+"err": 0,
+"ttft_p50": 3.278,
+"ttft_p99": 10.341,
+"decode_p50": 55.138180842500674,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 7,
+"n": 106,
+"err": 0,
+"ttft_p50": 3.33,
+"ttft_p99": 10.421,
+"decode_p50": 51.513782196113894,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 8,
+"n": 101,
+"err": 0,
+"ttft_p50": 2.937,
+"ttft_p99": 10.923,
+"decode_p50": 51.56634067255897,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 9,
+"n": 89,
+"err": 0,
+"ttft_p50": 3.191,
+"ttft_p99": 10.354,
+"decode_p50": 52.86138981791155,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 10,
+"n": 104,
+"err": 0,
+"ttft_p50": 2.883,
+"ttft_p99": 10.883,
+"decode_p50": 53.47916895679895,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 11,
+"n": 108,
+"err": 0,
+"ttft_p50": 3.011,
+"ttft_p99": 10.371,
+"decode_p50": 44.069670998064694,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 12,
+"n": 119,
+"err": 0,
+"ttft_p50": 3.811,
+"ttft_p99": 10.345,
+"decode_p50": 51.64992826398852,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 13,
+"n": 130,
+"err": 0,
+"ttft_p50": 3.359,
+"ttft_p99": 10.363,
+"decode_p50": 47.339593114241,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 14,
+"n": 116,
+"err": 0,
+"ttft_p50": 4.977,
+"ttft_p99": 10.526,
+"decode_p50": 47.643247363740315,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+],
+"gpus": 2,
+"harness": "g67",
+"done_epoch": 1791455436
+},
+{
 "tag": "g67_tp2mm_d1g1_s30_114x_q0",
 "partial": false,
 "done_utc": "09:43:18",
