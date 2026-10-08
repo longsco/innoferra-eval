@@ -2362,6 +2362,16 @@
    "change": "scheduler",
    "verdict": "under review",
    "why": "12/15 at 7.47 M/GPU vs plain TP2 + fast path 11/15 on the same 1,482 requests (production 0/15). Paired: TPS +3.5 tok/s (CI +1.7..+4.5), first token x1.086 (CI 1.061..1.107). With the Sep 30 1.29x result (11/15 vs 5/15), D1 + G1 helps on both windows."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_s30_114x_q0",
+   "at": "2026-10-08 02:43",
+   "protocol": "v5.1q",
+   "share": 1.16,
+   "name": "one engine (GPUs 6,7): TP2 + image fast path + D1 + G1, Sep 30 at 1.15x real load (7.47 M/GPU)",
+   "change": "scheduler",
+   "verdict": "under review",
+   "why": "15/15 at 7.47 M/GPU vs plain TP2 + fast path 7/15 on the same 2,782 requests (production 13/15). Paired: TPS +11.5 tok/s (x1.21), first token x1.096. With D1 + G1 the TP2 stack holds Sep 30 above 7 M and the Oct 3 knee at 12/15."
   }
  ],
  "g67_rule": {
