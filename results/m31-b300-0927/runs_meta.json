@@ -2282,6 +2282,26 @@
    "verdict": "comparison",
    "progress": "19:45 (10-07)",
    "why": "Layout comparison: 7/15 vs 10-11/15 for TP2 + image fast path. Paired (same 1,460 requests): DP2 first token x2.26 (CI 2.15..2.43), TPS +14.7 tok/s (x1.23). The full node shows the same order: TP2 12 and 11 of 15, DP2 1-7."
+  },
+  {
+   "tag": "g67_tp2mm_mr48_knee733_q0",
+   "at": "2026-10-07 20:30",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine (GPUs 6,7): TP2 + image fast path with a 48-request cap (MAXREQ=48), Oct 3 knee, quarter 0",
+   "change": "scheduler",
+   "verdict": "no clear change",
+   "why": "10/15 at 7.42 M/GPU (page rule). Paired with the uncapped run: first token x0.989 (CI 0.980..0.997), TPS +3.0 tok/s (CI +1.3..+4.5), inside the one-engine A/A noise (x0.965, +1.8 tok/s). Few decode intervals pass 48 running requests at this load, so the cap rarely acts. MAXREQ stays 64."
+  },
+  {
+   "tag": "g67_tp2mm_knee749_q0",
+   "at": "2026-10-07 21:18",
+   "protocol": "v5.1q",
+   "share": 0.94,
+   "name": "one engine (GPUs 6,7): TP2 + image fast path past the knee, Oct 3 peak 7.47 M/GPU, quarter 0",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "11/15 at 7.47 M/GPU (page rule), the same as at 7.42 M. Paired with the full-node TP2 run at 7.49 M (7/15) on the same 1,482 requests: first token x0.646, TPS +9.1 tok/s; this mixes the fast path with one engine vs four, so it is not a clean lever effect."
   }
  ],
  "g67_rule": {
