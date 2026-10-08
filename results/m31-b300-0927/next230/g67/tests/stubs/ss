@@ -1,0 +1,6 @@
+#!/bin/bash
+# mock ss: prints the LISTEN lines of $STUB_STATE/listen (format of 'ss -ltnH': State Recv-Q Send-Q Local:Port Peer:Port)
+ST=${STUB_STATE:-$(cat /tmp/g67-stub-state)}
+echo "ss $*" >> "$ST/ss_calls.log"
+[ -f "$ST/listen" ] && cat "$ST/listen"
+exit 0

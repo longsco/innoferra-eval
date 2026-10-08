@@ -1,5 +1,5 @@
 {
- "_note": "innoferra 10-01: plain-language metadata for every real-traffic replay in runs_v3.json (numbers come from runs_v3.json, produced on node 0008 by serving/minimax-m3.1/extract_runs.py). at = PDT time the run finished. protocol v3 = before Oct 1 04:30 PDT (replayed the requests production rejected with 429 + media-tag bug); v3.1 = current.",
+ "_note": "innoferra 10-01: plain-language metadata for every real-traffic replay in runs_v3.json (numbers come from runs_v3.json, produced on node 0008 by serving/minimax-m3.1/extract_runs.py). at = PDT time the run finished. protocol v3 = before Oct 1 04:30 PDT (replayed the requests production rejected with 429 + media-tag bug); v3.1 = current. protocol v5.1q (10-07) = one engine on GPUs 6,7 at the node's load per GPU (tags g67_*; see g67_rule).",
  "runs": [
   {
    "tag": "v3_tpc_05x",
@@ -2238,8 +2238,70 @@
    "change": "layout",
    "verdict": "under review",
    "why": "7/15 at 7.49 M/GPU (DP2 at 7.49 M: 2/15): first token p50 2.73 s (DP2 5.43 s), TPS p50 56.7 (DP2 81.6), hit 93.1%, 1 stream without visible content. At this load TP2 is decode-bound: minutes 0-5, 13 and 14 fall below 60 tok/s. TP2 beats DP2 at every Oct 3 load tested (7.32 M: 12 and 11 vs 1-7; 7.49 M: 7 vs 2)."
+  },
+  {
+   "tag": "g67_tp2mm_knee733_q0",
+   "at": "2026-10-07 17:23",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine on GPUs 6,7: attention TP2 + image fast path (tree next230), Oct 3 peak, quarter 0 of the knee plan, 7.42 M/GPU",
+   "change": "baseline",
+   "verdict": "baseline",
+   "progress": "17:25 (10-07)",
+   "why": "Baseline of test v5.1q. 10/15 here (minute 4 TPS 59.4); score_g67.py, which counts streams of 32+ tokens, gives 60.2 and 11/15. Paired with full-node TP2 without the fast path (same 1,460 requests): first token x0.859 (CI 0.743..0.948), TPS -2.6 tok/s."
+  },
+  {
+   "tag": "g67_tp2_knee733_q0",
+   "at": "2026-10-07 18:10",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine on GPUs 6,7: attention TP2 alone, no image fast path (tree next210/tp2), Oct 3 peak, quarter 0 of the knee plan, 7.42 M/GPU",
+   "change": "tokenization",
+   "verdict": "comparison",
+   "progress": "18:12 (10-07)",
+   "why": "Comparison for the image fast path on TP2: 10/15. Paired with TP2 + image fast path (same 1,460 requests): first token x1.111 (CI 1.064..1.215), TPS +0.3 tok/s. So the fast path gives about x0.90 first token on TP2."
+  },
+  {
+   "tag": "g67_tp2mm_knee733_q0_r2",
+   "at": "2026-10-07 18:56",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine on GPUs 6,7: TP2 + image fast path, A/A repeat of the baseline, Oct 3 peak, quarter 0 of the knee plan, 7.42 M/GPU",
+   "change": "calibration",
+   "verdict": "calibration",
+   "progress": "19:00 (10-07)",
+   "why": "A/A repeat of the baseline: 11/15 (baseline 10/15 here, 11/15 in score_g67.py). Paired: first token x0.965 (CI 0.957..0.976), TPS +1.8 tok/s. One-engine run-to-run noise is about 3.5% first token and 2 tok/s."
+  },
+  {
+   "tag": "g67_dp2mm_knee733_q0",
+   "at": "2026-10-07 19:43",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine on GPUs 6,7: DP2 attention + image fast path (adopted full-node stack, tree next220), Oct 3 peak, quarter 0 of the knee plan, 7.46 M/GPU",
+   "change": "layout",
+   "verdict": "comparison",
+   "progress": "19:45 (10-07)",
+   "why": "Layout comparison: 7/15 vs 10-11/15 for TP2 + image fast path. Paired (same 1,460 requests): DP2 first token x2.26 (CI 2.15..2.43), TPS +14.7 tok/s (x1.23). The full node shows the same order: TP2 12 and 11 of 15, DP2 1-7."
   }
  ],
+ "g67_rule": {
+  "_note": "innoferra 10-07: single-engine runs (tags g67_*): one engine on GPUs 6,7 (g67/chain_g67.sh); records from g67/extract_runs_g67.py, load per GPU scaled to 2 GPUs, marked \"harness\": \"g67\". They belong to the single-engine test v5.1q, never to the full-node test, so the headline never uses them. A finished g67 run without an entry in 'runs' shows with these defaults (verdict under review; share = its load / production's real load in its window) and a build warning until its entry is written. A full entry has tag, at (PDT finish), protocol v5.1q, share, name, change, verdict, why, and progress (the PROGRESS.md row key 'HH:MM (MM-DD)' when the row text does not name the tag).",
+  "tag_prefix": "g67_",
+  "protocol": "v5.1q",
+  "verdict": "under review",
+  "change": "single engine",
+  "why": "Single-engine run on GPUs 6,7 (a quarter of the node). It has no reviewed note yet. The numbers come from its per-minute record.",
+  "windows": {
+   "_s30_": [
+    "Sep 30 window",
+    6.43
+   ],
+   "default": [
+    "Oct 3 peak",
+    8.01
+   ]
+  }
+ },
  "production_scoring_note": "Production on the same requests, scored with the same per-minute rule from its hub logs: passes TTFT median, TTFT p99 and decode in every minute at every load; fails a minute only on the errors rule (its own 429 load-shedding and 504 timeouts). Under protocol v3.1 the 429-rejected requests are not replayed, so production's remaining errors are 504s.",
  "simulation_note": "StandardKernel inference-benchmark runs (synthetic sessions) are a cross-check only, never used to rank settings."
 }

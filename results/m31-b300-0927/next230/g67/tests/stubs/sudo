@@ -1,0 +1,4 @@
+#!/bin/bash
+# mock sudo: drops -n and runs the command as the same user (the tests never reach a real sudo)
+[ "${1:-}" = -n ] && shift
+exec "$@"

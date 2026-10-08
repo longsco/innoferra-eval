@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+"""mock curl for the g67 tests: 127.0.0.1:19491 (engine m31-tp2-3) and :8000 (gateway) answer only when the matching container
+runs in the docker stub state; /health codes for 19491 come from $STUB_STATE/health_19491 (space separated, one consumed per call,
+the last one repeats; default 200). Every other host/port = connection refused (exit 7). Every call is logged."""
+import json, os, re, sys
+ST = os.environ.get("STUB_STATE") or open("/tmp/g67-stub-state").read().strip()
+args = sys.argv[1:]
+open(os.path.join(ST, "curl_calls.log"), "a").write(" ".join(args) + "\n")
+url = [x for x in args if x.startswith("http")][-1]
+fail = any(x.startswith("-") and not x.startswith("--") and "f" in x[1:] for x in args)
+out = args[args.index("-o") + 1] if "-o" in args else None
+wfmt = args[args.index("-w") + 1] if "-w" in args else None
+m = re.match(r"https?://([^:/]+):(\d+)(/[^?]*)?", url); host, port, path = m.group(1), int(m.group(2)), m.group(3) or "/"
+try: C = json.load(open(os.path.join(ST, "containers.json")))
+except Exception: C = {}
+run = lambda n: n in C and C[n].get("running")
+code, body = None, ""
+if host == "127.0.0.1" and port == 19491 and run("m31-tp2-3"):
+    if path == "/health":
+        p = os.path.join(ST, "health_19491"); seq = open(p).read().split() if os.path.exists(p) else ["200"]
+        code = int(seq[0]);
+        if len(seq) > 1: open(p, "w").write(" ".join(seq[1:]))
+    elif path == "/metrics":
+        p = os.path.join(ST, "metrics_n"); n = int(open(p).read()) + 1 if os.path.exists(p) else 1; open(p, "w").write(str(n))
+        code = 200; body = f'sglang:generation_tokens_total{{a="0"}} {4000*n}\nsglang:num_requests_total{{a="0"}} {100*n}\nsglang:spec_verify_calls_total{{a="0"}} {1000*n}\n'
+    elif path == "/v1/models": code = 200; body = '{"object":"list","data":[{"id":"minimax-m3.1-nvfp4"}]}'
+    else: code = 200; body = "ok"
+elif host == "127.0.0.1" and port == 8000 and run("m31-gateway"):
+    if path == "/v1/models": code = 200; body = '{"object":"list","data":[{"id":"minimax-m3.1-nvfp4","object":"model"}]}'
+    elif path == "/health": code = 200; body = '{"status":"ok","route":{"pinned_new":1,"pinned_hit":2}}'
+    else: code = 200; body = "{}"
+if code is None:
+    if wfmt: sys.stdout.write(wfmt.replace("%{http_code}", "000"))
+    sys.exit(7)
+if fail and code >= 400:
+    if wfmt: sys.stdout.write(wfmt.replace("%{http_code}", str(code)))
+    sys.exit(22)
+if out: open(out, "w").write(body)
+else: sys.stdout.write(body)
+if wfmt: sys.stdout.write(wfmt.replace("%{http_code}", str(code)))
+sys.exit(0)

@@ -1,0 +1,157 @@
+#### (1) unmodified replay --dry-run, Oct 3 knee (b00-b02 frac 0.33), quarter 0
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 499 of 1671 sessions, last turns from t=14230s
+A/B plan quad_plan_w1003_1330.json half 0: warm 117/499, measured 1962/7888 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 131920 of 131920 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1460 requests (0 keep t), shift p50/p90 12.34/43.45 s; vs end-time window +38 entering (sent in it, ended after it), -39 leaving (sent before it, ended in it)
+traces 3 half-buckets; warm-up: 117 sessions' last turns from t=11400..15000s; measured: 1962 requests t=15000..15900s (1731 wait for an earlier turn; 1811 primed)
+closed loop (v3.2): 1731 measured requests continue a measured request and 59 their session's warm-up turn (those 59 warm turns generate, max_tokens = min(production's, 8192)) - they carry our answer where the shape allows; 172 have no replayed predecessor; 98 of 187 measured sessions' clients carry reasoning; primes off
+#### (2a) replay_dry_g67, Oct 3 knee (b00-b02 frac 0.33)
+[dry] ---- full node: load() with --ab-plan (none) --ab-half 0 --gpus 8
+[dry] read /tr/v5/w1003_1330/b00.jsonl (frac 1): 59689 records in 124 s
+[dry] read /tr/v5/w1003_1330/b01.jsonl (frac 1): 51755 records in 109 s
+[dry] read /tr/v5/w1003_1330/b02.jsonl (frac 0.33): 20476 records in 126 s
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 499 of 1671 sessions, last turns from t=14230s
+t-start (innoferra 10-06): send time = trace t - prod_total for 131920 of 131920 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 5858 requests (0 keep t), shift p50/p90 12.02/41.85 s; vs end-time window +151 entering (sent in it, ended after it), -165 leaving (sent before it, ended in it)
+[dry] ---- quarter 0: load() with --ab-plan /k/g67/quad_plan_w1003_1330.json --ab-half 0 --gpus 2
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 499 of 1671 sessions, last turns from t=14230s
+A/B plan quad_plan_w1003_1330.json half 0: warm 117/499, measured 1962/7888 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 131920 of 131920 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1460 requests (0 keep t), shift p50/p90 12.34/43.45 s; vs end-time window +38 entering (sent in it, ended after it), -39 leaving (sent before it, ended in it)
+[dry] ---- quarter 1: load() with --ab-plan /k/g67/quad_plan_w1003_1330.json --ab-half 1 --gpus 2
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 499 of 1671 sessions, last turns from t=14230s
+A/B plan quad_plan_w1003_1330.json half 1: warm 116/499, measured 1952/7888 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 131920 of 131920 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1454 requests (0 keep t), shift p50/p90 12.23/40.05 s; vs end-time window +37 entering (sent in it, ended after it), -45 leaving (sent before it, ended in it)
+[dry] ---- quarter 2: load() with --ab-plan /k/g67/quad_plan_w1003_1330.json --ab-half 2 --gpus 2
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 499 of 1671 sessions, last turns from t=14230s
+A/B plan quad_plan_w1003_1330.json half 2: warm 136/499, measured 2007/7888 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 131920 of 131920 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1479 requests (0 keep t), shift p50/p90 11.38/43.30 s; vs end-time window +36 entering (sent in it, ended after it), -45 leaving (sent before it, ended in it)
+[dry] ---- quarter 3: load() with --ab-plan /k/g67/quad_plan_w1003_1330.json --ab-half 3 --gpus 2
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 499 of 1671 sessions, last turns from t=14230s
+A/B plan quad_plan_w1003_1330.json half 3: warm 130/499, measured 1967/7888 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 131920 of 131920 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1465 requests (0 keep t), shift p50/p90 12.02/41.78 s; vs end-time window +40 entering (sent in it, ended after it), -36 leaving (sent before it, ended in it)
+[dry] offered load (production tokens of the requests the replay would send, by scheduled minute), M TPM/GPU:
+[dry] minute | full node (8 GPUs) | quarter 0 (2 GPUs) | quarter 1 (2 GPUs) | quarter 2 (2 GPUs) | quarter 3 (2 GPUs) | q0 share tok/req | q1 share tok/req | q2 share tok/req | q3 share tok/req
+[dry]      0 |   9.27 |   9.39 |   9.17 |   9.09 |   9.44 | 25.3%/24.5% | 24.7%/24.3% | 24.5%/25.6% | 25.5%/25.6%
+[dry]      1 |   7.83 |   8.91 |   7.55 |   7.53 |   7.34 | 28.4%/25.7% | 24.1%/24.8% | 24.0%/24.6% | 23.4%/24.8%
+[dry]      2 |   8.30 |   8.92 |   7.95 |   8.47 |   7.86 | 26.9%/23.9% | 24.0%/26.3% | 25.5%/25.7% | 23.7%/24.1%
+[dry]      3 |   7.64 |   7.15 |   6.61 |   8.37 |   8.42 | 23.4%/25.0% | 21.6%/23.3% | 27.4%/25.2% | 27.6%/26.4%
+[dry]      4 |   7.23 |   8.50 |   6.56 |   6.93 |   6.93 | 29.4%/25.1% | 22.7%/25.1% | 24.0%/24.8% | 24.0%/25.1%
+[dry]      5 |   7.56 |   7.40 |   7.43 |   8.06 |   7.33 | 24.5%/23.8% | 24.6%/27.6% | 26.7%/26.3% | 24.2%/22.3%
+[dry]      6 |   6.66 |   6.93 |   6.41 |   6.02 |   7.27 | 26.0%/24.6% | 24.1%/27.0% | 22.6%/24.3% | 27.3%/24.0%
+[dry]      7 |   6.92 |   7.11 |   6.74 |   6.89 |   6.94 | 25.7%/25.6% | 24.4%/23.3% | 24.9%/27.0% | 25.1%/24.2%
+[dry]      8 |   7.52 |   7.96 |   7.52 |   7.11 |   7.47 | 26.5%/25.0% | 25.0%/25.8% | 23.7%/25.3% | 24.8%/23.9%
+[dry]      9 |   6.16 |   5.67 |   6.34 |   6.38 |   6.26 | 23.0%/24.2% | 25.7%/24.5% | 25.9%/24.8% | 25.4%/26.4%
+[dry]     10 |   7.42 |   7.41 |   7.38 |   7.03 |   7.86 | 25.0%/25.1% | 24.9%/24.2% | 23.7%/24.5% | 26.5%/26.3%
+[dry]     11 |   7.15 |   6.59 |   6.61 |   7.88 |   7.53 | 23.1%/26.9% | 23.1%/23.8% | 27.5%/24.6% | 26.3%/24.6%
+[dry]     12 |   7.09 |   6.92 |   7.62 |   7.20 |   6.61 | 24.4%/23.8% | 26.9%/24.3% | 25.4%/26.9% | 23.3%/25.1%
+[dry]     13 |   7.63 |   7.75 |   7.39 |   7.08 |   8.32 | 25.4%/25.5% | 24.2%/23.8% | 23.2%/24.5% | 27.2%/26.2%
+[dry]     14 |   8.00 |   7.98 |   7.83 |   9.03 |   7.16 | 24.9%/25.5% | 24.5%/24.2% | 28.2%/24.2% | 22.4%/26.0%
+[dry] full node: 7.49 M TPM/GPU over 8 GPUs (100.0% of the node's tokens), 5858 measured requests (100.0%), 745 sessions, lead-in 2030 requests (100.0% of the node's lead tokens), warm-up 499 sessions 59.9 M tokens (100.0%)
+[dry] quarter 0: 7.64 M TPM/GPU over 2 GPUs (25.5% of the node's tokens), 1460 measured requests (24.9%), 187 sessions, lead-in 502 requests (26.2% of the node's lead tokens), warm-up 117 sessions 14.4 M tokens (24.0%)
+[dry] quarter 1: 7.27 M TPM/GPU over 2 GPUs (24.3% of the node's tokens), 1454 measured requests (24.8%), 192 sessions, lead-in 498 requests (25.1% of the node's lead tokens), warm-up 116 sessions 15.3 M tokens (25.6%)
+[dry] quarter 2: 7.54 M TPM/GPU over 2 GPUs (25.2% of the node's tokens), 1479 measured requests (25.2%), 169 sessions, lead-in 528 requests (24.6% of the node's lead tokens), warm-up 136 sessions 13.8 M tokens (23.1%)
+[dry] quarter 3: 7.52 M TPM/GPU over 2 GPUs (25.1% of the node's tokens), 1465 measured requests (25.0%), 197 sessions, lead-in 502 requests (24.0% of the node's lead tokens), warm-up 130 sessions 16.4 M tokens (27.3%)
+#### (2b) replay_dry_g67, Oct 3 1.0x (b00+b01)
+[dry] ---- full node: load() with --ab-plan (none) --ab-half 0 --gpus 8
+[dry] read /tr/v5/w1003_1330/b00.jsonl (frac 1): 59689 records in 126 s
+[dry] read /tr/v5/w1003_1330/b01.jsonl (frac 1): 51755 records in 110 s
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 507 of 1420 sessions, last turns from t=13963s
+t-start (innoferra 10-06): send time = trace t - prod_total for 111444 of 111444 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 4906 requests (0 keep t), shift p50/p90 12.11/42.13 s; vs end-time window +126 entering (sent in it, ended after it), -138 leaving (sent before it, ended in it)
+[dry] ---- quarter 0: load() with --ab-plan /k/g67/quad_plan_w1003_1330.json --ab-half 0 --gpus 2
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 507 of 1420 sessions, last turns from t=13963s
+A/B plan quad_plan_w1003_1330.json half 0: warm 124/507, measured 1644/6605 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 111444 of 111444 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1227 requests (0 keep t), shift p50/p90 12.35/43.02 s; vs end-time window +33 entering (sent in it, ended after it), -33 leaving (sent before it, ended in it)
+[dry] ---- quarter 1: load() with --ab-plan /k/g67/quad_plan_w1003_1330.json --ab-half 1 --gpus 2
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 507 of 1420 sessions, last turns from t=13963s
+A/B plan quad_plan_w1003_1330.json half 1: warm 120/507, measured 1647/6605 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 111444 of 111444 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1230 requests (0 keep t), shift p50/p90 12.56/41.12 s; vs end-time window +33 entering (sent in it, ended after it), -37 leaving (sent before it, ended in it)
+[dry] ---- quarter 2: load() with --ab-plan /k/g67/quad_plan_w1003_1330.json --ab-half 2 --gpus 2
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 507 of 1420 sessions, last turns from t=13963s
+A/B plan quad_plan_w1003_1330.json half 2: warm 135/507, measured 1671/6605 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 111444 of 111444 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1227 requests (0 keep t), shift p50/p90 11.69/44.75 s; vs end-time window +29 entering (sent in it, ended after it), -40 leaving (sent before it, ended in it)
+[dry] ---- quarter 3: load() with --ab-plan /k/g67/quad_plan_w1003_1330.json --ab-half 3 --gpus 2
+skip-prod-shed (v3.1): not sending 0 measured-window and 0 earlier requests production answered with 429
+warm-up budget 60 M tokens: 507 of 1420 sessions, last turns from t=13963s
+A/B plan quad_plan_w1003_1330.json half 3: warm 128/507, measured 1643/6605 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 111444 of 111444 records read up to end t = 18300 s (0 without a positive prod_total keep t; longest 1808 s, 0 over the 2400 s pad); window by send time: 1222 requests (0 keep t), shift p50/p90 11.87/40.10 s; vs end-time window +31 entering (sent in it, ended after it), -28 leaving (sent before it, ended in it)
+[dry] offered load (production tokens of the requests the replay would send, by scheduled minute), M TPM/GPU:
+[dry] minute | full node (8 GPUs) | quarter 0 (2 GPUs) | quarter 1 (2 GPUs) | quarter 2 (2 GPUs) | quarter 3 (2 GPUs) | q0 share tok/req | q1 share tok/req | q2 share tok/req | q3 share tok/req
+[dry]      0 |   7.36 |   7.37 |   7.26 |   7.25 |   7.57 | 25.0%/24.9% | 24.7%/25.2% | 24.6%/24.9% | 25.7%/24.9%
+[dry]      1 |   6.39 |   7.23 |   6.12 |   6.07 |   6.15 | 28.3%/26.3% | 23.9%/24.9% | 23.7%/24.4% | 24.1%/24.4%
+[dry]      2 |   6.64 |   6.54 |   6.65 |   7.05 |   6.33 | 24.6%/23.5% | 25.0%/27.2% | 26.5%/25.1% | 23.8%/24.1%
+[dry]      3 |   6.18 |   5.46 |   5.81 |   6.68 |   6.78 | 22.1%/24.5% | 23.5%/24.2% | 27.0%/25.1% | 27.4%/26.2%
+[dry]      4 |   5.65 |   6.36 |   5.50 |   5.10 |   5.65 | 28.1%/23.8% | 24.3%/25.7% | 22.6%/24.4% | 25.0%/26.0%
+[dry]      5 |   5.92 |   5.64 |   5.99 |   6.06 |   6.01 | 23.8%/23.6% | 25.3%/28.3% | 25.6%/25.8% | 25.4%/22.3%
+[dry]      6 |   5.14 |   5.27 |   5.08 |   4.51 |   5.70 | 25.6%/24.6% | 24.7%/26.8% | 21.9%/24.6% | 27.7%/23.9%
+[dry]      7 |   5.79 |   6.22 |   5.92 |   5.37 |   5.66 | 26.8%/26.5% | 25.6%/23.3% | 23.2%/26.5% | 24.4%/23.6%
+[dry]      8 |   6.34 |   6.48 |   6.17 |   6.42 |   6.31 | 25.5%/24.8% | 24.3%/25.1% | 25.3%/26.0% | 24.9%/24.2%
+[dry]      9 |   4.91 |   4.80 |   5.21 |   5.12 |   4.54 | 24.4%/25.1% | 26.5%/24.3% | 26.0%/24.3% | 23.1%/26.2%
+[dry]     10 |   6.07 |   6.04 |   6.53 |   6.05 |   5.67 | 24.9%/25.3% | 26.9%/24.2% | 24.9%/25.6% | 23.4%/24.9%
+[dry]     11 |   5.67 |   5.34 |   5.48 |   5.93 |   5.93 | 23.6%/27.7% | 24.1%/23.5% | 26.2%/23.5% | 26.1%/25.3%
+[dry]     12 |   5.68 |   5.76 |   6.16 |   5.58 |   5.22 | 25.3%/23.5% | 27.1%/24.8% | 24.6%/26.3% | 23.0%/25.4%
+[dry]     13 |   6.30 |   6.52 |   5.98 |   6.20 |   6.49 | 25.9%/25.6% | 23.7%/24.0% | 24.6%/24.5% | 25.8%/25.9%
+[dry]     14 |   6.19 |   6.15 |   6.07 |   6.90 |   5.64 | 24.8%/25.7% | 24.5%/24.2% | 27.9%/23.9% | 22.8%/26.3%
+[dry] full node: 6.02 M TPM/GPU over 8 GPUs (100.0% of the node's tokens), 4906 measured requests (100.0%), 640 sessions, lead-in 1699 requests (100.0% of the node's lead tokens), warm-up 507 sessions 59.5 M tokens (100.0%)
+[dry] quarter 0: 6.08 M TPM/GPU over 2 GPUs (25.2% of the node's tokens), 1227 measured requests (25.0%), 159 sessions, lead-in 417 requests (25.8% of the node's lead tokens), warm-up 124 sessions 15.3 M tokens (25.7%)
+[dry] quarter 1: 6.00 M TPM/GPU over 2 GPUs (24.9% of the node's tokens), 1230 measured requests (25.1%), 168 sessions, lead-in 417 requests (25.6% of the node's lead tokens), warm-up 120 sessions 15.1 M tokens (25.4%)
+[dry] quarter 2: 6.02 M TPM/GPU over 2 GPUs (25.0% of the node's tokens), 1227 measured requests (25.0%), 142 sessions, lead-in 444 requests (24.5% of the node's lead tokens), warm-up 135 sessions 13.5 M tokens (22.7%)
+[dry] quarter 3: 5.98 M TPM/GPU over 2 GPUs (24.8% of the node's tokens), 1222 measured requests (24.9%), 171 sessions, lead-in 421 requests (24.0% of the node's lead tokens), warm-up 128 sessions 15.6 M tokens (26.2%)
+#### (2c) replay_dry_g67, Sep 30 1.27x (b00-b02 frac 0.5)
+[dry] ---- full node: load() with --ab-plan (none) --ab-half 0 --gpus 8
+[dry] read /tr/v5/w0930_1310/b00.jsonl (frac 1): 75305 records in 118 s
+[dry] read /tr/v5/w0930_1310/b01.jsonl (frac 1): 72162 records in 120 s
+[dry] read /tr/v5/w0930_1310/b02.jsonl (frac 0.5): 38544 records in 117 s
+skip-prod-shed (v3.1): not sending 7 measured-window and 142 earlier requests production answered with 429
+warm-up budget 60 M tokens: 1811 of 7450 sessions, last turns from t=14026s
+t-start (innoferra 10-06): send time = trace t - prod_total for 185963 of 186011 records read up to end t = 18300 s (48 without a positive prod_total keep t; longest 1878 s, 0 over the 2400 s pad); window by send time: 12391 requests (0 keep t), shift p50/p90 5.08/25.37 s; vs end-time window +176 entering (sent in it, ended after it), -177 leaving (sent before it, ended in it)
+[dry] ---- quarter 0: load() with --ab-plan /k/g67/quad_plan_w0930_1310.json --ab-half 0 --gpus 2
+skip-prod-shed (v3.1): not sending 7 measured-window and 142 earlier requests production answered with 429
+warm-up budget 60 M tokens: 1811 of 7450 sessions, last turns from t=14026s
+A/B plan quad_plan_w0930_1310.json half 0: warm 464/1811, measured 3951/15944 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 185963 of 186011 records read up to end t = 18300 s (48 without a positive prod_total keep t; longest 1878 s, 0 over the 2400 s pad); window by send time: 3072 requests (0 keep t), shift p50/p90 5.10/25.06 s; vs end-time window +45 entering (sent in it, ended after it), -49 leaving (sent before it, ended in it)
+[dry] ---- quarter 1: load() with --ab-plan /k/g67/quad_plan_w0930_1310.json --ab-half 1 --gpus 2
+skip-prod-shed (v3.1): not sending 7 measured-window and 142 earlier requests production answered with 429
+warm-up budget 60 M tokens: 1811 of 7450 sessions, last turns from t=14026s
+A/B plan quad_plan_w0930_1310.json half 1: warm 455/1811, measured 3993/15944 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 185963 of 186011 records read up to end t = 18300 s (48 without a positive prod_total keep t; longest 1878 s, 0 over the 2400 s pad); window by send time: 3102 requests (0 keep t), shift p50/p90 4.96/25.66 s; vs end-time window +48 entering (sent in it, ended after it), -33 leaving (sent before it, ended in it)
+[dry] ---- quarter 2: load() with --ab-plan /k/g67/quad_plan_w0930_1310.json --ab-half 2 --gpus 2
+skip-prod-shed (v3.1): not sending 7 measured-window and 142 earlier requests production answered with 429
+warm-up budget 60 M tokens: 1811 of 7450 sessions, last turns from t=14026s
+A/B plan quad_plan_w0930_1310.json half 2: warm 447/1811, measured 4055/15944 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 185963 of 186011 records read up to end t = 18300 s (48 without a positive prod_total keep t; longest 1878 s, 0 over the 2400 s pad); window by send time: 3155 requests (0 keep t), shift p50/p90 5.29/25.53 s; vs end-time window +39 entering (sent in it, ended after it), -42 leaving (sent before it, ended in it)
+[dry] ---- quarter 3: load() with --ab-plan /k/g67/quad_plan_w0930_1310.json --ab-half 3 --gpus 2
+skip-prod-shed (v3.1): not sending 7 measured-window and 142 earlier requests production answered with 429
+warm-up budget 60 M tokens: 1811 of 7450 sessions, last turns from t=14026s
+A/B plan quad_plan_w0930_1310.json half 3: warm 445/1811, measured 3945/15944 requests (0 sessions not in the plan, assigned by hash)
+t-start (innoferra 10-06): send time = trace t - prod_total for 185963 of 186011 records read up to end t = 18300 s (48 without a positive prod_total keep t; longest 1878 s, 0 over the 2400 s pad); window by send time: 3062 requests (0 keep t), shift p50/p90 4.97/25.54 s; vs end-time window +44 entering (sent in it, ended after it), -53 leaving (sent before it, ended in it)
+[dry] offered load (production tokens of the requests the replay would send, by scheduled minute), M TPM/GPU:
+[dry] minute | full node (8 GPUs) | quarter 0 (2 GPUs) | quarter 1 (2 GPUs) | quarter 2 (2 GPUs) | quarter 3 (2 GPUs) | q0 share tok/req | q1 share tok/req | q2 share tok/req | q3 share tok/req
+[dry]      0 |   7.99 |   7.16 |   7.91 |   8.89 |   8.00 | 22.4%/25.4% | 24.8%/25.0% | 27.8%/25.4% | 25.0%/24.2%
+[dry]      1 |   7.54 |   7.19 |   7.19 |   7.59 |   8.18 | 23.8%/24.5% | 23.9%/24.8% | 25.2%/26.3% | 27.1%/24.4%
+[dry]      2 |   8.13 |   8.38 |   7.75 |   7.96 |   8.42 | 25.8%/24.2% | 23.8%/25.3% | 24.5%/26.1% | 25.9%/24.3%
+[dry]      3 |   8.01 |   7.77 |   6.91 |   8.73 |   8.65 | 24.2%/24.9% | 21.6%/24.8% | 27.2%/25.4% | 27.0%/24.9%
+[dry]      4 |   8.86 |   8.96 |   8.70 |   9.19 |   8.58 | 25.3%/24.8% | 24.6%/24.2% | 25.9%/26.7% | 24.2%/24.2%
+[dry]      5 |   8.88 |   8.61 |   9.40 |   8.91 |   8.62 | 24.2%/25.0% | 26.4%/24.8% | 25.1%/25.9% | 24.3%/24.3%
+[dry]      6 |   8.48 |   9.18 |   7.85 |   7.79 |   9.12 | 27.1%/24.8% | 23.1%/25.1% | 22.9%/25.5% | 26.9%/24.6%
+[dry]      7 |   8.69 |  10.46 |   8.04 |   7.71 |   8.56 | 30.1%/24.6% | 23.1%/25.5% | 22.2%/24.9% | 24.6%/25.0%
+[dry]      8 |   7.75 |   7.09 |   8.12 |   7.92 |   7.89 | 22.9%/23.1% | 26.2%/25.8% | 25.5%/26.2% | 25.4%/24.9%
+[dry]      9 |   8.44 |   8.97 |   8.31 |   8.26 |   8.23 | 26.6%/25.0% | 24.6%/25.2% | 24.5%/24.6% | 24.4%/25.2%
+[dry]     10 |   9.71 |   9.68 |   9.21 |   9.82 |  10.12 | 24.9%/24.4% | 23.7%/25.6% | 25.3%/24.1% | 26.1%/25.9%
+[dry]     11 |   8.55 |   8.39 |   8.40 |   9.37 |   8.03 | 24.5%/25.2% | 24.6%/24.8% | 27.4%/24.9% | 23.5%/25.1%
+[dry]     12 |   8.58 |   7.84 |   9.48 |   8.95 |   8.04 | 22.9%/26.1% | 27.6%/24.6% | 26.1%/25.1% | 23.4%/24.2%
+[dry]     13 |   9.21 |   9.74 |   8.52 |   9.58 |   9.00 | 26.4%/25.0% | 23.1%/25.1% | 26.0%/25.5% | 24.4%/24.5%
+[dry]     14 |   9.82 |  10.69 |   9.19 |   9.96 |   9.43 | 27.2%/24.5% | 23.4%/25.0% | 25.4%/25.3% | 24.0%/25.1%
+[dry] full node: 8.58 M TPM/GPU over 8 GPUs (100.0% of the node's tokens), 12391 measured requests (100.0%), 3208 sessions, lead-in 3553 requests (100.0% of the node's lead tokens), warm-up 1811 sessions 60.0 M tokens (100.0%)
+[dry] quarter 0: 8.67 M TPM/GPU over 2 GPUs (25.3% of the node's tokens), 3072 measured requests (24.8%), 812 sessions, lead-in 879 requests (24.9% of the node's lead tokens), warm-up 464 sessions 16.3 M tokens (27.2%)
+[dry] quarter 1: 8.33 M TPM/GPU over 2 GPUs (24.3% of the node's tokens), 3102 measured requests (25.0%), 774 sessions, lead-in 891 requests (24.7% of the node's lead tokens), warm-up 455 sessions 15.2 M tokens (25.4%)
+[dry] quarter 2: 8.71 M TPM/GPU over 2 GPUs (25.4% of the node's tokens), 3155 measured requests (25.5%), 771 sessions, lead-in 900 requests (25.0% of the node's lead tokens), warm-up 447 sessions 12.9 M tokens (21.5%)
+[dry] quarter 3: 8.59 M TPM/GPU over 2 GPUs (25.0% of the node's tokens), 3062 measured requests (24.7%), 851 sessions, lead-in 883 requests (25.4% of the node's lead tokens), warm-up 445 sessions 15.5 M tokens (25.8%)
+dry_runs rc=0

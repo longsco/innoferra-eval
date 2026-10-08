@@ -1,0 +1,131 @@
+== T1 GPU guard: every GPU set except exactly 6,7 is refused (exit 2, nothing started or removed)
+PASS  GPUS='' refused (rc 2)
+PASS  GPUS='0' refused (rc 2)
+PASS  GPUS='1' refused (rc 2)
+PASS  GPUS='5' refused (rc 2)
+PASS  GPUS='6' refused (rc 2)
+PASS  GPUS='7' refused (rc 2)
+PASS  GPUS='0,1' refused (rc 2)
+PASS  GPUS='2,3' refused (rc 2)
+PASS  GPUS='4,5' refused (rc 2)
+PASS  GPUS='6,7,0' refused (rc 2)
+PASS  GPUS='0,6,7' refused (rc 2)
+PASS  GPUS='7,6' refused (rc 2)
+PASS  GPUS='6, 7' refused (rc 2)
+PASS  GPUS=' 6,7' refused (rc 2)
+PASS  GPUS='6,7 ' refused (rc 2)
+PASS  GPUS='all' refused (rc 2)
+PASS  GPUS='0,1,2,3,4,5,6,7' refused (rc 2)
+PASS  GPUS='6;7' refused (rc 2)
+PASS  GPUS='06,07' refused (rc 2)
+PASS  GPUS='6,7,7' refused (rc 2)
+PASS  GPUS='6-7' refused (rc 2)
+PASS  GPUS='GPU6,GPU7' refused (rc 2)
+PASS  GPUS='6,7,' refused (rc 2)
+PASS  GPUS unset refused (rc 2)
+PASS  EXTRA_ENV CUDA_VISIBLE_DEVICES refused
+PASS  EXTRA_ENV NVIDIA_VISIBLE_DEVICES refused
+PASS  XARGS --base-gpu-id refused
+PASS  AB_B_ENV (twin) refused
+PASS  LAYOUT=tp4 refused
+PASS  GPUS=6,7 accepted (rc 0)
+PASS  engine started device-isolated: --gpus "device=6,7", name m31-tp2-3, port 19491, no CUDA_VISIBLE_DEVICES
+PASS  engine carries the owner word G67_OWNER=chain_g67
+== T2 node-state guard (GPUS=6,7): refuses, starts and removes nothing; never touches foreign containers
+PASS  foreign container process on GPU 6 -> refused
+PASS  host process on GPU 7 -> refused
+PASS  nvidia-smi failure -> refused (fail closed)
+PASS  GPU 6 memory in use without a process -> refused
+PASS  foreign m31-tp2-3 (no owner word, e.g. another agent's smoke) -> refused and NOT removed
+PASS  m31-gateway with a foreign image -> refused
+PASS  port 8000 held by a foreign process -> refused
+PASS  port 19491 held by a foreign process -> refused
+PASS  8-GPU stack container m31-tp2-0 running -> refused, not touched
+PASS  8-GPU chainQ.sh running -> refused
+PASS  orphaned engine_watchdog.sh running -> refused
+PASS  plain launch.sh (--gpus all) as engine launcher -> refused
+PASS  a running chain_g67 owns the engine -> a standalone launch is refused
+PASS  foreign work on GPUs 0-5 does not block GPUs 6,7 (rc 0)
+PASS  foreign containers never named in rm/restart/stop/logs calls
+== T3 replacing OUR engine: logs kept, only m31-tp2-3 removed, waits until GPUs 6,7 are free
+PASS  second launch replaces the first (rc 0/0, new id)
+PASS  old engine log saved, rm only m31-tp2-3 / m31-gateway / m31-gateway-b
+PASS  the old engine's GPU processes counted as ours (no refusal) and gone after rm
+== T4 gateway command and layout words
+PASS  DP2: gateway SGLANG_URLS=:19491 only, ROUTE_DP_SIZE=2; engine --dp-size 2 + DP attention
+PASS  gateway words = launch_tp2x4_old.sh (PREFIX 2048, INFLIGHT 4096, TPM 1e9, RPM 1e6, STRIP prompt_cache_key, port 8000)
+PASS  gateway start line = launch_tp2x4_old.sh line 47 except SGLANG_URLS (text compare)
+PASS  LAYOUT=tp2: --dp-size 1, no DP attention, gateway ROUTE_DP_SIZE=1
+PASS  EXTRA_ENV M31_ATTN_TP2_ALL=1 (4-engine launcher word) = TP2 layout
+PASS  NUMA=1: cpuset 96-127,224-255 + mems 3 (engine 3 of launch_tp2x4_old.sh)
+PASS  NUMA_PREFER=1: --numa-node 3 3 + SYS_NICE
+== T5 chain: every word of the previous lever is cleared (also words exported by the operator's shell)
+PASS  chain ran both levers (rc 0)
+PASS  lever 1 words reached its engine (max-running 48, numa-node 3, dp-size 1, LEAKTEST, --leak-flag)
+PASS  lever 2 engine has NONE of them (max-running 64, no numa, dp-size 2, no LEAKTEST/OPLEAK, no --leak-flag)
+PASS  lever 2 env snapshot: no FOO_LEAK/FOO_OP/LEAKTEST, NUMA_PREFER=0, MAXREQ=64, LAYOUT=dp2
+PASS  replay: quarter 0 of quad_plan_wtest.json, --gpus 2, flush :19491 only, out /tr/g67
+PASS  replay container gets no GPU (no docker --gpus flag)
+PASS  scored with 2 GPUs (strict SLA v2 table in the log)
+PASS  no curl to any port but 19491 and 8000
+== T6 watchdog: only m31-tp2-3, never other engines; exits with the chain / the lever / its stop file
+grep: /work/t6/bench/g67.log: No such file or directory
+PASS  unhealthy OUR engine: g67-replay removed, m31-tp2-3 restarted
+PASS  watchdog never named m31-tp2-0..2, replay-other or claude-sandbox-x
+PASS  watchdog exited on its stop file
+PASS  a foreign m31-tp2-3 (no owner word) is never restarted or removed
+PASS  watchdog exits when the chain PID is gone (0s)
+PASS  watchdog exits when the lever PID is gone
+== T7 HOLD protocol
+PASS  launcher waits while g67/HOLD exists (no docker run yet)
+PASS  launcher proceeds after HOLD is removed (rc 0)
+PASS  chain waits while g67/HOLD exists (line not popped, no launch)
+PASS  chain runs the lever after HOLD is removed
+PASS  node-state refusal: line back at the head of the queue, g67/HOLD written with the reason, nothing started
+PASS  chain exits on g67/STOP_CHAIN
+== T8 score_g67.py --gpus 8 reproduces /tmp/score.py on existing record files
+PASS  identical output on v5p_full_cl_gcsv3_70dw_paced (SLA v2 pass 7 / 15)
+PASS  identical output on v5p_full_cl_gcsv3_70tp2_paced (SLA v2 pass 12 / 15)
+PASS  identical output on v5p_full_cl_gcsv3_75tp2_paced (SLA v2 pass 7 / 15)
+PASS  identical output on v5s_full_cl_gcsv3_127x_paced (SLA v2 pass 14 / 15)
+PASS  identical output on v5t_ab_mmids_p60@A (SLA v2 pass 13 / 15)
+PASS  pairing a run with itself: ratio 1.000 (CI 1.000 .. 1.000), difference +0.00
+PASS  PAIR_WITH comma list: one block per reference, a missing reference is reported, not fatal
+PASS  no key on a curl command line (stdin header)
+== T9 chain refuses bad lines (no engine start) and refuses to start beside the 8-GPU stack
+PASS  line b1 refused: lever b1 FAILED: '--' (A/B twin) is not possible on GPUs 6,7; queue two lines and set P
+PASS  line b2 refused: lever b2 FAILED: GPUS=0,1 (only GPUs 6,7 may be used)
+PASS  line b3 refused: lever b3 FAILED: word CUDA_VISIBLE_DEVICES is not allowed in a g67 lever
+PASS  line b4 refused: lever b4 FAILED: word NAME is not allowed in a g67 lever
+PASS  line b5 refused: lever b5 FAILED: word AB_PLAN is not allowed in a g67 lever
+PASS  line b6 refused: lever b6 FAILED: frac '1.7' must be a number in (0, 1]
+PASS  line b7 refused: lever b7 FAILED: traces must be /tr/...jsonl[,...]
+PASS  line b8 refused: lever b8 FAILED: plan quad_plan_wtest.json covers wtest b00,b01,b02, not wtest/b05 (its
+PASS  line b9 refused: lever b9 FAILED: QUARTER=4 (0..3)
+PASS  line b10 refused: lever b10 FAILED: word PORT is not allowed in a g67 lever
+PASS  no docker run at all for bad lines
+PASS  chain refuses to start while an 8-GPU engine runs (rc 2)
+== T10 TERM to the chain during a replay: lever group killed, g67-replay removed, watchdog stopped
+grep: /work/t10/state/containers.json: No such file or directory
+grep: /work/t10/state/containers.json: No such file or directory
+grep: /work/t10/state/containers.json: No such file or directory
+grep: /work/t10/state/containers.json: No such file or directory
+grep: /work/t10/state/containers.json: No such file or directory
+grep: /work/t10/state/containers.json: No such file or directory
+grep: /work/t10/state/containers.json: No such file or directory
+grep: /work/t10/state/containers.json: No such file or directory
+grep: /work/t10/state/containers.json: No such file or directory
+PASS  chain exited on TERM and logged the cleanup
+PASS  g67-replay removed and gone from the state; STOP_WATCHDOG set; chain.pid removed
+PASS  the lever's watchdog exited too
+== T11 judge_mmverify.py, extract_runs_g67.py
+PASS  mmverify judge: PASS on same-only log, FAIL on a MISMATCH
+PASS  extract_runs_g67: tpm_gpu x4 (8 -> 2 GPUs), gpus 2, done time parsed (7.33 -> 29.32 2 01:02:03)
+== T12 quarter plan builder + replay dry run on synthetic traces (the replay's own load() and --ab-plan filter)
+PASS  make_quad_plan.py on synthetic traces (rc 0): 4 quarters, every key in the plan
+PASS  check b00,b01:0.5: each quarter carries 22-28% of the tokens
+PASS  replay_dry_g67.py ran the replay's load() 5 times (rc 0), 0 sessions outside the plan
+PASS  the four quarters partition the full node's requests and tokens exactly
+PASS  no network call and no docker call from the dry run
+
+RESULT: 107 passed, 0 failed

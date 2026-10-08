@@ -1,0 +1,69 @@
+  read b03.jsonl: 51507 records, 3834 sessions, 62.2 s
+  read b01.jsonl: 51755 records, 3850 sessions, 63.6 s
+  read b02.jsonl: 54427 records, 3880 sessions, 69.9 s
+  read b00.jsonl: 59689 records, 3880 sessions, 71.3 s
+  assigned b00: 3880 sessions (866 with load in the windows)
+  assigned b01: 3850 sessions (900 with load in the windows)
+  assigned b02: 3880 sessions (859 with load in the windows)
+  assigned b03: 3834 sessions (806 with load in the windows)
+check b00,b01,b02:0.33: node offers 7.49 M TPM/GPU over 8 GPUs (5858 measured requests, 629 active sessions); warm-up set 499 sessions 59.9 M tokens
+  q0: 7.32 M TPM/GPU over 2 GPUs | share tokens 24.4% requests 25.1% uncached 26.7% sessions 25.1% lead 23.8% warm 28.4% | per-minute token share min/med/max 20.5/24.5/26.7% request share 22.9/24.9/27.9%
+  q1: 7.50 M TPM/GPU over 2 GPUs | share tokens 25.0% requests 25.1% uncached 21.9% sessions 25.3% lead 25.1% warm 25.2% | per-minute token share min/med/max 22.6/25.7/26.5% request share 22.7/25.3/28.3%
+  q2: 7.80 M TPM/GPU over 2 GPUs | share tokens 26.0% requests 25.0% uncached 25.7% sessions 24.8% lead 27.4% warm 21.9% | per-minute token share min/med/max 23.2/25.4/30.2% request share 21.8/24.8/27.3%
+  q3: 7.35 M TPM/GPU over 2 GPUs | share tokens 24.5% requests 24.7% uncached 25.8% sessions 24.8% lead 23.7% warm 24.4% | per-minute token share min/med/max 22.5/24.5/26.3% request share 22.6/24.7/26.8%
+check b00,b01,b02:0.45: node offers 7.66 M TPM/GPU over 8 GPUs (6014 measured requests, 653 active sessions); warm-up set 489 sessions 59.9 M tokens
+  q0: 7.48 M TPM/GPU over 2 GPUs | share tokens 24.4% requests 25.2% uncached 26.2% sessions 25.1% lead 23.8% warm 28.0% | per-minute token share min/med/max 20.1/24.7/26.6% request share 23.2/25.1/28.1%
+  q1: 7.68 M TPM/GPU over 2 GPUs | share tokens 25.1% requests 25.4% uncached 22.8% sessions 25.3% lead 24.9% warm 25.2% | per-minute token share min/med/max 22.4/25.6/27.1% request share 22.1/25.6/28.3%
+  q2: 7.82 M TPM/GPU over 2 GPUs | share tokens 25.5% requests 24.6% uncached 24.8% sessions 24.7% lead 27.0% warm 21.4% | per-minute token share min/med/max 23.0/24.9/29.1% request share 21.1/24.6/26.7%
+  q3: 7.66 M TPM/GPU over 2 GPUs | share tokens 25.0% requests 24.8% uncached 26.2% sessions 25.0% lead 24.3% warm 25.4% | per-minute token share min/med/max 22.8/25.3/27.4% request share 22.6/24.8/27.4%
+check b00,b01:1.0: node offers 6.02 M TPM/GPU over 8 GPUs (4906 measured requests, 537 active sessions); warm-up set 507 sessions 59.5 M tokens
+  q0: 5.94 M TPM/GPU over 2 GPUs | share tokens 24.7% requests 24.9% uncached 24.6% sessions 25.1% lead 24.1% warm 26.8% | per-minute token share min/med/max 21.4/24.4/29.0% request share 23.0/25.1/26.6%
+  q1: 6.05 M TPM/GPU over 2 GPUs | share tokens 25.1% requests 25.4% uncached 23.2% sessions 25.3% lead 24.7% warm 24.1% | per-minute token share min/med/max 22.2/25.1/27.3% request share 23.2/25.2/28.9%
+  q2: 5.99 M TPM/GPU over 2 GPUs | share tokens 24.9% requests 24.9% uncached 26.0% sessions 24.8% lead 26.7% warm 23.1% | per-minute token share min/med/max 20.1/25.3/27.9% request share 22.8/24.8/27.4%
+  q3: 6.10 M TPM/GPU over 2 GPUs | share tokens 25.3% requests 24.7% uncached 26.2% sessions 24.8% lead 24.5% warm 26.0% | per-minute token share min/med/max 23.1/25.2/28.7% request share 22.8/24.8/27.0%
+check b00:1.0: node offers 3.05 M TPM/GPU over 8 GPUs (2402 measured requests, 270 active sessions); warm-up set 709 sessions 56.8 M tokens
+  q0: 2.95 M TPM/GPU over 2 GPUs | share tokens 24.2% requests 25.0% uncached 21.1% sessions 25.2% lead 23.8% warm 24.9% | per-minute token share min/med/max 19.7/23.7/30.1% request share 22.0/24.4/29.1%
+  q1: 2.96 M TPM/GPU over 2 GPUs | share tokens 24.3% requests 25.0% uncached 25.1% sessions 25.2% lead 23.8% warm 25.2% | per-minute token share min/med/max 19.5/24.9/28.4% request share 21.5/24.8/29.3%
+  q2: 3.06 M TPM/GPU over 2 GPUs | share tokens 25.1% requests 24.8% uncached 27.4% sessions 24.4% lead 25.5% warm 25.0% | per-minute token share min/med/max 15.6/25.9/30.2% request share 19.4/24.9/27.3%
+  q3: 3.23 M TPM/GPU over 2 GPUs | share tokens 26.5% requests 25.2% uncached 26.5% sessions 25.2% lead 26.9% warm 24.9% | per-minute token share min/med/max 19.7/25.9/31.5% request share 23.3/25.3/27.2%
+check b00,b01,b02,b03:1.0: node offers 11.65 M TPM/GPU over 8 GPUs (9386 measured requests, 1020 active sessions); warm-up set 412 sessions 59.9 M tokens
+  q0: 11.42 M TPM/GPU over 2 GPUs | share tokens 24.5% requests 25.1% uncached 23.2% sessions 25.3% lead 25.4% warm 25.9% | per-minute token share min/med/max 20.8/24.9/27.9% request share 23.7/25.0/27.6%
+  q1: 11.70 M TPM/GPU over 2 GPUs | share tokens 25.1% requests 25.1% uncached 27.2% sessions 25.0% lead 24.3% warm 23.9% | per-minute token share min/med/max 24.0/25.1/27.2% request share 23.7/25.0/27.1%
+  q2: 11.54 M TPM/GPU over 2 GPUs | share tokens 24.8% requests 24.7% uncached 25.8% sessions 24.8% lead 26.4% warm 24.5% | per-minute token share min/med/max 21.7/25.5/26.8% request share 22.6/24.4/26.7%
+  q3: 11.96 M TPM/GPU over 2 GPUs | share tokens 25.7% requests 25.1% uncached 23.8% sessions 24.9% lead 24.0% warm 25.7% | per-minute token share min/med/max 23.3/25.6/28.4% request share 22.5/25.0/26.8%
+wrote /g67/quad_plan_w1003_1330.json: 15444 sessions, quarters [3818, 3873, 3886, 3867], duplicate keys across buckets 0, 72 s
+  read b02.jsonl: 76619 records, 12989 sessions, 59.5 s
+  read b01.jsonl: 72162 records, 12913 sessions, 61.8 s
+  read b00.jsonl: 75305 records, 12933 sessions, 64.0 s
+  read b03.jsonl: 72879 records, 13075 sessions, 64.2 s
+  assigned b00: 12933 sessions (4088 with load in the windows)
+  assigned b01: 12913 sessions (4133 with load in the windows)
+  assigned b02: 12989 sessions (4130 with load in the windows)
+  assigned b03: 13075 sessions (4145 with load in the windows)
+check b00,b01:1.0: node offers 6.78 M TPM/GPU over 8 GPUs (9721 measured requests, 2087 active sessions); warm-up set 2056 sessions 60.0 M tokens
+  q0: 6.75 M TPM/GPU over 2 GPUs | share tokens 24.9% requests 25.2% uncached 27.3% sessions 24.5% lead 25.7% warm 26.2% | per-minute token share min/med/max 21.3/25.3/28.1% request share 23.1/25.2/27.3%
+  q1: 6.47 M TPM/GPU over 2 GPUs | share tokens 23.9% requests 25.1% uncached 24.6% sessions 25.1% lead 25.1% warm 26.6% | per-minute token share min/med/max 21.6/24.4/26.2% request share 23.7/25.0/27.1%
+  q2: 6.74 M TPM/GPU over 2 GPUs | share tokens 24.9% requests 24.7% uncached 24.3% sessions 25.3% lead 24.7% warm 23.2% | per-minute token share min/med/max 21.7/24.5/29.4% request share 23.5/24.5/25.6%
+  q3: 7.16 M TPM/GPU over 2 GPUs | share tokens 26.4% requests 24.9% uncached 23.8% sessions 25.1% lead 24.5% warm 24.0% | per-minute token share min/med/max 23.2/26.8/29.5% request share 23.6/25.1/25.9%
+check b00,b01,b02:0.25: node offers 7.71 M TPM/GPU over 8 GPUs (11057 measured requests, 2328 active sessions); warm-up set 1924 sessions 60.0 M tokens
+  q0: 7.73 M TPM/GPU over 2 GPUs | share tokens 25.1% requests 25.3% uncached 26.9% sessions 24.5% lead 24.8% warm 25.4% | per-minute token share min/med/max 22.1/25.0/27.4% request share 23.8/25.1/27.1%
+  q1: 7.35 M TPM/GPU over 2 GPUs | share tokens 23.8% requests 24.9% uncached 25.1% sessions 25.1% lead 24.3% warm 26.1% | per-minute token share min/med/max 21.0/24.1/25.4% request share 23.7/24.9/26.4%
+  q2: 7.74 M TPM/GPU over 2 GPUs | share tokens 25.1% requests 24.8% uncached 23.9% sessions 25.3% lead 26.9% warm 24.1% | per-minute token share min/med/max 22.3/25.1/29.2% request share 23.7/24.7/26.1%
+  q3: 8.01 M TPM/GPU over 2 GPUs | share tokens 26.0% requests 25.0% uncached 24.1% sessions 25.1% lead 24.1% warm 24.4% | per-minute token share min/med/max 22.5/26.3/28.5% request share 24.1/24.9/26.5%
+check b00,b01,b02:0.5: node offers 8.58 M TPM/GPU over 8 GPUs (12391 measured requests, 2562 active sessions); warm-up set 1811 sessions 60.0 M tokens
+  q0: 8.81 M TPM/GPU over 2 GPUs | share tokens 25.7% requests 25.4% uncached 28.3% sessions 24.5% lead 26.2% warm 26.5% | per-minute token share min/med/max 22.1/26.0/28.0% request share 23.1/25.4/27.7%
+  q1: 8.19 M TPM/GPU over 2 GPUs | share tokens 23.9% requests 25.0% uncached 23.8% sessions 25.2% lead 24.4% warm 25.6% | per-minute token share min/med/max 21.2/23.6/25.5% request share 23.3/25.0/27.1%
+  q2: 8.49 M TPM/GPU over 2 GPUs | share tokens 24.8% requests 24.7% uncached 24.3% sessions 25.2% lead 25.4% warm 23.0% | per-minute token share min/med/max 21.4/25.2/28.7% request share 23.6/24.5/25.9%
+  q3: 8.82 M TPM/GPU over 2 GPUs | share tokens 25.7% requests 25.0% uncached 23.6% sessions 25.0% lead 24.0% warm 24.9% | per-minute token share min/med/max 22.8/26.2/27.3% request share 23.4/25.0/26.2%
+check b00:1.0: node offers 3.45 M TPM/GPU over 8 GPUs (4924 measured requests, 1018 active sessions); warm-up set 2619 sessions 60.0 M tokens
+  q0: 3.43 M TPM/GPU over 2 GPUs | share tokens 24.9% requests 24.8% uncached 26.9% sessions 24.7% lead 23.8% warm 26.0% | per-minute token share min/med/max 20.7/25.2/28.9% request share 22.8/24.7/26.6%
+  q1: 3.32 M TPM/GPU over 2 GPUs | share tokens 24.1% requests 25.1% uncached 25.2% sessions 25.1% lead 25.2% warm 24.3% | per-minute token share min/med/max 18.3/24.0/29.0% request share 22.6/25.0/27.2%
+  q2: 3.49 M TPM/GPU over 2 GPUs | share tokens 25.3% requests 24.8% uncached 24.1% sessions 25.3% lead 25.5% warm 25.5% | per-minute token share min/med/max 22.3/24.5/29.9% request share 22.9/24.7/26.9%
+  q3: 3.56 M TPM/GPU over 2 GPUs | share tokens 25.8% requests 25.2% uncached 23.8% sessions 24.9% lead 25.5% warm 24.2% | per-minute token share min/med/max 21.4/25.5/30.1% request share 23.5/25.3/26.0%
+check b00,b01,b02,b03:1.0: node offers 13.18 M TPM/GPU over 8 GPUs (18945 measured requests, 4000 active sessions); warm-up set 1356 sessions 59.8 M tokens
+  q0: 13.10 M TPM/GPU over 2 GPUs | share tokens 24.8% requests 25.2% uncached 27.2% sessions 24.6% lead 25.7% warm 28.0% | per-minute token share min/med/max 22.2/25.0/27.7% request share 24.1/25.1/26.9%
+  q1: 13.01 M TPM/GPU over 2 GPUs | share tokens 24.7% requests 25.3% uncached 26.1% sessions 25.1% lead 24.2% warm 24.2% | per-minute token share min/med/max 22.7/24.6/26.7% request share 24.3/25.4/26.5%
+  q2: 13.16 M TPM/GPU over 2 GPUs | share tokens 25.0% requests 24.6% uncached 23.6% sessions 25.1% lead 24.5% warm 23.4% | per-minute token share min/med/max 22.5/25.1/27.8% request share 23.5/24.6/25.4%
+  q3: 13.46 M TPM/GPU over 2 GPUs | share tokens 25.5% requests 24.9% uncached 23.1% sessions 25.1% lead 25.6% warm 24.4% | per-minute token share min/med/max 24.0/25.0/27.8% request share 24.3/25.0/25.6%
+wrote /g67/quad_plan_w0930_1310.json: 51910 sessions, quarters [12975, 12861, 13208, 12866], duplicate keys across buckets 0, 67 s
+build_plans rc=0

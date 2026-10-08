@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""Mock docker for the g67 harness tests (never touches a real daemon). State: $STUB_STATE/containers.json; every call is appended
+to $STUB_STATE/docker_calls.log (one line per call, arguments joined by spaces). Supported: ps, inspect, rm, run, logs, restart,
+image inspect, build, stop. 'run --rm ... /k/replay_*.py ... --out /tr/...' simulates a replay: it writes records to the host path
+of --out (via the -v mapping of /tr), from $STUB_STATE/replay_records.jsonl when present, else 40 synthetic records; it sleeps
+$STUB_STATE/replay_sleep seconds first (0 default) and leaves a running container named by --name while it sleeps."""
+import json, os, re, sys, time, hashlib, signal, fcntl
+ST = os.environ.get("STUB_STATE") or open("/tmp/g67-stub-state").read().strip()
+PROC = os.environ.get("STUB_PROC") or os.path.join(os.path.dirname(ST), "proc")
+CF = os.path.join(ST, "containers.json"); LOG = os.path.join(ST, "docker_calls.log")
+LK = open(os.path.join(ST, ".lock"), "w"); fcntl.flock(LK, fcntl.LOCK_EX)      # one docker call at a time (the replay releases it while it sleeps)
+def load():
+    try: return json.load(open(CF))
+    except Exception: return {}
+def save(c):
+    json.dump(c, open(CF + ".tmp", "w"), indent=0); os.replace(CF + ".tmp", CF)
+def cid(name): return hashlib.sha256(f"{name}-{time.time_ns()}".encode()).hexdigest()
+args = sys.argv[1:]
+with open(LOG, "a") as f: f.write(" ".join(args) + "\n")
+if not args: sys.exit(0)
+cmd = args[0]; C = load()
+
+def fmt_val(c, fmt):
+    out = fmt
+    out = out.replace("{{.Id}}", c["id"]).replace("{{.Config.Image}}", c["image"]).replace("{{.State.Running}}", "true" if c["running"] else "false")
+    out = out.replace("{{.State.Status}}", c.get("status", "running" if c["running"] else "exited")).replace("{{.State.ExitCode}}", str(c.get("exit", 0)))
+    out = out.replace("{{.RestartCount}}", str(c.get("restarts", 0))).replace("{{.Name}}", "/" + c["name"])
+    out = out.replace("{{range .Config.Env}}{{println .}}{{end}}", "".join(e + "\n" for e in c.get("env", [])))
+    out = out.replace('{{join .Args " "}}', " ".join(c.get("args", [])))
+    return out
+
+if cmd == "ps":
+    allc = "-a" in args; q = "-q" in args
+    fmt = args[args.index("--format") + 1] if "--format" in args else None
+    for n, c in C.items():
+        if not (allc or c["running"]): continue
+        if q: print(c["id"][:12])
+        elif fmt: print(fmt.replace("{{.Names}}", n).replace("{{.ID}}", c["id"][:12]).replace("{{.Image}}", c["image"]).replace("{{.Command}}", '"' + " ".join(c.get("args", []))[:80] + '"').replace("{{.Status}}", "Up" if c["running"] else "Exited"))
+        else: print(c["id"][:12], c["image"], n)
+    sys.exit(0)
+if cmd == "inspect":
+    fmt = None; names = []; i = 1
+    while i < len(args):
+        if args[i] in ("-f", "--format"): fmt = args[i + 1]; i += 2; continue
+        names.append(args[i]); i += 1
+    rc = 0
+    for n in names:
+        c = C.get(n) or next((x for x in C.values() if x["id"].startswith(n)), None)
+        if c is None: sys.stderr.write(f"Error: No such object: {n}\n"); rc = 1; continue
+        print(fmt_val(c, fmt) if fmt else json.dumps([c]))
+    sys.exit(rc)
+if cmd == "image":
+    if len(args) > 1 and args[1] == "inspect":
+        fmt = args[args.index("--format") + 1] if "--format" in args else "{{.Id}}"
+        print("sha256:" + "ab" * 32 if "{{.Id}}" in fmt else ""); sys.exit(0)
+    sys.exit(0)
+if cmd in ("build", "pull"): sys.exit(0)
+if cmd == "rm":
+    for n in [x for x in args[1:] if not x.startswith("-")]:
+        c = C.pop(n, None)
+        if c is not None and c.get("pid"):
+            try: os.kill(c["pid"], signal.SIGTERM)
+            except Exception: pass
+        if c is not None:                                   # its GPU processes go away with it
+            ap = os.path.join(ST, "compute_apps")
+            if os.path.exists(ap):
+                keep = [l for l in open(ap) if c["id"] not in l]; open(ap, "w").writelines(keep)
+    save(C); sys.exit(0)
+if cmd == "restart":
+    for n in [x for x in args[1:] if not x.startswith("-")]:
+        if n in C: C[n]["restarts"] = C[n].get("restarts", 0) + 1; C[n]["running"] = True
+    save(C); sys.exit(0)
+if cmd == "stop":
+    for n in [x for x in args[1:] if not x.startswith("-")]:
+        if n in C: C[n]["running"] = False
+    save(C); sys.exit(0)
+if cmd == "logs":
+    n = args[-1]; p = os.path.join(ST, f"logs_{n}.txt")
+    if n not in C: sys.stderr.write(f"Error: No such container: {n}\n"); sys.exit(1)
+    if os.path.exists(p): sys.stdout.write(open(p).read())
+    sys.exit(0)
+if cmd == "run":
+    i = 1; o = {"env": [], "vol": [], "name": None, "rm": False, "d": False, "gpus": None, "opts": []}
+    flags1 = {"--name", "-e", "-v", "--gpus", "--network", "--restart", "--shm-size", "--ipc", "--ulimit", "--cap-add", "--log-driver",
+              "--log-opt", "-p", "--cpuset-cpus", "--cpuset-mems", "--entrypoint", "--cpus", "--cpu-shares", "--user", "-w"}
+    while i < len(args):
+        x = args[i]
+        if x == "--rm": o["rm"] = True; i += 1; continue
+        if x == "-d": o["d"] = True; i += 1; continue
+        if x in flags1:
+            v = args[i + 1]; o["opts"].append((x, v))
+            if x == "--name": o["name"] = v
+            elif x == "-e": o["env"].append(v)
+            elif x == "-v": o["vol"].append(v)
+            elif x == "--gpus": o["gpus"] = v
+            i += 2; continue
+        if x.startswith("-"): i += 1; continue
+        break
+    image = args[i]; rest = args[i + 1:]
+    if o["name"] and o["name"] in C: sys.stderr.write(f"Conflict. The container name \"/{o['name']}\" is already in use\n"); sys.exit(125)
+    if o["rm"] and not o["d"] and any(re.search(r"/k/replay\S*\.py", r) for r in rest):      # simulated replay
+        n = o["name"] or "anon-replay"; C[n] = {"id": cid(n), "name": n, "image": image, "env": o["env"], "args": rest, "running": True, "pid": os.getpid()}
+        save(C); fcntl.flock(LK, fcntl.LOCK_UN)
+        try:
+            sl = float(open(os.path.join(ST, "replay_sleep")).read().strip()) if os.path.exists(os.path.join(ST, "replay_sleep")) else 0.0
+            t0 = time.time()
+            while time.time() - t0 < sl:
+                time.sleep(0.2)
+                if n not in load(): print("replay container removed"); sys.exit(137)
+            out = rest[rest.index("--out") + 1]
+            host = None
+            for v in o["vol"]:
+                hp, cp = v.split(":")[0], v.split(":")[1]
+                if out.startswith(cp + "/"): host = hp + out[len(cp):]
+            src = os.path.join(ST, "replay_records.jsonl")
+            os.makedirs(os.path.dirname(host), exist_ok=True)
+            if os.path.exists(src): open(host, "w").write(open(src).read())
+            else:
+                with open(host, "w") as f:
+                    for k in range(40):
+                        f.write(json.dumps({"phase": "measured", "request_id": f"r{k}", "key": f"s{k % 7}", "t": 15000 + 22 * k + 9, "t_start": 15000 + 22 * k,
+                                            "status": 200, "error": None, "ttft": 0.5 + (k % 5) * 0.3, "total": 6.0 + (k % 3), "prompt_tokens": 60000,
+                                            "completion_tokens": 400, "cached_tokens": 55000, "prod_status": 200, "prod_ttft": 1.0, "prod_total": 9.0,
+                                            "prod_prompt_tokens": 60000, "prod_cached_tokens": 56000, "prod_completion_tokens": 380, "stream": True, "sched": 22 * k}) + "\n")
+            print("== replay_v2 load (stub) measured 15 min, 40 requests")
+        finally:
+            fcntl.flock(LK, fcntl.LOCK_EX); C = load(); C.pop(n, None); save(C)
+        sys.exit(0)
+    if o["rm"] and not o["d"]:                  # e.g. run --rm --entrypoint cat IMAGE /opt/ENGINE_COMMIT
+        print("0123456789abcdef0123"); sys.exit(0)
+    n = o["name"] or f"anon{len(C)}"; c = {"id": cid(n), "name": n, "image": image, "env": o["env"], "args": rest, "running": True,
+                                             "gpus": o["gpus"], "opts": o["opts"], "restarts": 0}
+    C[n] = c; save(C)
+    if os.path.exists(os.path.join(ST, "auto_apps")) and (o["gpus"] or "").find("6,7") >= 0:      # its two schedulers appear on GPUs 6 and 7
+        base = 7000 + 10 * len(C)
+        with open(os.path.join(ST, "compute_apps"), "a") as f:
+            for k, g in enumerate((6, 7)):
+                pid = base + k; os.makedirs(os.path.join(PROC, str(pid)), exist_ok=True)
+                open(os.path.join(PROC, str(pid), "cgroup"), "w").write(f"0::/system.slice/docker-{c['id']}.scope\n")
+                f.write(f"GPU-stub-000{g}, {pid}, 708 cid={c['id']}\n")
+    print(c["id"]); sys.exit(0)
+sys.exit(0)

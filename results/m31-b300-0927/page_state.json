@@ -23,7 +23,10 @@
   "v3_lp_cap_lpm_05x": "re-check half load (10/15) with cache-first; logs per-request timing",
   "v3_lp_cap_lpm_tok8_05x": "is tokenisation the time outside the GPU? 8 workers instead of 4",
   "v3_lp_cap_lpm_f2_075x": "retry of the 06:21 crash with the guard; logs per-request timing",
-  "v3_lp_cap_mr128_075x": "production runs 128 per worker; ours failed to boot at that size"
+  "v3_lp_cap_mr128_075x": "production runs 128 per worker; ours failed to boot at that size",
+  "g67_tp2mm_mr48_knee733_q0": "does a 48-request cap protect generation speed in minutes 0-3?",
+  "g67_tp2mm_knee749_q0": "TP2 + fast path past the knee: 7.49 M per GPU (full node 7/15)",
+  "g67_tp2mm_s30_127x_q0": "Sep 30 high load on TP2: the decode-bound day, needed before adoption"
  },
  "needs_ok": [],
  "between_runs": {

@@ -69,6 +69,16 @@
    "recorded": "production window Oct 3 06:30 PDT (lb01+lb02+lb03) plus the requests the hub log cut at 2 MiB, rebuilt",
    "divider": "Test v5.1r starts here (Oct 6 15:50): v5.1 on traces where the 3.5% of requests the hub log cut at 2 MiB are rebuilt (14.4% of prompt tokens, about 170k+ tokens each; prompt length within 2% of production's). The most faithful test so far. Compare within one test only.",
    "prod_errors": "production's own errors on the same requests"
+  },
+  "v5.1q": {
+   "start": "2026-10-07 16:40",
+   "recorded": "Oct 3 06:30 PDT (lb01+lb02+lb03); one engine replays quarter 0 of the node's request plan",
+   "divider": "Test v5.1q starts here (Oct 7 16:40). The owner allows only GPUs 6,7, so one engine (a quarter of the node) runs at the node's load per GPU. Compare within one test only.",
+   "prod_errors": "production's own errors on the same requests",
+   "single_engine": true,
+   "gpus": 2,
+   "name": "one engine on GPUs 6,7 (quarter node), same load per GPU",
+   "note": "Since Oct 7 14:41 PDT the owner allows only GPUs 6,7. Each run uses one engine (2 GPUs, a quarter of the node). It replays quarter 0 of the node's request plan at the same load per GPU (within 1-2%). The load per minute swings more than on the full node (0.44-1.74x), so minute counts are noisier. Paired CIs cover request sampling only; the one-engine A/A spread is about 3.5% first token and 2 tok/s."
   }
  },
  "share_names": {
@@ -78,7 +88,7 @@
   "1.0": "full"
  },
  "labels": {
-  "_note": "Plain names (8 words or fewer) for every run tag and queued tag; 'short' (5 words or fewer) is used in the header pill and the chart callout. 'base' = the changes it sat on top of. 'why' overrides runs_meta.json's reason when that reason is wrong (cite the source).",
+  "_note": "Plain names (8 words or fewer) for every run tag and queued tag; 'short' (5 words or fewer) is used in the header pill and the chart callout. 'base' = the changes it sat on top of. 'why' overrides runs_meta.json's reason when that reason is wrong (cite the source). 'load' and 'share' (queued single-engine tags only) = the planned load shown in the queue and its share (load / production's real load in the window), since a g67 tag carries neither. 'tiny' (single-engine runs) = the one- or two-word setup name in the answer-cell sentence on the newest single-engine result.",
   "v3_tpc_05x": {
    "name": "Half load, old routing (pinned on arrival)",
    "why": "One engine took the busy conversations (49–56 running, 43–66 waiting) while the other three ran 2–13 each: routing, not engine speed, was the limit.",
@@ -1158,6 +1168,45 @@
   "v4m_full_cl_gcsv3_175x": {
    "name": "NEW WINDOW 10-05 08:00 PDT (Monday), full node, GC off + v3, 1.75×",
    "short": "10-05 window 1.75×"
+  },
+  "g67_tp2mm_knee733_q0": {
+   "name": "One engine: TP2 + image fast path",
+   "short": "TP2 + fast path",
+   "tiny": "TP2"
+  },
+  "g67_tp2_knee733_q0": {
+   "name": "One engine: TP2 alone, no image fast path",
+   "short": "TP2 alone",
+   "tiny": "TP2 alone"
+  },
+  "g67_tp2mm_knee733_q0_r2": {
+   "name": "One engine: TP2 + image fast path, repeat",
+   "short": "TP2 + fast path, repeat",
+   "tiny": "TP2"
+  },
+  "g67_dp2mm_knee733_q0": {
+   "name": "One engine: DP2 + image fast path",
+   "short": "DP2 + fast path",
+   "tiny": "DP2"
+  },
+  "g67_tp2mm_mr48_knee733_q0": {
+   "name": "One engine: TP2 + fast path, 48-request cap",
+   "short": "TP2, cap 48",
+   "load": "≈7.42 M (planned)",
+   "tiny": "TP2, cap 48",
+   "share": 0.93
+  },
+  "g67_tp2mm_knee749_q0": {
+   "name": "One engine: TP2 + fast path, higher load",
+   "short": "TP2, 7.49 M",
+   "load": "≈7.49 M (planned)",
+   "share": 0.94
+  },
+  "g67_tp2mm_s30_127x_q0": {
+   "name": "One engine: TP2 + fast path, Sep 30",
+   "short": "TP2, Sep 30",
+   "load": "≈8.28 M (planned)",
+   "share": 1.29
   }
  },
  "plain_words": [
@@ -1228,7 +1277,8 @@
   "invalid (engine crash)": "Invalid",
   "failed to boot": "Invalid",
   "no clear change": "Baseline",
-  "under review": "Baseline"
+  "under review": "Baseline",
+  "comparison": "Baseline"
  },
  "baseline_changes": [
   "baseline",
@@ -2015,9 +2065,9 @@
   {
    "name": "Test setup: GPUs 6-7 only (owner request)",
    "state": "running",
-   "at": "2026-10-07 14:45",
-   "text": "Oct 7 14:41 PDT: by owner request our tests use only GPUs 6 and 7 of node 0008. The full-node chain, its watchdog, all engines and the gateway were stopped (nvidia-smi: all GPUs free). Next results come from one engine (quarter node) at the same load per GPU; A/B tests become sequential pairs on the same requests. Harness build: workflow wf_915777ef-68f.",
-   "ref": "PROGRESS.md Oct 7 14:45; next230/G67-HARNESS.md"
+   "at": "2026-10-07 16:40",
+   "text": "Oct 7 14:41 PDT: by owner request our tests use only GPUs 6 and 7 of node 0008. The full-node chain, its watchdog, all engines and the gateway were stopped (nvidia-smi: all GPUs free). Next results come from one engine (quarter node) at the same load per GPU; A/B tests become sequential pairs on the same requests. Harness build: workflow wf_915777ef-68f. 16:40: the one-engine chain (g67/chain_g67.sh) started. Its runs form test v5.1q (Results tab), apart from the full-node headline.",
+   "ref": "PROGRESS.md Oct 7 14:45; next230/G67-HARNESS.md; PROGRESS.md Oct 7 16:40"
   },
   {
    "name": "Faster sparse attention (generation steps and prompt chunks, bitwise equal)",

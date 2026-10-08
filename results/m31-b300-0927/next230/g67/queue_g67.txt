@@ -1,0 +1,5 @@
+# queue_g67.txt (innoferra 10-07) - lever queue of g67/chain_g67.sh: ONE engine (m31-tp2-3) on GPUs 6,7 ONLY. The chain pops the first
+# non-comment line (to g67/queue_g67.done). Format = chainQ: tag traces frac [VAR=value ...] ("$BB" and "$HCX" expand as in chainQ.sh).
+# g67 words: QUARTER=0..3 (default 0), QPLAN=/k/g67/<plan>.json (default quad_plan_<window>.json), LAYOUT=tp2, PAIR_WITH=<tag>[,<tag>],
+# JUDGE=mmverify [JUDGE_MIN_SAME=n]. Refused: '--' twins, GPUS other than 6,7, CUDA/NVIDIA_VISIBLE_DEVICES, NAME, PORT, AB_*, DYNB_*.
+# Example lines (NOT queued): g67/queue_g67.examples.txt. Nothing is queued now.

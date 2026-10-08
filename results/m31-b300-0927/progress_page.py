@@ -70,12 +70,15 @@ def read_node_state():
     p = os.path.join(D, "node_state.txt")
     if not os.path.exists(p):
         return None
-    sec, out = None, {"queue": [], "done": [], "markers": []}
+    sec, out = None, {"queue": [], "done": [], "markers": [], "chain": "8gpu"}
     for line in open(p, encoding="utf-8", errors="replace"):
         line = line.rstrip("\n")
         m = re.match(r"# read_utc (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)Z", line)
+        mc = re.match(r"# chain (\S+)", line)       # innoferra 10-07: g67 = one engine on GPUs 6,7 (g67/chain_g67.sh), 8gpu = chainQ.sh
         if m:
             out["read_utc"] = datetime.strptime(m.group(1), "%Y-%m-%dT%H:%M:%S")
+        elif mc:
+            out["chain"] = mc.group(1)
         elif line.startswith("## "):
             sec = line[3:].strip()
         elif line.strip() and sec in out:
@@ -93,10 +96,10 @@ def read_node_state():
         m = re.match(r"(\d\d:\d\d:\d\d) ===== lever (\S+?)(:| done)", line)
         if m:
             ev.append((utc_to_pdt(stamp_utc(m.group(1))), m.group(2), "start" if m.group(3) == ":" else "done"))
-        elif "===== CHAINQ" in line and "DONE" in line:
+        elif ("===== CHAINQ" in line and "DONE" in line) or "===== CHAIN_G67 DONE" in line:
             mm = re.match(r"(\d\d:\d\d:\d\d)", line)
             ev.append((utc_to_pdt(stamp_utc(mm.group(1))) if mm else None, None, "chain_done"))
-    return {"read_at": utc_to_pdt(ru).replace(second=0), "queue": [l.split()[0] for l in out["queue"]], "events": ev}
+    return {"read_at": utc_to_pdt(ru).replace(second=0), "queue": [l.split()[0] for l in out["queue"]], "events": ev, "chain": out["chain"]}
 
 
 NODE = read_node_state()
@@ -214,6 +217,35 @@ PROBES = {c.lower() for c in NOTES.get("baseline_changes", [])}
 META_BY = {m["tag"]: m for m in META.get("runs", [])}
 LABELS = {k: v for k, v in NOTES.get("labels", {}).items() if not k.startswith("_")}
 STATE = STATE or {}
+# innoferra 10-07: single-engine runs. Since Oct 7 14:41 PDT the owner allows only GPUs 6,7: g67/chain_g67.sh runs ONE engine (a quarter
+# of the node) at the node's load per GPU; g67/extract_runs_g67.py scales its records to 2 GPUs and marks them "harness": "g67".
+# runs_meta.json 'g67_rule' gives the test version of these runs and the defaults for a finished g67 run that has no entry yet.
+G67 = META.get("g67_rule") or {}
+G67_PREFIX = G67.get("tag_prefix", "g67_")
+def is_g67(tag): return str(tag).startswith(G67_PREFIX)
+def g67_done_pdt(hms):
+    """'HH:MM:SS' UTC finish time of a lever (no date) -> naive PDT: the render day in UTC, or the day before when it lies after now"""
+    nu = NOW.replace(tzinfo=LA).astimezone(timezone.utc).replace(tzinfo=None)
+    d = datetime.combine(nu.date(), datetime.strptime(hms, "%H:%M:%S").time())
+    return utc_to_pdt(d - timedelta(days=1) if d > nu + timedelta(minutes=5) else d)
+def g67_window(tag):
+    """(window name, production's real load per GPU in it) of a g67 tag: the first g67_rule 'windows' key found in the tag, else 'default'"""
+    ws = G67.get("windows") or {}
+    for k, w in ws.items():
+        if k != "default" and k in tag:
+            return w[0], float(w[1])
+    w = ws.get("default") or ["Oct 3 peak", 8.01]
+    return w[0], float(w[1])
+for _r in RAW:
+    _t = _r["tag"]
+    if G67.get("protocol") and is_g67(_t) and _t not in META_BY and not _r.get("partial"):
+        _w, _wl = g67_window(_t)
+        META_BY[_t] = {"tag": _t, "at": (g67_done_pdt(_r["done_utc"]) if _r.get("done_utc") else NOW).strftime("%Y-%m-%d %H:%M"),
+                       "protocol": G67["protocol"], "share": round(_r["tpm_gpu"] / _wl, 2) if _r.get("tpm_gpu") else None,
+                       "name": f"one engine on GPUs 6,7, {_w}: {_t}", "change": G67.get("change", "single engine"),
+                       "verdict": G67.get("verdict", "under review"), "why": G67.get("why", ""), "auto": True}
+        WARNINGS.append(f"run {_t}: no runs_meta.json entry; shown by the g67_rule (test {G67['protocol']}, "
+                        f"{META_BY[_t]['verdict']}) until one is written")
 
 
 def label_of(tag, fallback=""):
@@ -298,8 +330,18 @@ for x in RUNS:
 RUNS.sort(key=lambda r: r["at"], reverse=True)
 RUN_BY = {r["id"]: r for r in RUNS}
 VALID = [r for r in RUNS if not r["invalid"]]
-CUR = NOTES.get("current_test") or (VALID[0]["test"] if VALID else "v3.1")
 TV = NOTES.get("test_versions", {})
+QTESTS = {t for t, v in TV.items() if v.get("single_engine")}   # innoferra 10-07: tests of one engine on GPUs 6,7 (a quarter of the node)
+def single(r):
+    """a single-engine run (one engine, GPUs 6,7): its test is a single-engine test, its tag has the g67 prefix or its record the g67 mark"""
+    return r["test"] in QTESTS or is_g67(r["id"]) or (r.get("raw") or {}).get("harness") == "g67"
+for _r in RUNS:      # a single-engine run on a full-node test (or the reverse) would enter the full-node headline: refuse to build
+    _g = is_g67(_r["id"]) or (_r.get("raw") or {}).get("harness") == "g67"
+    if _g != (_r["test"] in QTESTS):
+        ERRORS.append(f"run {_r['id']}: " + (f"single-engine run on test {_r['test']}, which is not a single-engine test (page_notes.json "
+                                             "test_versions single_engine)" if _g else f"full-node run on the single-engine test {_r['test']}"))
+CUR = NOTES.get("current_test") or next((r["test"] for r in VALID if not single(r)), "v3.1")
+SINGLE_V = [r for r in VALID if single(r)]                       # valid single-engine runs, newest first
 SN = NOTES.get("share_names", {})
 def share_name(s): return SN.get(str(s), f"{s:g}×")
 def share_mult(s):
@@ -320,13 +362,13 @@ def glo(k):
 def best_points(test):
     out = []
     for k in sorted([k for k in GROUPS if k[0] == test and k[1] is not None], key=lambda k: k[1]):
-        b = best_of([r for r in GROUPS[k] if "@" not in str(r["id"])])   # innoferra 10-06: ink = full-node runs only; twin halves stay gray
+        b = best_of([r for r in GROUPS[k] if "@" not in str(r["id"]) and (test in QTESTS or not single(r))])   # innoferra 10-06: ink = full-node runs only; twin halves stay gray
         if b:
             out.append(b)
     return out
 
 
-CURV = [r for r in VALID if r["test"] == CUR]
+CURV = [r for r in VALID if r["test"] == CUR and not single(r)]   # innoferra 10-07: the full-node headline never counts a single-engine run
 CLOSEST = max(CURV, key=lambda r: (r["pass"], r["load"], r["at"])) if CURV else None
 PASS_TOP = max([r for r in CURV if r["pass"] >= NMIN and r.get("verdict") != "Rejected" and "@" not in str(r.get("id", ""))],
                key=lambda r: (r["load"], r["at"]), default=None)   # innoferra 10-04: headline = full-node runs only (twin halves are half-node replays)
@@ -340,8 +382,8 @@ PASS_PREV = None if PASS_TOP else max([r for r in VALID if r["test"] == "v3.1" a
 NEWEST = RUNS[0] if RUNS else None
 NEWEST_CUR = max(CURV, key=lambda r: r["at"]) if CURV else None
 BEST_CUR = best_points(CUR)
-EXTRA = []        # best run at shares the current test has not run yet (e.g. full load on v3)
-for _k in sorted([k for k in GROUPS if k[0] != CUR and k[1] is not None], key=lambda k: (k[1], k[0]), reverse=True):
+EXTRA = []        # best run at shares the current test has not run yet (e.g. full load on v3); never a single-engine test
+for _k in sorted([k for k in GROUPS if k[0] != CUR and k[0] not in QTESTS and k[1] is not None], key=lambda k: (k[1], k[0]), reverse=True):
     _b = best_of(GROUPS[_k])
     if _b and not any(b["share"] == _k[1] for b in BEST_CUR) and not any(e["share"] == _k[1] for e in EXTRA):
         EXTRA.append(_b)
@@ -445,11 +487,14 @@ def prog_row_for(r):
 
 _used_refl = set()
 for _r in RUNS:
-    _pr = prog_row_for(_r)
+    _ov = META_BY.get(_r["id"], {}).get("progress")   # innoferra 10-07: runs_meta.json 'progress' names the row when the row text has no tag
+    if _ov and _ov not in PROG:
+        WARNINGS.append(f"run {_r['id']}: runs_meta.json progress {_ov!r} is not a PROGRESS.md row")
+    _pr = (_ov, key_dt(_ov), "") if _ov in PROG else prog_row_for(_r)
     _r["prog"] = _pr[0] if _pr else None
     if not _pr:
         WARNINGS.append(f"run {_r['id']} ({stamp(_r['at'])}) has no PROGRESS.md result row")
-    elif _pr[2][0].isdigit() and not _r["invalid"] and int(_pr[2].split("/")[0]) != _r["pass"]:
+    elif _pr[2] and _pr[2][0].isdigit() and not _r["invalid"] and int(_pr[2].split("/")[0]) != _r["pass"]:
         WARNINGS.append(f"run {_r['id']}: PROGRESS.md {_pr[0]} says {_pr[2]}, the per-minute record says {_r['pass']}/{NMIN}")
     _r["refl"] = _r["prog"] if _r["prog"] in REFL else None
     if _r["refl"]:
@@ -566,11 +611,15 @@ def gpu_state():
     st = STATE
     reasons = st.get("reasons", {})
     def item(tag, share=None):
-        s = share if share is not None else share_of(tag)
+        q = is_g67(tag) and bool(G67)                              # innoferra 10-07: a single-engine lever (GPUs 6,7); its planned load is in labels
+        s = share if share is not None else ((LABELS.get(tag, {}).get("share") if q else None) or share_of(tag))
         return {"tag": tag, "share": s, "name": label_of(tag), "short": LABELS.get(tag, {}).get("short") or label_of(tag),
-                "why": cap(reasons.get(tag, ""), 15, f"reason for {tag}"), "needs_ok": tag in (st.get("needs_ok") or []), "load": load_for(s)[0]}
+                "why": cap(reasons.get(tag, ""), 15, f"reason for {tag}"), "needs_ok": tag in (st.get("needs_ok") or []),
+                "load": LABELS.get(tag, {}).get("load") or ("load not stated" if q else load_for(s)[0]),
+                "test": G67.get("protocol") if q else None, "single": q}
     g = {"form": "unknown", "fresh": False, "read_at": None, "running": None, "queue": [], "since": None, "state": None,
-         "between": st.get("between_runs"), "parked": st.get("parked") or [], "src": "node_state.txt" if NODE else "page_state.json"}
+         "between": st.get("between_runs"), "parked": st.get("parked") or [], "src": "node_state.txt" if NODE else "page_state.json",
+         "chain": (NODE or {}).get("chain")}
     if NODE:                                                   # authoritative: the node's own queue files (pull_node_state.sh)
         g["read_at"] = NODE["read_at"]
         g["queue"] = [item(t) for t in NODE["queue"]]
@@ -846,17 +895,53 @@ def header_html():
         res = ("no result, " + r["broke"]) if r["invalid"] else f"{r['pass']}/{NMIN}, " + ("closest" if r is CLOSEST else r["verdict"].lower())
         lt = load_for(r["share"], r["test"])[0] if r["invalid"] else m2(r["load"]) + " M"
         when = hm(r["at"]) if r["at"].date() == NOW.date() else stamp(r["at"])
-        newest = (f' · newest result <a href="#run-{esc(r["id"])}" title="{esc(f"{short_name(r)} at {lt}: {res}")}">{when}</a>'
-                  f' ({"no result" if r["invalid"] else str(r["pass"]) + "/" + str(NMIN)})')
+        one = single(r)                                            # innoferra 10-07: say when the newest result is one engine, not the node
+        tip_n = f"{short_name(r)} at {lt}: {res}" + (f" (one engine on GPUs 6,7, test {r['test']}; not a full-node result)" if one else "")
+        newest = (f' · newest result <a href="#run-{esc(r["id"])}" title="{esc(tip_n)}">{when}</a>'
+                  f' ({"no result" if r["invalid"] else str(r["pass"]) + "/" + str(NMIN)}{", one engine" if one else ""})')
         age_h = (NOW - r["at"]).total_seconds() / 3600
         if age_h > 6:
             newest += f' · <span class="warn">! no new result for {int(age_h)} h</span>'
     tip = (f"node 0008 queue read {hm(GPU['read_at'])} PDT from {GPU['src']}" if GPU.get("read_at") else "node queue not read")
+    if GPU.get("chain") == "g67":
+        tip += " · chain g67: one engine on GPUs 6,7 only (owner rule since Oct 7 14:41)"
     if GPU.get("running") and GPU["fresh"]:
         tip += f" · running: {GPU['running']['name']} at {GPU['running']['load']}"
     return ('<header class="hd"><h1>MiniMax-M3.1 on one 8×B300 node: progress toward ' + f'{TARGET:g}' + ' M TPM per GPU</h1><div class="hdline">'
             f'<p class="meta">Updated {stamp(NOW)} PDT{newest} · all times PDT · <a href="#howto">How to read this page</a></p>'
             f'<a class="gpu {GPU["form"]}" href="#recent" title="{esc(tip)}">{GPU.get("html") or esc(GPU["text"])}</a></div></header>')
+
+
+def single_status(plain_text=False):
+    """innoferra 10-07: one short sentence on the newest single-engine result (one engine on GPUs 6,7) and, when it scored fewer
+    minutes, the best single-engine run at about the same load (within 0.1 M, same production window). HTML unless plain_text.
+    First-screen budget (check_layout.sh): two lines in the 350 px answer cell = about 100 characters in system-ui, so the sentence
+    keeps to SINGLE_CHARS: first the best run's setup name goes, then the best clause, then the newest run's setup name."""
+    if not SINGLE_V:
+        return ""
+    n = SINGLE_V[0]
+    same = [r for r in SINGLE_V if r["test"] == n["test"] and abs(r["load"] - n["load"]) <= 0.1 and replay_window(r) == replay_window(n)]
+    b = max(same, key=lambda r: (r["pass"], r["at"]))
+    tiny = (lambda r: LABELS.get(r["id"], {}).get("tiny") or short_change(r))   # the layout word only (e.g. 'TP2')
+    def build(n_name, best, b_name):
+        """(plain text, page text) of one wording; the scores link to their run rows on the page"""
+        parts = [f"One engine on GPUs 6,7 ({n['test']}): newest ", (n, f"{n['pass']}/{NMIN} at {m2(n['load'])} M"),
+                 f" ({n_name + ', ' if n_name else ''}{hm(n['at'])})"]
+        if best:
+            parts += ["; best ", (b, f"{b['pass']}/{NMIN}")] + ([f" ({b_name})"] if b_name else [])
+        parts.append(".")
+        txt = "".join(x if isinstance(x, str) else x[1] for x in parts)
+        page = "".join(esc(x) if isinstance(x, str) else f'<a href="#run-{esc(x[0]["id"])}">{esc(x[1])}</a>' for x in parts)
+        return txt, (txt if plain_text else page)
+    best = b["pass"] > n["pass"]
+    for args in ((tiny(n), best, tiny(b)), (tiny(n), best, ""), (tiny(n), False, ""), ("", False, "")):
+        txt, out = build(*args)
+        if len(txt) <= SINGLE_CHARS:
+            break
+    return cap(out, 25, "single-engine status sentence")
+
+
+SINGLE_CHARS = 92     # innoferra 10-07: two lines in the answer cell (100 measured in system-ui at 390 and 1440 px; IBM Plex runs a little wider)
 
 
 def cells_html():
@@ -876,6 +961,10 @@ def cells_html():
               f'<p class="body">None on test {CUR} yet.' + (f' Closest: {c["pass"]}/{NMIN} at {m2(c["load"])} M ({stamp(c["at"])}).' if c else "")
               + (f' Test {PASS_PREV["test"]}: {NMIN}/{NMIN} up to {m2(PASS_PREV["load"])} M.' if PASS_PREV else "") + '</p>'
               + (f'<p class="lnk"><a href="#run-{c["id"]}">↳ run {hm(c["at"])}</a></p>' if c else "") + '</div>')
+    one = single_status()                                     # innoferra 10-07: the newest single-engine result, apart from the full-node answer
+    if one:
+        c1 = (c1.replace('<p class="lnk">', f'<p class="one">{one}</p><p class="lnk">', 1) if '<p class="lnk">' in c1
+              else c1[:-len("</div>")] + f'<p class="one">{one}</p></div>')
     ref = PASS_TOP or c
     c2 = ""
     if PROD_PEAK and ref:                                   # innoferra 10-06: production's REAL load (engine counters) in the replayed window
@@ -1039,6 +1128,8 @@ def mark_title(r):
     bits = [stamp(r["at"]), lc(r["name"]), f"{m2(r['load'])} M", f"{r['pass']}/{NMIN} minutes in SLA", r["verdict"].lower(), f"test {r['test']}"]
     if "@" in str(r["id"]):
         bits.append("half node (A/B twin)")
+    if single(r):
+        bits.append("one engine on GPUs 6,7 (quarter node), same load per GPU")
     if r["id"] in FRONT_IDS:
         bits.append("on the frontier of its test")
     return " · ".join(bits)
@@ -1546,7 +1637,7 @@ def legend_html():
         return '<svg class="sw" viewBox="0 0 16 16" aria-hidden="true">' + inner + "</svg>"
     items = []
     for t in sorted(SHOWN, key=tv_start, reverse=True):
-        name = "<b>" + esc(t) + "</b>" + (" current" if t == CUR else "")
+        name = "<b>" + esc(t) + "</b>" + (" current" if t == CUR else "") + (" one engine" if t in QTESTS else "")
         items.append('<span class="li">' + sw(f'<circle class="lf {tv_cls(t)}" cx="8" cy="8" r="{5.5 if t in HL else 3.5}"/>') + name + "</span>")
     items.append('<span class="li">' + sw('<circle class="lh" cx="8" cy="8" r="4.5"/>') + "half node</span>")
     items.append('<span class="li">' + sw('<path class="lk" d="M2 3 V9 H14"/>') + "frontier</span>")
@@ -1601,8 +1692,10 @@ def chart_html():
     if run:
         ph.append(f"▼ running since {hm(GPU['since']) if GPU.get('since') else '?'}: {lc(run['name'])} at {run['load']}")
     bold = f"test {HL[0]} (current)" if len(HL) == 1 and HL[0] == CUR else ("test " if len(HL) == 1 else "tests ") + join_and(HL)
+    qs = [t for t in SHOWN if t in QTESTS]                      # innoferra 10-07: single-engine tests drawn by default
     cap = [f"Colour shows the test; {bold} {'has' if len(HL) == 1 else 'have'} large marks and a bold line, and older tests have small marks.",
-           "A step line joins the frontier of each test: its full-node runs that no other run beats on both load and minutes."]
+           "A step line joins the frontier of each test: its full-node runs" + (f" ({join_and(qs)}: one-engine runs)" if qs else "")
+           + " that no other run beats on both load and minutes."]
     why = re.search(r"Rows below replay (traces that miss [^(;.,]+?) \(([^)]*)\)", TV.get(CUR, {}).get("divider", ""))
     cap.append("Compare runs only within one test" + (f": older tests replay {why.group(1)} ({why.group(2)})." if why else "."))
     wins = sorted({replay_window(r) for r in hlv} - {None})
@@ -1611,6 +1704,9 @@ def chart_html():
             + (f"The {join_and(HL)} runs on this chart replay the {join_and(wins)} production window{'s' if len(wins) > 1 else ''}. " if wins
                else (f"Test {CUR} replays {rec}. " if rec else ""))
             + f"The bold runs are from {stamp(first)} to {stamp(last) if first.date() != last.date() else hm(last)} PDT."]
+    for t in [t for t in VTESTS if t in QTESTS]:
+        more.append(f"Test {t} marks show one engine on GPUs 6,7 (a quarter of the node) at the node's load per GPU. "
+                    "Since Oct 7 14:41 the owner allows only GPUs 6,7. These runs are not full-node results, and the headline does not use them.")
     for t in HL:
         fr = FRONT.get(t, [])
         b15 = max([r for r in fr if r["pass"] >= NMIN], key=lambda r: r["load"], default=None)
@@ -1698,6 +1794,9 @@ def live_lead_row(ncols, where):
     cap(run["name"], 8, "live row name")
     if where == "recent":
         cells = td("t", t) + td("k c-what", what) + td("num c-load", esc(run["load"])) + td("c-min", esc(res)) + td("c-fails", "") + td("c-verd", verd)
+    elif where == "runs_load":                                     # innoferra 10-07: a runs table with a load column (single-engine panel)
+        cells = (td("t", t) + td("k c-what", what) + td("num c-load", esc(run["load"])) + td("c-min", esc(res))
+                 + "".join(td("c-x", "") for _ in range(ncols - 5)) + td("c-verd", verd))
     else:
         cells = (td("t", t) + td("k c-what", what) + td("c-min", esc(res)) + "".join(td("c-x", "") for _ in range(ncols - 4)) + td("c-verd", verd))
     return ((GPU["since"] or GPU["read_at"] or NOW).date()), f'<tr class="live">{cells}</tr>'
@@ -1742,6 +1841,9 @@ def recent_html():
         res = f"none passed (closest {CLOSEST['pass']}/{NMIN} at {m2(CLOSEST['load'])} M, {hm(CLOSEST['at'])})"
     else:
         res = "no valid run yet"
+    nq = sum(1 for r in wr if single(r))                         # innoferra 10-07: the pass statement is about the full node only
+    if nq:
+        res = "full node " + res + f" · {plural(nq, 'one-engine run')} (GPUs 6,7)"
     summary = (f"{stamp(start)} – {hm(NOW) if start.date() == NOW.date() else stamp(NOW)} PDT · {plural(len(wr), 'load run')}: {', '.join(vparts)} · {res}"
                + (f" · also {plural(ntest, 'test')}" if ntest else ""))
     head = ("<thead><tr><th>Time (PDT)</th><th>What we tried</th><th class=\"num\">" + ab("Load sent") + "</th><th>Minutes in SLA</th>"
@@ -1884,7 +1986,7 @@ def howto_html():
         rows.append(row([f"{m2(b['load'])} M" + ("" if cur else f" (test {b['test']} only)"), f"{esc(share_name(b['share']))} ({share_mult(b['share'])})",
                          f"{m2(b['pload'])} M", f"{b['pass']}/{NMIN}", f"{b['ppass']}/{NMIN}"]))
     for q in GPU.get("queue", []) + ([GPU["running"]] if GPU.get("running") else []):
-        if q.get("share") is not None and not any(b["share"] == q["share"] for b in BEST_CUR + EXTRA):
+        if q.get("share") is not None and not q.get("single") and not any(b["share"] == q["share"] for b in BEST_CUR + EXTRA):
             rows.append(row([esc(load_for(q["share"])[0]), f"{esc(share_name(q['share']))} ({share_mult(q['share'])})", "not measured", "–", "–"]))
     if GOAL_CONFIRMED and FULL:
         rows.append(row([f"{m2(TARGET)} M goal", f"{m2(TARGET / FULL['load'])}×", "—", "—", "—"]))
@@ -1944,7 +2046,7 @@ def runs_table(test, with_load=False):
     for k in keys:
         body.append(group_row(k, ncols))
         if run and test == (run.get("test") or CUR) and run.get("share") == k[1]:
-            body.append(live_lead_row(ncols, "runs")[1])
+            body.append(live_lead_row(ncols, "runs_load" if with_load else "runs")[1])
         rs = sorted(GROUPS[k], key=lambda r: (r["invalid"], -r["pass"], r["verdict"] != "Adopted", -r["at"].timestamp()))
         body.extend(run_row(r, with_load) for r in rs)
     head = ("<thead><tr><th>Run (PDT)</th><th>What changed</th>" + ('<th class="num">' + ab("Load sent") + "</th>" if with_load else "")
@@ -1995,14 +2097,16 @@ def v2_table():
 
 
 def older_html():
-    v3 = [r for r in RUNS if r["test"] != CUR]
+    v3 = [r for r in RUNS if r["test"] != CUR and r["test"] not in QTESTS]   # innoferra 10-07: single-engine tests have their own panel
     tests = sorted({r["test"] for r in v3}, reverse=True)
     blocks = []
     for t in tests:
         rs = [r for r in RUNS if r["test"] == t]
         b = best_of(rs)
-        summ = (f"Test {t}: the Sep 30 traffic before the two Oct 1 fixes (it replayed requests production had refused, and literal <image> text "
-                f"caused HTTP 500s) · {plural(len(rs), 'run')}, {stamp(min(r['at'] for r in rs))} – {stamp(max(r['at'] for r in rs))}"
+        rec = TV.get(t, {}).get("recorded")                   # innoferra 10-07: only test v3 has the pre-Oct 1 caveat; the others say what they replay
+        what = ("the Sep 30 traffic before the two Oct 1 fixes (it replayed requests production had refused, and literal <image> text caused HTTP 500s)"
+                if t == "v3" else ("production traffic of " + re.sub(r"^production windows? ", "", rec) if rec else "replays of production traffic"))
+        summ = (f"Test {t}: {what} · {plural(len(rs), 'run')}, {stamp(min(r['at'] for r in rs))} – {stamp(max(r['at'] for r in rs))}"
                 + (f" · closest {b['pass']}/{NMIN} at {m2(b['load'])} M" if b else ""))
         blocks.append(f'<details class="sub2"><summary>{esc(summ)}</summary>{runs_table(t, with_load=True)}</details>')
     blocks.append(v2_table())
@@ -2018,6 +2122,24 @@ def runs_html():
     return (f'<section class="panel" id="runs"><h2>Every run on the current test ({CUR}), by load</h2><p class="sub">{esc(sub)}</p>'
             '<p class="note"><a href="#chart">Chart → Overview</a> · Whole-run values are indicative; the minute count is the per-minute truth. '
             'Red marks a whole-run value that breaks the SLA.</p>' + runs_table(CUR) + "</section>")
+
+
+def single_html():
+    """innoferra 10-07: the single-engine tests (one engine on GPUs 6,7), newest test first, each with its runs by load"""
+    out = []
+    for t in sorted(QTESTS, key=tv_start, reverse=True):
+        rs = [r for r in RUNS if r["test"] == t]
+        if not rs:
+            continue
+        tv = TV.get(t, {})
+        span = f"runs {stamp(min(r['at'] for r in rs))}–{hm(max(r['at'] for r in rs))} PDT"
+        sub = (f"{tv.get('note', '')} Replays of production requests recorded {tv.get('recorded', '')}; {span}. "
+               f"A load passes only at {NMIN}/{NMIN}. Group rows show production on the same requests, scored minute by minute with the same rule.")
+        out.append(f'<section class="panel" id="single-{esc(re.sub(r"[^a-z0-9]+", "-", t.lower()))}"><h2>One engine on GPUs 6,7 (test {esc(t)}), by load</h2>'
+                   f'<p class="sub">{esc(sub.strip())}</p><p class="note">These runs are not full-node results: the headline, the answers and '
+                   'STANDINGS line 1 do not use them. Compare them within this test, or pair them with a full-node run on the same requests.</p>'
+                   + runs_table(t, with_load=True) + "</section>")
+    return "".join(out)
 
 
 def sim_html():
@@ -2300,6 +2422,7 @@ details.panel>summary h2{font-size:1.1rem}
 .cell .lead.hero{font-size:1.6rem;line-height:1.2}
 .cell .body{font-size:.95rem;margin:0 0 4px;line-height:1.4}
 .cell .lnk{font-size:.85rem;color:var(--muted);margin:0}
+.cell .one{font-size:.85rem;color:var(--muted);margin:0 0 4px;line-height:1.4}
 .chartcol{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;min-width:0}
 .chartcol h2{margin-bottom:4px}
 .lgd{display:flex;flex-wrap:wrap;gap:2px 12px;margin:0 0 4px;font-size:.85rem;color:var(--muted)}
@@ -2548,6 +2671,22 @@ def standings_md():
             w = r["raw"]
             L.append(f"| {stamp(r['at'])} | {r['name']} | {m2(r['load'])} M | {r['pass']}/{NMIN} | {r['ppass']}/{NMIN} at {m2(r['pload'])} M | "
                      f"{tt(w['ttft'][0])} / {tt(w['ttft'][2])} | {dec(w['decode_p50'])} | {r['verdict']}{', closest' if r is CLOSEST else ''} |")
+    for t in sorted(QTESTS, key=tv_start, reverse=True):          # innoferra 10-07: single-engine runs, apart from the full-node headline
+        rs = [r for r in RUNS if r["test"] == t]
+        if not rs:
+            continue
+        L += ["", f"## Single-engine test ({t}) runs, newest first: one engine on GPUs 6,7, not full-node results", "",
+              (single_status(plain_text=True) + " " if any(not r["invalid"] for r in rs) else "") + TV.get(t, {}).get("note", ""), "",
+              "| time (PDT) | change | load sent | minutes in SLA | production, same requests | TTFT p50 / p99 (s) | decode (tok/s) | verdict |",
+              "|---|---|---|---|---|---|---|---|"]
+        for r in rs:
+            if r["invalid"]:
+                L.append(f"| {stamp(r['at'])} | {r['name']} | – | no result ({r['broke']}) | – | – | – | Invalid |")
+            else:
+                w = r["raw"]
+                L.append(f"| {stamp(r['at'])} | {r['name']} | {m2(r['load'])} M | {r['pass']}/{NMIN} | {r['ppass']}/{NMIN} at {m2(r['pload'])} M | "
+                         f"{tt(w['ttft'][0])} / {tt(w['ttft'][2])} | {dec(w['decode_p50'])} | "
+                         f"{(r['vraw'][:1].upper() + r['vraw'][1:]) or r['verdict']} |")   # the role in the test: baseline, comparison, calibration
     L += ["", "## Production readings", "",
           "- Same requests as our replay, scored per minute with the same rule: "
           + "; ".join(f"{b['ppass']}/{NMIN} at {m2(b['pload'])} M" + ("" if b["test"] == CUR else f" (test {b['test']})") for b in BEST_CUR + EXTRA)
@@ -2609,7 +2748,7 @@ def learnings_html():
 
 def build():
     overview = (f'<div class="top">{cells_html()}{chart_html()}</div>' + recent_html() + sessions_html() + next_html() + why_html() + howto_html())
-    results = runs_html() + older_html() + sim_html() + queue_html() + log_html()
+    results = runs_html() + single_html() + older_html() + sim_html() + queue_html() + log_html()
     setup = prod_html() + setup_html() + gap_html() + launch_html()
     learn = learnings_html()
     tabs = [("overview", "Overview"), ("results", "Results"), ("setup", "Setup &amp; production"), ("learn", "Learnings")]
@@ -2631,6 +2770,14 @@ def checks(page, standings):
     # (1) STANDINGS.md line 1 = status_text(); the cells use the same status values
     if standings.splitlines()[0] != status_text():
         ERRORS.append("STANDINGS.md line 1 differs from status_text()")
+    # (1b) innoferra 10-07: the full-node headline (status line, answer cells, PASS_TOP/PASS_HARD, loads per share) never uses a single-engine run
+    for nm, xs in (("PASS_TOP", [PASS_TOP]), ("PASS_HARD", [PASS_HARD]), ("CLOSEST", [CLOSEST]), ("FULL", [FULL]), ("BEST_CUR", BEST_CUR), ("EXTRA", EXTRA)):
+        for x in xs:
+            if x is not None and single(x):
+                ERRORS.append(f"{nm} is the single-engine run {x['id']}: the full-node headline must not use it")
+    for x in SINGLE_V:
+        if x["id"] in status_text():
+            ERRORS.append(f"status line names the single-engine run {x['id']}")
     if CLOSEST and not PASS_TOP and nbsp_units(f"Closest: {CLOSEST['pass']}/{NMIN} at {m2(CLOSEST['load'])} M ({stamp(CLOSEST['at'])})") not in page:
         ERRORS.append("answer cell 1 does not carry the status() closest run")
     # (3) never '15/15' or 'passes' next to production unless production scored 15/15
