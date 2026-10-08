@@ -1505,9 +1505,14 @@ def chart_svg(variant):
                 MK[q["id"]] = p
         return None
     for t in [t for t in SHOWN if t in QTESTS]:
+        # a frontier mark takes the runs of its test tied to it (same minutes, load within TIE_TOL: the page's one-spot rule), as the
+        # older tests' frontier marks do; so two one-engine runs at one spot never fight for it
+        qgrp = {next(q["id"] for q in gp if q["id"] in FRONT_IDS): gp for gp in tie_groups([r for r in VALID if r["test"] == t])
+                if any(q["id"] in FRONT_IDS for q in gp)}
         for r in FRONT.get(t, []):
-            if r["id"] not in MK and not put_repair(new_mark("hf", [r], front=True) if t in HL else new_mark("fr", fgrp.get(r["id"], [r]), front=True)):
-                q_left_out.extend([r] if t in HL else fgrp.get(r["id"], [r]))
+            gp = qgrp.get(r["id"], [r]) if t in HL else fgrp.get(r["id"], [r])
+            if r["id"] not in MK and not put_repair(new_mark("hf" if t in HL else "fr", gp, front=True)):
+                q_left_out.extend(gp)
         fronts[t] = add_steps(t)
         nr_ = chart_newest()                            # the newest run's group first, then the groups with more minutes in SLA
         for gp in sorted(tie_groups([r for r in hlr if r["test"] == t and r["id"] not in MK and r not in q_left_out]),

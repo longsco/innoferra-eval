@@ -70,20 +70,21 @@ Data: since Oct 7 14:41 PDT the owner allows only GPUs 6,7. One-engine runs (a q
 | # | Item | What changed |
 |---|---|---|
 | 1 | No one-engine claim on the chart | The best label ("15/15 up to X M", "Y M to the goal") and the caption sentence ("Test T passes all 15 minutes up to X M") use full-node tests only. Build check 1c fails the render when a text with "up to", "to the goal", "Best:" or "pass" names a one-engine test, or gives a one-engine result that no full-node run matches, and does not say "one engine". It also fails the render when a "Passes" badge of a one-engine run does not say "one engine". |
-| 2 | Marks stay in their own minute (rule 2) | The nudge limits (0.45 minute, 0.05 M) are never doubled now. The doubled limits drew the DP2 one-engine run (7/15) at 7.9 minutes on the narrow chart. Order: full-node frontier marks, A/B twin halves with an arrow, other full-node marks, then one-engine marks, then the other twin halves. A one-engine frontier mark can lift the full-node marks in its way; they must find a spot inside their own limits again, else everything goes back. A mark with no free spot is not drawn on that chart, and "More about this chart" counts it. Build check 1d fails the render when a mark sits outside the limits. |
+| 2 | Marks stay in their own minute (rule 2) | The nudge limits (0.45 minute, 0.05 M) are never doubled now. The doubled limits drew the DP2 one-engine run (7/15) at 7.9 minutes on the narrow chart. Order: full-node frontier marks, A/B twin halves with an arrow, other full-node marks, then one-engine marks, then the other twin halves. A one-engine frontier mark takes the one-engine runs tied to it (same minutes, load within 0.06 M), as the older tests' frontier marks do. It can lift the full-node marks in its way; they must find a spot inside their own limits again, else everything goes back. The other one-engine marks go in this order: the newest run, then more minutes in SLA first. A mark with no free spot is not drawn on that chart, and "More about this chart" counts it. Build check 1d fails the render when a mark sits outside the limits. |
 | 3 | Older tests sit behind the checkbox | Test v5 is gray and shows only with the checkbox, because v5.1q took the third colour. This decision stays until the owner changes it. The caption under the chart now says: "Older tests are gray and show only with the checkbox." |
 | 4 | Production sentence | "Production on the same requests scores ..." in "More about this chart" uses full-node runs only. |
 | 5 | First screen | Answer cell 1 gives the newest one-engine result in one line ("One engine: newest N/15 at X M (HH:MM)."); its tooltip and STANDINGS.md give the whole sentence. Between runs, the header pill says "next: <name>" and hides it on phones; the load is in the tooltip. |
 
-Measured (check_layout.sh, system-ui; render on the data of Oct 7 21:00 PDT):
+Measured (check_layout.sh, system-ui; renders on the data of Oct 7 21:00-21:20 PDT):
 
 - First screen: the third answer cell at 390 px ends at 717 px (limit 750; before this round 736). The 12-hour table top at 1440 px is at 730 px (limit 760; before 749).
 - Marks: every mark sits inside 0.45 minute and 0.05 M. No full-node mark is left out. The DP2 one-engine run (7/15 at 7.46 M) is not drawn on the narrow chart: it sits between two full-node 7/15 marks (7.33 and 7.49 M), and no spot inside the limits is free there. The wide chart draws it 0.45 minute up.
 - Six simulations, each with a passing build, DOM test and layout check:
   - sim1: a fake 15/15 one-engine run at 7.80 M with a runs_meta.json entry but no label.
   - sim2 and sim2b: a fake 15/15 one-engine run at 7.50 M with no runs_meta.json entry, while a run is on the GPUs and between runs. Its mark is not drawn: it sits beside the full-node 15/15 at 7.41 M and the goal line.
-  - sim3: one-engine runs crowd 7.43-7.50 M (4, 8, 9, 11 and 12 of 15).
-  - sim4: a fake 15/15 Sep 30 one-engine run at 8.28 M, GPUs idle.
+  - sim3: one-engine runs crowd 7.42-7.50 M (the real runs plus fakes with 8, 9, 11 and 12 of 15).
+  - sim4: a fake 15/15 Sep 30 one-engine run at 8.28 M, GPUs idle. It is drawn on both charts.
   - sim5: sim4 between runs, with "no new result for 6 h" in the header (worst case: 737 px at 390 px, 754 px at 1440 px).
 - In every simulation the status line, the "Best:" note and the caption keep the full-node values (15/15 up to 7.41 M). A one-engine 15/15 run shows "✓ Passes, one engine".
+- In every simulation the only one-engine mark left out on the narrow chart is DP2; sim2 and sim2b also leave out the fake 15/15 at 7.50 M (both charts), and sim3 leaves out DP2 on the wide chart too.
 - Mutation test: with the old loops (one-engine tests in the best label and the caption), the sim2 render fails build check 1c on "Test v5.1q passes all 15 minutes up to 7.50 M" and "0.10 M is left to the goal".
