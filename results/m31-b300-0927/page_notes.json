@@ -1285,6 +1285,13 @@
    "tiny": "Cache 2.51",
    "load": "≈7.80 M (planned)",
    "share": 0.97
+  },
+  "g67_tp2mm_d1g1_hc30_v5rrc_knee78_q1": {
+   "name": "One engine: faithful Oct 3, quarter 1",
+   "short": "Faithful, quarter 1",
+   "tiny": "Quarter 1",
+   "load": "≈7.8 M (planned)",
+   "share": 0.97
   }
  },
  "plain_words": [
