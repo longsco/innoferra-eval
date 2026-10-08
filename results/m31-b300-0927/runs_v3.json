@@ -93667,5 +93667,202 @@
 "gpus": 2,
 "harness": "g67",
 "done_epoch": 1791430194
+},
+{
+"tag": "g67_tp2mm_s30_127x_q0",
+"partial": true,
+"done_utc": null,
+"requests": 1289,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 3.492,
+"prod_tpm_gpu": 3.5,
+"hit": 0.9503,
+"prod_hit": 0.969,
+"ttft": [
+1.3980196139309555,
+8.901431120932102,
+29.570520424982533
+],
+"prod_ttft": [
+0.367,
+3.888,
+10.646
+],
+"decode_p50": 56.544747530256046,
+"prod_decode_p50": 62.5,
+"passed": 1,
+"prod_passed": 6,
+"minutes": [
+{
+"min": 0,
+"n": 197,
+"err": 0,
+"ttft_p50": 1.7562367969658226,
+"ttft_p99": 33.19446726795286,
+"decode_p50": 49.31260037612356,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 188,
+"err": 0,
+"ttft_p50": 0.862004155991599,
+"ttft_p99": 11.423171160975471,
+"decode_p50": 61.012409452595705,
+"pass": true,
+"fails": []
+},
+{
+"min": 2,
+"n": 184,
+"err": 0,
+"ttft_p50": 1.5005092709325254,
+"ttft_p99": 35.77527761994861,
+"decode_p50": 44.9759704795743,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 205,
+"err": 0,
+"ttft_p50": 1.690993916010484,
+"ttft_p99": 28.89539588196203,
+"decode_p50": 58.11753129490941,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 206,
+"err": 0,
+"ttft_p50": 1.625448030885309,
+"ttft_p99": 26.995897796936333,
+"decode_p50": 58.48230908126552,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 5,
+"n": 206,
+"err": 0,
+"ttft_p50": 1.149921664968133,
+"ttft_p99": 15.032815290847793,
+"decode_p50": 55.461676351442165,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99",
+"decode"
+]
+},
+{
+"min": 6,
+"n": 103,
+"err": 0,
+"ttft_p50": 1.4215361941605806,
+"ttft_p99": 20.932318798964843,
+"decode_p50": 74.06472432610305,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 197,
+"err": 0,
+"ttft_p50": 0.482,
+"ttft_p99": 10.832,
+"decode_p50": 58.139534883720934,
+"pass": false,
+"fails": [
+"decode"
+]
+},
+{
+"min": 1,
+"n": 188,
+"err": 0,
+"ttft_p50": 0.346,
+"ttft_p99": 10.793,
+"decode_p50": 61.279926335174956,
+"pass": true,
+"fails": []
+},
+{
+"min": 2,
+"n": 184,
+"err": 0,
+"ttft_p50": 0.349,
+"ttft_p99": 10.708,
+"decode_p50": 65.31531531531532,
+"pass": true,
+"fails": []
+},
+{
+"min": 3,
+"n": 205,
+"err": 0,
+"ttft_p50": 0.365,
+"ttft_p99": 10.661,
+"decode_p50": 60.99078914612896,
+"pass": true,
+"fails": []
+},
+{
+"min": 4,
+"n": 206,
+"err": 0,
+"ttft_p50": 0.359,
+"ttft_p99": 10.665,
+"decode_p50": 66.47623993767853,
+"pass": true,
+"fails": []
+},
+{
+"min": 5,
+"n": 206,
+"err": 0,
+"ttft_p50": 0.369,
+"ttft_p99": 10.635,
+"decode_p50": 62.43756243756244,
+"pass": true,
+"fails": []
+},
+{
+"min": 6,
+"n": 103,
+"err": 0,
+"ttft_p50": 0.322,
+"ttft_p99": 10.514,
+"decode_p50": 65.94399277326109,
+"pass": true,
+"fails": []
+}
+],
+"gpus": 2,
+"harness": "g67"
 }
 ]

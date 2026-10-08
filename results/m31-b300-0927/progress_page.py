@@ -1419,8 +1419,8 @@ def chart_svg(variant):
     fronts = {t: add_steps(t) for t in SHOWN if t not in QTESTS}
     # 2. the bold tests' A/B twins with a measured change, each with a bracket arrow on its left from A to B; then their other runs.
     # Bold runs with the same minutes whose spots overlap (and no frontier run beside them) split evenly up and down inside the minute
-    # (single-engine runs too: a full-node mark may move inside its limits to leave room for one).
-    hb = sorted([r for r in VALID if r["test"] in HL and r["id"] not in MK], key=lambda r: (r["pass"], r["load"]))
+    # (full-node and twin runs only: one-engine runs take free spots afterwards or are left out and counted).
+    hb = sorted([r for r in VALID if r["test"] in HL and r["id"] not in MK and not single(r)], key=lambda r: (r["pass"], r["load"]))   # innoferra 10-07 skeptic: one-engine runs never shift full-node/twin spots
     near = 2 * OUT["hh"] + GAP
     i = 0
     while i < len(hb):
