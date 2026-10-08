@@ -78,7 +78,7 @@ Data: since Oct 7 14:41 PDT the owner allows only GPUs 6,7. One-engine runs (a q
 Measured (check_layout.sh, system-ui; renders on the data of Oct 7 21:00-21:20 PDT):
 
 - First screen: the third answer cell at 390 px ends at 717 px (limit 750; before this round 736). The 12-hour table top at 1440 px is at 730 px (limit 760; before 749).
-- Marks: every mark sits inside 0.45 minute and 0.05 M. No full-node mark is left out. The DP2 one-engine run (7/15 at 7.46 M) is not drawn on the narrow chart: it sits between two full-node 7/15 marks (7.33 and 7.49 M), and no spot inside the limits is free there. The wide chart draws it 0.45 minute up.
+- Marks: every mark sits inside 0.45 minute and 0.05 M. No full-node mark is left out. One-engine runs never move full-node or twin marks (10-07 skeptic fix): they take a free spot inside the limits or are left out and counted in the caption. The DP2 one-engine run (7/15 at 7.46 M) sits between two full-node 7/15 marks (7.33 and 7.49 M), so neither chart draws it.
 - Six simulations, each with a passing build, DOM test and layout check:
   - sim1: a fake 15/15 one-engine run at 7.80 M with a runs_meta.json entry but no label.
   - sim2 and sim2b: a fake 15/15 one-engine run at 7.50 M with no runs_meta.json entry, while a run is on the GPUs and between runs. Its mark is not drawn: it sits beside the full-node 15/15 at 7.41 M and the goal line.
