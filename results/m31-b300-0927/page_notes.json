@@ -1220,6 +1220,71 @@
    "short": "TP2, Sep 30",
    "load": "≈8.28 M (planned)",
    "share": 1.29
+  },
+  "g67_tp2mm_d1g1_knee77_q0": {
+   "name": "One engine: best stack, Oct 3 at 7.94 M",
+   "short": "Best stack, 7.94 M",
+   "tiny": "7.94 M"
+  },
+  "g67_tp2mm_d1p8_s30_127x_q0": {
+   "name": "One engine: delayer 8 passes, Sep 30 1.29x",
+   "short": "8 passes, Sep 30",
+   "tiny": "8 passes"
+  },
+  "g67_tp2mm_d1p8_hc30_knee749_q0": {
+   "name": "One engine: host cache ratio 3.0 (8 passes)",
+   "short": "Host cache 3.0",
+   "tiny": "Cache 3.0"
+  },
+  "g67_tp2mm_d1p8_slru_knee749_q0": {
+   "name": "One engine: segmented-LRU cache eviction",
+   "short": "SLRU eviction",
+   "tiny": "SLRU"
+  },
+  "g67_tp2mm_d1g1_hc30_knee749_q0": {
+   "name": "One engine: host cache ratio 3.0, 12 passes",
+   "short": "Cache 3.0, 12 passes",
+   "tiny": "Cache 3.0"
+  },
+  "g67_tp2mm_d1g1_hc30_v5rrc_knee78_q0": {
+   "name": "One engine: faithful Oct 3 replay, 0.97x load",
+   "short": "Faithful Oct 3",
+   "tiny": "Faithful"
+  },
+  "g67_tp2mm_d1g1_hc30_knee77_q0": {
+   "name": "One engine: cache 3.0, Oct 3 at 7.94 M",
+   "short": "Cache 3.0, 7.94 M",
+   "tiny": "7.94 M",
+   "load": "≈7.94 M (planned)",
+   "share": 0.99
+  },
+  "g67_tp2mm_d1g1_hc30_cs50_v5rrc_knee78_q0": {
+   "name": "One engine: fair chunk share 0.5, faithful Oct 3",
+   "short": "Chunk share 0.5",
+   "tiny": "Share 0.5",
+   "load": "≈7.80 M (planned)",
+   "share": 0.97
+  },
+  "g67_tp2mm_d1g1_hc30_s30_127x_q0": {
+   "name": "One engine: cache 3.0, Sep 30 1.29x",
+   "short": "Cache 3.0, Sep 30",
+   "tiny": "Sep 30",
+   "load": "≈8.4 M (planned)",
+   "share": 1.31
+  },
+  "g67_tp2mm_d1g1_hc30_s30_114x_q0": {
+   "name": "One engine: cache 3.0, Sep 30 1.15x",
+   "short": "Cache 3.0, Sep 30",
+   "tiny": "Sep 30",
+   "load": "≈7.47 M (planned)",
+   "share": 1.16
+  },
+  "g67_tp2mm_d1g1_v5rrc_knee78_q0": {
+   "name": "One engine: faithful Oct 3, cache 2.51",
+   "short": "Faithful, cache 2.51",
+   "tiny": "Cache 2.51",
+   "load": "≈7.80 M (planned)",
+   "share": 0.97
   }
  },
  "plain_words": [
