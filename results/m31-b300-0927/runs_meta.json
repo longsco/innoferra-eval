@@ -2522,6 +2522,16 @@
    "change": "cache",
    "verdict": "comparison",
    "why": "14/15 at 7.52 M/GPU vs 15/15 with ratio 2.51 (production 13/15). The miss is minute 0 at TPS 58 (ratio 2.51: 66). Paired: TPS -2.0 tok/s (CI -2.8..-1.0, at the edge of the A/A noise), first token x1.030. On this decode-bound day the larger host pool is neutral; it stays adopted for its large Oct 3 gain."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_v5rrc_knee78_q1",
+   "at": "2026-10-08 15:49",
+   "protocol": "v5.1rq",
+   "share": 0.98,
+   "name": "one engine (GPUs 6,7): best stack, faithful Oct 3 replay on quarter 1 at 0.98x production's real load",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "11/15 at 7.87 M/GPU including rebuilt turns (6.93 M logged); production 0/15. Quarter 0 scored 12/15. The misses (minutes 0-1 and 5-6) follow giant cold prompts of 591k, 423k and 786k tokens, as quarter 0's misses followed 811k and 593k ones. Each ties up the single engine for about 15-20 s."
   }
  ],
  "g67_rule": {
