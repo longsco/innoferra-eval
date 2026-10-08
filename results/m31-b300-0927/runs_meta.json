@@ -2312,6 +2312,16 @@
    "change": "load",
    "verdict": "comparison",
    "why": "5/15 at 8.42 M/GPU (page rule); every miss is decode (TPS 44-59 tok/s) while first token stays 0.45-1.8 s; production 13/15 on the same requests. Paired with the full-node DP2 run (14/15 at 8.28 M): first token x0.679, TPS -20.1 tok/s. On Sep 30's decode-bound high load TP2's decode cost decides."
+  },
+  {
+   "tag": "g67_dp2mm_s30_127x_q0",
+   "at": "2026-10-07 22:52",
+   "protocol": "v5.1q",
+   "share": 1.31,
+   "name": "one engine (GPUs 6,7): DP2 + image fast path (adopted next220) on Sep 30 at 1.29x real load (8.44 M/GPU), quarter 0",
+   "change": "layout",
+   "verdict": "comparison",
+   "why": "10/15 at 8.44 M/GPU vs TP2 + fast path 5/15 on the same 3,072 requests; production 13/15. Paired against TP2: first token x1.78 (CI 1.70..1.85), TPS +23.8 tok/s (x1.43). On the decode-bound Sep 30 high load DP2 wins; on the Oct 3 knee TP2 wins (11 vs 7 of 15)."
   }
  ],
  "g67_rule": {
