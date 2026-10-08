@@ -2422,16 +2422,6 @@
    "change": "load",
    "verdict": "baseline",
    "why": "11/15 at 7.68 M/GPU (production 12/15 on these requests). Sep 30 ladder of this stack: 7.47 M 15/15, 7.68 M 11/15, 8.38-8.42 M 11 and 9/15."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_knee77_q0",
-   "at": "2026-10-08 07:24",
-   "protocol": "v5.1q",
-   "share": 0.99,
-   "name": "one engine (GPUs 6,7): TP2 + fast path + D1 + G1, Oct 3 at 7.94 M/GPU, knee search",
-   "change": "load",
-   "verdict": "baseline",
-   "why": "7/15 at 7.94 M/GPU (production 0/15 on these requests). Oct 3 ladder of this stack: 7.47 M 12/15 (twice), 7.94 M 7/15, 8.30 M 3/15. 35 follow-ups prefilled their whole session again after 2.5-15 minutes idle. Production served them from cache. They carry 4.9 M of our 5.0 M extra uncached tokens (+45%)."
   }
  ],
  "g67_rule": {
