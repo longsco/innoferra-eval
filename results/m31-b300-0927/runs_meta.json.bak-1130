@@ -2472,16 +2472,6 @@
    "change": "cache",
    "verdict": "adopted",
    "why": "13/15 at 7.47 M/GPU vs 12/15 with ratio 2.51 (production 0/15). Paired: TPS +9.8 tok/s (CI +7.9..+11.6), first token x0.867 (CI 0.844..0.889); the 8-pass pair gave +8.9 tok/s and x0.942, so the gain repeats. Uncached 10.1 M vs production 11.1 M. Misses: minute 0 at TPS 60.0 (rule: above 60) and minute 13 by one gateway 502 (keep-alive race, harness bug, fixed for the next runs). Adopted for single-engine tests; a full node fits about ratio 2.85."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_hc30_v5rrc_knee78_q0",
-   "at": "2026-10-08 11:19",
-   "protocol": "v5.1rq",
-   "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack (TP2 + fast path + D1 + G1 + host ratio 3.0), FAITHFUL Oct 3 replay (rebuilt bodies + rebuilt lost turns) at 0.97x production's real load",
-   "change": "load",
-   "verdict": "baseline",
-   "why": "12/15 at 7.80 M/GPU including rebuilt turns (6.89 M logged; production's real load 8.01 M); production 0/15 on these requests. Minutes 0-11 pass at up to 8.4 M/GPU. Minutes 12-14 fail behind two genuine cold giant prompts (811k and 593k tokens; production had them cold too): a chunked giant takes the whole prefill budget, so other new prompts wait 20-30 s. Fair chunk share 0.5 queued."
   }
  ],
  "g67_rule": {

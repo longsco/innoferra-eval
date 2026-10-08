@@ -1,0 +1,38 @@
+# DYN67-DYNTREE230-PARSER skeptic verdict: READY WITH FIXES
+
+## Blocking
+- Section 5 safety gate is unsafe against the chain running now. This blocks any GPU run built from that section; it does not block the CPU artifacts. The running chain_g67 (pid 3211702) started 16:38 PDT Oct 7. That is before the M1/M2 chain fix (chain_g67.sh mtime 17:24 and 18:16 PDT Oct 7). So it never writes g67/lever.pgid (0 'process group' lines in g67.log). Its lever also does not hold gpu67.lock after launch_g67.sh exits. [measured] At 10:13 and 10:35 PDT, lever g67_tp2mm_d1g1_hc30_knee749_q0 was in its replay (g67-replay up, m31-tp2-3 serving). /proc/locks showed no lock on g67m/gpu67.lock, and g67/lever.pgid did not exist. [measured] g67_gpu_holders returns 0 for our own m31-tp2-3, and g67_eightgpu stays quiet. [code: g67_lib.sh:71-111] So if an operator sets HOLD mid-lever, every gate in the spec passes. The spec then says to remove m31-tp2-3 and take :8000. That kills a running lever and takes over its traffic. Fix: require the chain to be idle at HOLD, as runner/run_dyn67.sh chain_idle() already does [code: runner/run_dyn67.sh:195-234]. The idle check: (1) chain.pid's only children are the HOLD-loop sleep, in 3 samples; (2) g67.log shows 'g67/HOLD present ... waiting' after the newest 'lever ... done'; (3) no g67-replay container exists; (4) m31-tp2-3 is never removed automatically, only by hand after its log is kept. Hold the flock for the whole run.
+
+## Fixes applied or needed
+- APPLIED: none inside the build's copy. 0 build files changed; its MANIFEST.sha256 still checks 77/77 OK. All my work is in /data01/minimax31/serving/next250/dyn67/sk230p/ (my MANIFEST.sha256 sha 4dfc972bf060534c). I deleted my scratch dirs work/ and ptest/. [measured]
+- NEEDED (spec, blocking for GPU): replace the lever.pgid / flock gate with the chain-idle check above.
+- NEEDED (report text): '632 cut answers at 4 points' is wrong. The four streamed cut points total 482 (cut_h 150, cut_p1m 147, cut_p1e 150, cut_inv2 35). The 150 non-stream cut answers make 632. The total is 1,075. [measured: st_xcompare]
+- NEEDED (report text): 'first tool chunk 1/2/3' is true only for tool-first answers. With reasoning it is 1/3/3; content-first is 2/3/3. 'Held to the end 0' leaves out cut_h, where 150/150 are held because the answer ends at the header. [measured: compare.json]
+- NEEDED (repro): parser/vbst has no gwenv.json, so vb_fork_types.py crashed silently (stderr went to /dev/null). fork_types.json is empty: its sha e3b0c442... is the empty-file hash, and it is in the MANIFEST. With the file added, in my copy only: 57/58 turns equal; the 1 difference is whitespace only. [measured]
+- NEEDED (rerun hygiene): f1/ec_run.sh deletes and rebuilds the shared f1/gwc/trail. The st, vbst and m3 containers mount that directory while they run. f1_more.sh ran at the same time as st and vbst. No effect this time: all 13 runs used gw-copy 6b7523f4ade90e39, and the live shim did not change. [measured] Use a per-run gateway copy.
+- RECOMMENDED: the runner should refuse to continue unless the worker boot log says 'SGLANG_MM_PASS_IDS_WITH_MEDIA_ENGINE=1: ... engine fast path on'. If the self-test fails, the fast path turns off and only an INFO line shows it. [code: minimax_m3_vl.py:397-406]
+- RECOMMENDED (privacy, LOW): real rows store name_h / args_h as unsalted sha256[:16]. Tool names are low-entropy, so a dictionary can reverse them. Use a per-run salt, or keep raw rows in tmpfs. The out dirs are also chmod 777 on a node shared by 16 users.
+- RECOMMENDED (test practice): 'All 6 protected trees refuse apply' suggests apply was run against live trees. That relies on the code under test to protect live state. [inferred, MED] No harm happened: next230/tree is unchanged. Test protected() as a pure function instead, as my T6 does.
+
+## Notes
+Did we adopt Dynamo? No. Our serving test stack is still SGLang plus our gateway. The Oct 7 rung-10a twin failed: A passed 12/15 minutes and B (Dynamo) passed 2/15. TTFT p50 was 1.96 s for A and 5.37 s for B. [measured: bench/stress2-0927.log] Production already runs a Dynamo KV router, and the user's long-term direction (10-03) is to adopt Dynamo. [memory] This build is CPU-only groundwork. Dynamo has never booted with TP2 on GPUs 6,7.
+
+What I re-checked on node 0008 (CPU only):
+- dyntree230: diff -rq against next230/tree shows exactly 4 entries. No file is hard-linked to the live tree. The launcher mounts DEV_SRC read-only. [measured; code: launch_dev67.sh:120]
+- Patcher S4: 30 of 30 of my adversarial tests pass on scratch copies. They cover symlinks, a trailing slash, python and sglang subdirs, the marker at tree root and python root, an edited patched file, a stale backup, no base layer, and --check on the real dyntree230 (file unchanged). [measured]
+- F1: I recompared every set from the raw rows: 673 requests x 12 passes, 330 fresh, 28 + 99 edge. All are identical; the only stock-vs-stock_dp2 field that differs is routed_dp_rank, as intended. The timing numbers reproduce: 2.18 s vs 0.047 s, and with real-size images 2.38 s vs 0.121 s (p99 1.39 s). [measured]
+- F1, my new 24-body format set: EXIF-rotated JPEG (RGB, gray, CMYK), WEBP (lossy, alpha, animated), APNG, palette+tRNS, 16-bit, LA, 1-bit, BMP, TIFF, 2000x28, 28x2000, 4000x3000, 7000x5000, a wrong MIME type, mixed formats. Result: 24/24 identical across live/stock/fast/verify. VERIFY: 23 same, 0 different. 1 identical error (a 1x500 image fails the aspect-ratio check). [measured]
+- mm_hashes: the harness never passes them. The caller-hash override runs after process_mm_data_async, so flag-on/off identity holds. [code: tokenizer_manager.py:1103-1123]
+- M4 diff: the m3v2 diff plus the incremental diff equals the full diff. Only the shipped core contains the M4 log strings; the m3v2 and rp cores do not. [measured]
+- M4 crate tests reproduce: stock 338 pass / 19 fail; M4 flag on 337 / 20 (1 expected new failure); m4_announced 7/7 with the flag off and on. [measured]
+- M4, my randomized test: 127,400 runs for each flag state. 0 calls with empty or non-object arguments. 0 errors after a name went out. 0 chunking mismatches on well-formed input. 0 key mismatches in 36,295 cut runs. [measured]
+- M4 frontend tests: real turns 1,075/1,075 equal to m3v2 for both variants. vbst numbers reproduce: m3v2 59 bad arguments vs M4 0; L==Lo 2,240; L==Lrp 1,856. The 13 remaining cut-call key differences are all T24 cases that get {} (documented). [measured]
+- M3: confirmed. Cache hit share 16.5-18.8%. Ids equal 3,973/3,973. Paired timing differences are inside the A/A drift. Bad split: cache on gives 192 vs 191 tokens, and fast 244 vs stock 243; cache off gives all equal. [measured] The old harness never sets the variable. [code: grep]
+- Runner-spec items match the code: launch_g67.sh:80-84, lib_dyn.sh:194-201, and the /engine flush route [code: replay_v2_cl.py:575-578]. The only safety problem is the gate in 'blocking'.
+
+Safety and privacy:
+- No build script uses --gpus, --device, --privileged or host network. The docker default runtime is runc. All containers used --network none, --cpus <= 8 and --rm, and none are left. No locks, HOLD or STOP files were created. No live file changed. [measured]
+- No request ids or keys in the outputs. Free text appears only in synthetic rows. 0 real message snippets in any output row; the 8 snippet hits are coincidental text in cargo logs, MANIFEST.sha256 and shim.py. [measured]
+- The build ran up to 5 CPU containers at nice 19 while levers ran. [inferred, LOW] This may have disturbed lever timing slightly.
+
+My scripts and logs are in /data01/minimax31/serving/next250/dyn67/sk230p/ on node 0008.

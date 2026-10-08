@@ -82,16 +82,6 @@
    "gpus": 2,
    "name": "one engine on GPUs 6,7 (quarter node), same load per GPU",
    "note": "Since Oct 7 14:41 PDT the owner allows only GPUs 6,7. Each run uses one engine (2 GPUs, a quarter of the node). It replays quarter 0 of the node's request plan at the same load per GPU (within 1-2%). The load per minute swings more than on the full node (0.44-1.74x), so minute counts are noisier. Paired CIs cover request sampling only; the one-engine A/A spread is about 3.5% first token and 2 tok/s."
-  },
-  "v5.1rq": {
-   "start": "2026-10-08 11:19",
-   "recorded": "Oct 3 06:30 PDT (lb01+lb02+lb03) plus the requests the hub log cut at 2 MiB (rebuilt) and the turns lost with hub log parts (rebuilt); one engine replays quarter 0",
-   "divider": "Test v5.1rq starts here (Oct 8 11:19): the most faithful Oct 3 replay. It adds the 3.5% of requests the hub log cut at 2 MiB and the turns lost with missing log parts, both rebuilt. One engine (GPUs 6,7) replays quarter 0. The load per GPU includes the rebuilt turns; the per-minute records count only logged requests. Compare within this test only.",
-   "prod_errors": "production's own errors on the same requests",
-   "single_engine": true,
-   "gpus": 2,
-   "name": "one engine on GPUs 6,7 (quarter node), same load per GPU",
-   "note": "Since Oct 7 14:41 PDT the owner allows only GPUs 6,7. Each run uses one engine (2 GPUs, a quarter of the node). It replays quarter 0 of the node's request plan at the same load per GPU (within 1-2%). The load per minute swings more than on the full node (0.44-1.74x), so minute counts are noisier. Paired CIs cover request sampling only; the one-engine A/A spread is about 3.5% first token and 2 tok/s."
   }
  },
  "share_names": {
