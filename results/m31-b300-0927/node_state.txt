@@ -1,4 +1,4 @@
-# read_utc 2026-10-08T23:29:53Z
+# read_utc 2026-10-08T23:39:40Z
 # chain g67
 ## queue
 g67_tp2mm_d1g1_hc30_v5rrc_knee78_q2 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl 0.97 QUARTER=2 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--clos
@@ -7,7 +7,6 @@ g67_tp2mm_d1g1_hc30_v5rrc_knee78_q2 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1
 22:05:17 g67_tp2mm_d1g1_hc30_v5rrc_knee78_q1 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl 0.97 QUARTER=1 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY_FILE=replay_v2_cl.py "REPLAY_EXT
 22:51:52 g67_tp2mm_d1g1_hc30_knee749_q0_r2 /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl 0.45 QUARTER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --
 ## markers
-18:19:32 ===== lever g67_tp2mm_d1g1_hc30_knee77_q0: traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl frac 0.65; QUARTE
 19:06:14 ===== lever g67_tp2mm_d1g1_hc30_knee77_q0 done
 19:35:45 ===== lever g67_tp2mm_d1g1_hc30_cs50_v5rrc_knee78_q0: traces /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl frac 0.97; QUARTER=0 QPLAN=/k/g6
 20:21:10 ===== lever g67_tp2mm_d1g1_hc30_cs50_v5rrc_knee78_q0 done
@@ -19,3 +18,4 @@ g67_tp2mm_d1g1_hc30_v5rrc_knee78_q2 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1
 22:49:37 ===== lever g67_tp2mm_d1g1_hc30_v5rrc_knee78_q1 done
 22:50:37 ===== CHAIN_G67 DONE
 22:51:52 ===== lever g67_tp2mm_d1g1_hc30_knee749_q0_r2: traces /tr/v5/w1003_1330/b00.jsonl,/tr/v5/w1003_1330/b01.jsonl,/tr/v5/w1003_1330/b02.jsonl frac 0.45; QU
+23:39:05 ===== lever g67_tp2mm_d1g1_hc30_knee749_q0_r2 done

@@ -2532,6 +2532,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "11/15 at 7.87 M/GPU including rebuilt turns (6.93 M logged); production 0/15. Quarter 0 scored 12/15. The misses (minutes 0-1 and 5-6) follow giant cold prompts of 591k, 423k and 786k tokens, as quarter 0's misses followed 811k and 593k ones. Each ties up the single engine for about 15-20 s."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_knee749_q0_r2",
+   "at": "2026-10-08 16:39",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine (GPUs 6,7): best stack with host cache ratio 3.0, Oct 3 knee 7.48 M/GPU, repeat",
+   "change": "repeat",
+   "verdict": "baseline",
+   "why": "14/15 at 7.48 M/GPU (first run 13/15, one minute lost to the gateway keep-alive 502, now fixed; production 0/15). Paired A/A: first token x0.987, TPS +1.5 tok/s, inside the one-engine noise. The new stack gives 13-14/15 on this window."
   }
  ],
  "g67_rule": {
