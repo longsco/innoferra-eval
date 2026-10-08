@@ -2392,6 +2392,16 @@
    "change": "calibration",
    "verdict": "calibration",
    "why": "9/15 vs 11/15 for the identical first run; paired between the two: first token x0.995, TPS -0.9 tok/s. Run-to-run noise in paired metrics is about 1%, but minute counts swing by 2 because many minutes sit near 60 tok/s."
+  },
+  {
+   "tag": "g67_tp2mm_d1q35_knee749_q0",
+   "at": "2026-10-08 05:02",
+   "protocol": "v5.1q",
+   "share": 0.94,
+   "name": "one engine (GPUs 6,7): TP2 + fast path + D1 with queue trigger 0.35 (was 0.25) + G1, Oct 3 knee 7.46 M/GPU",
+   "change": "scheduler",
+   "verdict": "no clear change",
+   "why": "9/15 vs 12/15 for trigger 0.25 on the same 1,482 requests (production 0/15). Paired with 0.25: first token x0.970 (inside the A/A noise), TPS +3.1 tok/s. Paired metrics are flat to slightly better, so the lower minute count is noise near the limits. The trigger stays 0.25."
   }
  ],
  "g67_rule": {
