@@ -2352,6 +2352,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "1/15 at 8.31 M/GPU; production 0/15 on the same requests. The plain TP2 knee on the Oct 3 mix lies between 7.47 M (11/15) and 8.31 M (1/15). A D1 + G1 run at this load is queued."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_knee749_q0",
+   "at": "2026-10-08 01:57",
+   "protocol": "v5.1q",
+   "share": 0.94,
+   "name": "one engine (GPUs 6,7): TP2 + image fast path + D1 (pass-capped delayer) + G1 (all even decode graph sizes), Oct 3 knee 7.47 M/GPU",
+   "change": "scheduler",
+   "verdict": "under review",
+   "why": "12/15 at 7.47 M/GPU vs plain TP2 + fast path 11/15 on the same 1,482 requests (production 0/15). Paired: TPS +3.5 tok/s (CI +1.7..+4.5), first token x1.086 (CI 1.061..1.107). With the Sep 30 1.29x result (11/15 vs 5/15), D1 + G1 helps on both windows."
   }
  ],
  "g67_rule": {
