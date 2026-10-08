@@ -92864,5 +92864,60 @@
 ],
 "gpus": 2,
 "harness": "g67"
+},
+{
+"tag": "g67_tp2mm_mr48_knee733_q0",
+"partial": true,
+"done_utc": null,
+"requests": 17,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 0.08,
+"prod_tpm_gpu": 0.084,
+"hit": 0.9777,
+"prod_hit": 0.979,
+"ttft": [
+0.7598449629731476,
+1.1166841271333396,
+1.2744112240616232
+],
+"prod_ttft": [
+2.644,
+10.195,
+10.21
+],
+"decode_p50": 74.91051613968366,
+"prod_decode_p50": 51.73255246461689,
+"passed": 1,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 17,
+"err": 0,
+"ttft_p50": 0.7598449629731476,
+"ttft_p99": 1.2744112240616232,
+"decode_p50": 74.91051613968366,
+"pass": true,
+"fails": []
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 17,
+"err": 0,
+"ttft_p50": 2.644,
+"ttft_p99": 10.21,
+"decode_p50": 51.73255246461689,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+],
+"gpus": 2,
+"harness": "g67"
 }
 ]
