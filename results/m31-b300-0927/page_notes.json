@@ -41,6 +41,9 @@
    "prod_errors": "504 timeouts",
    "prod_errors_src": "runs_meta.json production_scoring_note: on v3.1 the requests production refused (429) are not replayed"
   },
+  "v3.2": {
+   "recorded": "Sep 30 13:10–13:25 PDT, closed loop (our own answers feed the next turns); 7 runs use the Oct 1, Oct 3 and Oct 5 windows; traces without lb03"
+  },
   "v3": {
    "start": "2026-09-30 22:15",
    "recorded": "Sep 30 13:10–13:25 PDT",
@@ -88,7 +91,7 @@
   "1.0": "full"
  },
  "labels": {
-  "_note": "Plain names (8 words or fewer) for every run tag and queued tag; 'short' (5 words or fewer) is used in the header pill and the chart callout. 'base' = the changes it sat on top of. 'why' overrides runs_meta.json's reason when that reason is wrong (cite the source). 'load' and 'share' (queued single-engine tags only) = the planned load shown in the queue and its share (load / production's real load in the window), since a g67 tag carries neither. 'tiny' (single-engine runs) = the one- or two-word setup name in the answer-cell sentence on the newest single-engine result.",
+  "_note": "Plain names (8 words or fewer) for every run tag and queued tag; 'short' (5 words or fewer) is used in the header pill and the chart callout. 'base' = the changes it sat on top of. 'why' overrides runs_meta.json's reason when that reason is wrong (cite the source). 'load' and 'share' (queued single-engine tags only) = the planned load shown in the queue and its share (load / production's real load in the window), since a g67 tag carries neither. 'tiny' is not read since Oct 7 r2: the answer-cell line on the newest single-engine result names no setup; its tooltip and STANDINGS.md use 'name' without 'One engine:'.",
   "v3_tpc_05x": {
    "name": "Half load, old routing (pinned on arrival)",
    "why": "One engine took the busy conversations (49–56 running, 43–66 waiting) while the other three ran 2–13 each: routing, not engine speed, was the limit.",
@@ -2065,8 +2068,8 @@
   {
    "name": "Test setup: GPUs 6-7 only (owner request)",
    "state": "running",
-   "at": "2026-10-07 16:40",
-   "text": "Oct 7 14:41 PDT: by owner request our tests use only GPUs 6 and 7 of node 0008. The full-node chain, its watchdog, all engines and the gateway were stopped (nvidia-smi: all GPUs free). Next results come from one engine (quarter node) at the same load per GPU; A/B tests become sequential pairs on the same requests. Harness build: workflow wf_915777ef-68f. 16:40: the one-engine chain (g67/chain_g67.sh) started. Its runs form test v5.1q (Results tab), apart from the full-node headline.",
+   "at": "2026-10-07 14:41",
+   "text": "Oct 7 14:41 PDT: by owner request our tests use only GPUs 6 and 7 of node 0008. The full-node chain, its watchdog, all engines and the gateway were stopped (nvidia-smi: all GPUs free). Next results come from one engine (quarter node) at the same load per GPU; A/B tests become sequential pairs on the same requests. Harness build: workflow wf_915777ef-68f. 16:40: the one-engine chain (g67/chain_g67.sh) started. Its runs form test v5.1q (Results tab), apart from the full-node headline. 20:40: the chain's scorer (g67/score_g67.py) now uses the rule of this page (extract_runs.py), so the chain log and this page show the same minutes.",
    "ref": "PROGRESS.md Oct 7 14:45; next230/G67-HARNESS.md; PROGRESS.md Oct 7 16:40"
   },
   {

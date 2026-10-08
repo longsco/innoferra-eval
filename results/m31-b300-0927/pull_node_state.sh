@@ -13,6 +13,9 @@
 #                                    load per GPU scaled to the 2 GPUs of one engine; every record carries "harness": "g67").
 #                  A half is replaced only when its pull parses as a JSON list (the full-node list must not be empty); a failed half
 #                  keeps its records from the local copy. Both halves failed = the local file stays as it is.
+#                  innoferra 10-07 r2: each g67 record gets "done_epoch" = the modification time (UTC epoch) of its record file
+#                  traffic/g67/v3L-<tag>.jsonl (stat, read-only), so progress_page.py dates a run that has no runs_meta.json entry by
+#                  its own day, not by the render day. A failed stat keeps the records' old values.
 cd "$(dirname "$0")" || exit 1
 N=/data01/minimax31
 SSH="ssh -o ConnectTimeout=15 -o BatchMode=yes 0008"
@@ -36,6 +39,7 @@ fi
 if $SSH "python3 $N/serving/g67/extract_runs_g67.py $N/traffic/g67 $N/bench/g67.log" > runs_g67.json.tmp 2>/dev/null \
    && python3 -c 'import json,sys; d=json.load(open("runs_g67.json.tmp")); sys.exit(0 if isinstance(d, list) else 1)' 2>/dev/null; then
   OKG=1
+  $SSH "cd $N/traffic/g67 && stat -c '%Y %n' v3L-*.jsonl" > runs_g67_mtime.tmp 2>/dev/null || rm -f runs_g67_mtime.tmp
 else
   echo "runs_v3.json single-engine (g67) pull FAILED: kept the local g67 records"
 fi
@@ -53,6 +57,17 @@ full = json.load(open("runs_full.json.tmp")) if okf else [r for r in old if not 
 single = json.load(open("runs_g67.json.tmp")) if okg else [r for r in old if g67(r)]
 for r in single:                                   # extract_runs_g67.py sets both; kept here so the merge never loses the mark
     r.setdefault("harness", "g67"); r.setdefault("gpus", 2)
+mt = {}                                            # innoferra 10-07 r2: record file time -> "done_epoch" (the run's day)
+try:
+    for line in open("runs_g67_mtime.tmp"):
+        ep, _, fn = line.strip().partition(" ")
+        if fn.startswith("v3L-") and fn.endswith(".jsonl") and ep.isdigit():
+            mt[fn[4:-6]] = int(ep)
+except OSError:
+    pass
+for r in single:
+    if r["tag"] in mt:
+        r["done_epoch"] = mt[r["tag"]]
 seen = {r["tag"] for r in full}
 clash = [r["tag"] for r in single if r["tag"] in seen]
 if clash:
@@ -66,4 +81,4 @@ os.replace("runs_v3.json.tmp", "runs_v3.json")
 print(f"runs_v3.json: {len(runs)} runs ({len(full)} full node{'' if okf else ', local'}; {len(single) - len(clash)} single engine{'' if okg else ', local'})")
 EOF
 fi
-rm -f runs_full.json.tmp runs_g67.json.tmp runs_v3.json.tmp
+rm -f runs_full.json.tmp runs_g67.json.tmp runs_g67_mtime.tmp runs_v3.json.tmp

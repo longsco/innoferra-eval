@@ -2248,7 +2248,7 @@
    "change": "baseline",
    "verdict": "baseline",
    "progress": "17:25 (10-07)",
-   "why": "Baseline of test v5.1q. 10/15 here (minute 4 TPS 59.4); score_g67.py, which counts streams of 32+ tokens, gives 60.2 and 11/15. Paired with full-node TP2 without the fast path (same 1,460 requests): first token x0.859 (CI 0.743..0.948), TPS -2.6 tok/s."
+   "why": "Baseline of test v5.1q: 10/15 by the page rule (minute 4: TPS 59.4); the 17:23 chain log says 11/15 (old g67 scorer). Paired with full-node TP2 without the fast path: first token x0.859 (CI 0.743..0.948), TPS -2.6 tok/s."
   },
   {
    "tag": "g67_tp2_knee733_q0",
@@ -2270,7 +2270,7 @@
    "change": "calibration",
    "verdict": "calibration",
    "progress": "19:00 (10-07)",
-   "why": "A/A repeat of the baseline: 11/15 (baseline 10/15 here, 11/15 in score_g67.py). Paired: first token x0.965 (CI 0.957..0.976), TPS +1.8 tok/s. One-engine run-to-run noise is about 3.5% first token and 2 tok/s."
+   "why": "A/A repeat of the baseline: 11/15 (baseline 10/15; the old g67 scorer gave it 11/15). Paired: first token x0.965 (CI 0.957..0.976), TPS +1.8 tok/s. One-engine run-to-run noise is about 3.5% first token and 2 tok/s."
   },
   {
    "tag": "g67_dp2mm_knee733_q0",

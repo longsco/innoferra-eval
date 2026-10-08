@@ -181,7 +181,8 @@ def ab(term, label=None): return f'<abbr title="{esc(ABBR[term])}">{esc(label or
 def rule_ab(k): return f'<abbr title="{esc(RULES[k][1])}">{esc(RULES[k][0])}</abbr>'
 
 
-VOCAB = {"Passes": ("passes", '<span class="ok">✓</span> Passes'), "Adopted": ("adopted", "Adopted"), "Baseline": ("baseline", "Baseline"),
+VOCAB = {"Passes": ("passes", '<span class="ok">✓</span> Passes'), "Passes, one engine": ("passes", '<span class="ok">✓</span> Passes, one engine'),
+         "Adopted": ("adopted", "Adopted"), "Baseline": ("baseline", "Baseline"),
          "Rejected": ("rejected", "Rejected"), "Invalid": ("invalid", "✕ Invalid"), "Finding": ("finding", "Finding"), "SIM": ("sim", "SIM"),
          "Running": ("running", "● Running"), "Queued": ("queued", "Queued"), "Production": ("production", "Production"),
          "Superseded": ("superseded", "Superseded")}
@@ -223,8 +224,17 @@ STATE = STATE or {}
 G67 = META.get("g67_rule") or {}
 G67_PREFIX = G67.get("tag_prefix", "g67_")
 def is_g67(tag): return str(tag).startswith(G67_PREFIX)
-def g67_done_pdt(hms):
-    """'HH:MM:SS' UTC finish time of a lever (no date) -> naive PDT: the render day in UTC, or the day before when it lies after now"""
+def g67_done_pdt(hms, epoch=None):
+    """finish time of a g67 lever -> naive PDT. hms = 'HH:MM:SS' UTC of its done line in bench/g67.log (no date). The date comes from
+    epoch, the modification time of its record file (runs_v3.json 'done_epoch', added by pull_node_state.sh), so a page rendered days
+    later keeps the right day (innoferra 10-07 r2); without it, the render day in UTC, or the day before when that lies after now."""
+    if epoch:
+        fm = datetime.fromtimestamp(float(epoch), timezone.utc).replace(tzinfo=None)
+        if not hms:
+            return utc_to_pdt(fm)
+        d = datetime.combine(fm.date(), datetime.strptime(hms, "%H:%M:%S").time())
+        d += timedelta(days=1) if d < fm - timedelta(hours=12) else (timedelta(days=-1) if d > fm + timedelta(hours=12) else timedelta(0))
+        return utc_to_pdt(d)
     nu = NOW.replace(tzinfo=LA).astimezone(timezone.utc).replace(tzinfo=None)
     d = datetime.combine(nu.date(), datetime.strptime(hms, "%H:%M:%S").time())
     return utc_to_pdt(d - timedelta(days=1) if d > nu + timedelta(minutes=5) else d)
@@ -240,7 +250,8 @@ for _r in RAW:
     _t = _r["tag"]
     if G67.get("protocol") and is_g67(_t) and _t not in META_BY and not _r.get("partial"):
         _w, _wl = g67_window(_t)
-        META_BY[_t] = {"tag": _t, "at": (g67_done_pdt(_r["done_utc"]) if _r.get("done_utc") else NOW).strftime("%Y-%m-%d %H:%M"),
+        META_BY[_t] = {"tag": _t, "at": (g67_done_pdt(_r.get("done_utc"), _r.get("done_epoch")) if (_r.get("done_utc") or _r.get("done_epoch"))
+                                         else NOW).strftime("%Y-%m-%d %H:%M"),
                        "protocol": G67["protocol"], "share": round(_r["tpm_gpu"] / _wl, 2) if _r.get("tpm_gpu") else None,
                        "name": f"one engine on GPUs 6,7, {_w}: {_t}", "change": G67.get("change", "single engine"),
                        "verdict": G67.get("verdict", "under review"), "why": G67.get("why", ""), "auto": True}
@@ -485,17 +496,40 @@ def prog_row_for(r):
     return best
 
 
+def row_score(txt, tag):
+    """the score a PROGRESS.md row gives a run: the first 'N/15' (or INVALID / FAILED TO BOOT) after its tag, else (a row that does not
+    name the tag, chosen by runs_meta.json 'progress') the first one in the row; '' when the row has none"""
+    m = re.search(r"(?<![\w])(?:v3_)?" + re.escape(tag) + r"(?![\w])[^|]{0,240}?(\d{1,2}/15|INVALID|FAILED TO BOOT)", txt)
+    if m:
+        return m.group(1)
+    m = re.search(r"(?<![\d/])\d{1,2}/15(?!\d)|INVALID|FAILED TO BOOT", txt)
+    return m.group(0) if m else ""
+
+
+def prog_correction(r, after):
+    """innoferra 10-07 r2: a later PROGRESS.md row that names the run's tag with the score of the per-minute record (a correction row)"""
+    for k in sorted(PROG, key=lambda k: key_dt(k) or datetime.min):
+        kd = key_dt(k)
+        if kd and after and kd > after and row_score(PROG[k], r["id"]) == f"{r['pass']}/{NMIN}" and re.search(
+                r"(?<![\w])" + re.escape(r["id"]) + r"(?![\w])", PROG[k]):
+            return k
+    return None
+
+
 _used_refl = set()
 for _r in RUNS:
     _ov = META_BY.get(_r["id"], {}).get("progress")   # innoferra 10-07: runs_meta.json 'progress' names the row when the row text has no tag
     if _ov and _ov not in PROG:
         WARNINGS.append(f"run {_r['id']}: runs_meta.json progress {_ov!r} is not a PROGRESS.md row")
-    _pr = (_ov, key_dt(_ov), "") if _ov in PROG else prog_row_for(_r)
+    _pr = (_ov, key_dt(_ov), row_score(PROG[_ov], _r["id"])) if _ov in PROG else prog_row_for(_r)   # 10-07 r2: the named row's score too
     _r["prog"] = _pr[0] if _pr else None
     if not _pr:
         WARNINGS.append(f"run {_r['id']} ({stamp(_r['at'])}) has no PROGRESS.md result row")
     elif _pr[2] and _pr[2][0].isdigit() and not _r["invalid"] and int(_pr[2].split("/")[0]) != _r["pass"]:
-        WARNINGS.append(f"run {_r['id']}: PROGRESS.md {_pr[0]} says {_pr[2]}, the per-minute record says {_r['pass']}/{NMIN}")
+        _r["prog_fix"] = prog_correction(_r, _pr[1])
+        if not _r["prog_fix"]:
+            WARNINGS.append(f"run {_r['id']}: PROGRESS.md {_pr[0]} says {_pr[2]}, the per-minute record says {_r['pass']}/{NMIN} "
+                            "(no later PROGRESS.md row names the run with that score)")
     _r["refl"] = _r["prog"] if _r["prog"] in REFL else None
     if _r["refl"]:
         _used_refl.add(_r["refl"])
@@ -666,6 +700,10 @@ def gpu_state():
         q = g["queue"][0] if g["queue"] else None
         g["text"] = ((f"Between runs since {hm(g['since'])}" if g["since"] else "Between runs")
                      + (f" · next: {lc(q['short'])} at {q['load']}" if q else ""))
+        # innoferra 10-07 r2: the pill shows 'next: <short name>' and hides it on phones; the load is in the tooltip, so the header keeps
+        # one line at 1440 px (the long form wrapped it: 12-hour table top 754 px against the 760 px limit)
+        nxt = f" · next: {lc(q['short'])}" if q else ""
+        g["html"] = esc(f"Between runs since {hm(g['since'])}" if g["since"] else "Between runs") + (f'<span class="gpu-what">{esc(nxt)}</span>' if nxt else "")
     else:
         g["form"] = "idle"
         g["text"] = "✕ Idle" + (f" since {hm(g['since'])}" if g["since"] else "")
@@ -694,6 +732,10 @@ def status_text():
 
 
 def short_name(r): return lc(r["name"])
+def role(r):
+    """the verdict word of a run: its badge word; for a single-engine run its role in its test (runs_meta.json verdict: baseline,
+    comparison, calibration), because the Baseline badge covers all three (innoferra 10-07 r2)"""
+    return (r["vraw"] or r["verdict"]).lower() if single(r) else r["verdict"].lower()
 
 
 def name_parts(r):
@@ -749,7 +791,7 @@ def fails_html(c):
 def verdict_cell(r):
     out = []
     if not r["invalid"] and r["pass"] >= NMIN:
-        out.append(badge("Passes"))
+        out.append(badge("Passes, one engine" if single(r) else "Passes"))   # innoferra 10-07 r2: a one-engine pass is not a node pass
     out.append(badge(r["verdict"]))
     if r is CLOSEST:
         out.append(CLOSEST_TAG)
@@ -804,6 +846,8 @@ def run_what(r, where):
                     f'<p>{esc(utc_in_text(untag(rf["result"])))}</p><p>{esc(utc_in_text(untag(rf["insight"])))}</p>{plan}</details>')
     ev = [f"run {r['id']}", "no replay output" if r["norecord"] else "replay output on 0008 (runs_v3.json)",
           f"PROGRESS.md {key_label(r['prog'])}" if r.get("prog") else "no PROGRESS.md row"]
+    if r.get("prog_fix"):                                   # innoferra 10-07 r2: that row gave another score; a later row corrects it
+        ev.append(f"score corrected in PROGRESS.md {key_label(r['prog_fix'])}")
     if r.get("refl"):
         ev.append(f"reflection {key_label(r['refl'])}")
     if LABELS.get(r["id"], {}).get("why_src"):
@@ -892,7 +936,7 @@ def header_html():
     newest = ""
     if NEWEST:
         r = NEWEST
-        res = ("no result, " + r["broke"]) if r["invalid"] else f"{r['pass']}/{NMIN}, " + ("closest" if r is CLOSEST else r["verdict"].lower())
+        res = ("no result, " + r["broke"]) if r["invalid"] else f"{r['pass']}/{NMIN}, " + ("closest" if r is CLOSEST else role(r))
         lt = load_for(r["share"], r["test"])[0] if r["invalid"] else m2(r["load"]) + " M"
         when = hm(r["at"]) if r["at"].date() == NOW.date() else stamp(r["at"])
         one = single(r)                                            # innoferra 10-07: say when the newest result is one engine, not the node
@@ -907,41 +951,40 @@ def header_html():
         tip += " · chain g67: one engine on GPUs 6,7 only (owner rule since Oct 7 14:41)"
     if GPU.get("running") and GPU["fresh"]:
         tip += f" · running: {GPU['running']['name']} at {GPU['running']['load']}"
+    elif GPU.get("form") == "between" and GPU.get("queue"):
+        tip += f" · next: {GPU['queue'][0]['name']} at {GPU['queue'][0]['load']}"
     return ('<header class="hd"><h1>MiniMax-M3.1 on one 8×B300 node: progress toward ' + f'{TARGET:g}' + ' M TPM per GPU</h1><div class="hdline">'
             f'<p class="meta">Updated {stamp(NOW)} PDT{newest} · all times PDT · <a href="#howto">How to read this page</a></p>'
             f'<a class="gpu {GPU["form"]}" href="#recent" title="{esc(tip)}">{GPU.get("html") or esc(GPU["text"])}</a></div></header>')
 
 
 def single_status(plain_text=False):
-    """innoferra 10-07: one short sentence on the newest single-engine result (one engine on GPUs 6,7) and, when it scored fewer
-    minutes, the best single-engine run at about the same load (within 0.1 M, same production window). HTML unless plain_text.
-    First-screen budget (check_layout.sh): two lines in the 350 px answer cell = about 100 characters in system-ui, so the sentence
-    keeps to SINGLE_CHARS: first the best run's setup name goes, then the best clause, then the newest run's setup name."""
+    """innoferra 10-07: the newest single-engine result (one engine on GPUs 6,7), apart from the full-node answer.
+    plain_text (STANDINGS.md): the whole sentence: the newest run with its setup and window and, when it scored fewer minutes, the best
+    single-engine run at about the same load (within 0.1 M, same production window), then 'Not a full-node result.'
+    Page (answer cell 1): ONE line, 'One engine: newest N/15 at X M (HH:MM).', linked to the run's row, with the whole sentence as its
+    tooltip. 10-07 r2: two lines cost the first screen its margin (check_layout.sh: 14 px left at 390 px, 11 px at 1440 px), so the
+    line keeps to SINGLE_CHARS and drops the time first. Setup names come from page_notes.json labels (name without 'One engine:'),
+    never from a cut of a long name; a run without a label shows no setup name."""
     if not SINGLE_V:
         return ""
     n = SINGLE_V[0]
     same = [r for r in SINGLE_V if r["test"] == n["test"] and abs(r["load"] - n["load"]) <= 0.1 and replay_window(r) == replay_window(n)]
     b = max(same, key=lambda r: (r["pass"], r["at"]))
-    tiny = (lambda r: LABELS.get(r["id"], {}).get("tiny") or short_change(r))   # the layout word only (e.g. 'TP2')
-    def build(n_name, best, b_name):
-        """(plain text, page text) of one wording; the scores link to their run rows on the page"""
-        parts = [f"One engine on GPUs 6,7 ({n['test']}): newest ", (n, f"{n['pass']}/{NMIN} at {m2(n['load'])} M"),
-                 f" ({n_name + ', ' if n_name else ''}{hm(n['at'])})"]
-        if best:
-            parts += ["; best ", (b, f"{b['pass']}/{NMIN}")] + ([f" ({b_name})"] if b_name else [])
-        parts.append(".")
-        txt = "".join(x if isinstance(x, str) else x[1] for x in parts)
-        page = "".join(esc(x) if isinstance(x, str) else f'<a href="#run-{esc(x[0]["id"])}">{esc(x[1])}</a>' for x in parts)
-        return txt, (txt if plain_text else page)
-    best = b["pass"] > n["pass"]
-    for args in ((tiny(n), best, tiny(b)), (tiny(n), best, ""), (tiny(n), False, ""), ("", False, "")):
-        txt, out = build(*args)
-        if len(txt) <= SINGLE_CHARS:
-            break
-    return cap(out, 25, "single-engine status sentence")
+    when = lambda r: hm(r["at"]) if r["at"].date() == NOW.date() else stamp(r["at"])
+    setup = lambda r: re.sub(r"^One engine:\s*", "", LABELS[r["id"]]["name"]) if r["id"] in LABELS else ""
+    who = lambda r: f"({setup(r) + ', ' if setup(r) else ''}{when(r)})"
+    w = replay_window(n)
+    whole = (f"One engine on GPUs 6,7 (test {n['test']}): newest {n['pass']}/{NMIN} at {m2(n['load'])} M" + (f" on the {w} window" if w else "")
+             + f" {who(n)}" + (f"; best at that load {b['pass']}/{NMIN} {who(b)}" if b["pass"] > n["pass"] else "") + ". Not a full-node result.")
+    if plain_text:
+        return whole
+    head = f"One engine: newest {n['pass']}/{NMIN} at {m2(n['load'])} M"
+    tail = next((t for t in (f" ({when(n)}).", ".") if len(head + t) <= SINGLE_CHARS), ".")
+    return cap(f'<a href="#run-{esc(n["id"])}" title="{esc(whole)}">{esc(head)}</a>{esc(tail)}', 25, "single-engine status sentence")
 
 
-SINGLE_CHARS = 92     # innoferra 10-07: two lines in the answer cell (100 measured in system-ui at 390 and 1440 px; IBM Plex runs a little wider)
+SINGLE_CHARS = 44     # innoferra 10-07 r2: ONE line in the answer cell (321 px: about 46 characters of IBM Plex Sans, 50 of system-ui)
 
 
 def cells_html():
@@ -1118,8 +1161,9 @@ if not PROD_PEAK:
 
 
 def short_change(r):
-    """a few words for a chart label: the page_notes.json short label, else the plain name up to its first '(', ':' or ','"""
-    s = LABELS.get(r["id"], {}).get("short") or re.split(r"\s*[(:,;]", r["name"])[0]
+    """a few words for a chart label: the page_notes.json short label, else the plain name up to its first '(', ':', ';' or ',' (10-07 r2:
+    not a comma between digits, so 'GPUs 6,7' stays whole)"""
+    s = LABELS.get(r["id"], {}).get("short") or re.split(r"\s*(?:[(:;]|,(?!\d))", r["name"])[0]
     return lc(s.strip())
 
 
@@ -1344,19 +1388,17 @@ def chart_svg(variant):
         for q in m["runs"]:
             MK[q["id"]] = m
         return m
+    bold_left_out = []                                  # innoferra 10-07 r2: full-node bold runs with no free spot inside the limits
     def must_put(m):
-        """a bold run is never left out: wider limits, then its own spot, with a build warning"""
+        """a full-node bold mark: the free spot nearest its own spot inside the nudge limits. innoferra 10-07 r2: the limits are never
+        widened any more (twice the limits drew a 7/15 mark at 7.9 minutes on the narrow chart, against the caption and CHART-NOTES
+        rule 2). Single-engine marks and twin halves are placed after every full-node mark, so they never take its spot. A full-node
+        mark with no free spot is left out of this chart, counted in the caption and warned about; None is returned."""
         if put(m):
             return m
-        if put(m, 2.0):
-            WARNINGS.append(f"chart ({variant}): {m['r']['id']} needed twice the nudge limits")
-            return m
-        m["x"], m["y"] = m["ex"], m["ey"]
-        placed.append(m)
-        marks.append(m)
-        MK[m["r"]["id"]] = m
-        WARNINGS.append(f"chart ({variant}): no free spot for {m['r']['id']}; drawn at its own spot over another mark")
-        return m
+        bold_left_out.extend(m["runs"])
+        WARNINGS.append(f"chart ({variant}): no free spot for {m['r']['id']} inside the nudge limits; left out of this chart")
+        return None
     older = [r for r in VALID if r["test"] not in HL]
     groups = tie_groups(older)
     fgrp = {next(q["id"] for q in gp if q["id"] in FRONT_IDS): gp for gp in groups if any(q["id"] in FRONT_IDS for q in gp)}
@@ -1366,16 +1408,18 @@ def chart_svg(variant):
             segs.append((p["x"], p["y"], p["x"], q["y"], t, t in HL))
             segs.append((p["x"], q["y"], q["x"], q["y"], t, t in HL))
         return pts
-    # 1. frontier runs of the tests drawn by default (bold tests first), with the older runs tied to them; then their step lines
-    for t in sorted(SHOWN, key=lambda t: (t not in HL, -VTESTS.index(t))):
+    # 1. frontier runs of the full-node tests drawn by default (bold tests first), with the older runs tied to them; then their step
+    # lines. innoferra 10-07 r2: single-engine tests come after every full-node mark (2b), so a one-engine run never moves a full-node one
+    for t in sorted([t for t in SHOWN if t not in QTESTS], key=lambda t: (t not in HL, -VTESTS.index(t))):
         for r in FRONT.get(t, []):
             if t in HL:
                 must_put(new_mark("hf", [r], front=True))
             else:
                 must_put(new_mark("fr", fgrp.get(r["id"], [r]), front=True))
-    fronts = {t: add_steps(t) for t in SHOWN}
+    fronts = {t: add_steps(t) for t in SHOWN if t not in QTESTS}
     # 2. the bold tests' A/B twins with a measured change, each with a bracket arrow on its left from A to B; then their other runs.
-    # Bold runs with the same minutes whose spots overlap (and no frontier run beside them) split evenly up and down inside the minute.
+    # Bold runs with the same minutes whose spots overlap (and no frontier run beside them) split evenly up and down inside the minute
+    # (single-engine runs too: a full-node mark may move inside its limits to leave room for one).
     hb = sorted([r for r in VALID if r["test"] in HL and r["id"] not in MK], key=lambda r: (r["pass"], r["load"]))
     near = 2 * OUT["hh"] + GAP
     i = 0
@@ -1401,6 +1445,8 @@ def chart_svg(variant):
                 ab_list.append((a, b))
     for a, b in ab_list:
         ma, mb = must_put(new_mark("hh", [a])), must_put(new_mark("hh", [b]))
+        if not (ma and mb):
+            continue                                          # 10-07 r2: a half with no free spot gets no arrow (the caption counts it)
         left = min(ma["x"] - ma["rad"], mb["x"] - mb["rad"])
         lo, hi = sorted((ma["y"], mb["y"]))
         bx = None
@@ -1416,16 +1462,61 @@ def chart_svg(variant):
         arrows.append((ma, mb, bx, provisional(b)))
         hard.extend([(ma["x"] - ma["rad"], ma["y"], bx, ma["y"]), (bx, lo, bx, hi), (bx, mb["y"], mb["x"] - mb["rad"], mb["y"])])
     hlr = sorted([r for r in VALID if r["test"] in HL and r["id"] not in MK], key=lambda r: ("@" in str(r["id"]), -r["at"].timestamp()))
-    hl_left_out = []                                   # innoferra 10-06: bold half-node twin halves are dropped (counted) when no spot is free
-    full_hl = []
-    for r in hlr:
-        if "@" in str(r["id"]):
-            if not (put(new_mark("hh", [r])) or put(new_mark("hh", [r]), 2.0)):
-                hl_left_out.append(r)
-        else:
-            full_hl.append(r)
+    hl_left_out, q_left_out = [], []                    # innoferra 10-06: bold half-node twin halves are dropped (counted) when no spot is free
+    full_hl = [r for r in hlr if "@" not in str(r["id"]) and not single(r)]
     for gp in tie_groups(full_hl):                      # innoferra 10-07: full-node bold runs at one spot share one mark (xN), never drawn over each other
-        must_put(new_mark("ho", gp))
+        must_put(new_mark("ho", gp))                    # 10-07 r2: before the twin halves (the skeptic's order), so a twin half is the one left out
+    # 2b. innoferra 10-07 r2: single-engine runs, after every full-node mark: their frontier runs, their step line, then the other runs
+    # (runs at one spot share one mark). One with no free spot inside the nudge limits is left out of this chart and counted.
+    def unplace(m):
+        placed.remove(m)
+        marks.remove(m)
+        for q in m["runs"]:
+            MK.pop(q["id"], None)
+    def put_repair(m):
+        """a single-engine frontier mark: put(m); else lift the full-node non-frontier marks ('ho') that could be in its way, place it,
+        and place them again inside the nudge limits. Kept only when every lifted mark finds a spot again; else everything goes back
+        and None is returned. So a full-node mark may move inside its limits for it, but is never left out for it."""
+        if put(m):
+            return m
+        reach = NUDGE_MIN * V + NUDGE_M * U
+        lift = [p for p in placed if p["kind"] == "ho" and math.hypot(p["x"] - m["ex"], p["y"] - m["ey"]) < m["rad"] + p["rad"] + GAP + reach]
+        if not lift:
+            return None
+        spot = [(p, p["x"], p["y"]) for p in lift]
+        for p in lift:
+            unplace(p)
+        if put(m):
+            back = []
+            for p in lift:
+                if not put(p):
+                    break
+                back.append(p)
+            else:
+                return m
+            for p in back:
+                unplace(p)
+            unplace(m)
+        for p, x_, y_ in spot:                                 # roll back: every lifted mark at its old spot
+            p["x"], p["y"] = x_, y_
+            placed.append(p)
+            marks.append(p)
+            for q in p["runs"]:
+                MK[q["id"]] = p
+        return None
+    for t in [t for t in SHOWN if t in QTESTS]:
+        for r in FRONT.get(t, []):
+            if r["id"] not in MK and not put_repair(new_mark("hf", [r], front=True) if t in HL else new_mark("fr", fgrp.get(r["id"], [r]), front=True)):
+                q_left_out.extend([r] if t in HL else fgrp.get(r["id"], [r]))
+        fronts[t] = add_steps(t)
+        nr_ = chart_newest()                            # the newest run's group first, then the groups with more minutes in SLA
+        for gp in sorted(tie_groups([r for r in hlr if r["test"] == t and r["id"] not in MK and r not in q_left_out]),
+                         key=lambda gp: (not (nr_ and any(q is nr_ for q in gp)), -gp[0]["pass"], -max(q["at"] for q in gp).timestamp())):
+            if not put(new_mark("ho", gp)):
+                q_left_out.extend(gp)
+    for r in hlr:                                       # 2c. bold twin halves; 10-07 r2: inside the nudge limits only (no twice-the-limits retry)
+        if "@" in str(r["id"]) and r["id"] not in MK and not put(new_mark("hh", [r])):
+            hl_left_out.append(r)
     # 3. behind the checkbox: the gray tests' frontier runs and step lines, then every other older run, ties merged
     left_out = []
     for t in [t for t in VTESTS if t not in SHOWN]:
@@ -1556,8 +1647,9 @@ def chart_svg(variant):
                         (-far, 26, "end"), (0, up - 14, "middle"), (0, 34, "middle")]
         ring = sorted([(dx, dy, "start" if dx >= 0 else "end") for dy in list(range(16, 100, 6)) + list(range(-14, -100, -6))
                        for dx in (10, -10, 24, -24, 40, -40, 60, -60, 90, -90)], key=lambda c: (abs(c[0]) + abs(c[1]), c[1] < 0))
-        # the bold tests: best 15/15 run and its distance to the goal (else the best run)
-        for t in HL:
+        # the bold full-node tests: best 15/15 run and its distance to the goal (else the best run). innoferra 10-07 r2: never a
+        # single-engine test (a one-engine 15/15 is not a node pass; checks() refuses any such claim)
+        for t in [t for t in HL if t not in QTESTS]:
             fr = [r for r in FRONT.get(t, []) if r["id"] in MK]
             best = max([r for r in fr if r["pass"] >= NMIN], key=lambda r: r["load"], default=None)
             pre = f"{t}: " if len(HL) > 1 else ""
@@ -1626,7 +1718,12 @@ def chart_svg(variant):
     shown_fr = {r["id"] for t in SHOWN if t not in HL for r in FRONT.get(t, [])}
     other = [r for r in older if r["id"] not in shown_fr]
     CHART_STATS[variant] = {"other": len(other), "left_out": len(left_out), "hl_left_out": len(hl_left_out), "nudged": nudged, "miss_off": miss_off, "miss_on": miss_on,
-                            "marks_v3": sum(1 for m in marks if m["group"] == "v3"), "xlo": XLO}
+                            "marks_v3": sum(1 for m in marks if m["group"] == "v3"), "xlo": XLO,
+                            # innoferra 10-07 r2: one-engine and full-node bold runs left out, and the largest nudge of any mark (build check)
+                            "q_left_out": len(q_left_out), "bold_left_out": len(bold_left_out),
+                            "max_dy_min": max((abs(m["y"] - m["ey"]) / V for m in marks), default=0.0),
+                            "max_dx_m": max((abs(m["x"] - m["ex"]) / U for m in marks), default=0.0),
+                            "drawn": {q["id"] for m in marks for q in m["runs"]}}
     return (f'<svg class="chart {variant}" viewBox="0 0 {W} {H}" role="group" aria-labelledby="chart-h">' + "".join(g) + labs + "</svg>")
 
 
@@ -1688,12 +1785,15 @@ def chart_html():
              + [("on-n", note(k, x)) for k, x in on_n if (k, x) not in on_w])
     if nr:
         ph.append(f"Latest: {hm(nr['at'])} · {short_name(nr)} at {m2(nr['load'])} M · {nr['pass']}/{NMIN} · "
-                  + ("closest" if nr is CLOSEST else nr["verdict"].lower()))
+                  + ("closest" if nr is CLOSEST else role(nr)))
     if run:
         ph.append(f"▼ running since {hm(GPU['since']) if GPU.get('since') else '?'}: {lc(run['name'])} at {run['load']}")
     bold = f"test {HL[0]} (current)" if len(HL) == 1 and HL[0] == CUR else ("test " if len(HL) == 1 else "tests ") + join_and(HL)
     qs = [t for t in SHOWN if t in QTESTS]                      # innoferra 10-07: single-engine tests drawn by default
-    cap = [f"Colour shows the test; {bold} {'has' if len(HL) == 1 else 'have'} large marks and a bold line, and older tests have small marks.",
+    small = [t for t in SHOWN if t not in HL]                  # older tests drawn by default (small marks); the gray ones need the checkbox
+    cap = [f"Colour shows the test; {bold} {'has' if len(HL) == 1 else 'have'} large marks and a bold line"
+           + (f", and {'test' if len(small) == 1 else 'tests'} {join_and(small)} {'has' if len(small) == 1 else 'have'} small marks" if small else "") + "."
+           + (" Older tests are gray and show only with the checkbox." if gray else ""),
            "A step line joins the frontier of each test: its full-node runs" + (f" ({join_and(qs)}: one-engine runs)" if qs else "")
            + " that no other run beats on both load and minutes."]
     why = re.search(r"Rows below replay (traces that miss [^(;.,]+?) \(([^)]*)\)", TV.get(CUR, {}).get("divider", ""))
@@ -1707,7 +1807,7 @@ def chart_html():
     for t in [t for t in VTESTS if t in QTESTS]:
         more.append(f"Test {t} marks show one engine on GPUs 6,7 (a quarter of the node) at the node's load per GPU. "
                     "Since Oct 7 14:41 the owner allows only GPUs 6,7. These runs are not full-node results, and the headline does not use them.")
-    for t in HL:
+    for t in [t for t in HL if t not in QTESTS]:               # innoferra 10-07 r2: never a single-engine test (checks() refuses it)
         fr = FRONT.get(t, [])
         b15 = max([r for r in fr if r["pass"] >= NMIN], key=lambda r: r["load"], default=None)
         if b15:
@@ -1732,15 +1832,18 @@ def chart_html():
             more.append(f"Engine side matters on test {t}: the same setup on the other engine pair scored {lo}" + (f"–{hi}" if hi != lo else "")
                         + f" minutes apart at {join_and([m2(s[0]) + ' M' for s in sws])} (side-swap twin{'s' if len(sws) > 1 else ''} "
                         + ", ".join(hm(s[3]) for s in sws) + "). So one A/B twin is not proof; an A/A twin measures the side bias.")
-    if hlv:
-        pp = sorted({r["ppass"] for r in hlv})
-        pf = Counter(f for r in hlv for f in r["pfails"])
+    hfull = [r for r in hlv if not single(r)]                 # innoferra 10-07 r2: production's score on the full-node runs only (should-fix 5)
+    hlf = [t for t in HL if any(r["test"] == t for r in hfull)]
+    if hfull:
+        pp = sorted({r["ppass"] for r in hfull})
+        pf = Counter(f for r in hfull for f in r["pfails"])
         def per_run(k):
-            ns = sorted({r["pfails"].get(k, 0) for r in hlv})
+            ns = sorted({r["pfails"].get(k, 0) for r in hfull})
             return f"{ns[0]}" if ns[0] == ns[-1] else f"{ns[0]}–{ns[-1]}"
         rules = join_and([f"{RULES[k][3]} in {per_run(k)} of {NMIN} minutes" for k, _ in sorted(pf.items(), key=lambda kv: (-kv[1], TIE.get(kv[0], 9)))[:2]]) if pf else ""
-        more.append((f"Production on the same requests scores {pp[0]}/{NMIN} at each load of test {join_and(HL)}" if len(pp) == 1 else
-                     f"Production on the same requests scores {pp[0]}–{pp[-1]}/{NMIN} on test {join_and(HL)}")
+        tw = ("test " if len(hlf) == 1 else "tests ") + join_and(hlf)
+        more.append((f"Production on the same requests scores {pp[0]}/{NMIN} at each load of the full-node runs of {tw}" if len(pp) == 1 else
+                     f"Production on the same requests scores {pp[0]}–{pp[-1]}/{NMIN} on the full-node runs of {tw}")
                     + (f". It misses on {rules}." if rules else "."))
     refl = f"The goal line is {m2(TARGET)} M per GPU" + ("." if GOAL_CONFIRMED else "; the owner has not confirmed its basis.")
     if PROD_PEAK:
@@ -1757,6 +1860,13 @@ def chart_html():
     if hlo_:
         more.append(f"{'Up to ' if sw_.get('hl_left_out', 0) != sn_.get('hl_left_out', 0) else ''}{plural(hlo_, 'half-node twin run')} of the "
                     "current tests had no free spot on the narrow chart and " + ("is" if hlo_ == 1 else "are") + " not drawn there; every run is in the tables.")
+    for stat_, what_ in (("q_left_out", "one-engine run"), ("bold_left_out", "full-node run of the bold tests")):   # innoferra 10-07 r2
+        nw, nn = sw_.get(stat_, 0), sn_.get(stat_, 0)
+        if nw or nn:
+            n_ = max(nw, nn)
+            on = "the wide and the narrow chart" if nw and nn else ("the wide chart" if nw else "the narrow chart")
+            more.append(f"{'Up to ' if nw and nn and nw != nn else ''}{plural(n_, what_, what_.replace('run', 'runs', 1))} had no free spot inside "
+                        f"the nudge limits on {on} and {'is' if n_ == 1 else 'are'} not drawn there; every run is in the tables.")
     lo_ = max(sw_["left_out"], sn_["left_out"])
     if lo_:
         more.append(f"With the checkbox, {'up to ' if sw_['left_out'] != sn_['left_out'] else ''}{plural(lo_, 'older run')} with no free spot near "
@@ -2766,6 +2876,45 @@ def build():
             f"{footer_html()}\n<script>{JS}</script>\n")
 
 
+CLAIM_KEYS = re.compile(r"up to|to the goal|\bBest:|\b[Pp]ass(?:es|ed)?\b")
+SQ_RX = re.compile(r"(?<![\w.])(?:" + "|".join(re.escape(t) for t in sorted(QTESTS)) + r")(?![\w])") if QTESTS else None
+
+
+def claim_pieces(text, md=False):
+    """innoferra 10-07 r2: visible text cut into claims: every SVG text and table cell (each tag ends a piece; inline tags do not), then
+    sentences. md: STANDINGS.md lines, table cells and sentences."""
+    if md:
+        t = text.replace("|", "\n")
+    else:
+        t = re.sub(r"<(script|style)>.*?</\1>", "", text, flags=re.S)
+        t = re.sub(r"</?(?:a|b|i|em|strong|span|abbr|code|sup|sub|small|u)\b[^>]*>", "", t)
+        t = html.unescape(re.sub(r"<[^>]+>", "\n", t))
+    t = t.replace(" ", " ")
+    return [x.strip() for x in re.split(r"\n+|(?<=[.;])\s+(?=[A-Z0-9(])", t) if x.strip()]
+
+
+def single_claim(pc):
+    """why one claim piece breaks rule (1c), [] when it does not: it names a single-engine test, or it states a single-engine result
+    ('N/15 up to X M', 'passes ... up to X M', 'Y M to the goal') that no full-node run matches; a piece that says 'one engine' is
+    a one-engine statement and passes"""
+    if not CLAIM_KEYS.search(pc) or "one engine" in pc.lower():
+        return []
+    bad = []
+    if SQ_RX and SQ_RX.search(pc):
+        bad.append("names a single-engine test")
+    fn = [r for r in VALID if not single(r)]
+    for m in re.finditer(r"(?:(\d+)/15 |\b(?:[Pp]ass(?:es)?|Yes,)\b[^.;|]{0,40}?)up to (\d+\.\d\d) M", pc):
+        n, x = int(m.group(1) or NMIN), m.group(2)
+        if any(m2(r["load"]) == x and r["pass"] >= n for r in SINGLE_V) and not any(m2(r["load"]) == x and r["pass"] >= n for r in fn):
+            bad.append(f"'{m.group(0)}' is a single-engine result")
+    for m in re.finditer(r"(\d+\.\d\d) M (?:is left )?to the goal", pc):
+        base = TARGET - float(m.group(1))
+        near = lambda rs: any(abs(r["load"] - base) <= 0.0051 and r["pass"] >= NMIN for r in rs)
+        if near(SINGLE_V) and not near(fn):
+            bad.append(f"'{m.group(0)}' measures from a single-engine pass")
+    return bad
+
+
 def checks(page, standings):
     # (1) STANDINGS.md line 1 = status_text(); the cells use the same status values
     if standings.splitlines()[0] != status_text():
@@ -2778,6 +2927,27 @@ def checks(page, standings):
     for x in SINGLE_V:
         if x["id"] in status_text():
             ERRORS.append(f"status line names the single-engine run {x['id']}")
+    # (1c) innoferra 10-07 r2: no full-node claim anywhere uses a single-engine run. A claim = an SVG text, a table cell or a sentence of
+    # the page or STANDINGS.md with 'up to', 'to the goal', 'Best:' or 'pass(es)'. Unless it says 'one engine', it must not name a
+    # single-engine test, and its 'N/15 up to X M' / 'passes ... up to X M' / 'Y M (is left) to the goal' must not be a single-engine
+    # result that no full-node run matches. 'Passes' badges of single-engine runs must say 'one engine'.
+    for src, pieces in (("page", claim_pieces(page)), ("STANDINGS.md", claim_pieces(standings, md=True))):
+        for pc in pieces:
+            bad = single_claim(pc)
+            if bad:
+                ERRORS.append(f"{src}: full-node claim with single-engine data ({'; '.join(bad)}): {pc[:140]!r}")
+    sid = {r["id"] for r in RUNS if single(r)}
+    for row in re.findall(r"<tr\b[^>]*>.*?</tr>", page, flags=re.S):
+        rid = set(re.findall(r'(?:href="#run-|id="run-)([^"]+)"', row)) | set(re.findall(r"Source: run (\S+) ·", row))
+        if rid & sid:
+            for m in re.finditer(r'<span class="v passes"><span class="ok">✓</span>([^<]*)</span>', row):
+                if "one engine" not in m.group(1):
+                    ERRORS.append(f"a 'Passes' badge of the single-engine run {sorted(rid & sid)[0]} does not say 'one engine'")
+    # (1d) innoferra 10-07 r2: every chart mark sits inside the nudge limits that the chart caption states
+    for v_, st in CHART_STATS.items():
+        if st.get("max_dy_min", 0) > NUDGE_MIN + 1e-6 or st.get("max_dx_m", 0) > NUDGE_M + 1e-6:
+            ERRORS.append(f"chart ({v_}): a mark sits {st['max_dy_min']:.2f} minute / {st['max_dx_m']:.3f} M from its value; "
+                          f"the caption allows {NUDGE_MIN:g} minute / {NUDGE_M:g} M")
     if CLOSEST and not PASS_TOP and nbsp_units(f"Closest: {CLOSEST['pass']}/{NMIN} at {m2(CLOSEST['load'])} M ({stamp(CLOSEST['at'])})") not in page:
         ERRORS.append("answer cell 1 does not carry the status() closest run")
     # (3) never '15/15' or 'passes' next to production unless production scored 15/15
