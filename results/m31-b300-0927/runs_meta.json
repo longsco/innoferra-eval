@@ -2492,6 +2492,16 @@
    "change": "cache",
    "verdict": "adopted",
    "why": "13/15 at 7.96 M/GPU vs 7/15 with ratio 2.51 on the same 1,596 requests (production 0/15). Paired: first token x0.618 (CI 0.583..0.666), TPS +14.6 tok/s (x1.28). Uncached prefill equals production's (11.0 vs 11.2 M). The two misses are the start-burst minutes 0-1 on decode (TPS 59 and 52)."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_cs50_v5rrc_knee78_q0",
+   "at": "2026-10-08 13:21",
+   "protocol": "v5.1rq",
+   "share": 0.97,
+   "name": "one engine (GPUs 6,7): best stack + fair chunk share 0.5, faithful Oct 3 at 0.97x production's real load",
+   "change": "scheduler",
+   "verdict": "rejected",
+   "why": "12/15, the same count as share 1.0 (production 0/15), but paired first token x1.176 (CI 1.146..1.231) and TPS -8.6 tok/s (CI -11.7..-6.2). The giant-prompt minutes got worse (minute 12 first token 14.6 s vs 8.2 s). Splitting each pass's prefill budget makes the giant prefill last longer and keeps decode mixed with prefill for longer."
   }
  ],
  "g67_rule": {
