@@ -2332,6 +2332,16 @@
    "change": "load",
    "verdict": "comparison",
    "why": "7/15 at 7.48 M/GPU (page rule); production 13/15 on the same requests. Paired with the full-node DP2 run at 7.41 M (15/15): first token x0.531, TPS -27.6 tok/s (x0.68). Plain TP2 fails Sep 30-shaped traffic on decode even near 7.4 M."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_s30_127x_q0",
+   "at": "2026-10-08 00:25",
+   "protocol": "v5.1q",
+   "share": 1.3,
+   "name": "one engine (GPUs 6,7): TP2 + image fast path + pass-capped prefill delayer (D1) + all even decode graph sizes (G1), Sep 30 at 1.29x (8.38 M/GPU)",
+   "change": "scheduler",
+   "verdict": "under review",
+   "why": "11/15 at 8.38 M/GPU against plain TP2 5/15 and DP2 + fast path 10/15 on the same 3,072 requests (production 13/15). Paired with plain TP2: TPS +5.2 tok/s (x1.10, CI +4.2..+6.2), first token x1.041. The missing decode protection was most of TP2's decode loss (TP2-DECODE report). Confirmation runs at the Oct 3 knee and on Sep 30 1.15x are queued."
   }
  ],
  "g67_rule": {
