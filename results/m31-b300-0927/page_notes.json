@@ -1294,9 +1294,9 @@
   "items": [
    {
     "rule": "ttft_p50",
-    "title": "Oct 3 at 7.5-7.9 M: idle conversations lose their cache after about 4 minutes",
-    "text": "One engine with production's layout (TP2) and our best settings passes 12/15 at 7.47 M and 7/15 at 7.94 M. The misses sit in the busy minutes 0-4 and 13-14. In those runs, 22 and 35 follow-ups processed their whole prompt again. About 4 minutes after our last answer, their cached prefix was gone. Production served the same requests at least 80% from cache. These re-prefills are nearly all of our extra prompt processing (+24% and +45% over production). Our cache is full: the host pool holds the whole cache (12.2 M tokens), about the same as production's (12.6 M). So production must carry fewer conversations per engine. A test with a 19% larger host pool is running.",
-    "src": "PROGRESS.md Oct 8 07:30, 08:20"
+    "title": "Oct 3 at 7.5-7.9 M: idle conversations lost their cache after about 4 minutes (fixed on one engine)",
+    "text": "One engine with production's layout (TP2) and our best settings passed 12/15 at 7.47 M and 7/15 at 7.94 M. The misses sat in the busy minutes. There, 22 and 35 follow-ups processed their whole prompt again: about 4 minutes after our last answer, their cached prefix was gone. Write-through keeps a host copy of every cache entry, so the host pool (12.2 M tokens) is the whole cache. With a 14.6 M-token host pool (ratio 3.0), the Oct 3 knee passes 14/15 and our uncached prompt tokens drop below production's. A full node has room for about ratio 2.85 unless each token's host copy gets smaller.",
+    "src": "PROGRESS.md Oct 8 07:30, 08:20, 09:05"
    },
    {
     "rule": "ttft_p50",
@@ -2079,10 +2079,10 @@
    "ref": "PROGRESS.md Oct 7 14:45; next230/G67-HARNESS.md; PROGRESS.md Oct 7 16:40"
   },
   {
-   "name": "Host KV cache ratio 3.0 (was 2.51): 15% above production's host pool",
-   "state": "running",
-   "at": "2026-10-08 07:30",
-   "text": "Oct 8 08:20 PDT: write-through keeps a host copy of every GPU entry, so the host pool is the whole cache. Ours holds 12.2 M tokens, production's 12.6 M. An idle conversation survives about 4 minutes at the Oct 3 knee. Ratio 3.0 gives 14.6 M tokens (about 130 GB more host memory per engine). A simulation predicts 31-37% less uncached prefill. The run at the Oct 3 knee (7.47 M), paired with ratio 2.51, started 08:11.",
+   "name": "Host KV cache ratio 3.0 (was 2.51): +8.9 tok/s, Oct 3 knee 14/15",
+   "state": "under review",
+   "at": "2026-10-08 09:05",
+   "text": "Oct 8 09:05 PDT: at the Oct 3 knee (7.49 M), ratio 3.0 passes 14/15 (ratio 2.51: 12/15). Paired: generation +8.9 tok/s, first token x0.94. Our uncached prompt tokens fall below production's (10.2 M vs 11.1 M). Re-confirming with the adopted delayer (12 passes) on Oct 3 at 7.47 M and 7.94 M and on Sep 30 at 7.47 M and 8.4 M. Limit: 779 GB host memory per engine; a full node fits about ratio 2.85.",
    "ref": "PROGRESS.md Oct 8 07:30"
   },
   {
