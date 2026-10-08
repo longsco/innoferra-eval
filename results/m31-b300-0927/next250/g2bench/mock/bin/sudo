@@ -1,0 +1,4 @@
+#!/bin/bash
+# mock sudo (tp2prof mock suite): drops -n and runs the command as the same user
+[ "${1:-}" = -n ] && shift
+exec "$@"

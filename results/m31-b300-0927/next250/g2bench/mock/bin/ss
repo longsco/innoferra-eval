@@ -1,0 +1,4 @@
+#!/bin/bash
+# mock ss (tp2prof mock suite): prints $STUB_STATE/listen ('ss -ltnH' format)
+[ -f "${STUB_STATE:?}/listen" ] && cat "$STUB_STATE/listen"
+exit 0

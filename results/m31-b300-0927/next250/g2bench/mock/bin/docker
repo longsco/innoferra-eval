@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""mock docker - g2/bench copy (10-08) of the tp2prof mock docker + VARIANT bench support: an engine whose argv or env holds a word
+listed in $STUB_STATE/variant_markers (default: --enable-symm-mem) starts the mock engine as the VARIANT (--symm, step 37 ms
+instead of 40; $STUB_STATE/gate_diverge N -> --diverge N; var_mtt -> --mtt; var_die_after -> crash; var_accept -> --accept);
+every 'run -d' is also written as JSON to $STUB_STATE/docker_runs.jsonl (exact argv, for the variant argv test); inspect knows
+'{{json .Config.Cmd}}'.
+Original: mock docker for the tp2prof mock suite (never touches a real daemon; the suite runs in a CPU-only container without a docker
+socket). State: $STUB_STATE/containers.json; every call is appended to $STUB_STATE/docker_calls.log (one line, arguments joined).
+Supported: ps, inspect (-f templates used by g67_lib.sh / run_tp2prof.sh / launch_dev67.sh), image inspect, rm, logs (--timestamps,
+--tail), run:
+  run --rm --entrypoint cat IMAGE /opt/ENGINE_COMMIT -> prints a fake commit (launch_dev67.sh preflight);
+  run -d --name m31-tp2-3 ... -> registers the container and starts mock_engine.py on the published port (-p 127.0.0.1:P:P) with
+     the host path of /logs; --tp-size / --dp-size from the engine argv; $STUB_STATE/hc_override (JSON) is merged into its
+     HostConfig (isolation test); $STUB_STATE/auto_apps -> its two 'schedulers' appear on GPUs 6,7 (nvidia-smi stub) with
+     /proc/<pid>/cgroup under $STUB_PROC naming this container; $STUB_STATE/engine_die_after = seconds until the fake engine crashes;
+     $STUB_STATE/listen gets a LISTEN line for the port (ss stub);
+  run --rm --name g67-replay ... IMAGE args -> runs the command HERE (foreground) with the -e env and every container path of a -v
+     mount rewritten to its host path; registered (with its labels) while it runs; 'rm -f' of it kills the process.
+Exit codes as docker: 0, 1 (no such object), 125 (name conflict), 137 (killed)."""
+import fcntl, hashlib, json, os, re, signal, subprocess, sys, time
+ST = os.environ["STUB_STATE"]
+HERE = os.path.dirname(os.path.abspath(__file__))
+PROC = os.environ.get("STUB_PROC", os.path.join(ST, "proc"))
+CF = os.path.join(ST, "containers.json")
+LK = open(os.path.join(ST, ".docker.lock"), "w")
+fcntl.flock(LK, fcntl.LOCK_EX)
+
+
+def load():
+    try:
+        return json.load(open(CF))
+    except Exception:
+        return {}
+
+
+def save(c):
+    json.dump(c, open(CF + ".tmp", "w"), indent=0)
+    os.replace(CF + ".tmp", CF)
+
+
+def alive(pid):
+    if not pid:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    try:                                   # a zombie is not alive
+        with open(f"/proc/{pid}/stat") as f:
+            return f.read().split(")")[-1].split()[0] != "Z"
+    except OSError:
+        return False
+
+
+def running(c):
+    return c.get("running", False) and (c.get("pid") is None or alive(c["pid"]))
+
+
+def hostconfig(c):
+    g = (c.get("gpus") or "").strip().strip('"').strip("'")
+    dr = None
+    if g == "all":
+        dr = [{"Driver": "", "Count": -1, "DeviceIDs": None, "Capabilities": [["gpu"]], "Options": {}}]
+    elif g.startswith("device="):
+        dr = [{"Driver": "", "Count": 0, "DeviceIDs": g[len("device="):].split(","), "Capabilities": [["gpu"]], "Options": {}}]
+    hc = {"DeviceRequests": dr, "Privileged": bool(c.get("privileged")), "Runtime": "runc", "Devices": [], "DeviceCgroupRules": None}
+    hc.update(c.get("hc_override") or {})
+    return hc
+
+
+def render(c, fmt):
+    out = fmt
+    rep = {"{{.Id}}": c["id"], "{{.Config.Image}}": c["image"], "{{.State.Running}}": "true" if running(c) else "false",
+           "{{.State.Status}}": "running" if running(c) else "exited", "{{.State.ExitCode}}": str(c.get("exit", 0 if running(c) else 1)),
+           "{{.RestartCount}}": "0", "{{.Name}}": "/" + c["name"], "{{.State.StartedAt}}": c.get("started", ""),
+           "{{json .HostConfig}}": json.dumps(hostconfig(c)), "{{json .HostConfig.DeviceRequests}}": json.dumps(hostconfig(c)["DeviceRequests"]),
+           "{{range .Config.Env}}{{println .}}{{end}}": "".join(e + "\n" for e in c.get("env", [])),
+           "{{json .Config.Cmd}}": json.dumps(c.get("args", []))}
+    for k, v in rep.items():
+        out = out.replace(k, v)
+    out = re.sub(r'\{\{index \.Config\.Labels "([^"]+)"\}\}', lambda m: c.get("labels", {}).get(m.group(1), ""), out)
+    return out
+
+
+args = sys.argv[1:]
+with open(os.path.join(ST, "docker_calls.log"), "a") as f:
+    f.write(" ".join(args) + "\n")
+if not args:
+    sys.exit(0)
+cmd = args[0]
+C = load()
+
+if cmd == "ps":
+    fmt = args[args.index("--format") + 1] if "--format" in args else None
+    for n, c in C.items():
+        if not ("-a" in args or running(c)):
+            continue
+        print(fmt.replace("{{.Names}}", n).replace("{{.ID}}", c["id"][:12]).replace("{{.Status}}", "Up" if running(c) else "Exited")
+              if fmt else f"{c['id'][:12]} {c['image']} {n}")
+    sys.exit(0)
+if cmd == "inspect":
+    fmt, names, i = None, [], 1
+    while i < len(args):
+        if args[i] in ("-f", "--format"):
+            fmt = args[i + 1]
+            i += 2
+            continue
+        names.append(args[i])
+        i += 1
+    rc = 0
+    for n in names:
+        c = C.get(n) or next((x for x in C.values() if x["id"].startswith(n)), None)
+        if c is None:
+            sys.stderr.write(f"Error: No such object: {n}\n")
+            rc = 1
+            continue
+        print(render(c, fmt) if fmt else json.dumps([c]))
+    sys.exit(rc)
+if cmd == "image":
+    fmt = args[args.index("--format") + 1] if "--format" in args else "{{.Id}}"
+    print("sha256:" + "cd" * 32 if "{{.Id}}" in fmt else "mock-base")
+    sys.exit(0)
+
+
+def drop_apps(c):
+    ap = os.path.join(ST, "compute_apps")
+    if os.path.exists(ap):
+        keep = [l for l in open(ap) if c["id"] not in l]
+        open(ap, "w").writelines(keep)
+    lp = os.path.join(ST, "listen")
+    if os.path.exists(lp) and c.get("port"):
+        keep = [l for l in open(lp) if f":{c['port']} " not in l]
+        open(lp, "w").writelines(keep)
+
+
+def resolve(n):            # a name or an id (prefix) -> the name key
+    if n in C:
+        return n
+    return next((k for k, x in C.items() if x["id"].startswith(n)), None)
+
+
+if cmd == "rm":
+    for n in [x for x in args[1:] if not x.startswith("-")]:
+        k = resolve(n)
+        c = C.pop(k, None) if k else None
+        if c is None:
+            continue
+        for p in (c.get("pid"), c.get("pgid")):
+            if p:
+                try:
+                    os.killpg(p, signal.SIGKILL) if p == c.get("pgid") else os.kill(p, signal.SIGKILL)
+                except OSError:
+                    pass
+        drop_apps(c)
+    save(C)
+    sys.exit(0)
+if cmd == "logs":
+    n = args[-1]
+    k = resolve(n)
+    c = C.get(k) if k else None
+    if c is None:
+        sys.stderr.write(f"Error: No such container: {n}\n")
+        sys.exit(1)
+    p = c.get("log")
+    lines = open(p).read().splitlines(True) if p and os.path.exists(p) else []
+    if "--tail" in args:
+        t = int(args[args.index("--tail") + 1])
+        lines = lines[-t:]
+    if "--timestamps" not in args:
+        lines = [l.split(" ", 1)[1] if re.match(r"^\d{4}-\d\d-\d\dT", l) else l for l in lines]
+    sys.stdout.write("".join(lines))
+    sys.exit(0)
+if cmd in ("stop", "restart"):
+    sys.exit(0)
+if cmd != "run":
+    sys.exit(0)
+
+# ---- run ----------------------------------------------------------------------------------------------------------------------
+i = 1
+o = {"env": [], "vol": [], "name": None, "rm": False, "d": False, "gpus": None, "labels": {}, "publish": [], "entrypoint": None,
+     "privileged": False, "network": None}
+flags1 = {"--name", "-e", "-v", "--gpus", "--network", "--restart", "--shm-size", "--ipc", "--ulimit", "--cap-add", "--log-driver",
+          "--log-opt", "-p", "--cpuset-cpus", "--cpuset-mems", "--entrypoint", "--cpus", "--cpu-shares", "--user", "-w", "--label",
+          "--runtime", "--device"}
+while i < len(args):
+    x = args[i]
+    if x == "--rm":
+        o["rm"] = True
+        i += 1
+        continue
+    if x == "-d":
+        o["d"] = True
+        i += 1
+        continue
+    if x == "--privileged":
+        o["privileged"] = True
+        i += 1
+        continue
+    if x in flags1:
+        v = args[i + 1]
+        if x == "--name":
+            o["name"] = v
+        elif x == "-e":
+            o["env"].append(v)
+        elif x == "-v":
+            o["vol"].append(v)
+        elif x == "--gpus":
+            o["gpus"] = v
+        elif x == "--label":
+            k, _, val = v.partition("=")
+            o["labels"][k] = val
+        elif x == "-p":
+            o["publish"].append(v)
+        elif x == "--entrypoint":
+            o["entrypoint"] = v
+        elif x == "--network":
+            o["network"] = v
+        i += 2
+        continue
+    if x.startswith("-"):
+        i += 1
+        continue
+    break
+image = args[i]
+rest = args[i + 1:]
+if o["rm"] and o["entrypoint"] == "cat":
+    print("0123456789abcdef0123456789abcdef01234567")
+    sys.exit(0)
+if o["name"] and o["name"] in C:
+    sys.stderr.write(f'docker: Error response from daemon: Conflict. The container name "/{o["name"]}" is already in use\n')
+    sys.exit(125)
+cid = hashlib.sha256(f"{o['name']}-{time.time_ns()}".encode()).hexdigest()
+now = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime()) + ".%09dZ" % (time.time_ns() % 10**9)
+c = {"id": cid, "name": o["name"] or f"anon{len(C)}", "image": image, "env": o["env"], "args": rest, "gpus": o["gpus"],
+     "labels": o["labels"], "started": now, "running": True, "privileged": o["privileged"], "vol": o["vol"], "network": o["network"]}
+
+if o["d"]:            # the engine
+    with open(os.path.join(ST, "docker_runs.jsonl"), "a") as f:
+        f.write(json.dumps({"argv": args}) + "\n")
+    rd = os.path.join(ST, "run_delay")
+    if os.path.exists(rd):       # skeptic 10-08: a slow 'docker run -d' (TERM during the launch, test T26)
+        time.sleep(float(open(rd).read().strip() or 0))
+    port = None
+    for p in o["publish"]:
+        m = re.match(r"^(?:127\.0\.0\.1:)?(\d+):(\d+)$", p)
+        if m:
+            port = int(m.group(1))
+    logs_host = next((v.split(":")[0] for v in o["vol"] if v.split(":")[1] == "/logs"), ST)
+    tp = int(rest[rest.index("--tp-size") + 1]) if "--tp-size" in rest else 1
+    dp = int(rest[rest.index("--dp-size") + 1]) if "--dp-size" in rest else 1
+    logf = os.path.join(ST, f"englog_{cid[:12]}.txt")
+    open(logf, "w").close()
+    cmdline = [sys.executable, os.path.join(os.path.dirname(HERE), "mock_engine.py"), "--port", str(port or 19491), "--logs-host",
+               logs_host, "--log-file", logf, "--tp", str(tp), "--dp", str(dp), "--synth-dir", os.environ["STUB_SYNTH_DIR"]]
+    da = os.path.join(ST, "engine_die_after")
+    if os.path.exists(da):
+        cmdline += ["--die-after-s", open(da).read().strip()]
+    mk = os.path.join(ST, "variant_markers")
+    markers = open(mk).read().split() if os.path.exists(mk) else ["--enable-symm-mem"]
+    if any(m in rest or m in o["env"] for m in markers):          # the VARIANT engine of the bench
+        cmdline += ["--symm", "--step-ms", "37"]
+        for fn, flag in (("gate_diverge", "--diverge"), ("var_mtt", "--mtt"), ("var_die_after", "--die-after-s"), ("var_accept", "--accept")):
+            p = os.path.join(ST, fn)
+            if os.path.exists(p):
+                cmdline += [flag, open(p).read().strip()]
+    pr = subprocess.Popen(cmdline, stdout=subprocess.DEVNULL, stderr=open(os.path.join(ST, f"engine_{cid[:12]}.err"), "w"),
+                          start_new_session=True)
+    c.update({"pid": pr.pid, "pgid": pr.pid, "log": logf, "port": port})
+    hp = os.path.join(ST, "hc_override")
+    if os.path.exists(hp):
+        c["hc_override"] = json.load(open(hp))
+    if os.path.exists(os.path.join(ST, "auto_apps")) and "6,7" in (o["gpus"] or ""):
+        with open(os.path.join(ST, "compute_apps"), "a") as f:
+            for k, g in enumerate((6, 7)):
+                fp = 9000 + 10 * len(C) + k
+                os.makedirs(os.path.join(PROC, str(fp)), exist_ok=True)
+                open(os.path.join(PROC, str(fp), "cgroup"), "w").write(f"0::/system.slice/docker-{cid}.scope\n")
+                f.write(f"GPU-stub-000{g}, {fp}, 70000 cid={cid}\n")
+    if port:
+        with open(os.path.join(ST, "listen"), "a") as f:
+            f.write(f"LISTEN 0 4096 127.0.0.1:{port} 0.0.0.0:*\n")
+    C[c["name"]] = c
+    save(C)
+    print(cid)
+    sys.exit(0)
+
+# foreground container (the driver): run the command here with mapped paths
+maps = []
+for v in o["vol"]:
+    parts = v.split(":")
+    maps.append((parts[1], parts[0]))
+maps.sort(key=lambda x: -len(x[0]))
+
+
+def mapped(s):
+    for cpath, hpath in maps:
+        if s == cpath or s.startswith(cpath + "/"):
+            return hpath + s[len(cpath):]
+        if "=" in s:
+            k, _, val = s.partition("=")
+            if val == cpath or val.startswith(cpath + "/"):
+                return k + "=" + hpath + val[len(cpath):]
+    return s
+
+
+cmdv = ([o["entrypoint"]] if o["entrypoint"] else []) + [mapped(x) for x in rest]
+env = dict(os.environ)
+for e in o["env"]:
+    k, _, v = e.partition("=")
+    env[k] = v
+pr = subprocess.Popen(cmdv, env=env, start_new_session=True)
+c.update({"pid": pr.pid, "pgid": pr.pid})
+C[c["name"]] = c
+save(C)
+fcntl.flock(LK, fcntl.LOCK_UN)
+rc = pr.wait()
+fcntl.flock(LK, fcntl.LOCK_EX)
+C = load()
+if o["rm"] and C.get(c["name"], {}).get("id") == cid:
+    C.pop(c["name"], None)
+    save(C)
+sys.exit(137 if rc < 0 else rc)

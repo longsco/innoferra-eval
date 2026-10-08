@@ -1,0 +1,4 @@
+timing prompts: n 56, tokens 2741440, identical to the original driver: True (sha256 e5e9bf348e7c vs e5e9bf348e7c); build 11.2 s / 6.5 s; exact lengths 56/56
+gate prompts: n 50, tokens 754695, exact lengths 50/50, min 1024 max 61440, inside the vocabulary (200061): True, sha256 3c6fc60fee4a, build 2.4 s
+longest shared prefix: gate vs gate 176 tokens, gate vs timing 173 tokens (the chat-template prefix alone is 173 tokens; allowed: prefix + 8)
+RESULT PASS

@@ -1,0 +1,48 @@
+== tp2bench compare: run realcheck, variant 'real-tp2-vs-dp2': args [] env []; arms ref var
+   tags: [measured] = this window; step = Part A (unprofiled engine log); collectives = Part B (torch profiler)
+   ref   driver exit 0; KV pool 4857600; flags -; /server_info keys -
+   var   driver exit 0; KV pool 2579072; flags -; /server_info keys -
+-- load identity: timing prompts (token ids sha256) DIFFER or missing: {'ref': '-', 'var': '-'}
+-- container check var vs ref: n/a: container.env / container.cmd.json missing
+-- engine ref: nccl 2.28.9, max_total_num_tokens 4857600, symm prealloc lines 0, symm-enabled lines 0, SymmMem debug NOT-in-pool by op {}, tracebacks 0
+-- engine var: nccl 2.28.9, max_total_num_tokens 2579072, symm prealloc lines 0, symm-enabled lines 0, SymmMem debug NOT-in-pool by op {}, tracebacks 0
+-- identity gate (greedy, temperature 0, ignore_eos, one request at a time; token ids compared, never printed)
+   no gate files
+-- Part A: decode step, UNPROFILED (TP0 Decode lines, pairs without a Prefill line, timer windows)
+   level metric                                          ref              var   delta (arm - ref) [95% CI]
+      32 step ms p50                                  38.578           34.089   var: -4.489 (x0.884)
+      32 step ms p90                                  38.753           34.263   var: -4.49 (x0.884)
+      32 step ms mean                                 38.536           34.081   var: -4.456 [-4.538, -4.373]
+      32 implied step ms p50                          38.501           34.079
+      32 fwd occupancy %                              94.396           95.128
+      32 accept p50                                     3.23             3.07
+      32 engine gen tok/s p50                        2673.65          1437.28   var: -1236.37 (x0.538)
+      32 driver tok/s (received)                      2603.5           2720.1   var: 116.6 (x1.045)
+      32 running p50                                      32               16
+      32 KV tokens p50                               1686016           847104
+      32 clean pairs                                      28               32
+      32 window valid                                   True             True
+      56 step ms p50                                  47.948           39.724   var: -8.224 (x0.828)
+      56 step ms p90                                  48.183           40.001   var: -8.182 (x0.83)
+      56 step ms mean                                 47.976           39.773   var: -8.203 [-8.292, -8.114]
+      56 implied step ms p50                          47.963           39.734
+      56 fwd occupancy %                              93.672           94.944
+      56 accept p50                                     3.22             3.22
+      56 engine gen tok/s p50                        3756.84          2260.66   var: -1496.18 (x0.602)
+      56 driver tok/s (received)                      2426.5           2407.1   var: -19.4 (x0.992)
+      56 running p50                                      56               28
+      56 KV tokens p50                               3017600          1528064
+      56 clean pairs                                      22               28
+      56 window valid                                   True             True
+-- Part B: collectives per verify step, PROFILED (all streams; mean of 2 ranks; read kernel times, not walls)
+      56 ref   collectives 5.322 ms/step (by phase {'draft forward': 0.395, 'target verify': 4.928}); NCCL AG/RS calls/step 134.0, of them ncclSymk 0; partner wait 0.44 ms; kernel time all streams 48.578 ms (compute stream 8.317); kept steps [18, 18]; iterations mismatched 0
+            comm kernels (ms/step x calls/step): ncclDevKernel_ReduceScatter_Sum_bf16_RING_LL 2.321 x65.0; ncclDevKernel_AllGather_RING_LL 2.244 x69.0; _all_gather_kernel_inner 0.671 x1.0; all_reduce_kernel 0.086 x2.0
+      56 var   collectives 0.685 ms/step (by phase {'target verify': 0.685}); NCCL AG/RS calls/step 0, of them ncclSymk 0; partner wait 0.008 ms; kernel time all streams 40.986 ms (compute stream 38.029); kept steps [18, 18]; iterations mismatched 0
+            comm kernels (ms/step x calls/step): _all_gather_kernel_inner 0.671 x1.0; all_reduce_kernel 0.014 x1.0
+      56 var - ref: collectives -4.637 ms/step, kernel time all streams -7.592 ms/step
+      32 ref   collectives 3.622 ms/step (by phase {'draft forward': 0.308, 'target verify': 3.314}); NCCL AG/RS calls/step 134.0, of them ncclSymk 0; partner wait 0.403 ms; kernel time all streams 39.662 ms (compute stream 5.918); kept steps [18, 18]; iterations mismatched 0
+            comm kernels (ms/step x calls/step): ncclDevKernel_ReduceScatter_Sum_bf16_RING_LL 1.647 x65.0; ncclDevKernel_AllGather_RING_LL 1.484 x69.0; _all_gather_kernel_inner 0.378 x1.0; all_reduce_kernel 0.113 x2.0
+      32 var   collectives 0.387 ms/step (by phase {'target verify': 0.387}); NCCL AG/RS calls/step 0, of them ncclSymk 0; partner wait 0.003 ms; kernel time all streams 35.285 ms (compute stream 32.519); kept steps [18, 18]; iterations mismatched 0
+            comm kernels (ms/step x calls/step): _all_gather_kernel_inner 0.377 x1.0; all_reduce_kernel 0.01 x1.0
+      32 var - ref: collectives -3.235 ms/step, kernel time all streams -4.377 ms/step
+VERDICT: NOT COMPARABLE: check load / windows / accept / container lines | gate NOT RUN (GATE=0 or no gate file) | ncclSymk AG/RS calls L56 0/0, L32 0/0 | step L32 -4.456 ms [-4.538, -4.373]; L56 -8.203 ms [-8.292, -8.114] | load equal False, windows valid True, accept within 5% True | container check None

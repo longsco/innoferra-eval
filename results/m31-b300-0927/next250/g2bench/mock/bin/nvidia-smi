@@ -1,0 +1,17 @@
+#!/bin/bash
+# mock nvidia-smi (tp2prof mock suite; = g67/tests/stubs/nvidia-smi): 8 GPUs GPU-stub-0000..0007; memory.used from
+# $STUB_STATE/gpu_mem_<i> (default 0); compute apps from $STUB_STATE/compute_apps ("GPU-stub-000<i>, <pid>, <MiB> [cid=<id>]").
+ST=${STUB_STATE:?}
+echo "nvidia-smi $*" >> "$ST/nvsmi_calls.log"
+mem(){ cat "$ST/gpu_mem_$1" 2>/dev/null || echo 0; }
+case "$*" in
+  *--query-compute-apps=gpu_uuid,pid,used_memory*) [ -f "$ST/compute_apps" ] && sed -e 's/ cid=.*//' "$ST/compute_apps" | grep -v '^\s*$';;
+  *--query-compute-apps=pid*) [ -f "$ST/compute_apps" ] && awk -F', *' 'NF>1{print $2}' "$ST/compute_apps";;
+  *--query-gpu=index,uuid,memory.used*) for i in 0 1 2 3 4 5 6 7; do echo "$i, GPU-stub-000$i, $(mem $i)"; done;;
+  *--query-gpu=name*) for i in 0 1 2 3 4 5 6 7; do echo "NVIDIA B300 SXM6 AC"; done;;
+  *--query-gpu=memory.used*) for i in 0 1 2 3 4 5 6 7; do mem $i; done;;
+  *--query-gpu=driver_version*) for i in 0 1 2 3 4 5 6 7; do echo "580.105.08"; done;;
+  -L) for i in 0 1 2 3 4 5 6 7; do echo "GPU $i: NVIDIA B300 SXM6 AC (UUID: GPU-stub-000$i)"; done;;
+  *) echo "mock nvidia-smi";;
+esac
+exit 0

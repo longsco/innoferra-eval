@@ -1,0 +1,444 @@
+== T01_no_hold
+     | 20:32:27 run_tp2prof tp2prof-20261008T203227Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:32:28 run_tp2prof REFUSED: g67/HOLD is absent: write it (echo reason > g67/HOLD), wait for the running lever to end, then start this runner
+  ok   rc 2
+  ok   says HOLD
+  ok   no engine started
+  ok   lock free
+== T02_lever_running
+     | 20:32:28 run_tp2prof tp2prof-20261008T203228Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:32:28 run_tp2prof REFUSED: a g67 lever is running (process group 81): wait for it (the chain holds at g67/HOLD after it)
+  ok   rc 2
+  ok   says lever
+  ok   no engine started
+== T03_lock_held
+     | 20:32:29 run_tp2prof tp2prof-20261008T203229Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:32:29 run_tp2prof REFUSED: GPUs 6,7 are locked by: other holder (pid 140)
+  ok   rc 2
+  ok   says locked
+  ok   no engine started
+== T04_pin_mismatch
+     | 20:32:29 run_tp2prof tp2prof-20261008T203229Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:32:30 run_tp2prof REFUSED: engine launcher /w/t/T04_pin_mismatch/k/g67m/launch_dev67.sh changed: sha256 6ed77ad51796 is not the pinned e127c9f31201 (review it, then pin it again: sha256sum /w/t/T04_pin_mismatch/k/g67m/launch_dev67.sh > /w/t/T04_pin_mismatch/k/g67/launch_dev67.sha256)
+  ok   rc 2
+  ok   says changed
+  ok   no engine started
+== T05_foreign_engine
+     | 20:32:30 run_tp2prof tp2prof-20261008T203230Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:32:31 run_tp2prof REFUSED: container m31-tp2-3 exists and is not ours (foreign:no-owner-word(image=minimax-m31-sglang:demo-bef87f4))
+  ok   rc 2
+  ok   says not ours
+  ok   foreign engine untouched
+  ok   no rm call
+== T06_foreign_gpu_holder
+     | 20:32:32 run_tp2prof REFUSED: GPUs 6,7 not free (rc 1): GPU 7 held by pid 4242 (9000 MiB, container none/host)
+     | 20:32:32 GPUs 6,7 lock released
+     | 20:32:32 end rc 2 (run dir /w/t/T06_foreign_gpu_holder/runs/tp2prof-20261008T203231Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 2
+  ok   says GPUs not free
+  ok   no engine started
+  ok   lock released
+== T07_gpu_words
+  ok   word GPUS=0,1: rc 2
+  ok   word GPUS=0,1: no engine
+  ok   word "EXTRA_ENV=$BB CUDA_VISIBLE_DEVICES=0 M3: rc 2
+  ok   word "EXTRA_ENV=$BB CUDA_VISIBLE_DEVICES=0 M3: no engine
+  ok   word "XARGS=--base-gpu-id 0": rc 2
+  ok   word "XARGS=--base-gpu-id 0": no engine
+  ok   word NAME=x: rc 2
+  ok   word NAME=x: no engine
+== T08_drift
+     | 20:32:33 run_tp2prof tp2prof-20261008T203233Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:32:33 run_tp2prof REFUSED: chain recipe drift: chain_g67.sh base_env body changed (review run_tp2prof.sh against g67/chain_g67.sh + g67/launch_g67.sh)
+  ok   rc 2
+  ok   says drift
+  ok   no engine started
+== T09_hooks_outside_suite
+  ok   rc 2
+  ok   says test hook
+  ok   no engine started
+== T10_dry_run
+     |     XARGS=--enable-hierarchical-cache --hicache-size 211 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report --schedule-policy lpm --enable-request-time-stats-logging --mm-feature-transport cpu --gc-warning-threshold-secs 0.3 --gc-threshold 700 10 100000 --enable-prefill-delayer --prefill-delayer-queue-min-ratio 0.25 --prefill-delayer-max-delay-passes 12 --prefill-delayer-max-delay-ms 100000 --cuda-graph-bs-decode 1 2 3 4 5 6 7 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64
+     | 20:32:34 DRY RUN: tp2 driver: sudo -n docker run --rm --name g67-replay --label tp2prof=tp2prof-20261008T203233Z --network host -e NVIDIA_VISIBLE_DEVICES=void -e CUDA_VISIBLE_DEVICES= --cpus 8 -v /p:/p:ro -v /w/t/T10_dry_run/plans:/plans:ro -v /w/t/T10_dry_run/runs/tp2prof-20261008T203233Z/tp2:/out -v /w/t/T10_dry_run/englogs/tp2prof-20261008T203233Z:/prof:ro -v /w/t/T10_dry_run/model:/models:ro --entrypoint nice minimax-m31-sglang:demo-bef87f4 -n 10 python3 /p/tp2prof_drive.py --url http://127.0.0.1:19491 --plan /plans/s30.json --levels 4,6 --layout tp2 --run-id tp2prof-20261008T203233Z --prof-dir-engine /logs/tp2prof-20261008T203233Z/tp2 --prof-dir-local /prof/tp2 --ranks 2 --dp 1 --prompt-mode chat --num-steps 8 --window 6 --settle 1 --out /out/drive.json --prompt-mode synth --ready-timeout 60 --prof-timeout 90 --level-settle 1 --max-new 1000000
+     | 20:32:34 DRY RUN: nothing was started or changed
+  ok   rc 0
+  ok   no engine started
+  ok   no rm
+  ok   prints env GPUS=6,7
+  ok   prints TP2 env
+  ok   lock free
+  ok   HOLD kept
+== T11_isolation_breach
+     | 20:32:36 run_tp2prof REFUSED: the started m31-tp2-3 is NOT isolated to GPUs 6,7 (DeviceIDs ['0', '1'] (need exactly 6,7)): removed at once
+     | 20:32:48 GPUs 6,7 lock released
+     | 20:32:48 end rc 2 (run dir /w/t/T11_isolation_breach/runs/tp2prof-20261008T203234Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 2
+  ok   says NOT isolated
+  ok   container removed at once
+  ok   no driver started
+  ok   lock released
+== T12_tp2_happy
+     | 20:33:32 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:33:32 tp2: analysis -> /w/t/T12_tp2_happy/runs/tp2prof-20261008T203248Z/tp2/report.txt
+     | 20:33:32 end rc 0 (run dir /w/t/T12_tp2_happy/runs/tp2prof-20261008T203248Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   one engine run with --gpus device=6,7
+  ok   engine run has --gpus "device=6,7" and --restart no
+  ok   no other --gpus value anywhere
+  ok   engine env: owner word + run tag
+  ok   engine argv: TP2 (dp 1, no dp-attention, tp 2)
+  ok   engine env: TP2 patches + D1 + G1 words
+  ok   engine: chunk 16384, maxreq 64, memfrac 0.80, fa4 draft
+  ok   driver: g67-replay, no GPU, label
+  ok   every container name is watched by the guard
+  ok   no engine left
+  ok   lock released
+  ok   HOLD kept
+  ok   GPU apps gone
+  ok   drive.json: 2 timer windows held
+  ok   drive.json: 2 complete captures
+  ok   drive.json: metrics snapshots carry device timer
+  ok   engine log saved
+  ok   driver started before the engine was healthy (prompt build overlaps the boot)
+  ok   drive.json: health wait recorded
+  ok   report: Part A valid windows
+  ok   report: Part B both levels
+  ok   report: Part A step ~ mock step (35-80 ms)
+  ok   analysis: synthetic groups recovered (attention core > 0, comm > 0, sampling > 0)
+  ok   g67.log has start + end lines, no lever lines
+  ok   privacy: drive.json holds no request ids
+  ok   traces in the engine logs dir
+== T13_tp2_dp2_compare
+     | 20:35:00 dp2: analysis -> /w/t/T13_tp2_dp2_compare/runs/tp2prof-20261008T203333Z/dp2/report.txt
+     | 20:35:00 compare -> /w/t/T13_tp2_dp2_compare/runs/tp2prof-20261008T203333Z/compare.txt
+     | 20:35:00 end rc 0 (run dir /w/t/T13_tp2_dp2_compare/runs/tp2prof-20261008T203333Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   two engine runs, both device=6,7
+  ok   dp2 engine argv: dp 2 + dp-attention
+  ok   dp2 driver routes by dp (--dp 2)
+  ok   dp2 traces carry DP names
+  ok   compare report written
+  ok   no engine left
+  ok   lock released
+== T14_idle_chain_engine
+     | 20:35:45 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:35:45 tp2: analysis -> /w/t/T14_idle_chain_engine/runs/tp2prof-20261008T203500Z/tp2/report.txt
+     | 20:35:45 end rc 0 (run dir /w/t/T14_idle_chain_engine/runs/tp2prof-20261008T203500Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   idle engine log saved like launch_g67
+  ok   idle engine removed before launch
+  ok   no engine left
+== T15_engine_dies
+     | 20:36:00 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:36:01 tp2: analysis -> /w/t/T15_engine_dies/runs/tp2prof-20261008T203545Z/tp2/report.txt
+     | 20:36:01 end rc 1 (run dir /w/t/T15_engine_dies/runs/tp2prof-20261008T203545Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc != 0
+  ok   watchdog or driver noticed
+  ok   no engine/driver left
+  ok   lock released
+== T16_stop_file
+     | 20:36:13 STOP file: no further layout
+     | 20:36:13 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:36:13 end rc 1 (run dir /w/t/T16_stop_file/runs/tp2prof-20261008T203601Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc != 0
+  ok   STOP honoured
+  ok   no engine/driver left
+  ok   lock released
+== T17_sigterm
+  ok   rc != 0
+  ok   teardown ran
+  ok   no engine/driver left
+  ok   lock released
+== T19_old_chain_lever_post_launch
+     | 20:36:26 run_tp2prof tp2prof-20261008T203626Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:36:26 run_tp2prof REFUSED: a g67 lever is in flight (chain_g67 lever subshell pid 5837 (chain pid 5833)): wait for it (the chain holds at g67/HOLD after it)
+  ok   rc 2
+  ok   says in flight
+  ok   no engine started
+  ok   lock free
+== T20_old_chain_lever_parked_at_hold
+     | 20:37:12 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:37:12 tp2: analysis -> /w/t/T20_old_chain_lever_parked_at_hold/runs/tp2prof-20261008T203628Z/tp2/report.txt
+     | 20:37:12 end rc 0 (run dir /w/t/T20_old_chain_lever_parked_at_hold/runs/tp2prof-20261008T203628Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0: a lever parked at HOLD inside launch_g67.sh does not block
+  ok   no engine left
+  ok   lock released
+== T21_old_chain_launcher_holds_lock
+     | 20:37:13 run_tp2prof tp2prof-20261008T203713Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:37:14 run_tp2prof REFUSED: a g67 lever is in flight (chain_g67 lever subshell pid 6543 (chain pid 6539)): wait for it (the chain holds at g67/HOLD after it)
+  ok   rc 2
+  ok   says in flight
+  ok   no engine started
+== T22_new_chain_lever_holds_lock
+     | 20:37:15 run_tp2prof tp2prof-20261008T203715Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:37:15 run_tp2prof REFUSED: a g67 lever is in flight (chain_g67 lever subshell pid 6613 (chain pid 6609)): wait for it (the chain holds at g67/HOLD after it)
+  ok   rc 2
+  ok   says in flight
+  ok   no engine started
+== T23_idle_chain_at_hold
+     |     XARGS=--enable-hierarchical-cache --hicache-size 211 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report --schedule-policy lpm --enable-request-time-stats-logging --mm-feature-transport cpu --gc-warning-threshold-secs 0.3 --gc-threshold 700 10 100000 --enable-prefill-delayer --prefill-delayer-queue-min-ratio 0.25 --prefill-delayer-max-delay-passes 12 --prefill-delayer-max-delay-ms 100000 --cuda-graph-bs-decode 1 2 3 4 5 6 7 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64
+     | 20:37:18 DRY RUN: tp2 driver: sudo -n docker run --rm --name g67-replay --label tp2prof=tp2prof-20261008T203717Z --network host -e NVIDIA_VISIBLE_DEVICES=void -e CUDA_VISIBLE_DEVICES= --cpus 8 -v /p:/p:ro -v /w/t/T23_idle_chain_at_hold/plans:/plans:ro -v /w/t/T23_idle_chain_at_hold/runs/tp2prof-20261008T203717Z/tp2:/out -v /w/t/T23_idle_chain_at_hold/englogs/tp2prof-20261008T203717Z:/prof:ro -v /w/t/T23_idle_chain_at_hold/model:/models:ro --entrypoint nice minimax-m31-sglang:demo-bef87f4 -n 10 python3 /p/tp2prof_drive.py --url http://127.0.0.1:19491 --plan /plans/s30.json --levels 4,6 --layout tp2 --run-id tp2prof-20261008T203717Z --prof-dir-engine /logs/tp2prof-20261008T203717Z/tp2 --prof-dir-local /prof/tp2 --ranks 2 --dp 1 --prompt-mode chat --num-steps 8 --window 6 --settle 1 --out /out/drive.json --prompt-mode synth --ready-timeout 60 --prof-timeout 90 --level-settle 1 --max-new 1000000
+     | 20:37:18 DRY RUN: nothing was started or changed
+  ok   rc 0: an idle chain waiting at HOLD does not block
+  ok   no engine started
+== T24_lever_boots_during_lock_wait
+     | 20:37:26 run_tp2prof REFUSED: a g67 lever is in flight after the lock wait (chain_g67 lever subshell pid 6933 (chain pid 6842))
+     | 20:37:26 GPUs 6,7 lock released
+     | 20:37:26 end rc 2 (run dir /w/t/T24_lever_boots_during_lock_wait/runs/tp2prof-20261008T203719Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 2
+  ok   waited for the lock
+  ok   refused after the lock wait
+  ok   no engine started
+  ok   lock released
+== T25_watchdog_alive
+     | 20:37:27 run_tp2prof tp2prof-20261008T203727Z: layouts [tp2] plan s30 levels 4,6 steps 8 window 6s (MOCK SUITE)
+     | 20:37:28 run_tp2prof REFUSED: a g67 lever is in flight (watchdog_g67.sh pid 6977): wait for it (the chain holds at g67/HOLD after it)
+  ok   rc 2
+  ok   says watchdog
+  ok   no engine started
+== T26_term_during_launch
+  ok   rc 143 (TERM)
+  ok   engine started by docker run during the TERM is removed
+  ok   found by its run tag
+  ok   lock released
+  ok   g67.log end line says rc 143
+== T18_analysis_unit
+     | checks 117, failures 0
+  ok   synthetic trace unit test
+== V01_variant_happy
+     | 20:39:04 var: analysis -> /w/t/V01_variant_happy/runs/tp2bench-20261008T203736Z/var/report.txt
+     | 20:39:04 compare -> /w/t/V01_variant_happy/runs/tp2bench-20261008T203736Z/compare_bench.txt: VERDICT: ADOPT CANDIDATE: identical outputs and a faster step at every level (confirm with a paired knee replay) | gate PASS (8/8 identical; A/A identical in every arm) | ncclSymk AG/RS calls L6 8.0/9.0, L4 8.0/9.0 | step L4 -3.043 ms [-3.067, -3.019]; L6 -2.997 ms [-3.011, -2.983] | load equal True, windows valid True, accept within 5% True | container check True
+     | 20:39:04 end rc 0 (run dir /w/t/V01_variant_happy/runs/tp2bench-20261008T203736Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   run dir tp2bench-*
+  ok   two engine runs, both --gpus device=6,7 + --restart no
+  ok   no other --gpus value anywhere
+ok
+  ok   argv: var = ref + exactly the variant args / env words
+  ok   argv: ref has no variant word
+  ok   both engines: owner word + the same run tag
+  ok   env check line in runner.log
+  ok   env files differ only in XARGS / EXTRA_ARGS / EXTRA_ENV
+ok
+  ok   drivers: same load words (only per-arm paths / gate files differ)
+  ok   drivers: CPU only (void, no --gpus), label
+  ok   ref driver writes lengths, var reads them without rescale
+  ok   var driver: gate-ref + abort-over 25
+  ok   same timing prompts (ids sha256) in both arms
+  ok   same lengths in both arms
+  ok   gate: ref A/A 8/8, var A/A 8/8, var vs ref 8/8
+  ok   gate: 2 passes per arm, cache flushed after each
+  ok   gate prompts: built by ref, loaded by var, 8 geometric lengths 256..2048
+  ok   shared files
+  ok   server key read back: ref False, var True
+  ok   both arms: 2 valid timer windows + 2 complete captures
+  ok   container env + argv saved per arm
+  ok   compare: container check OK
+  ok   compare: gate line 8/8
+  ok   compare: var comm kernels are ncclSymk, ref ring
+  ok   compare: collectives lower in var (8 vs 12 us per call)
+  ok   compare: step faster in var (mock 37 vs 40 ms) with CI
+  ok   compare: VERDICT ADOPT CANDIDATE
+  ok   compare: engine facts (symm prealloc line only in var)
+  ok   traces per arm
+  ok   per-arm reports
+  ok   privacy: drive.json holds no ids, no rids, no text
+  ok   g67.log: VARIANT start + end lines, no lever lines
+  ok   lock note names the variant bench
+  ok   every container name is watched by the GPU guard daemon (m31-* / g67-*)
+  ok   no engine left
+  ok   lock released
+  ok   HOLD kept
+== V02_gate_abort
+     | 20:39:57 var: analysis -> /w/t/V02_gate_abort/runs/tp2bench-20261008T203905Z/var/report.txt
+     | 20:39:57 compare -> /w/t/V02_gate_abort/runs/tp2bench-20261008T203905Z/compare_bench.txt: VERDICT: REJECT: identity gate stopped the variant before its timing (8 of 8 gate prompts differ from the reference (stop at 4))
+     | 20:39:57 end rc 1 (run dir /w/t/V02_gate_abort/runs/tp2bench-20261008T203905Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 1
+  ok   both engines ran
+  ok   var driver exit 4
+  ok   runner says gate STOP
+  ok   var: gate abort reason, no timer window
+  ok   compare: VERDICT REJECT
+  ok   no engine left
+  ok   lock released
+== V03_gate_small_diff
+     | 20:41:26 var: analysis -> /w/t/V03_gate_small_diff/runs/tp2bench-20261008T203957Z/var/report.txt
+     | 20:41:26 compare -> /w/t/V03_gate_small_diff/runs/tp2bench-20261008T203957Z/compare_bench.txt: VERDICT: REJECT: outputs differ from the reference (not adoptable as is) | gate FAIL (6/8 identical; A/A identical in every arm) | ncclSymk AG/RS calls L6 8.0/9.0, L4 8.0/9.0 | step L4 -2.991 ms [-2.997, -2.984]; L6 -2.992 ms [-2.996, -2.989] | load equal True, windows valid True, accept within 5% True | container check True
+     | 20:41:26 end rc 0 (run dir /w/t/V03_gate_small_diff/runs/tp2bench-20261008T203957Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0 (2 differ < 4: timing runs)
+  ok   var vs ref: 6 identical, 2 differing at token 5
+  ok   var A/A still identical (deterministic divergence)
+  ok   var timed (2 windows)
+  ok   compare: VERDICT REJECT (outputs differ)
+  ok   no engine left
+== V04_accept_collapse
+     | 20:42:19 var: analysis -> /w/t/V04_accept_collapse/runs/tp2bench-20261008T204126Z/var/report.txt
+     | 20:42:19 compare -> /w/t/V04_accept_collapse/runs/tp2bench-20261008T204126Z/compare_bench.txt: VERDICT: REJECT: identity gate stopped the variant before its timing (gate accept length x0.2778 of the reference (band 0.75-1.25): spec decode looks broken)
+     | 20:42:19 end rc 1 (run dir /w/t/V04_accept_collapse/runs/tp2bench-20261008T204126Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 1
+  ok   var driver exit 4
+  ok   abort reason = accept band
+  ok   no engine left
+  ok   lock released
+== V05_refusals
+  ok   env CUDA_VISIBLE_DEVICES: rc 2
+  ok   env CUDA_VISIBLE_DEVICES: no engine
+  ok   env NVIDIA_VISIBLE_DEVICES: rc 2
+  ok   env NVIDIA_VISIBLE_DEVICES: no engine
+  ok   env G67_OWNER: rc 2
+  ok   env G67_OWNER: no engine
+  ok   env G67_TP2PROF: rc 2
+  ok   env G67_TP2PROF: no engine
+  ok   env HF_TOKEN: rc 2
+  ok   env HF_TOKEN: no engine
+  ok   env LD_PRELOAD: rc 2
+  ok   env LD_PRELOAD: no engine
+  ok   env word not KEY=value: rc 2
+  ok   env word not KEY=value: no engine
+  ok   arg --base-gpu-id: rc 2
+  ok   arg --base-gpu-id: no engine
+  ok   arg --tp-size: rc 2
+  ok   arg --tp-size: no engine
+  ok   arg --port=: rc 2
+  ok   arg --port=: no engine
+  ok   arg --model-path: rc 2
+  ok   arg --model-path: no engine
+  ok   arg --enable-dp-attention: rc 2
+  ok   arg --enable-dp-attention: no engine
+  ok   glob char: rc 2
+  ok   glob char: no engine
+  ok   shell char: rc 2
+  ok   shell char: no engine
+  ok   quote char: rc 2
+  ok   quote char: no engine
+  ok   first word not a flag: rc 2
+  ok   first word not a flag: no engine
+  ok   short flag: rc 2
+  ok   short flag: no engine
+  ok   dp2 layout in variant mode: rc 2
+  ok   dp2 layout in variant mode: no engine
+  ok   ARMS var ref: rc 2
+  ok   ARMS var ref: no engine
+  ok   ARMS without variant: rc 2
+  ok   ARMS without variant: no engine
+  ok   GATE=1 without variant: rc 2
+  ok   GATE=1 without variant: no engine
+  ok   GATE_N=0: rc 2
+  ok   GATE_N=0: no engine
+  ok   GATE_MAX < GATE_MIN: rc 2
+  ok   GATE_MAX < GATE_MIN: no engine
+  ok   LENGTH_SCALE=2: rc 2
+  ok   LENGTH_SCALE=2: no engine
+  ok   VARIANT_NAME with a space: rc 2
+  ok   VARIANT_NAME with a space: no engine
+  ok   no g67.log line from word refusals
+== V06_dry_run
+     |     XARGS=--enable-hierarchical-cache --hicache-size 211 --hicache-write-policy write_through --hicache-io-backend kernel --hicache-mem-layout page_first --enable-cache-report --schedule-policy lpm --enable-request-time-stats-logging --mm-feature-transport cpu --gc-warning-threshold-secs 0.3 --gc-threshold 700 10 100000 --enable-prefill-delayer --prefill-delayer-queue-min-ratio 0.25 --prefill-delayer-max-delay-passes 12 --prefill-delayer-max-delay-ms 100000 --cuda-graph-bs-decode 1 2 3 4 5 6 7 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64 --enable-symm-mem
+     | 20:42:21 DRY RUN: var driver: sudo -n docker run --rm --name g67-replay --label tp2prof=tp2bench-20261008T204220Z --network host -e NVIDIA_VISIBLE_DEVICES=void -e CUDA_VISIBLE_DEVICES= --cpus 8 -v /p:/p:ro -v /w/t/V06_dry_run/plans:/plans:ro -v /w/t/V06_dry_run/runs/tp2bench-20261008T204220Z/var:/out -v /w/t/V06_dry_run/runs/tp2bench-20261008T204220Z/shared:/shared -v /w/t/V06_dry_run/englogs/tp2bench-20261008T204220Z:/prof:ro -v /w/t/V06_dry_run/model:/models:ro --entrypoint nice minimax-m31-sglang:demo-bef87f4 -n 10 python3 /p/tp2prof_drive.py --url http://127.0.0.1:19491 --plan /plans/s30.json --levels 4,6 --layout var --run-id tp2bench-20261008T204220Z --prof-dir-engine /logs/tp2bench-20261008T204220Z/var --prof-dir-local /prof/var --ranks 2 --dp 1 --prompt-mode chat --num-steps 8 --window 6 --settle 1 --out /out/drive.json --length-scale 1.0 --server-keys enable_symm_mem --lengths-file /shared/lengths.json --no-rescale --gate 8 --gate-min 256 --gate-max 2048 --gate-tokens 16 --gate-aa 1 --gate-prompts /shared/gate_prompts.json --gate-out /shared/gate_var.json --gate-ref /shared/gate_ref.json --gate-abort-over 25 --prompt-mode synth --ready-timeout 60 --prof-timeout 90 --level-settle 1 --max-new 1000000
+     | 20:42:21 DRY RUN: nothing was started or changed
+  ok   rc 0
+  ok   no engine started
+  ok   env check printed
+  ok   both env files + both driver commands printed
+  ok   var env shows the variant word
+  ok   lock free
+  ok   HOLD kept
+  ok   no g67.log line
+== V07_term_during_var_launch
+/p/mock/run_mock_tests.sh: line 488: [: : integer expression expected
+/p/mock/run_mock_tests.sh: line 488: [: : integer expression expected
+  ok   rc 143 (TERM)
+  ok   the var engine started during the TERM is removed
+  ok   found by its run tag
+  ok   lock released
+  ok   g67.log end line says rc 143
+== V08_var_engine_dies
+     | 20:44:13 ref: analysis -> /w/t/V08_var_engine_dies/runs/tp2bench-20261008T204316Z/ref/report.txt
+     | 20:44:13 compare -> /w/t/V08_var_engine_dies/runs/tp2bench-20261008T204316Z/compare_bench.txt: VERDICT: INCOMPLETE: the variant arm did not run
+     | 20:44:13 end rc 1 (run dir /w/t/V08_var_engine_dies/runs/tp2bench-20261008T204316Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 1
+  ok   watchdog or driver noticed in the var arm
+  ok   ref arm intact (2 valid windows)
+  ok   compare still written
+  ok   no engine/driver left
+  ok   lock released
+== V09_aba
+     | 20:46:25 ref2: analysis -> /w/t/V09_aba/runs/tp2bench-20261008T204413Z/ref2/report.txt
+     | 20:46:26 compare -> /w/t/V09_aba/runs/tp2bench-20261008T204413Z/compare_bench.txt: VERDICT: ADOPT CANDIDATE: identical outputs and a faster step at every level (confirm with a paired knee replay) | gate PASS (8/8 identical; A/A identical in every arm) | ncclSymk AG/RS calls L6 8.0/9.0, L4 8.0/9.0 | step L4 -3.012 ms [-3.019, -3.005] (A/A ref2 0.021); L6 -3.019 ms [-3.024, -3.015] (A/A ref2 0.03) | load equal True, windows valid True, accept within 5% True | container check True
+     | 20:46:26 end rc 0 (run dir /w/t/V09_aba/runs/tp2bench-20261008T204413Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   three engine runs
+  ok   ref2 env identical to ref
+ok
+  ok   argv: ref2 = ref exactly
+ok
+  ok   argv: var = ref + --enable-symm-mem
+ok
+  ok   drivers ref2 vs ref: same load
+  ok   ref2 gate vs ref 8/8, no abort word for ref2
+  ok   compare: ref2 column + A/A noise in the verdict
+  ok   compare: container check ref2 OK
+  ok   no engine left
+  ok   lock released
+== V10_kv_fixed
+     | 20:47:17 var: analysis -> /w/t/V10_kv_fixed/runs/tp2bench-20261008T204626Z/var/report.txt
+     | 20:47:17 compare -> /w/t/V10_kv_fixed/runs/tp2bench-20261008T204626Z/compare_bench.txt: VERDICT: INCOMPLETE: the variant arm stopped before or during its timing (driver exit 2; the fixed load needs 158048 KV tokens > 138000 (0.92 of this engine's pool 150000): rerun every arm with a smaller LENGTH_SCALE)
+     | 20:47:18 end rc 1 (run dir /w/t/V10_kv_fixed/runs/tp2bench-20261008T204626Z). Remove g67/HOLD to resume the chain when done.
+  ok   too small: rc 1, var exit 2
+  ok   too small: says LENGTH_SCALE
+  ok   too small: compare VERDICT INCOMPLETE (not a gate verdict)
+  ok   too small: no engine left
+== V10b_kv_fixed_fuller
+     | 20:48:46 var: analysis -> /w/t/V10b_kv_fixed_fuller/runs/tp2bench-20261008T204718Z/var/report.txt
+     | 20:48:46 compare -> /w/t/V10b_kv_fixed_fuller/runs/tp2bench-20261008T204718Z/compare_bench.txt: VERDICT: ADOPT CANDIDATE: identical outputs and a faster step at every level (confirm with a paired knee replay) | gate PASS (8/8 identical; A/A identical in every arm) | ncclSymk AG/RS calls L6 8.0/9.0, L4 8.0/9.0 | step L4 -2.973 ms [-2.983, -2.964]; L6 -2.973 ms [-2.98, -2.966] | load equal True, windows valid True, accept within 5% True | container check True
+     | 20:48:46 end rc 0 (run dir /w/t/V10b_kv_fixed_fuller/runs/tp2bench-20261008T204718Z). Remove g67/HOLD to resume the chain when done.
+  ok   0.85 < need <= 0.92: rc 0, same lengths, fixed
+  ok   no engine left
+== V11_env_only_variant
+     | 20:50:15 var: analysis -> /w/t/V11_env_only_variant/runs/tp2bench-20261008T204847Z/var/report.txt
+     | 20:50:15 compare -> /w/t/V11_env_only_variant/runs/tp2bench-20261008T204847Z/compare_bench.txt: VERDICT: ADOPT CANDIDATE: identical outputs and a faster step at every level (confirm with a paired knee replay) | gate PASS (8/8 identical; A/A identical in every arm) | ncclSymk AG/RS calls L6 8.0/9.0, L4 8.0/9.0 | step L4 -3.017 ms [-3.022, -3.011]; L6 -3.018 ms [-3.035, -3.0] | load equal True, windows valid True, accept within 5% True | container check True
+     | 20:50:15 end rc 0 (run dir /w/t/V11_env_only_variant/runs/tp2bench-20261008T204847Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+ok
+  ok   argv identical, env + the word
+  ok   env check: only EXTRA_ENV
+  ok   driver: server keys none
+  ok   compare: container check OK
+== V12_hold_removed_between_arms
+     | 20:51:00 ref: analysis -> /w/t/V12_hold_removed_between_arms/runs/tp2bench-20261008T205015Z/ref/report.txt
+     | 20:51:00 compare -> /w/t/V12_hold_removed_between_arms/runs/tp2bench-20261008T205015Z/compare_bench.txt: VERDICT: INCOMPLETE: the variant arm did not run
+     | 20:51:00 end rc 1 (run dir /w/t/V12_hold_removed_between_arms/runs/tp2bench-20261008T205015Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 1
+  ok   one engine only
+  ok   says HOLD removed
+  ok   no engine left
+  ok   lock released
+== V13_ref_fails_no_var
+     | 20:51:13 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:51:13 compare -> /w/t/V13_ref_fails_no_var/runs/tp2bench-20261008T205100Z/compare_bench.txt: VERDICT: INCOMPLETE: the variant arm did not run
+     | 20:51:13 end rc 1 (run dir /w/t/V13_ref_fails_no_var/runs/tp2bench-20261008T205100Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 1
+  ok   only the ref engine ran
+  ok   says reference incomplete
+  ok   compare: VERDICT INCOMPLETE
+  ok   no engine left
+  ok   lock released
+== V14_default_gate_size
+     | 20:52:09 var: analysis -> /w/t/V14_default_gate_size/runs/tp2bench-20261008T205114Z/var/report.txt
+     | 20:52:09 compare -> /w/t/V14_default_gate_size/runs/tp2bench-20261008T205114Z/compare_bench.txt: VERDICT: ADOPT CANDIDATE: identical outputs and a faster step at every level (confirm with a paired knee replay) | gate PASS (50/50 identical; A/A identical in every arm) | ncclSymk AG/RS calls n/a | step L4 -3.009 ms [-3.017, -3.001]; L6 -3.007 ms [-3.011, -3.003] | load equal True, windows valid True, accept within 5% True | container check True
+     | 20:52:09 end rc 0 (run dir /w/t/V14_default_gate_size/runs/tp2bench-20261008T205114Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   50 gate prompts, 64 new tokens, 50/50 identical
+  ok   PROFILE=0: no capture, driver has --no-profile
+  ok   compare without Part B still gives a verdict
+== V15_regression_no_variant_words
+     | 20:52:53 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:52:53 tp2: analysis -> /w/t/V15_regression_no_variant_words/runs/tp2prof-20261008T205209Z/tp2/report.txt
+     | 20:52:53 end rc 0 (run dir /w/t/V15_regression_no_variant_words/runs/tp2prof-20261008T205209Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   run dir tp2prof-* (original mode)
+  ok   driver command = the original words (no VARIANT option, no /shared mount)
+  ok   no compare_bench
+  ok   g67.log: original start line
+== mock suite: 296 passed, 0 failed
+rc=0

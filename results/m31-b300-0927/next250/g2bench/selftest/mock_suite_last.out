@@ -1,0 +1,32 @@
+live launcher = live pin (e127c9f31201)
+container rc=0
+  ok   lock released
+== V13_ref_fails_no_var
+     | 20:51:13 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:51:13 compare -> /w/t/V13_ref_fails_no_var/runs/tp2bench-20261008T205100Z/compare_bench.txt: VERDICT: INCOMPLETE: the variant arm did not run
+     | 20:51:13 end rc 1 (run dir /w/t/V13_ref_fails_no_var/runs/tp2bench-20261008T205100Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 1
+  ok   only the ref engine ran
+  ok   says reference incomplete
+  ok   compare: VERDICT INCOMPLETE
+  ok   no engine left
+  ok   lock released
+== V14_default_gate_size
+     | 20:52:09 var: analysis -> /w/t/V14_default_gate_size/runs/tp2bench-20261008T205114Z/var/report.txt
+     | 20:52:09 compare -> /w/t/V14_default_gate_size/runs/tp2bench-20261008T205114Z/compare_bench.txt: VERDICT: ADOPT CANDIDATE: identical outputs and a faster step at every level (confirm with a paired knee replay) | gate PASS (50/50 identical; A/A identical in every arm) | ncclSymk AG/RS calls n/a | step L4 -3.009 ms [-3.017, -3.001]; L6 -3.007 ms [-3.011, -3.003] | load equal True, windows valid True, accept within 5% True | container check True
+     | 20:52:09 end rc 0 (run dir /w/t/V14_default_gate_size/runs/tp2bench-20261008T205114Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   50 gate prompts, 64 new tokens, 50/50 identical
+  ok   PROFILE=0: no capture, driver has --no-profile
+  ok   compare without Part B still gives a verdict
+== V15_regression_no_variant_words
+     | 20:52:53 GPUs 6,7 lock released (analysis runs on the CPU only)
+     | 20:52:53 tp2: analysis -> /w/t/V15_regression_no_variant_words/runs/tp2prof-20261008T205209Z/tp2/report.txt
+     | 20:52:53 end rc 0 (run dir /w/t/V15_regression_no_variant_words/runs/tp2prof-20261008T205209Z). Remove g67/HOLD to resume the chain when done.
+  ok   rc 0
+  ok   run dir tp2prof-* (original mode)
+  ok   driver command = the original words (no VARIANT option, no /shared mount)
+  ok   no compare_bench
+  ok   g67.log: original start line
+== mock suite: 296 passed, 0 failed
+rc=0
