@@ -1,0 +1,214 @@
+== FULL Oct3 7.32M TP2 70tp2 (12/15) [tp2] window 19.1 min, schedulers 4, GPUs 8
+   per-GPU running (time weighted) p10/p50/p90/mean: 1.5/11.0/21.0/11.70; accept (token weighted) 3.725; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 38.0 tok/s; intervals 1893 (clean 907, 48%); prefill lines 7647; new prefill tokens/s/GPU 6358
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   644 |   17.1 |   17.1 ( 644) | 1.00 |   75.7 |  0.06 | 3.33 |  178.8
+    2- 4 |   121 |   24.7 |   24.5 ( 111) | 1.01 |   84.3 |  0.19 | 3.42 |  137.8
+    4- 6 |   130 |   31.9 |   28.8 (  49) | 1.11 |  104.3 |  0.48 | 3.62 |  106.7
+    6- 8 |   250 |   38.9 |   32.8 (  50) | 1.19 |  107.3 |  0.72 | 3.62 |   88.5
+    8-10 |   251 |   48.8 |   34.5 (  32) | 1.41 |  110.0 |  0.96 | 3.63 |   72.9
+   10-12 |   152 |   55.8 |   36.7 (  12) | 1.52 |  107.3 |  1.16 | 3.67 |   64.8
+   12-14 |    87 |   65.2 |   38.9 (   4) | 1.68 |  111.0 |  1.39 | 3.67 |   55.4
+   14-16 |    66 |   69.8 |   41.6 (   5) | 1.68 |  108.2 |  1.58 | 3.65 |   52.3
+   16-20 |   119 |   85.7 |    nan (   0) |  nan |  112.6 |  1.97 | 3.72 |   42.3
+   20-24 |    60 |  173.0 |    nan (   0) |  nan |  105.4 |  2.30 | 3.80 |   21.3
+   24-33 |    13 |  224.0 |    nan (   0) |  nan |   89.7 |  2.36 | 3.92 |   17.2
+   clean fit: step = 18.08 + 1.865 x running/GPU + 1.58 x KV-tokens/GPU(M)  (R2 0.90, n 554); 90% CI a [17.86,18.29] b [1.638,2.047] c [0.21,3.31]
+== FULL Oct3 7.32M TP2 70tp2_r2 (11/15) [tp2] window 17.9 min, schedulers 4, GPUs 8
+   per-GPU running (time weighted) p10/p50/p90/mean: 1.5/11.5/20.0/11.57; accept (token weighted) 3.712; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 38.7 tok/s; intervals 1815 (clean 801, 44%); prefill lines 7618; new prefill tokens/s/GPU 6629
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   606 |   16.9 |   16.9 ( 605) | 1.00 |   70.0 |  0.04 | 3.05 |  172.5
+    2- 4 |    59 |   24.5 |   24.3 (  47) | 1.01 |   87.9 |  0.22 | 3.54 |  142.6
+    4- 6 |   134 |   32.0 |   29.2 (  52) | 1.10 |  106.7 |  0.51 | 3.63 |  110.7
+    6- 8 |   243 |   40.3 |   32.3 (  53) | 1.25 |  113.5 |  0.76 | 3.63 |   90.4
+    8-10 |   226 |   45.9 |   34.3 (  24) | 1.34 |  117.1 |  1.01 | 3.66 |   81.7
+   10-12 |   174 |   54.2 |   38.5 (  13) | 1.41 |  111.4 |  1.19 | 3.70 |   67.5
+   12-14 |   126 |   63.5 |   39.3 (   3) | 1.62 |  107.2 |  1.38 | 3.71 |   58.3
+   14-16 |    93 |   77.2 |    nan (   1) |  nan |  112.7 |  1.67 | 3.67 |   47.1
+   16-20 |   108 |   98.7 |   42.4 (   3) | 2.33 |  109.0 |  1.92 | 3.71 |   36.9
+   20-24 |    36 |  220.5 |    nan (   0) |  nan |  106.9 |  2.33 | 3.75 |   17.6
+   24-33 |    10 |  249.1 |    nan (   0) |  nan |   93.6 |  2.34 | 3.83 |   15.2
+   clean fit: step = 18.68 + 1.367 x running/GPU + 5.33 x KV-tokens/GPU(M)  (R2 0.90, n 317); 90% CI a [18.33,18.98] b [1.089,1.690] c [2.62,7.48]
+== FULL Oct3 7.33M DP2 70dw (7/15) [dp2] window 17.9 min, schedulers 8, GPUs 8
+   per-GPU running (time weighted) p10/p50/p90/mean: 4.0/13.0/22.0/12.89; accept (token weighted) 3.745; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 38.5 tok/s; intervals 3274 (clean 1314, 40%); prefill lines 6695; new prefill tokens/s/GPU 5855
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   601 |   15.7 |   15.6 ( 591) | 1.00 |   65.4 |  0.07 | 3.05 |  188.6
+    2- 4 |   269 |   23.2 |   22.2 ( 188) | 1.05 |   84.8 |  0.24 | 3.42 |  144.9
+    4- 6 |   383 |   30.2 |   26.7 ( 171) | 1.13 |  106.0 |  0.49 | 3.54 |  115.1
+    6- 8 |   421 |   34.9 |   28.4 ( 122) | 1.23 |  117.5 |  0.76 | 3.59 |  103.6
+    8-10 |   399 |   38.5 |   31.2 (  97) | 1.23 |  110.3 |  0.92 | 3.60 |   91.3
+   10-12 |   318 |   42.4 |   33.4 (  64) | 1.27 |  115.9 |  1.22 | 3.61 |   83.4
+   12-14 |   228 |   45.8 |   33.8 (  39) | 1.36 |  118.6 |  1.46 | 3.60 |   77.1
+   14-16 |   223 |   53.3 |   35.7 (  25) | 1.49 |  114.1 |  1.63 | 3.66 |   68.1
+   16-20 |   250 |   69.9 |   38.4 (  14) | 1.82 |  112.1 |  1.96 | 3.76 |   53.2
+   20-24 |   130 |   98.3 |   38.1 (   3) | 2.58 |  106.9 |  2.25 | 3.79 |   40.4
+   24-33 |    52 |  206.9 |    nan (   0) |  nan |   87.1 |  2.26 | 3.77 |   18.6
+   clean fit: step = 16.80 + 1.325 x running/GPU + 2.92 x KV-tokens/GPU(M)  (R2 0.74, n 1314); 90% CI a [16.53,17.03] b [1.184,1.470] c [1.86,3.91]
+== FULL Oct3 7.33M DP2 70dw_r2 (3/15) [dp2] window 17.9 min, schedulers 8, GPUs 8
+   per-GPU running (time weighted) p10/p50/p90/mean: 4.0/14.0/23.0/13.99; accept (token weighted) 3.760; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 36.3 tok/s; intervals 3038 (clean 1260, 41%); prefill lines 6635; new prefill tokens/s/GPU 6163
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   482 |   16.7 |   16.8 ( 472) | 1.00 |   78.9 |  0.08 | 2.74 |  165.8
+    2- 4 |   417 |   21.2 |   20.8 ( 338) | 1.02 |   73.2 |  0.15 | 3.39 |  151.7
+    4- 6 |   242 |   29.9 |   26.5 ( 114) | 1.12 |  102.3 |  0.46 | 3.69 |  113.7
+    6- 8 |   239 |   33.8 |   29.8 (  94) | 1.14 |  121.7 |  0.81 | 3.78 |  103.2
+    8-10 |   314 |   38.0 |   31.0 (  89) | 1.22 |  117.0 |  0.99 | 3.62 |   94.0
+   10-12 |   310 |   41.2 |   33.1 (  54) | 1.24 |  111.4 |  1.17 | 3.67 |   87.5
+   12-14 |   272 |   45.1 |   35.5 (  45) | 1.27 |  110.7 |  1.35 | 3.57 |   77.9
+   14-16 |   211 |   52.8 |   36.9 (  25) | 1.43 |  110.4 |  1.62 | 3.71 |   69.5
+   16-20 |   301 |   69.8 |   38.4 (  21) | 1.82 |  117.8 |  2.09 | 3.72 |   53.9
+   20-24 |   152 |   99.1 |   40.0 (   7) | 2.48 |  102.6 |  2.20 | 3.80 |   38.0
+   24-33 |    98 |  171.1 |    nan (   1) |  nan |   84.2 |  2.29 | 3.71 |   22.3
+   clean fit: step = 17.18 + 1.002 x running/GPU + 5.55 x KV-tokens/GPU(M)  (R2 0.78, n 1260); 90% CI a [16.92,17.40] b [0.875,1.117] c [4.64,6.76]
+== FULL Oct3 7.49M TP2 75tp2 (7/15) [tp2] window 18.7 min, schedulers 4, GPUs 8
+   per-GPU running (time weighted) p10/p50/p90/mean: 2.0/15.5/22.5/14.34; accept (token weighted) 3.723; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 33.8 tok/s; intervals 1690 (clean 868, 51%); prefill lines 7707; new prefill tokens/s/GPU 6987
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   572 |   17.2 |   17.2 ( 572) | 1.00 |  123.7 |  0.08 | 2.70 |  147.3
+    2- 4 |   115 |   24.1 |   24.1 ( 115) | 1.00 |   66.7 |  0.19 | 3.38 |  139.2
+    4- 6 |    66 |   29.8 |   29.6 (  59) | 1.01 |  108.3 |  0.54 | 3.42 |  111.1
+    6- 8 |   112 |   37.1 |   32.9 (  52) | 1.13 |  114.1 |  0.77 | 3.60 |  100.4
+    8-10 |   147 |   45.3 |   35.5 (  30) | 1.27 |  110.3 |  0.97 | 3.67 |   79.4
+   10-12 |   131 |   52.8 |   38.3 (  17) | 1.38 |  119.5 |  1.29 | 3.72 |   69.7
+   12-14 |   119 |   62.2 |   39.5 (  11) | 1.58 |  118.1 |  1.52 | 3.71 |   58.4
+   14-16 |    83 |   69.9 |   41.0 (   5) | 1.71 |  116.6 |  1.75 | 3.73 |   53.6
+   16-20 |   186 |   84.3 |   47.9 (   7) | 1.76 |  123.0 |  2.25 | 3.71 |   45.0
+   20-24 |   122 |  133.1 |    nan (   0) |  nan |  106.8 |  2.33 | 3.73 |   28.4
+   24-33 |    37 |  221.4 |    nan (   0) |  nan |   90.8 |  2.36 | 3.77 |   17.5
+   clean fit: step = 19.37 + 1.593 x running/GPU + 2.41 x KV-tokens/GPU(M)  (R2 0.92, n 525); 90% CI a [19.13,19.65] b [1.426,1.802] c [0.69,3.73]
+== FULL Oct3 7.49M DP2 75dw (2/15) [dp2] window 20.2 min, schedulers 8, GPUs 8
+   per-GPU running (time weighted) p10/p50/p90/mean: 2.0/15.0/25.0/14.96; accept (token weighted) 3.738; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 33.0 tok/s; intervals 3302 (clean 1743, 53%); prefill lines 6860; new prefill tokens/s/GPU 6002
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   930 |   15.8 |   15.8 ( 930) | 1.00 |   53.1 |  0.05 | 2.98 |  182.5
+    2- 4 |   441 |   20.7 |   20.6 ( 433) | 1.00 |   80.2 |  0.17 | 2.84 |  136.7
+    4- 6 |   142 |   25.9 |   24.9 ( 100) | 1.04 |   75.9 |  0.34 | 3.52 |  120.6
+    6- 8 |   177 |   33.2 |   29.6 (  60) | 1.12 |   99.8 |  0.66 | 3.48 |  101.7
+    8-10 |   252 |   37.0 |   31.3 (  87) | 1.18 |  109.4 |  0.93 | 3.55 |   94.1
+   10-12 |   221 |   41.9 |   33.6 (  50) | 1.25 |  111.2 |  1.17 | 3.64 |   85.3
+   12-14 |   239 |   47.8 |   34.9 (  35) | 1.37 |  110.5 |  1.38 | 3.65 |   74.4
+   14-16 |   221 |   56.8 |   35.9 (  19) | 1.58 |  119.2 |  1.74 | 3.74 |   65.4
+   16-20 |   343 |   73.4 |   37.2 (  19) | 1.97 |  119.1 |  2.07 | 3.75 |   52.0
+   20-24 |   193 |  101.6 |   40.8 (   8) | 2.49 |  103.4 |  2.19 | 3.75 |   36.0
+   24-33 |   143 |  162.8 |    nan (   2) |  nan |   82.4 |  2.20 | 3.77 |   24.3
+   clean fit: step = 16.13 + 1.236 x running/GPU + 3.94 x KV-tokens/GPU(M)  (R2 0.82, n 1743); 90% CI a [15.93,16.29] b [1.048,1.457] c [2.19,5.55]
+== FULL Sep30 8.28M DP2 127x (14/15) [dp2] window 20.9 min, schedulers 8, GPUs 8
+   per-GPU running (time weighted) p10/p50/p90/mean: 3.0/22.0/28.0/19.42; accept (token weighted) 3.562; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 52.5 tok/s; intervals 4556 (clean 2023, 44%); prefill lines 7864; new prefill tokens/s/GPU 3861
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   694 |   17.5 |   17.5 ( 694) | 1.00 |   41.5 |  0.04 | 2.80 |  159.8
+    2- 4 |   545 |   20.8 |   20.8 ( 545) | 1.00 |   37.2 |  0.09 | 3.11 |  152.0
+    4- 6 |   365 |   24.6 |   24.6 ( 365) | 1.00 |   28.9 |  0.13 | 3.15 |  127.0
+    6- 8 |   146 |   26.3 |   26.3 ( 146) | 1.00 |   23.8 |  0.14 | 3.17 |  116.7
+    8-10 |    48 |   29.9 |   29.9 (  48) | 1.00 |   37.3 |  0.33 | 3.30 |  109.6
+   10-12 |    31 |   30.6 |   30.2 (  24) | 1.01 |   43.8 |  0.48 | 3.45 |  109.3
+   12-14 |    71 |   34.0 |   31.5 (  37) | 1.08 |   45.5 |  0.56 | 3.39 |   99.7
+   14-16 |   112 |   40.0 |   32.8 (  27) | 1.22 |   47.1 |  0.69 | 3.57 |   89.5
+   16-20 |   658 |   44.0 |   36.1 (  61) | 1.22 |   43.4 |  0.78 | 3.56 |   79.6
+   20-24 |   960 |   50.1 |   37.4 (  50) | 1.34 |   45.1 |  0.97 | 3.51 |   69.0
+   24-33 |   926 |   61.4 |   41.5 (  26) | 1.48 |   48.0 |  1.26 | 3.55 |   57.2
+   clean fit: step = 18.38 + 1.125 x running/GPU + -1.13 x KV-tokens/GPU(M)  (R2 0.80, n 2023); 90% CI a [18.24,18.53] b [1.065,1.191] c [-2.48,0.06]
+== G67 Sep30 8.42M TP2+mm (5/15) [tp2] window 18.3 min, schedulers 1, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 2.0/30.0/31.5/24.38; accept (token weighted) 3.538; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 42.3 tok/s; intervals 484 (clean 223, 46%); prefill lines 2012; new prefill tokens/s/GPU 5037
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   123 |   18.8 |   18.8 ( 123) | 1.00 |   35.4 |  0.04 | 2.86 |  149.6
+    2- 4 |    65 |   22.1 |   22.1 (  65) | 1.00 |   22.7 |  0.05 | 2.79 |  126.7
+    4- 6 |    12 |   28.1 |   28.1 (  12) | 1.00 |   32.0 |  0.16 | 3.39 |  119.9
+    6- 8 |    15 |   30.0 |   30.0 (  15) | 1.00 |   38.7 |  0.25 | 3.02 |  101.2
+   20-24 |    32 |   59.9 |    nan (   0) |  nan |   47.9 |  1.03 | 3.58 |   62.0
+   24-33 |   227 |   76.5 |    nan (   0) |  nan |   46.6 |  1.39 | 3.54 |   46.9
+   clean fit: step = 17.53 + 3.027 x running/GPU + -36.31 x KV-tokens/GPU(M)  (R2 0.94, n 210); 90% CI a [17.20,17.74] b [2.788,3.247] c [-41.90,-30.11]
+== G67 Oct3 7.43M TP2+mm (10/15) [tp2] window 17.0 min, schedulers 1, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 1.5/11.0/19.0/11.13; accept (token weighted) 3.775; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 40.6 tok/s; intervals 446 (clean 192, 43%); prefill lines 1872; new prefill tokens/s/GPU 6795
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   151 |   16.6 |   16.6 ( 151) | 1.00 |   92.4 |  0.05 | 4.12 |  249.5
+    2- 4 |    21 |   24.4 |   23.5 (  14) | 1.04 |  137.2 |  0.40 | 3.95 |  140.3
+    4- 6 |    34 |   37.2 |   28.3 (   9) | 1.31 |  135.5 |  0.67 | 3.87 |  101.7
+    6- 8 |    62 |   40.1 |   31.7 (  13) | 1.27 |  122.6 |  0.84 | 3.67 |   87.7
+    8-10 |    54 |   55.8 |    nan (   2) |  nan |  125.8 |  1.09 | 3.70 |   66.6
+   10-12 |    33 |   50.1 |    nan (   1) |  nan |  127.3 |  1.36 | 3.63 |   71.3
+   12-14 |    15 |   59.8 |    nan (   0) |  nan |  133.3 |  1.70 | 3.63 |   59.6
+   14-16 |    33 |   71.7 |    nan (   2) |  nan |  123.9 |  1.84 | 3.72 |   51.2
+   16-20 |    35 |  111.2 |    nan (   0) |  nan |  126.5 |  2.31 | 3.76 |   31.7
+   20-24 |     8 |  250.0 |    nan (   0) |  nan |  111.3 |  2.37 | 3.91 |   16.0
+   clean fit: step = 18.47 + 1.833 x running/GPU + 1.28 x KV-tokens/GPU(M)  (R2 0.85, n 71); 90% CI a [17.00,19.79] b [0.635,2.775] c [-3.57,8.57]
+== G67 Oct3 7.42M TP2 alone (10/15) [tp2] window 18.9 min, schedulers 1, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 0.5/12.0/19.5/11.34; accept (token weighted) 3.779; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 40.1 tok/s; intervals 585 (clean 340, 58%); prefill lines 1811; new prefill tokens/s/GPU 6066
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   246 |   16.6 |   16.6 ( 246) | 1.00 |  112.2 |  0.06 | 4.20 |  253.5
+    2- 4 |    57 |   22.4 |   22.4 (  57) | 1.00 |   74.2 |  0.15 | 3.26 |  140.7
+    4- 6 |    38 |   35.1 |   29.8 (  15) | 1.18 |  145.7 |  0.73 | 3.98 |  109.9
+    6- 8 |    32 |   41.3 |   32.4 (   5) | 1.27 |  117.9 |  0.82 | 3.79 |   92.1
+    8-10 |    51 |   48.5 |   34.8 (   9) | 1.39 |  112.4 |  0.97 | 3.75 |   76.9
+   10-12 |    38 |   52.7 |   36.6 (   4) | 1.44 |  118.2 |  1.25 | 3.75 |   72.5
+   12-14 |    37 |   66.6 |    nan (   2) |  nan |  111.5 |  1.39 | 3.75 |   53.7
+   14-16 |    23 |   63.0 |    nan (   2) |  nan |  113.2 |  1.70 | 3.65 |   54.6
+   16-20 |    51 |   95.2 |    nan (   0) |  nan |  126.2 |  2.28 | 3.70 |   37.7
+   20-24 |    10 |  206.3 |    nan (   0) |  nan |  105.5 |  2.32 | 3.75 |   18.2
+   clean fit: step = 18.12 + 1.322 x running/GPU + 5.87 x KV-tokens/GPU(M)  (R2 0.90, n 126); 90% CI a [17.61,18.67] b [0.946,1.688] c [2.75,9.05]
+== G67 Oct3 7.42M TP2+mm r2 (11/15) [tp2] window 16.0 min, schedulers 1, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 4.5/12.0/19.0/11.81; accept (token weighted) 3.617; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 38.0 tok/s; intervals 356 (clean 103, 29%); prefill lines 1856; new prefill tokens/s/GPU 7246
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |    39 |   18.9 |   18.9 (  37) | 1.00 |   58.6 |  0.06 | 2.97 |  155.0
+    2- 4 |    36 |   22.9 |   22.8 (  25) | 1.01 |   80.7 |  0.18 | 3.41 |  143.3
+    4- 6 |    54 |   33.9 |   29.5 (  13) | 1.15 |  117.1 |  0.57 | 3.30 |   95.6
+    6- 8 |    55 |   39.9 |   31.4 (  19) | 1.27 |  121.4 |  0.81 | 3.49 |   83.8
+    8-10 |    47 |   52.1 |   33.1 (   5) | 1.57 |  118.2 |  1.04 | 3.56 |   73.4
+   10-12 |    31 |   59.3 |   38.0 (   3) | 1.56 |  119.7 |  1.34 | 3.64 |   58.5
+   12-14 |    27 |   66.8 |    nan (   1) |  nan |  118.5 |  1.48 | 3.67 |   56.2
+   14-16 |    30 |   71.2 |    nan (   0) |  nan |  123.0 |  1.81 | 3.70 |   50.6
+   16-20 |    30 |  118.2 |    nan (   0) |  nan |  125.2 |  2.27 | 3.74 |   30.5
+   20-24 |     7 |  189.3 |    nan (   0) |  nan |  106.3 |  2.32 | 3.76 |   19.1
+   clean fit: step = 17.87 + 1.582 x running/GPU + 4.41 x KV-tokens/GPU(M)  (R2 0.91, n 102); 90% CI a [17.34,18.28] b [1.305,1.945] c [2.31,6.60]
+== G67 Oct3 7.46M DP2+mm (7/15) [dp2] window 18.0 min, schedulers 2, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 2.0/12.0/21.0/12.07; accept (token weighted) 3.794; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 40.8 tok/s; intervals 945 (clean 436, 46%); prefill lines 1516; new prefill tokens/s/GPU 5637
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   254 |   15.3 |   15.3 ( 249) | 1.00 |  104.0 |  0.10 | 4.20 |  271.7
+    2- 4 |   129 |   22.4 |   20.9 (  96) | 1.07 |   72.2 |  0.15 | 3.54 |  153.9
+    4- 6 |    84 |   31.1 |   26.1 (  33) | 1.19 |  100.8 |  0.45 | 3.65 |  113.7
+    6- 8 |    80 |   34.6 |   28.7 (  24) | 1.21 |  107.8 |  0.70 | 3.67 |  108.9
+    8-10 |   105 |   40.9 |   31.9 (  17) | 1.28 |  126.7 |  1.07 | 3.66 |   86.8
+   10-12 |    79 |   46.3 |    nan (   2) |  nan |  126.2 |  1.29 | 3.61 |   79.1
+   12-14 |    50 |   49.3 |   33.9 (   7) | 1.46 |  151.8 |  1.82 | 3.76 |   79.1
+   14-16 |    54 |   54.0 |   40.1 (   7) | 1.35 |  133.9 |  1.96 | 3.73 |   66.0
+   16-20 |    57 |   73.4 |    nan (   1) |  nan |  127.0 |  2.22 | 3.70 |   48.1
+   20-24 |    37 |   95.3 |    nan (   0) |  nan |  109.0 |  2.33 | 3.73 |   43.0
+   24-33 |    16 |  113.6 |    nan (   0) |  nan |   95.3 |  2.40 | 3.72 |   34.9
+   clean fit: step = 15.07 + 1.807 x running/GPU + 2.13 x KV-tokens/GPU(M)  (R2 0.78, n 436); 90% CI a [14.73,15.49] b [1.351,2.375] c [-2.14,5.35]
+== G67 Oct3 7.42M TP2+mm mr48 (10/15) [tp2] window 17.5 min, schedulers 1, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 2.0/10.0/19.0/10.56; accept (token weighted) 3.644; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 40.7 tok/s; intervals 491 (clean 217, 44%); prefill lines 1783; new prefill tokens/s/GPU 6304
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   140 |   17.6 |   17.6 ( 140) | 1.00 |   71.2 |  0.07 | 1.79 |  102.3
+    2- 4 |    69 |   24.1 |   24.0 (  49) | 1.00 |   64.0 |  0.16 | 3.19 |  123.1
+    4- 6 |    41 |   39.5 |   30.0 (   7) | 1.32 |  128.0 |  0.59 | 3.65 |   91.6
+    6- 8 |    69 |   42.6 |   32.9 (  13) | 1.29 |  124.8 |  0.84 | 3.49 |   83.9
+    8-10 |    53 |   44.6 |   34.7 (   7) | 1.29 |  120.0 |  1.09 | 3.50 |   76.6
+   10-12 |    34 |   65.8 |    nan (   0) |  nan |  117.6 |  1.26 | 3.54 |   51.6
+   12-14 |    23 |   60.7 |    nan (   1) |  nan |  127.7 |  1.61 | 3.64 |   59.8
+   14-16 |    19 |   86.9 |    nan (   0) |  nan |  137.2 |  1.92 | 3.69 |   43.5
+   16-20 |    32 |   86.0 |    nan (   0) |  nan |  130.5 |  2.35 | 3.86 |   47.0
+   20-24 |    11 |  174.5 |    nan (   0) |  nan |  112.1 |  2.40 | 3.91 |   22.6
+   clean fit: step = 16.13 + 2.153 x running/GPU + 1.44 x KV-tokens/GPU(M)  (R2 0.91, n 193); 90% CI a [15.42,16.60] b [1.640,3.001] c [-3.83,5.54]
+== G67 Oct3 7.47M TP2+mm (11/15) [tp2] window 18.4 min, schedulers 1, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 1.0/11.0/19.5/10.87; accept (token weighted) 3.678; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 40.8 tok/s; intervals 517 (clean 265, 51%); prefill lines 1865; new prefill tokens/s/GPU 6540
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   191 |   19.0 |   19.0 ( 191) | 1.00 |   85.3 |  0.09 | 3.33 |  175.5
+    2- 4 |    46 |   22.8 |   22.8 (  44) | 1.00 |   62.3 |  0.13 | 3.17 |  136.7
+    4- 6 |    33 |   31.1 |   29.4 (  15) | 1.06 |  115.9 |  0.54 | 3.80 |  117.6
+    6- 8 |    37 |   43.1 |   31.8 (   7) | 1.36 |  119.0 |  0.84 | 3.59 |   85.8
+    8-10 |    70 |   51.4 |   34.1 (   4) | 1.51 |  126.3 |  1.10 | 3.58 |   68.6
+   10-12 |    38 |   52.1 |    nan (   2) |  nan |  124.8 |  1.34 | 3.66 |   71.7
+   12-14 |    28 |   72.1 |    nan (   0) |  nan |  127.8 |  1.58 | 3.70 |   50.0
+   14-16 |    29 |   68.2 |    nan (   1) |  nan |  138.6 |  2.10 | 3.57 |   53.8
+   16-20 |    37 |  117.5 |    nan (   1) |  nan |  132.4 |  2.36 | 3.74 |   32.1
+   20-24 |     8 |  189.9 |    nan (   0) |  nan |  114.9 |  2.31 | 3.89 |   20.5
+   clean fit: step = 17.22 + 2.555 x running/GPU + -4.25 x KV-tokens/GPU(M)  (R2 0.91, n 263); 90% CI a [16.42,17.74] b [1.749,3.603] c [-10.64,1.31]

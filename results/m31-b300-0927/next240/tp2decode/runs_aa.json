@@ -1,0 +1,6 @@
+[
+ {"label": "mmids twin1 A: DP2 e0-1", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_mmids_p60@A.jsonl", "logs": ["/data01/minimax31/logs/engine-20261007T183706Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T183706Z-tp2-1.log"]},
+ {"label": "mmids twin1 B: DP2+mm e2-3", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_mmids_p60@B.jsonl", "logs": ["/data01/minimax31/logs/engine-20261007T183707Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T183707Z-tp2-3.log"]},
+ {"label": "mmids twin2 A: DP2 e2-3", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_mmidssw_p60@A.jsonl", "logs": ["/data01/minimax31/logs/engine-20261007T192843Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T192843Z-tp2-3.log"]},
+ {"label": "mmids twin2 B: DP2+mm e0-1", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_mmidssw_p60@B.jsonl", "logs": ["/data01/minimax31/logs/engine-20261007T192842Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T192843Z-tp2-1.log"]}
+]

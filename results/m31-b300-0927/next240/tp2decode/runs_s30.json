@@ -1,0 +1,4 @@
+[
+ {"label": "G67 Sep30 DP2+mm one engine", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_dp2mm_s30_127x_q0.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T055208Z-g67-tp2-3.log"]},
+ {"label": "G67 Sep30 8.42M TP2+mm (5/15)", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_tp2mm_s30_127x_q0.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T050505Z-g67-tp2-3.log"]}
+]

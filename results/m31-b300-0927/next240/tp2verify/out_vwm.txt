@@ -1,0 +1,11 @@
+twin1 B: TP2 engines 2-3                      : prefill lines in window 3016; queue_min >= 2 at 60% of them, >= 3 at 25%
+twin2 B: TP2 engines 0-1                      : prefill lines in window 3038; queue_min >= 2 at 53% of them, >= 3 at 16%
+FULL Oct3 7.32M TP2 70tp2 (12/15)             : prefill lines in window 7647; queue_min >= 2 at 83% of them, >= 3 at 55%
+FULL Oct3 7.32M TP2 70tp2_r2 (11/15)          : prefill lines in window 7618; queue_min >= 2 at 83% of them, >= 3 at 53%
+FULL Oct3 7.49M TP2 75tp2 (7/15)              : prefill lines in window 7707; queue_min >= 2 at 90% of them, >= 3 at 73%
+G67 Sep30 8.42M TP2+mm (5/15)                 : prefill lines in window 2012; queue_min >= 2 at 96% of them, >= 3 at 70%
+G67 Oct3 7.43M TP2+mm (10/15)                 : prefill lines in window 1872; queue_min >= 2 at 80% of them, >= 3 at 55%
+G67 Oct3 7.42M TP2 alone (10/15)              : prefill lines in window 1811; queue_min >= 2 at 81% of them, >= 3 at 57%
+G67 Oct3 7.42M TP2+mm r2 (11/15)              : prefill lines in window 1856; queue_min >= 2 at 75% of them, >= 3 at 49%
+G67 Oct3 7.42M TP2+mm mr48 (10/15)            : prefill lines in window 1783; queue_min >= 2 at 73% of them, >= 3 at 51%
+G67 Oct3 7.47M TP2+mm (11/15)                 : prefill lines in window 1865; queue_min >= 2 at 82% of them, >= 3 at 61%

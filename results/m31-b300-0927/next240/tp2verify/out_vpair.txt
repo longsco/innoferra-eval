@@ -1,0 +1,66 @@
+== Sep30 one engine: DP2 (A) vs TP2 (B): pairs 2892 (same output length 4%); TPS p50 A 83.9 B 56.9 (ratio of p50 0.678); paired ratio p50 0.701 geo 0.695; token-weighted rate ratio 0.803; TTFT paired geo 0.543
+   output 20-100 (A side): n 773, paired TPS ratio p25/p50/p75 0.332/0.510/0.748, geo 0.487
+   output 100-300 (A side): n 1016, paired TPS ratio p25/p50/p75 0.513/0.683/0.935, geo 0.719
+   output 300-1000 (A side): n 752, paired TPS ratio p25/p50/p75 0.633/0.793/1.112, geo 0.870
+   output 1000-3000 (A side): n 239, paired TPS ratio p25/p50/p75 0.680/0.814/0.991, geo 0.848
+   output 3000-99999 (A side): n 112, paired TPS ratio p25/p50/p75 0.728/0.828/0.956, geo 0.863
+== TP2 twin1: DP2 e0-1 (A) vs TP2 e2-3 (B): pairs 2311 (same output length 5%); TPS p50 A 127.7 B 88.2 (ratio of p50 0.691); paired ratio p50 0.738 geo 0.715; token-weighted rate ratio 0.799; TTFT paired geo 0.563
+   output 20-100 (A side): n 459, paired TPS ratio p25/p50/p75 0.280/0.503/0.800, geo 0.450
+   output 100-300 (A side): n 891, paired TPS ratio p25/p50/p75 0.450/0.714/1.135, geo 0.720
+   output 300-1000 (A side): n 667, paired TPS ratio p25/p50/p75 0.579/0.845/1.201, geo 0.860
+   output 1000-3000 (A side): n 216, paired TPS ratio p25/p50/p75 0.634/0.832/1.213, geo 0.940
+   output 3000-99999 (A side): n 78, paired TPS ratio p25/p50/p75 0.754/0.876/1.124, geo 0.972
+== TP2 twin2: DP2 e2-3 (A) vs TP2 e0-1 (B): pairs 2310 (same output length 4%); TPS p50 A 130.4 B 101.3 (ratio of p50 0.777); paired ratio p50 0.813 geo 0.790; token-weighted rate ratio 0.895; TTFT paired geo 0.521
+   output 20-100 (A side): n 462, paired TPS ratio p25/p50/p75 0.338/0.593/0.904, geo 0.537
+   output 100-300 (A side): n 897, paired TPS ratio p25/p50/p75 0.508/0.800/1.202, geo 0.783
+   output 300-1000 (A side): n 665, paired TPS ratio p25/p50/p75 0.655/0.924/1.381, geo 0.957
+   output 1000-3000 (A side): n 223, paired TPS ratio p25/p50/p75 0.666/0.901/1.285, geo 0.966
+   output 3000-99999 (A side): n 63, paired TPS ratio p25/p50/p75 0.803/0.976/1.115, geo 0.978
+== nodelay twin1: DP2+delayer e0-1 (A) vs DP2 no delayer e2-3 (B): pairs 2312 (same output length 4%); TPS p50 A 124.7 B 99.9 (ratio of p50 0.801); paired ratio p50 0.824 geo 0.791; token-weighted rate ratio 0.843; TTFT paired geo 0.753
+   output 20-100 (A side): n 471, paired TPS ratio p25/p50/p75 0.327/0.667/1.055, geo 0.600
+   output 100-300 (A side): n 897, paired TPS ratio p25/p50/p75 0.484/0.815/1.288, geo 0.802
+   output 300-1000 (A side): n 670, paired TPS ratio p25/p50/p75 0.572/0.855/1.317, geo 0.870
+   output 1000-3000 (A side): n 206, paired TPS ratio p25/p50/p75 0.663/0.955/1.234, geo 0.973
+   output 3000-99999 (A side): n 68, paired TPS ratio p25/p50/p75 0.727/0.924/1.312, geo 0.954
+== nodelay twin2: DP2+delayer e2-3 (A) vs DP2 no delayer e0-1 (B): pairs 2314 (same output length 4%); TPS p50 A 125.0 B 103.5 (ratio of p50 0.828); paired ratio p50 0.841 geo 0.802; token-weighted rate ratio 0.825; TTFT paired geo 0.726
+   output 20-100 (A side): n 433, paired TPS ratio p25/p50/p75 0.364/0.690/1.084, geo 0.659
+   output 100-300 (A side): n 924, paired TPS ratio p25/p50/p75 0.501/0.834/1.291, geo 0.747
+   output 300-1000 (A side): n 661, paired TPS ratio p25/p50/p75 0.589/0.860/1.346, geo 0.908
+   output 1000-3000 (A side): n 225, paired TPS ratio p25/p50/p75 0.703/0.951/1.353, geo 1.029
+   output 3000-99999 (A side): n 71, paired TPS ratio p25/p50/p75 0.694/0.920/1.197, geo 0.978
+== cross-day e2-3: DP2 no delayer (A, 10-06) vs TP2 (B, 10-07): pairs 2313 (same output length 4%); TPS p50 A 99.8 B 88.2 (ratio of p50 0.884); paired ratio p50 0.925 geo 0.938; token-weighted rate ratio 1.003; TTFT paired geo 0.811
+   output 20-100 (A side): n 471, paired TPS ratio p25/p50/p75 0.396/0.713/1.232, geo 0.693
+   output 100-300 (A side): n 868, paired TPS ratio p25/p50/p75 0.552/0.914/1.588, geo 0.950
+   output 300-1000 (A side): n 666, paired TPS ratio p25/p50/p75 0.694/0.975/1.509, geo 1.063
+   output 1000-3000 (A side): n 239, paired TPS ratio p25/p50/p75 0.696/1.011/1.599, geo 1.095
+   output 3000-99999 (A side): n 69, paired TPS ratio p25/p50/p75 0.801/0.982/1.242, geo 1.083
+== cross-day e0-1: DP2 no delayer (A, 10-06) vs TP2 (B, 10-07): pairs 2314 (same output length 5%); TPS p50 A 103.5 B 101.3 (ratio of p50 0.978); paired ratio p50 0.996 geo 1.017; token-weighted rate ratio 1.116; TTFT paired geo 0.709
+   output 20-100 (A side): n 474, paired TPS ratio p25/p50/p75 0.410/0.755/1.183, geo 0.703
+   output 100-300 (A side): n 914, paired TPS ratio p25/p50/p75 0.660/0.966/1.590, geo 1.051
+   output 300-1000 (A side): n 652, paired TPS ratio p25/p50/p75 0.798/1.103/1.600, geo 1.167
+   output 1000-3000 (A side): n 206, paired TPS ratio p25/p50/p75 0.836/1.144/1.584, geo 1.223
+   output 3000-99999 (A side): n 68, paired TPS ratio p25/p50/p75 0.958/1.132/1.622, geo 1.317
+== cross-day control e0-1: DP2+delayer 10-06 (A) vs DP2+delayer 10-07 (B): pairs 2313 (same output length 5%); TPS p50 A 124.7 B 127.7 (ratio of p50 1.024); paired ratio p50 1.027 geo 1.036; token-weighted rate ratio 1.059; TTFT paired geo 1.082
+   output 20-100 (A side): n 471, paired TPS ratio p25/p50/p75 0.501/0.868/1.295, geo 0.838
+   output 100-300 (A side): n 898, paired TPS ratio p25/p50/p75 0.645/1.027/1.555, geo 1.035
+   output 300-1000 (A side): n 669, paired TPS ratio p25/p50/p75 0.729/1.097/1.688, geo 1.129
+   output 1000-3000 (A side): n 207, paired TPS ratio p25/p50/p75 0.861/1.134/1.567, geo 1.198
+   output 3000-99999 (A side): n 68, paired TPS ratio p25/p50/p75 0.869/1.155/1.706, geo 1.241
+== cross-day control e2-3: DP2+delayer 10-06 (A) vs DP2+delayer 10-07 (B): pairs 2311 (same output length 4%); TPS p50 A 125.1 B 130.3 (ratio of p50 1.042); paired ratio p50 1.022 geo 1.033; token-weighted rate ratio 1.030; TTFT paired geo 0.988
+   output 20-100 (A side): n 433, paired TPS ratio p25/p50/p75 0.497/0.868/1.295, geo 0.823
+   output 100-300 (A side): n 921, paired TPS ratio p25/p50/p75 0.655/1.002/1.654, geo 0.984
+   output 300-1000 (A side): n 661, paired TPS ratio p25/p50/p75 0.786/1.062/1.591, geo 1.167
+   output 1000-3000 (A side): n 225, paired TPS ratio p25/p50/p75 0.877/1.127/1.849, geo 1.277
+   output 3000-99999 (A side): n 71, paired TPS ratio p25/p50/p75 0.871/1.127/1.633, geo 1.289
+== full node 7.33 M: DP2 70dw (A) vs TP2 70tp2 (B): pairs 5623 (same output length 4%); TPS p50 A 93.2 B 70.6 (ratio of p50 0.757); paired ratio p50 0.806 geo 0.780; token-weighted rate ratio 0.936; TTFT paired geo 0.520
+   output 20-100 (A side): n 1121, paired TPS ratio p25/p50/p75 0.255/0.588/0.990, geo 0.527
+   output 100-300 (A side): n 2121, paired TPS ratio p25/p50/p75 0.409/0.759/1.340, geo 0.746
+   output 300-1000 (A side): n 1630, paired TPS ratio p25/p50/p75 0.563/0.930/1.597, geo 0.955
+   output 1000-3000 (A side): n 576, paired TPS ratio p25/p50/p75 0.697/0.962/1.455, geo 1.027
+   output 3000-99999 (A side): n 175, paired TPS ratio p25/p50/p75 0.735/0.946/1.248, geo 1.000
+== one engine knee: DP2 (A) vs TP2 (B): pairs 1392 (same output length 5%); TPS p50 A 92.3 B 69.2 (ratio of p50 0.749); paired ratio p50 0.815 geo 0.782; token-weighted rate ratio 0.907; TTFT paired geo 0.401
+   output 20-100 (A side): n 278, paired TPS ratio p25/p50/p75 0.318/0.590/0.850, geo 0.531
+   output 100-300 (A side): n 529, paired TPS ratio p25/p50/p75 0.483/0.769/1.151, geo 0.745
+   output 300-1000 (A side): n 389, paired TPS ratio p25/p50/p75 0.693/0.933/1.330, geo 0.961
+   output 1000-3000 (A side): n 156, paired TPS ratio p25/p50/p75 0.787/0.985/1.292, geo 1.049
+   output 3000-99999 (A side): n 40, paired TPS ratio p25/p50/p75 0.646/0.950/1.245, geo 0.957

@@ -1,0 +1,26 @@
+== G67 Sep30 DP2+mm one engine [dp2] window 18.1 min, schedulers 2, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 4.0/25.0/31.0/22.59; accept (token weighted) 3.577; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 49.9 tok/s; intervals 990 (clean 402, 41%); prefill lines 1677; new prefill tokens/s/GPU 4995
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   167 |   15.4 |   15.4 ( 167) | 1.00 |   29.8 |  0.03 | 2.90 |  177.3
+    2- 4 |    99 |   21.1 |   21.1 (  99) | 1.00 |   27.7 |  0.06 | 2.80 |  134.5
+    4- 6 |    39 |   22.7 |   22.7 (  39) | 1.00 |   26.0 |  0.10 | 2.91 |  125.7
+    6- 8 |    22 |   27.1 |   27.1 (  22) | 1.00 |   45.0 |  0.31 | 2.95 |  108.1
+    8-10 |     8 |   30.3 |   30.3 (   8) | 1.00 |   51.1 |  0.42 | 3.38 |  113.3
+   10-12 |    16 |   31.6 |   31.5 (  15) | 1.00 |   50.0 |  0.52 | 3.41 |  103.0
+   14-16 |    13 |   34.3 |   32.7 (   5) | 1.05 |   42.7 |  0.64 | 3.45 |   93.6
+   16-20 |    78 |   40.6 |   36.7 (   9) | 1.11 |   43.9 |  0.78 | 3.49 |   83.2
+   20-24 |   162 |   48.5 |   38.3 (   8) | 1.27 |   44.9 |  0.95 | 3.53 |   72.7
+   24-33 |   382 |   56.7 |   40.4 (  27) | 1.40 |   43.3 |  1.20 | 3.58 |   61.8
+   clean fit: step = 17.01 + 1.168 x running/GPU + -3.04 x KV-tokens/GPU(M)  (R2 0.88, n 402); 90% CI a [16.69,17.28] b [1.032,1.312] c [-5.79,-0.32]
+== G67 Sep30 8.42M TP2+mm (5/15) [tp2] window 18.3 min, schedulers 1, GPUs 2
+   per-GPU running (time weighted) p10/p50/p90/mean: 2.0/30.0/31.5/24.38; accept (token weighted) 3.538; cuda graph OFF share 0.00%
+   engine per-request rate (gen tokens / running-seconds) 42.3 tok/s; intervals 484 (clean 223, 46%); prefill lines 2012; new prefill tokens/s/GPU 5037
+   step ms by per-GPU running | n | all p50 | clean p50 (n) | all/clean | ctx/req p50 (k) | KV tok/GPU p50 (M) | accept p50 | per-req tok/s p50
+    0- 2 |   123 |   18.8 |   18.8 ( 123) | 1.00 |   35.4 |  0.04 | 2.86 |  149.6
+    2- 4 |    65 |   22.1 |   22.1 (  65) | 1.00 |   22.7 |  0.05 | 2.79 |  126.7
+    4- 6 |    12 |   28.1 |   28.1 (  12) | 1.00 |   32.0 |  0.16 | 3.39 |  119.9
+    6- 8 |    15 |   30.0 |   30.0 (  15) | 1.00 |   38.7 |  0.25 | 3.02 |  101.2
+   20-24 |    32 |   59.9 |    nan (   0) |  nan |   47.9 |  1.03 | 3.58 |   62.0
+   24-33 |   227 |   76.5 |    nan (   0) |  nan |   46.6 |  1.39 | 3.54 |   46.9
+   clean fit: step = 17.53 + 3.027 x running/GPU + -36.31 x KV-tokens/GPU(M)  (R2 0.94, n 210); 90% CI a [17.20,17.74] b [2.788,3.247] c [-41.90,-30.11]

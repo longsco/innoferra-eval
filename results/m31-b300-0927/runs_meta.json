@@ -2322,6 +2322,16 @@
    "change": "layout",
    "verdict": "comparison",
    "why": "10/15 at 8.44 M/GPU vs TP2 + fast path 5/15 on the same 3,072 requests; production 13/15. Paired against TP2: first token x1.78 (CI 1.70..1.85), TPS +23.8 tok/s (x1.43). On the decode-bound Sep 30 high load DP2 wins; on the Oct 3 knee TP2 wins (11 vs 7 of 15)."
+  },
+  {
+   "tag": "g67_tp2mm_s30_114x_q0",
+   "at": "2026-10-07 23:52",
+   "protocol": "v5.1q",
+   "share": 1.16,
+   "name": "one engine (GPUs 6,7): TP2 + image fast path on Sep 30 at 1.15x real load (7.48 M/GPU), quarter 0",
+   "change": "load",
+   "verdict": "comparison",
+   "why": "7/15 at 7.48 M/GPU (page rule); production 13/15 on the same requests. Paired with the full-node DP2 run at 7.41 M (15/15): first token x0.531, TPS -27.6 tok/s (x0.68). Plain TP2 fails Sep 30-shaped traffic on decode even near 7.4 M."
   }
  ],
  "g67_rule": {

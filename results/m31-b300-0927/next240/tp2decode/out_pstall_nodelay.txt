@@ -1,0 +1,12 @@
+== nodelay twin1 A: DP2+delayer e0-1 [dp2] schedulers 4; wall covered 17.4 min/scheduler; prefill stall share 48.4%; Prefill lines/scheduler-min 43.9; new tok per line 6220; stall per line 365 ms; stall per 1k new tok 58.5 ms
+   stall per interval = -248 + 253.3 ms x lines + 27.31 ms x 1k new tokens (R2 0.86, n 1316)
+   fwd occupancy p50 (clean intervals) by per-GPU running: 0-2: 93.8; 2-4: 94.6; 4-6: 95.3; 6-8: 95.3; 8-10: 95.3; 10-12: 95.2
+== nodelay twin1 B: DP2 NO delayer e2-3 [dp2] schedulers 4; wall covered 18.4 min/scheduler; prefill stall share 50.0%; Prefill lines/scheduler-min 44.4; new tok per line 5591; stall per line 354 ms; stall per 1k new tok 63.0 ms
+   stall per interval = -241 + 209.5 ms x lines + 34.15 ms x 1k new tokens (R2 0.80, n 1223)
+   fwd occupancy p50 (clean intervals) by per-GPU running: 0-2: 92.4; 2-4: 94.5; 4-6: 95.1; 6-8: 95.1; 8-10: 95.3; 10-12: 95.4; 12-14: 95.4
+== nodelay twin2 A: DP2+delayer e2-3 [dp2] schedulers 4; wall covered 19.1 min/scheduler; prefill stall share 46.4%; Prefill lines/scheduler-min 36.6; new tok per line 6066; stall per line 394 ms; stall per 1k new tok 64.9 ms
+   stall per interval = -598 + 481.5 ms x lines + 9.84 ms x 1k new tokens (R2 0.78, n 1331)
+   fwd occupancy p50 (clean intervals) by per-GPU running: 0-2: 93.8; 2-4: 94.8; 4-6: 95.2; 6-8: 95.3; 8-10: 95.2; 10-12: 95.3
+== nodelay twin2 B: DP2 NO delayer e0-1 [dp2] schedulers 4; wall covered 18.9 min/scheduler; prefill stall share 54.4%; Prefill lines/scheduler-min 41.8; new tok per line 5719; stall per line 399 ms; stall per 1k new tok 69.6 ms
+   stall per interval = -922 + 619.1 ms x lines + -6.73 ms x 1k new tokens (R2 0.50, n 1224)
+   fwd occupancy p50 (clean intervals) by per-GPU running: 0-2: 93.5; 2-4: 93.1; 4-6: 95.1; 6-8: 94.9; 8-10: 95.1; 10-12: 95.0

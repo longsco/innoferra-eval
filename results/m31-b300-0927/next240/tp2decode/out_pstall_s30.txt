@@ -1,0 +1,6 @@
+== G67 Sep30 DP2+mm one engine [dp2] schedulers 2; wall covered 17.8 min/scheduler; prefill stall share 39.9%; Prefill lines/scheduler-min 46.3; new tok per line 6479; stall per line 252 ms; stall per 1k new tok 38.5 ms
+   stall per interval = -167 + 103.8 ms x lines + 27.12 ms x 1k new tokens (R2 0.92, n 588)
+   fwd occupancy p50 (clean intervals) by per-GPU running: 0-2: 93.5; 2-4: 94.7; 4-6: 95.0; 6-8: 95.4; 8-10: 95.7; 10-12: 95.4; 16-20: 95.5; 20-24: 95.2; 24-33: 95.1
+== G67 Sep30 8.42M TP2+mm (5/15) [tp2] schedulers 1; wall covered 18.4 min/scheduler; prefill stall share 30.6%; Prefill lines/scheduler-min 109.8; new tok per line 5506; stall per line 168 ms; stall per 1k new tok 30.4 ms
+   stall per interval = -123 + 88.5 ms x lines + 17.27 ms x 1k new tokens (R2 0.94, n 261)
+   fwd occupancy p50 (clean intervals) by per-GPU running: 0-2: 94.0; 2-4: 94.5; 4-6: 94.7; 6-8: 94.5

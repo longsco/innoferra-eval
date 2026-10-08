@@ -1,0 +1,3 @@
+DP2      : step = 21.27 + 0.593 N + 2.81 m   (max residual 1.39 ms, 9 cells)
+TP2      : step = 23.34 + 0.763 N + 3.29 m   (max residual 1.45 ms, 9 cells)
+TP2 - DP2: step = 1.92 + 0.157 N + 0.71 m   (max residual 0.54 ms, 9 cells)

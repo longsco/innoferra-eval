@@ -1,0 +1,24 @@
+[s_end, N>=2.0] pooled real-traffic clean-step fit, groups ['twins (5.95 M/GPU per half)', 'full node Oct 3 7.32-7.33 M', 'full node Oct 3 7.49 M', 'one engine Oct 3 knee'], rows 4698 (TP2 1343)
+   common TP2 extra = +1.52 [0.70,2.06] +0.342 [0.239,0.431] N -0.01 [-0.71,1.00] m  (ms; N per GPU, m = M KV tok/GPU)
+   extra at N 4, m 0.4: +2.88 ms [+2.36, +3.22]
+   extra at N 8, m 0.9: +4.24 ms [+3.95, +4.45]
+   extra at N 12, m 1.4: +5.60 ms [+5.19, +6.05]
+   extra at N 16, m 1.8: +6.96 ms [+6.34, +7.77]
+[s_end, N>=4.0] pooled real-traffic clean-step fit, groups ['twins (5.95 M/GPU per half)', 'full node Oct 3 7.32-7.33 M', 'full node Oct 3 7.49 M', 'one engine Oct 3 knee'], rows 2579 (TP2 773)
+   common TP2 extra = +1.11 [0.53,1.62] +0.323 [0.217,0.409] N +0.28 [-0.44,1.23] m  (ms; N per GPU, m = M KV tok/GPU)
+   extra at N 4, m 0.4: +2.52 ms [+2.13, +2.83]
+   extra at N 8, m 0.9: +3.95 ms [+3.72, +4.16]
+   extra at N 12, m 1.4: +5.38 ms [+5.08, +5.72]
+   extra at N 16, m 1.8: +6.78 ms [+6.27, +7.36]
+[s_avg, N>=2.0] pooled real-traffic clean-step fit, groups ['twins (5.95 M/GPU per half)', 'full node Oct 3 7.32-7.33 M', 'full node Oct 3 7.49 M', 'one engine Oct 3 knee'], rows 4698 (TP2 1343)
+   common TP2 extra = +1.22 [0.02,2.10] +0.316 [0.186,0.459] N +1.38 [0.51,2.73] m  (ms; N per GPU, m = M KV tok/GPU)
+   extra at N 4, m 0.4: +3.04 ms [+2.32, +3.49]
+   extra at N 8, m 0.9: +5.00 ms [+4.61, +5.28]
+   extra at N 12, m 1.4: +6.96 ms [+6.42, +7.61]
+   extra at N 16, m 1.8: +8.78 ms [+7.82, +9.87]
+[s_avg, N>=4.0] pooled real-traffic clean-step fit, groups ['twins (5.95 M/GPU per half)', 'full node Oct 3 7.32-7.33 M', 'full node Oct 3 7.49 M', 'one engine Oct 3 knee'], rows 2579 (TP2 773)
+   common TP2 extra = +1.15 [0.08,1.98] +0.256 [0.138,0.405] N +1.61 [0.57,2.59] m  (ms; N per GPU, m = M KV tok/GPU)
+   extra at N 4, m 0.4: +2.82 ms [+2.08, +3.34]
+   extra at N 8, m 0.9: +4.65 ms [+4.25, +5.00]
+   extra at N 12, m 1.4: +6.47 ms [+5.99, +6.99]
+   extra at N 16, m 1.8: +8.14 ms [+7.39, +8.98]

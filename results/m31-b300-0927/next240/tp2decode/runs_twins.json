@@ -1,0 +1,10 @@
+[
+ {"label": "twin1 A: DP2 engines 0-1 (5.95 M/GPU per half)", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_tp2_p60@A.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T160231Z-tp2-0.log", "/data01/minimax31/logs/engine-20261007T160231Z-tp2-1.log"]},
+ {"label": "twin1 B: TP2 engines 2-3", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_tp2_p60@B.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T160232Z-tp2-2.log", "/data01/minimax31/logs/engine-20261007T160232Z-tp2-3.log"]},
+ {"label": "twin2 A: DP2 engines 2-3", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_tp2sw_p60@A.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T165410Z-tp2-2.log", "/data01/minimax31/logs/engine-20261007T165411Z-tp2-3.log"]},
+ {"label": "twin2 B: TP2 engines 0-1", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_tp2sw_p60@B.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T165410Z-tp2-0.log", "/data01/minimax31/logs/engine-20261007T165410Z-tp2-1.log"]}
+]

@@ -1,0 +1,6 @@
+[
+ {"label": "nodelay twin1 A: DP2+delayer e0-1", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_nodelay_p60@A.jsonl", "logs": ["/data01/minimax31/logs/engine-20261007T003158Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T003158Z-tp2-1.log"]},
+ {"label": "nodelay twin1 B: DP2 NO delayer e2-3", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_nodelay_p60@B.jsonl", "logs": ["/data01/minimax31/logs/engine-20261007T003158Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T003158Z-tp2-3.log"]},
+ {"label": "nodelay twin2 A: DP2+delayer e2-3", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_nodelaysw_p60@A.jsonl", "logs": ["/data01/minimax31/logs/engine-20261007T012517Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T012517Z-tp2-3.log"]},
+ {"label": "nodelay twin2 B: DP2 NO delayer e0-1", "traffic": "/data01/minimax31/traffic/v3L-v5t_ab_nodelaysw_p60@B.jsonl", "logs": ["/data01/minimax31/logs/engine-20261007T012516Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T012517Z-tp2-1.log"]}
+]

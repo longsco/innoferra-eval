@@ -1,0 +1,23 @@
+[
+ {"label": "FULL Oct3 7.32M TP2 70tp2 (12/15)", "traffic": "/data01/minimax31/traffic/v3L-v5p_full_cl_gcsv3_70tp2_paced.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T174530Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T174530Z-tp2-1.log","/data01/minimax31/logs/engine-20261007T174530Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T174531Z-tp2-3.log"]},
+ {"label": "FULL Oct3 7.32M TP2 70tp2_r2 (11/15)", "traffic": "/data01/minimax31/traffic/v3L-v5p_full_cl_gcsv3_70tp2_r2_paced.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T202029Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T202029Z-tp2-1.log","/data01/minimax31/logs/engine-20261007T202030Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T202030Z-tp2-3.log"]},
+ {"label": "FULL Oct3 7.33M DP2 70dw (7/15)", "traffic": "/data01/minimax31/traffic/v3L-v5p_full_cl_gcsv3_70dw_paced.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261006T215833Z-tp2-0.log","/data01/minimax31/logs/engine-20261006T215833Z-tp2-1.log","/data01/minimax31/logs/engine-20261006T215833Z-tp2-2.log","/data01/minimax31/logs/engine-20261006T215834Z-tp2-3.log"]},
+ {"label": "FULL Oct3 7.33M DP2 70dw_r2 (3/15)", "traffic": "/data01/minimax31/traffic/v3L-v5p_full_cl_gcsv3_70dw_r2_paced.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T051002Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T051002Z-tp2-1.log","/data01/minimax31/logs/engine-20261007T051003Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T051003Z-tp2-3.log"]},
+ {"label": "FULL Oct3 7.49M TP2 75tp2 (7/15)", "traffic": "/data01/minimax31/traffic/v3L-v5p_full_cl_gcsv3_75tp2_paced.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T211401Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T211401Z-tp2-1.log","/data01/minimax31/logs/engine-20261007T211402Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T211402Z-tp2-3.log"]},
+ {"label": "FULL Oct3 7.49M DP2 75dw (2/15)", "traffic": "/data01/minimax31/traffic/v3L-v5p_full_cl_gcsv3_75dw_paced.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261006T163641Z-tp2-0.log","/data01/minimax31/logs/engine-20261006T163642Z-tp2-1.log","/data01/minimax31/logs/engine-20261006T163642Z-tp2-2.log","/data01/minimax31/logs/engine-20261006T163642Z-tp2-3.log"]},
+ {"label": "FULL Sep30 8.28M DP2 127x (14/15)", "traffic": "/data01/minimax31/traffic/v3L-v5s_full_cl_gcsv3_127x_paced.jsonl",
+  "logs": ["/data01/minimax31/logs/engine-20261007T151212Z-tp2-0.log","/data01/minimax31/logs/engine-20261007T151213Z-tp2-1.log","/data01/minimax31/logs/engine-20261007T151213Z-tp2-2.log","/data01/minimax31/logs/engine-20261007T151214Z-tp2-3.log"]},
+ {"label": "G67 Sep30 8.42M TP2+mm (5/15)", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_tp2mm_s30_127x_q0.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T050505Z-g67-tp2-3.log"]},
+ {"label": "G67 Oct3 7.43M TP2+mm (10/15)", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_tp2mm_knee733_q0.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T002304Z-g67-tp2-3.log"]},
+ {"label": "G67 Oct3 7.42M TP2 alone (10/15)", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_tp2_knee733_q0.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T011048Z-g67-tp2-3.log"]},
+ {"label": "G67 Oct3 7.42M TP2+mm r2 (11/15)", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_tp2mm_knee733_q0_r2.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T015629Z-g67-tp2-3.log"]},
+ {"label": "G67 Oct3 7.46M DP2+mm (7/15)", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_dp2mm_knee733_q0.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T024359Z-g67-tp2-3.log"]},
+ {"label": "G67 Oct3 7.42M TP2+mm mr48 (10/15)", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_tp2mm_mr48_knee733_q0.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T033000Z-g67-tp2-3.log"]},
+ {"label": "G67 Oct3 7.47M TP2+mm (11/15)", "traffic": "/data01/minimax31/traffic/g67/v3L-g67_tp2mm_knee749_q0.jsonl", "logs": ["/data01/minimax31/logs/engine-20261008T041811Z-g67-tp2-3.log"]}
+]

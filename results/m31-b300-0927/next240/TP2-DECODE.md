@@ -24,15 +24,16 @@ Words used in this report:
 
 1. **The per-step TP cost is real but small: fd = 1.10-1.16 at equal per-GPU load** [measured: 4 matched data sets, section 2].
    The FD bench of the 10-07 smoke gave 1.12-1.18 [measured: tp2-smoke-20261007T125042Z/fd_report.txt]. CUDA graphs ran in
-   100% of decode intervals in both layouts [measured]. So the decode step alone explains about one third of the TPS loss.
-2. **The TPS p50 loss (x0.69-0.81 below the knee, x0.71-0.73 on Sep 30 at 8.42 M) has four parts:**
+   100% of decode intervals in both layouts [measured]. Below the knee the step explains about one third of the TPS loss. On the
+   decode-bound Sep 30 day the step cost, amplified by the concurrency feedback (2c), is the larger part [inferred, MED].
+2. **The TPS p50 loss (x0.69-0.81 below the knee; x0.70 paired on Sep 30 1.29x, one engine, same requests) has four parts:**
    - a. **Missing decode protection (largest part below the knee).** DP2 runs the prefill delayer (30 passes). TP2 runs none.
      DP2 WITHOUT the delayer shows the same loss pattern: short requests x0.72, replay TPS p50 x0.80-0.83 [measured: nodelay twins].
      Short requests (20-300 tokens) set the TPS p50, and they lose most under TP2 (x0.67-0.79). Long requests lose x0.81-0.94.
    - b. **Per-step TP cost** (fd 1.10-1.16): collectives, replicated per-request work, replicated index-K reads, host time.
    - c. **Concurrency feedback at high load.** A longer step keeps more requests running, and more requests make the step longer.
-     On Sep 30 at 8.42 M the TP2 engine ran at N = 30 (p50; cap 32) against N = 22 on DP2 [measured]. The feedback multiplies
-     every step change by about x1.5-2.2 in per-request rate [inferred, MED].
+     On Sep 30 at 8.42 M the TP2 engine ran at N = 30 (p50; cap 32) against N = 25 for DP2 on the same harness [measured].
+     The feedback multiplies every step change by about x1.5-2.2 in per-request rate [inferred, MED].
    - d. **Accept length -0..-3%** under TP2 (A/A between two DP2 halves: +-1.9%) [measured; no mechanism found, LOW].
 3. **Fix ranking by decode gain per engineer-day** (section 5): D1 TP2 delayer queue trigger (flags exist, no build) >
    G1 graph batch-size fill > G2 NCCL symmetric memory (flag exists) > D2 decode-run guarantee (small patch) >
@@ -40,8 +41,9 @@ Words used in this report:
    E6 index-K TP shard. A max-running cap and a smaller draft block give no gain. A mixed TP2/DP2 node cannot be tested on GPUs 6,7.
 4. **Sep 30 1.29x (TP2 single engine 5/15 today), what-if** [inferred, LOW-MED; 6 failing minutes sit at 52-59 tok/s, so counts
    swing]: D1 -> 10-13/15. G2, S1 or E6 alone -> 7-9/15 each. E7 + S1 + G1 -> about 12/15. D1 + E7 + S1 + G1 -> about 14/15.
-   All TP2 step extras removed -> 15/15 (TPS p50 of minutes 83; the DP2 full node scored 14/15 at TPS 81 on the same window).
-5. **Next (section 6).** Step A: D1 + G1 on one engine, Sep 30 1.29x quarter 0, paired with the 05:05 UTC TP2 run. No build;
+   All TP2 step extras removed -> 15/15 with TPS p50 of minutes 83. Check: DP2 on the same harness and requests measured 85
+   (10/15; its 5 misses are first token 3.3-6.3 s, where TP2 is x0.56) [measured, finished 05:52 UTC].
+5. **Next (section 6).** Step A: D1 + G1 on one engine, Sep 30 1.29x quarter 0, paired with `g67_tp2mm_s30_127x_q0`. No build;
    CPU prep 1-2 h; GPU 47 min. Step B: G2 step bench + quality gate on one engine. CPU prep 0.5 day; GPU about 40 min.
 
 ---------------------------------------------------------------------------------------------------------------------------
@@ -54,7 +56,7 @@ Words used in this report:
 | nodelay twins | DP2 + delayer vs DP2 without delayer, 5.95 M/GPU, both sides | `engine-20261007T003158Z-*`, `...012516/7Z-*` | `v3L-v5t_ab_nodelay(sw)_p60@{A,B}` |
 | full node 7.32-7.33 M | TP2 70tp2 (12/15), 70tp2_r2 (11/15) vs DP2 70dw (7/15), 70dw_r2 (3/15) | `...20261007T174530Z`, `...202029Z`; `...20261006T215833Z`, `...20261007T051002Z` | `v3L-v5p_full_cl_gcsv3_70*` |
 | full node 7.49 M | TP2 75tp2 (7/15) vs DP2 75dw (2/15) | `...20261007T211401Z`, `...20261006T163641Z` | `v3L-..._75*` |
-| Sep 30 1.29x | DP2 full node 8.28 M (14/15); TP2 one engine 8.42 M (5/15) | `...20261007T151212Z`; `engine-20261008T050505Z-g67-tp2-3` | `v3L-v5s_..._127x_paced`; `g67/v3L-g67_tp2mm_s30_127x_q0` |
+| Sep 30 1.29x | DP2 full node 8.28 M (14/15); TP2 one engine 8.42 M (5/15); DP2 one engine, same requests (10/15) | `...20261007T151212Z`; `engine-20261008T050505Z-g67-tp2-3`; `engine-20261008T055208Z-g67-tp2-3` | `v3L-v5s_..._127x_paced`; `g67/v3L-g67_{tp2mm,dp2mm}_s30_127x_q0` |
 | single engine Oct 3 knee | TP2 (+fast path) x5 runs vs DP2 + fast path (7/15) | `engine-20261008T0{02304,11048,15629,33000,41811}Z-g67-*`, `...024359Z-g67-*` | `g67/v3L-g67_*knee*` |
 | FD bench | 3 engines, fixed concurrency, 32k and 98k prompts | `tp2-smoke-20261007T125042Z/fd_report.txt` | synthetic |
 
@@ -85,9 +87,9 @@ Fits (clean intervals, TP2 extra = da + db N + dc m) [measured: out_pooledfit.tx
 |---|---|---|---|---|
 | FD bench | +1.92 | +0.157 | +0.71 | 1.15 |
 | twins | +2.09 [1.60, 2.60] | +0.00 [-0.26, 0.26] | +1.64 [-0.22, 3.33] | 1.11 |
-| full 7.33 M | +1.28 [1.04, 1.54] | +0.53 [0.30, 0.74] | -1.31 [-3.02, 0.39] | 1.15 |
+| full 7.33 M | +1.28 [1.04, 1.54] | +0.53 [0.30, 0.74] | -1.31 [-3.02, 0.39] | 1.16 |
 | full 7.49 M | +3.25 [2.97, 3.53] | +0.36 [0.06, 0.61] | -1.53 [-3.51, 0.85] | 1.15 |
-| one engine | +2.27 [1.87, 2.77] | +0.07 [-0.54, 0.50] | -0.13 [-3.65, 4.41] | 1.08 |
+| one engine | +2.27 [1.87, 2.77] | +0.07 [-0.54, 0.50] | -0.13 [-3.65, 4.41] | 1.07 |
 
 N and m are collinear in real traffic, so db and dc are unstable. The robust result: TP2 adds about 2 ms per step at small N
 and 3.5-5 ms at N 10-16. At N 24 the FD bench shows +6.6 ms (fd 1.18). Real traffic has no clean TP2 interval above N 20.
@@ -111,7 +113,7 @@ each layer therefore all-gathers the hidden states before attention [communicato
 64 Q heads, 4 KV heads, 4 index heads, ONE index-K head, vocab 200,064; draft 5 dense layers, block 7 [code: config.json].
 
 Operating points: K = Oct 3 knee (N 12, m 1.4; DP2 clean about 32-34 ms). S = Sep 30 1.29x TP2 point (N 30, m 1.4; DP2 clean
-about 42-43 ms, TP2 about 50-51 ms).
+40-43 ms measured at N 24-33, TP2 about 50-51 ms by the model).
 
 | # | component (TP2 minus DP2, ms per step) | why it grows | K | S | basis |
 |---|---|---|---|---|---|
@@ -166,19 +168,29 @@ Reading:
   1k prompt tokens vs 45-70 ms [measured: out_pstall*.txt]. TP2 prefill is cheaper per token. The loss comes from WHEN the stalls
   fall, not from how much stall there is.
 
-### 3.3 Concurrency feedback (Sep 30 1.29x)
+### 3.3 Concurrency feedback (Sep 30 1.29x, decode-bound day)
 
-| | DP2 full node 8.28 M (14/15) | TP2 one engine 8.42 M (5/15) |
-|---|---|---|
-| N per GPU p50 / mean (time weighted) | 22 / 19.4 | 30 / 24.4 (cap 32) |
-| all step at N 20-24 / 24-33 | 50.1 / 61.4 ms | 59.9 / 76.5 ms |
-| engine rate, all buckets | x1.00 | x0.71-0.76 |
-| replay TPS p50 | 79 | 57 |
-| minutes missed | 1 (minute 10, first token 3.2 s) | 10 (all on TPS 44-59; first token 0.45-1.8 s) |
+| | DP2 full node 8.28 M | DP2 one engine (same requests as TP2) | TP2 one engine 8.42 M |
+|---|---|---|---|
+| minutes in SLA | 14/15 | 10/15 | 5/15 |
+| misses | 1 (first token 3.2 s) | 5, all first token (3.3-6.3 s) | 10, all TPS (44-59; first token 0.45-1.8 s) |
+| N per GPU p50 / mean (time weighted) | 22 / 19.4 | 25 / 22.6 | 30 / 24.4 (cap 32) |
+| clean step at N 24-33 | 41.5 ms | 40.4 ms | no clean interval (model 50.8 at N 30) |
+| all step at N 20-24 / 24-33 | 50.1 / 61.4 ms | 48.5 / 56.7 ms | 59.9 / 76.5 ms |
+| accept (token weighted) | 3.562 | 3.577 | 3.538 |
+| prefill stall share of wall | 37% | 40% | 31% |
+| 20-100-token requests hit by >= 1 prefill | 44% | 31% | 74% |
+| engine rate 20-100 / 100-300 / 1000-3000 tokens | 117 / 78 / 57 | 126 / 80 / 56 | 83 / 56 / 43 |
+| replay TPS p50 | 79 | 84 | 57 |
+| paired with DP2 one engine (2,950 requests) | - | 1.00 | TPS x0.70, first token x0.56 |
 
-[measured: out_full.txt, out_req.txt]. With fixed decode demand, N = demand / rate (Little's law). The clean-step elasticity
-d ln C / d ln N is 0.45-0.55 at N 24-30, so a step cut of x% raises the per-request rate by about x / (1 - e) = 1.8-2.2 x%
-[inferred, MED]. The 10-03 index-score twin showed the same: model +2.0 tok/s, measured +7.86 [prior: m31-engine-profile].
+[measured: out_full.txt, out_s30.txt, out_req*.txt, out_pstall*.txt; DP2 one-engine run = `engine-20261008T055208Z-g67-tp2-3.log`,
+`g67/v3L-g67_dp2mm_s30_127x_q0.jsonl`, finished 05:52 UTC]. On the same harness DP2 fails only first token and TP2 fails only
+decode: the two layouts sit on opposite sides of the SLA on this day.
+
+With fixed decode demand, N = demand / rate (Little's law). The clean-step elasticity e = d ln C / d ln N is 0.45-0.55 at N 24-30,
+so a step cut of x% raises the per-request rate by about x / (1 - e) = 1.8-2.2 x% [inferred, MED]. The 10-03 index-score twin
+showed the same effect: model +2.0 tok/s, measured +7.86 [prior: m31-engine-profile].
 
 ---------------------------------------------------------------------------------------------------------------------------
 ## 4. Upstream and fork features checked
@@ -229,7 +241,7 @@ Gain per engineer-day, central: D1 >> G1 > G2 > D2 > S1 > E7 > draft split > E6 
   the other decodes) gives mismatched collectives and a hang [inferred, HIGH]. Our own warm-bypass patch syncs its decision with
   one gloo all-reduce for this reason [code: managers/scheduler.py:3136-3144].
 - **The delayer's wall-clock cap is evaluated per rank after its gather** [code: managers/prefill_delayer.py:231-233]. The two
-  ranks read the clock some microseconds apart, so a release near the 400 ms boundary can split them [inferred, MED].
+  ranks read the clock some microseconds apart, so a release near the time cap can split them [inferred, MED].
   The pass cap is deterministic: both ranks count the same passes [code: prefill_delayer.py:251]. So D1 sets the pass cap
   (12 passes, about 0.4-0.6 s) and switches the time cap off (100000 ms). D2 must count passes too, never wall time.
 - The delayer gathers its inputs from TP rank 0 each pass (one gloo all-gather of 5 integers per rank)
@@ -308,16 +320,18 @@ TPS p50 > 60, no error [inferred; out_minute_model.txt].
 | D1 x1.10 + E7 + S1 + G1 | 14 | 13, 14 | 8 | 11 |
 | all TP2 step extras | 15 | 13, 14 | 9 | 11 |
 
-The Oct 3 knee misses are mostly start-burst minutes 0-3 (first token 3.1-3.6 s and TPS 37-53); decode fixes move them little.
+Validation: with all TP2 step extras removed the model gives a TPS p50 of minutes of 83 on Sep 30; DP2 measured 85 on the same
+requests and harness [measured]. The Oct 3 knee misses are mostly start-burst minutes 0-3 (first token 3.1-3.6 s and TPS 37-53);
+decode fixes move them little.
 One-engine A/A noise: first token +-3.5%, TPS +-2 tok/s [prior: PROGRESS 10-07 19:00]; minute counts swing +-1-3.
 
 ---------------------------------------------------------------------------------------------------------------------------
-## 8. Files (node `/data01/minimax31/serving/next240/tp2decode/`)
+## 8. Files (node `/data01/minimax31/serving/next240/tp2decode/`; aggregate copy on the Mac in `next240/tp2decode/`)
 
 | file | what |
 |---|---|
 | `dlog.py` | parser: Decode/Prefill batch lines, server args, implied step per interval, measured window |
-| `anatomy.py` + `runs_*.json` -> `out_twins`, `out_full`, `out_aa`, `out_nodelay` | step by per-GPU running, accept, graph flag, rate, clean fits |
+| `anatomy.py` + `runs_*.json` -> `out_twins`, `out_full`, `out_aa`, `out_nodelay`, `out_s30` | step by per-GPU running, accept, graph flag, rate, clean fits |
 | `binpool.py` -> `out_binpool.txt` | pooled clean / all step by bin, TP2 vs DP2 |
 | `pooledfit.py` -> `out_pooledfit.txt` | clean-step fit with TP2 terms, bootstrap CIs |
 | `reqrate.py` -> `out_req*.txt` | per-request engine rate by output bucket (ReqTimeStats) vs replay TPS |

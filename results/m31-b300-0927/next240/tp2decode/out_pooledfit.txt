@@ -1,0 +1,32 @@
+== twins (5.95 M/GPU per half, Oct 3 b00): n 2296 (TP2 549), R2 0.63
+   DP2: step = 16.53 [16.28,16.79] + 1.860 [1.701,1.995] n + 1.93 [1.02,2.97] m
+   TP2 extra: +2.09 [1.60,2.60] +0.002 [-0.257,0.260] n +1.64 [-0.22,3.33] m
+   at n 6/GPU, m 0.7 M/GPU: DP2 29.0 ms, TP2 32.3 ms, fd 1.112
+   at n 10/GPU, m 1.2 M/GPU: DP2 37.5 ms, TP2 41.5 ms, fd 1.109
+   at n 14/GPU, m 1.6 M/GPU: DP2 45.7 ms, TP2 50.4 ms, fd 1.104
+   at n 22/GPU, m 1.0 M/GPU: DP2 59.4 ms, TP2 63.2 ms, fd 1.063
+   at n 30/GPU, m 1.4 M/GPU: DP2 75.0 ms, TP2 79.5 ms, fd 1.059
+== full node Oct 3 7.32-7.33 M: n 3445 (TP2 871), R2 0.79
+   DP2: step = 17.01 [16.82,17.18] + 1.142 [1.053,1.236] n + 4.39 [3.65,5.06] m
+   TP2 extra: +1.28 [1.04,1.54] +0.529 [0.301,0.742] n -1.31 [-3.02,0.39] m
+   at n 6/GPU, m 0.7 M/GPU: DP2 26.9 ms, TP2 30.5 ms, fd 1.132
+   at n 10/GPU, m 1.2 M/GPU: DP2 33.7 ms, TP2 38.7 ms, fd 1.148
+   at n 14/GPU, m 1.6 M/GPU: DP2 40.0 ms, TP2 46.6 ms, fd 1.165
+   at n 22/GPU, m 1.0 M/GPU: DP2 46.5 ms, TP2 58.1 ms, fd 1.250
+   at n 30/GPU, m 1.4 M/GPU: DP2 57.4 ms, TP2 72.7 ms, fd 1.267
+== full node Oct 3 7.49 M: n 2268 (TP2 525), R2 0.86
+   DP2: step = 16.13 [15.93,16.29] + 1.236 [1.072,1.450] n + 3.94 [2.32,5.30] m
+   TP2 extra: +3.25 [2.97,3.53] +0.357 [0.063,0.609] n -1.53 [-3.51,0.85] m
+   at n 6/GPU, m 0.7 M/GPU: DP2 26.3 ms, TP2 30.6 ms, fd 1.164
+   at n 10/GPU, m 1.2 M/GPU: DP2 33.2 ms, TP2 38.2 ms, fd 1.150
+   at n 14/GPU, m 1.6 M/GPU: DP2 39.7 ms, TP2 45.5 ms, fd 1.146
+   at n 22/GPU, m 1.0 M/GPU: DP2 47.3 ms, TP2 56.8 ms, fd 1.203
+   at n 30/GPU, m 1.4 M/GPU: DP2 58.7 ms, TP2 70.5 ms, fd 1.201
+== single engine Oct 3 knee: n 1191 (TP2 755), R2 0.85
+   DP2: step = 15.07 [14.63,15.36] + 1.807 [1.432,2.365] n + 2.13 [-2.39,5.19] m
+   TP2 extra: +2.27 [1.87,2.77] +0.067 [-0.537,0.504] n -0.13 [-3.65,4.41] m
+   at n 6/GPU, m 0.7 M/GPU: DP2 27.4 ms, TP2 30.0 ms, fd 1.094
+   at n 10/GPU, m 1.2 M/GPU: DP2 35.7 ms, TP2 38.5 ms, fd 1.078
+   at n 14/GPU, m 1.6 M/GPU: DP2 43.8 ms, TP2 46.8 ms, fd 1.069
+   at n 22/GPU, m 1.0 M/GPU: DP2 57.0 ms, TP2 60.6 ms, fd 1.063
+   at n 30/GPU, m 1.4 M/GPU: DP2 72.3 ms, TP2 76.4 ms, fd 1.057

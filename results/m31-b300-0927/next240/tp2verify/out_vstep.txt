@@ -1,0 +1,115 @@
+== coverage and classification check (file order vs 1-s timestamps)
+   twin1 A: DP2 engines 0-1 (5.95 M/GPU per half)   [dp2] window  16.9 min, reqs 2402; logs cover window: True; TP1 decode lines 0; intervals 2185; clean file-order 787 / timestamp 850 (agree 644; ts-clean but prefill in file order 206; file-order clean but ts-dirty 143)
+   twin1 B: TP2 engines 2-3                         [tp2] window  16.1 min, reqs 2402; logs cover window: True; TP1 decode lines 0; intervals 890; clean file-order 269 / timestamp 264 (agree 223; ts-clean but prefill in file order 41; file-order clean but ts-dirty 46)
+   twin2 A: DP2 engines 2-3                         [dp2] window  17.3 min, reqs 2402; logs cover window: True; TP1 decode lines 0; intervals 2236; clean file-order 856 / timestamp 897 (agree 710; ts-clean but prefill in file order 187; file-order clean but ts-dirty 146)
+   twin2 B: TP2 engines 0-1                         [tp2] window  18.9 min, reqs 2402; logs cover window: False; TP1 decode lines 0; intervals 1240; clean file-order 540 / timestamp 552 (agree 479; ts-clean but prefill in file order 73; file-order clean but ts-dirty 61)
+   FULL Oct3 7.32M TP2 70tp2 (12/15)                [tp2] window  19.1 min, reqs 5858; logs cover window: False; TP1 decode lines 0; intervals 1893; clean file-order 900 / timestamp 907 (agree 861; ts-clean but prefill in file order 46; file-order clean but ts-dirty 39)
+   FULL Oct3 7.32M TP2 70tp2_r2 (11/15)             [tp2] window  17.9 min, reqs 5858; logs cover window: True; TP1 decode lines 0; intervals 1815; clean file-order 814 / timestamp 801 (agree 763; ts-clean but prefill in file order 38; file-order clean but ts-dirty 51)
+   FULL Oct3 7.33M DP2 70dw (7/15)                  [dp2] window  17.9 min, reqs 5858; logs cover window: False; TP1 decode lines 0; intervals 3274; clean file-order 1237 / timestamp 1314 (agree 1149; ts-clean but prefill in file order 165; file-order clean but ts-dirty 88)
+   FULL Oct3 7.33M DP2 70dw_r2 (3/15)               [dp2] window  17.9 min, reqs 5858; logs cover window: False; TP1 decode lines 0; intervals 3038; clean file-order 1209 / timestamp 1260 (agree 1111; ts-clean but prefill in file order 149; file-order clean but ts-dirty 98)
+   FULL Oct3 7.49M TP2 75tp2 (7/15)                 [tp2] window  18.7 min, reqs 6014; logs cover window: True; TP1 decode lines 0; intervals 1690; clean file-order 859 / timestamp 868 (agree 847; ts-clean but prefill in file order 21; file-order clean but ts-dirty 12)
+   FULL Oct3 7.49M DP2 75dw (2/15)                  [dp2] window  20.2 min, reqs 6014; logs cover window: False; TP1 decode lines 0; intervals 3302; clean file-order 1717 / timestamp 1743 (agree 1663; ts-clean but prefill in file order 80; file-order clean but ts-dirty 54)
+   FULL Sep30 8.28M DP2 127x (14/15)                [dp2] window  20.9 min, reqs 12391; logs cover window: False; TP1 decode lines 0; intervals 4556; clean file-order 1960 / timestamp 2023 (agree 1935; ts-clean but prefill in file order 88; file-order clean but ts-dirty 25)
+   G67 Sep30 8.42M TP2+mm (5/15)                    [tp2] window  18.3 min, reqs 3072; logs cover window: True; TP1 decode lines 0; intervals 484; clean file-order 223 / timestamp 223 (agree 223; ts-clean but prefill in file order 0; file-order clean but ts-dirty 0)
+   G67 Oct3 7.43M TP2+mm (10/15)                    [tp2] window  17.0 min, reqs 1460; logs cover window: True; TP1 decode lines 0; intervals 446; clean file-order 196 / timestamp 192 (agree 184; ts-clean but prefill in file order 8; file-order clean but ts-dirty 12)
+   G67 Oct3 7.42M TP2 alone (10/15)                 [tp2] window  18.9 min, reqs 1460; logs cover window: True; TP1 decode lines 0; intervals 585; clean file-order 339 / timestamp 340 (agree 335; ts-clean but prefill in file order 5; file-order clean but ts-dirty 4)
+   G67 Oct3 7.42M TP2+mm r2 (11/15)                 [tp2] window  16.0 min, reqs 1460; logs cover window: True; TP1 decode lines 0; intervals 356; clean file-order 99 / timestamp 103 (agree 90; ts-clean but prefill in file order 13; file-order clean but ts-dirty 9)
+   G67 Oct3 7.46M DP2+mm (7/15)                     [dp2] window  18.0 min, reqs 1460; logs cover window: True; TP1 decode lines 0; intervals 945; clean file-order 416 / timestamp 436 (agree 395; ts-clean but prefill in file order 41; file-order clean but ts-dirty 21)
+   G67 Oct3 7.42M TP2+mm mr48 (10/15)               [tp2] window  17.5 min, reqs 1460; logs cover window: True; TP1 decode lines 0; intervals 491; clean file-order 224 / timestamp 217 (agree 211; ts-clean but prefill in file order 6; file-order clean but ts-dirty 13)
+   G67 Oct3 7.47M TP2+mm (11/15)                    [tp2] window  18.4 min, reqs 1482; logs cover window: True; TP1 decode lines 0; intervals 517; clean file-order 273 / timestamp 265 (agree 262; ts-clean but prefill in file order 3; file-order clean but ts-dirty 11)
+   G67 Sep30 DP2+mm one engine                      [dp2] window  18.1 min, reqs 3072; logs cover window: True; TP1 decode lines 0; intervals 990; clean file-order 385 / timestamp 402 (agree 376; ts-clean but prefill in file order 26; file-order clean but ts-dirty 9)
+
+== twins (5.95 M/GPU per half)
+   per-GPU running | DP2 clean med (n) | TP2 clean med (n) | ratio s_end [90% CI] | ratio s_avg | TP2-DP2 ms (s_avg)
+    1- 2 |  16.4 ( 615) |  19.5 ( 135) | 1.186 [1.109, 1.275] | 1.138 | +2.4
+    2- 4 |  22.3 ( 502) |  25.3 ( 211) | 1.135 [1.102, 1.174] | 1.116 | +2.8
+    4- 6 |  25.6 ( 318) |  29.1 ( 122) | 1.137 [1.112, 1.153] | 1.152 | +4.2
+    6- 8 |  27.3 ( 128) |  32.3 (  50) | 1.180 [1.146, 1.197] | 1.176 | +5.2
+    8-10 |  29.8 (  56) |  34.1 (  15) | 1.143 [1.110, 1.176] | 1.183 | +5.9
+   10-12 |  31.5 (  17) |  36.6 (   6) | 1.162 [1.093, 1.214] | 1.135 | +4.8
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 1-6: n 468, ratio p25/p50/p75 1.099/1.130/1.179; diff p50 +2.86 ms
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 6-12: n 70, ratio p25/p50/p75 1.132/1.166/1.194; diff p50 +4.71 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 1-6: n 468, ratio p25/p50/p75 1.094/1.126/1.198; diff p50 +3.13 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 6-12: n 70, ratio p25/p50/p75 1.136/1.172/1.219; diff p50 +5.41 ms
+   fit (s_avg, file-order clean, n 2183): DP2 = 17.79 + 1.682 N + 2.98 m; TP2 extra = +1.84 [0.01,3.93] +0.107 [-0.366,0.545] N +2.41 [0.53,4.08] m
+      at N 6, m 0.7: DP2 30.0 ms, TP2 34.1 ms, extra +4.17 ms, fd 1.139
+      at N 12, m 1.4: DP2 42.1 ms, TP2 48.6 ms, extra +6.49 ms, fd 1.154
+      N-only fit at N 6: DP2 30.1, TP2 34.2, fd 1.134
+      N-only fit at N 12: DP2 42.6, TP2 48.9, fd 1.147
+
+== full node Oct 3 7.32-7.33 M
+   per-GPU running | DP2 clean med (n) | TP2 clean med (n) | ratio s_end [90% CI] | ratio s_avg | TP2-DP2 ms (s_avg)
+    1- 2 |  15.8 (1068) |  19.3 ( 413) | 1.223 [1.100, 1.243] | 1.215 | +3.4
+    2- 4 |  20.9 ( 518) |  24.5 ( 162) | 1.172 [1.031, 1.204] | 1.174 | +3.7
+    4- 6 |  26.3 ( 280) |  28.6 ( 109) | 1.087 [1.056, 1.125] | 1.137 | +3.8
+    6- 8 |  28.4 ( 182) |  31.6 (  87) | 1.113 [1.087, 1.138] | 1.144 | +4.4
+    8-10 |  30.7 ( 167) |  34.2 (  58) | 1.115 [1.097, 1.133] | 1.169 | +5.5
+   10-12 |  31.9 (  95) |  37.2 (  26) | 1.167 [1.151, 1.196] | 1.157 | +5.4
+   12-14 |  33.7 (  66) |  39.3 (  10) | 1.166 [1.101, 1.261] | 1.219 | +8.1
+   14-16 |  35.3 (  42) |  40.7 (   8) | 1.153 [1.127, 1.181] | 1.170 | +6.5
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 1-6: n 684, ratio p25/p50/p75 1.115/1.132/1.206; diff p50 +2.37 ms
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 6-12: n 171, ratio p25/p50/p75 1.088/1.117/1.152; diff p50 +3.48 ms
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 12-40: n 21, ratio p25/p50/p75 1.153/1.174/1.195; diff p50 +6.01 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 1-6: n 684, ratio p25/p50/p75 1.102/1.121/1.209; diff p50 +2.28 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 6-12: n 171, ratio p25/p50/p75 1.119/1.160/1.198; diff p50 +5.16 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 12-40: n 21, ratio p25/p50/p75 1.138/1.215/1.278; diff p50 +7.88 ms
+   fit (s_avg, file-order clean, n 3323): DP2 = 17.16 + 1.218 N + 4.84 m; TP2 extra = +1.32 [-0.59,3.08] +0.362 [0.033,0.711] N +1.67 [-0.62,4.07] m
+      at N 6, m 0.7: DP2 27.9 ms, TP2 32.5 ms, extra +4.66 ms, fd 1.167
+      at N 12, m 1.4: DP2 38.5 ms, TP2 46.5 ms, extra +8.00 ms, fd 1.208
+      N-only fit at N 6: DP2 27.6, TP2 31.9, fd 1.156
+      N-only fit at N 12: DP2 38.2, TP2 45.5, fd 1.191
+
+== full node Oct 3 7.49 M
+   per-GPU running | DP2 clean med (n) | TP2 clean med (n) | ratio s_end [90% CI] | ratio s_avg | TP2-DP2 ms (s_avg)
+    1- 2 |  15.8 ( 930) |  21.4 ( 229) | 1.355 [1.256, 1.369] | 1.355 | +5.6
+    2- 4 |  20.6 ( 433) |  24.1 ( 115) | 1.172 [1.077, 1.327] | 1.226 | +4.7
+    4- 6 |  24.9 (  99) |  29.6 (  57) | 1.188 [1.099, 1.243] | 1.203 | +5.2
+    6- 8 |  28.0 (  60) |  32.8 (  49) | 1.170 [1.098, 1.195] | 1.082 | +2.6
+    8-10 |  30.7 (  83) |  35.4 (  33) | 1.156 [1.117, 1.180] | 1.141 | +4.7
+   10-12 |  32.4 (  38) |  38.2 (  17) | 1.179 [1.140, 1.206] | 1.175 | +6.1
+   12-14 |  34.5 (  31) |  39.4 (   8) | 1.144 [1.120, 1.175] | 1.127 | +4.7
+   16-20 |  36.5 (  18) |  44.5 (   5) | 1.218 [1.132, 1.375] | 1.209 | +8.3
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 1-6: n 401, ratio p25/p50/p75 1.175/1.244/1.312; diff p50 +4.89 ms
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 6-12: n 98, ratio p25/p50/p75 1.127/1.155/1.181; diff p50 +4.59 ms
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 12-40: n 8, ratio p25/p50/p75 1.146/1.160/1.204; diff p50 +5.57 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 1-6: n 401, ratio p25/p50/p75 1.171/1.258/1.309; diff p50 +4.86 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 6-12: n 98, ratio p25/p50/p75 1.093/1.123/1.149; diff p50 +3.84 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 12-40: n 8, ratio p25/p50/p75 1.087/1.131/1.184; diff p50 +4.89 ms
+   fit (s_avg, file-order clean, n 2233): DP2 = 16.08 + 1.394 N + 3.71 m; TP2 extra = +3.16 [1.31,6.44] +0.245 [-0.361,0.753] N +0.25 [-2.15,3.39] m
+      at N 6, m 0.7: DP2 27.0 ms, TP2 31.8 ms, extra +4.80 ms, fd 1.178
+      at N 12, m 1.4: DP2 38.0 ms, TP2 44.4 ms, extra +6.44 ms, fd 1.170
+      N-only fit at N 6: DP2 26.7, TP2 31.5, fd 1.181
+      N-only fit at N 12: DP2 37.5, TP2 44.0, fd 1.174
+
+== one engine Oct 3 knee
+   per-GPU running | DP2 clean med (n) | TP2 clean med (n) | ratio s_end [90% CI] | ratio s_avg | TP2-DP2 ms (s_avg)
+    1- 2 |  15.3 ( 250) |  19.0 ( 257) | 1.241 [1.101, 1.253] | 1.241 | +3.7
+    2- 4 |  20.7 (  96) |  22.8 (  82) | 1.098 [1.021, 1.154] | 1.096 | +2.1
+    4- 6 |  25.4 (  29) |  29.1 (  40) | 1.147 [1.009, 1.194] | 1.135 | +3.7
+    6- 8 |  28.0 (  19) |  31.6 (  38) | 1.128 [1.082, 1.186] | 1.087 | +2.7
+    8-10 |  30.5 (  12) |  34.1 (  14) | 1.117 [0.974, 1.174] | 1.140 | +4.7
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 1-6: n 378, ratio p25/p50/p75 1.215/1.229/1.247; diff p50 +3.59 ms
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 6-12: n 40, ratio p25/p50/p75 1.074/1.101/1.123; diff p50 +2.85 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 1-6: n 378, ratio p25/p50/p75 1.218/1.230/1.253; diff p50 +3.59 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 6-12: n 40, ratio p25/p50/p75 1.072/1.109/1.142; diff p50 +3.33 ms
+   fit (s_avg, file-order clean, n 860): DP2 = 14.87 + 2.333 N + -0.43 m; TP2 extra = +2.76 [0.04,4.42] -0.319 [-1.251,0.631] N +3.78 [-1.66,10.91] m
+      at N 6, m 0.7: DP2 28.6 ms, TP2 32.1 ms, extra +3.49 ms, fd 1.122
+      at N 12, m 1.4: DP2 42.3 ms, TP2 46.5 ms, extra +4.23 ms, fd 1.100
+      N-only fit at N 6: DP2 28.6, TP2 32.1, fd 1.124
+      N-only fit at N 12: DP2 42.2, TP2 46.8, fd 1.108
+
+== one engine Sep 30 1.29x
+   per-GPU running | DP2 clean med (n) | TP2 clean med (n) | ratio s_end [90% CI] | ratio s_avg | TP2-DP2 ms (s_avg)
+    1- 2 |  15.4 ( 167) |  18.9 ( 110) | 1.229 [1.012, 1.338] | 1.230 | +3.5
+    2- 4 |  21.1 (  99) |  22.1 (  65) | 1.045 [0.973, 1.120] | 1.046 | +1.0
+    4- 6 |  22.7 (  39) |  28.1 (  12) | 1.239 [1.239, 1.239] | 1.253 | +5.8
+    6- 8 |  27.1 (  22) |  30.0 (  15) | 1.106 [1.105, 1.115] | 1.113 | +3.1
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 1-6: n 187, ratio p25/p50/p75 1.183/1.209/1.233; diff p50 +3.38 ms
+   matched (s_end; |dN|<=1, |dm|<=0.2 M): N 6-12: n 18, ratio p25/p50/p75 1.090/1.108/1.118; diff p50 +2.95 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 1-6: n 187, ratio p25/p50/p75 1.182/1.211/1.240; diff p50 +3.39 ms
+   matched (s_avg; |dN|<=1, |dm|<=0.2 M): N 6-12: n 18, ratio p25/p50/p75 1.096/1.113/1.146; diff p50 +3.08 ms
+   fit (s_avg, file-order clean, n 595): DP2 = 17.12 + 1.139 N + -1.61 m; TP2 extra = +0.24 [-4.07,3.34] +2.046 [0.450,2.514] N -35.15 [-46.16,4.32] m
+      at N 6, m 0.7: DP2 22.8 ms, TP2 10.7 ms, extra -12.09 ms, fd 0.471
+      at N 12, m 1.4: DP2 28.5 ms, TP2 4.1 ms, extra -24.42 ms, fd 0.145
+      N-only fit at N 6: DP2 23.5, TP2 28.3, fd 1.204
+      N-only fit at N 12: DP2 29.9, TP2 38.6, fd 1.293

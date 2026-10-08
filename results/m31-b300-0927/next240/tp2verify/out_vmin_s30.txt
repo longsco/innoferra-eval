@@ -1,0 +1,9 @@
+A: minutes 15 pass 10; misses with TTFT>=3 5, with TPS<=60 0; TTFT p50 by minute 3.56/1.70/6.30/5.12/2.94/2.44/3.25/1.71/0.92/0.90/1.22/2.07/0.88/1.03/3.76; TPS p50 by minute 73/83/64/85/89/76/97/101/93/81/78/89/92/81/90
+B: minutes 15 pass 5; misses with TTFT>=3 0, with TPS<=60 10; TTFT p50 by minute 1.80/0.86/1.50/1.69/1.63/1.20/1.32/0.64/0.45/0.50/0.65/1.07/0.52/0.60/1.25; TPS p50 by minute 49/60/44/58/58/55/63/63/72/53/52/61/59/53/58
+paired requests 3072: TTFT ratio B/A p50 0.561 geo 0.543 (n 2950); TPS ratio B/A p50 0.701 geo 0.695 (n 2892)
+[strict] A: TPS p50 all 83.9; 20-100: n 780 hit 2% TPS all 173 unhit 174 hit 21; 100-300: n 1019 hit 52% TPS all 88 unhit 118 hit 66; 300-1000: n 752 hit 98% TPS all 61 unhit 143 hit 61; 1000-3000: n 239 hit 100% TPS all 58 unhit 111 hit 58
+[strict] B: TPS p50 all 56.9; 20-100: n 759 hit 13% TPS all 103 unhit 116 hit 42; 100-300: n 1040 hit 85% TPS all 58 unhit 100 hit 54; 300-1000: n 743 hit 100% TPS all 46 unhit nan hit 46; 1000-3000: n 261 hit 100% TPS all 45 unhit nan hit 45
+[strict] counterfactual TPS p50: B re-mixed to A's per-bucket hit shares 64.8 (B actual 56.9, A actual 83.9); A re-mixed to B's shares 73.1
+[liberal] A: TPS p50 all 83.9; 20-100: n 780 hit 92% TPS all 173 unhit 182 hit 171; 100-300: n 1019 hit 98% TPS all 88 unhit 143 hit 87; 300-1000: n 752 hit 100% TPS all 61 unhit 174 hit 61; 1000-3000: n 239 hit 100% TPS all 58 unhit nan hit 58
+[liberal] B: TPS p50 all 56.9; 20-100: n 759 hit 99% TPS all 103 unhit 180 hit 103; 100-300: n 1040 hit 100% TPS all 58 unhit nan hit 58; 300-1000: n 743 hit 100% TPS all 46 unhit nan hit 46; 1000-3000: n 261 hit 100% TPS all 45 unhit nan hit 45
+[liberal] counterfactual TPS p50: B re-mixed to A's per-bucket hit shares 57.2 (B actual 56.9, A actual 83.9); A re-mixed to B's shares 83.1

@@ -1,0 +1,6 @@
+pooled real-traffic clean-step fit, groups ['twins (5.95 M/GPU per half)', 'full node Oct 3 7.32-7.33 M', 'full node Oct 3 7.49 M', 'one engine Oct 3 knee'], rows 4698 (TP2 1343)
+   common TP2 extra = +1.22 [0.02,2.10] +0.316 [0.186,0.459] N +1.38 [0.51,2.73] m  (ms; N per GPU, m = M KV tok/GPU)
+   extra at N 4, m 0.4: +3.04 ms [+2.32, +3.49]
+   extra at N 8, m 0.9: +5.00 ms [+4.61, +5.28]
+   extra at N 12, m 1.4: +6.96 ms [+6.42, +7.61]
+   extra at N 16, m 1.8: +8.78 ms [+7.82, +9.87]
