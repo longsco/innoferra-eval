@@ -1370,7 +1370,7 @@
    {
     "rule": "ttft_p50",
     "title": "Oct 3 at 7.5-7.9 M: idle conversations lost their cache after about 4 minutes (fixed on one engine)",
-    "text": "One engine with production's layout (TP2) and our best settings passed 12/15 at 7.47 M and 7/15 at 7.94 M. The misses sat in the busy minutes. There, 22 and 35 follow-ups processed their whole prompt again: about 4 minutes after our last answer, their cached prefix was gone. Write-through keeps a host copy of every cache entry, so the host pool (12.2 M tokens) is the whole cache. With a 14.6 M-token host pool (ratio 3.0), the Oct 3 knee passes 14/15 and our uncached prompt tokens drop below production's. A full node has room for about ratio 2.85 unless each token's host copy gets smaller.",
+    "text": "One engine with production's layout (TP2) and our best settings passed 12/15 at 7.47 M and 7/15 at 7.94 M. The misses sat in the busy minutes. There, 22 and 35 follow-ups processed their whole prompt again: about 4 minutes after our last answer, their cached prefix was gone. Write-through keeps a host copy of every cache entry, so the host pool (12.2 M tokens) is the whole cache. With a 14.6 M-token host pool (ratio 3.0), Oct 3 passes 13/15 at 7.47 M and at 7.96 M, and our uncached prompt tokens match production's. A full node has room for about ratio 2.85 unless each token's host copy gets smaller.",
     "src": "PROGRESS.md Oct 8 07:30, 08:20, 09:05"
    },
    {
@@ -2156,8 +2156,8 @@
   {
    "name": "Host KV cache ratio 3.0 (was 2.51): adopted for single-engine tests",
    "state": "adopted",
-   "at": "2026-10-08 10:35",
-   "text": "Oct 8 10:35 PDT: two paired runs at the Oct 3 knee (7.47 M) give generation +8.9 and +9.8 tok/s and first token x0.94 and x0.87. The knee passes 14/15 and 13/15 (ratio 2.51: 12/15; production 0/15). Our uncached prompt tokens fall below production's (10.1 M vs 11.1 M). Limit: 779 GB host memory per engine, so a full node fits about ratio 2.85 unless each token's host copy gets smaller. Segmented-LRU eviction gave nothing (rejected).",
+   "at": "2026-10-08 12:10",
+   "text": "Oct 8 12:10 PDT: three paired runs on Oct 3: at 7.47 M generation +8.9 and +9.8 tok/s (14/15 and 13/15; ratio 2.51: 12/15); at 7.96 M first token x0.62 and generation +14.6 tok/s (13/15; ratio 2.51: 7/15; production 0/15 on these requests). Our uncached prompt tokens now match production's. Limit: 779 GB host memory per engine, so a full node fits about ratio 2.85 unless each token's host copy gets smaller. Segmented-LRU eviction gave nothing.",
    "ref": "PROGRESS.md Oct 8 07:30"
   },
   {

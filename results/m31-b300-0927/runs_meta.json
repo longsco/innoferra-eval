@@ -2482,6 +2482,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "12/15 at 7.80 M/GPU including rebuilt turns (6.89 M logged; production's real load 8.01 M); production 0/15 on these requests. Minutes 0-11 pass at up to 8.4 M/GPU. Minutes 12-14 fail behind two genuine cold giant prompts (811k and 593k tokens; production had them cold too): a chunked giant takes the whole prefill budget, so other new prompts wait 20-30 s. Fair chunk share 0.5 queued."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_knee77_q0",
+   "at": "2026-10-08 12:06",
+   "protocol": "v5.1q",
+   "share": 0.99,
+   "name": "one engine (GPUs 6,7): best stack with host cache ratio 3.0, Oct 3 at 7.96 M/GPU, knee search",
+   "change": "cache",
+   "verdict": "adopted",
+   "why": "13/15 at 7.96 M/GPU vs 7/15 with ratio 2.51 on the same 1,596 requests (production 0/15). Paired: first token x0.618 (CI 0.583..0.666), TPS +14.6 tok/s (x1.28). Uncached prefill equals production's (11.0 vs 11.2 M). The two misses are the start-burst minutes 0-1 on decode (TPS 59 and 52)."
   }
  ],
  "g67_rule": {
