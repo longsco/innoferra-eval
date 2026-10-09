@@ -2681,7 +2681,7 @@
    "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 3 (0.985x production's real load)",
    "change": "scheduling",
    "verdict": "kept",
-   "why": "15/15 at 6.98 M/GPU (production 0/15 on these requests); first run of this quarter. TPS p50 86.7, first token p50 0.84 s; worst minute 3 (first token 2.76 s, TPS 73.3). Host gate normal (boot 594 s). With it, the whole faithful Oct 3 replay passes 58 of 60 minutes with the full stack (q0 15, q1 14, q2 14, q3 15) (production on the same requests: 0 of 60)."
+   "why": "15/15 at 6.98 M/GPU (production 0/15 on these requests); first run of this quarter. TPS p50 86.7, first token p50 0.84 s; worst minute 3 (first token 2.76 s, TPS 73.3). Host gate normal (boot 594 s). With it, the whole faithful Oct 3 replay passes 59 of 60 minutes with the full stack (q0 15, q1 14, q2 14, q3 15) (production on the same requests: 0 of 60)."
   },
   {
    "tag": "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q1_r2",
@@ -2722,16 +2722,6 @@
    "change": "load",
    "verdict": "baseline",
    "why": "12/15 at 7.30 M/GPU (production 0/15). Fails minutes 0-1 (start burst: TPS 56.5 and 40.7, first token 3.30 s in minute 1) and minute 12 (first token 3.59 s, TPS 53.7). TPS p50 70.5 against 97.3 at 0.985x (6.90 M, 15/15): +7% load costs 22 tok/s at the median, so decode headroom runs out between 6.9 and 7.3 M on this quarter."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q1",
-   "at": "2026-10-09 09:44",
-   "protocol": "v5.1rq",
-   "share": 1.05,
-   "name": "one engine (GPUs 6,7): full stack + giant bundle + warm compile cache, faithful Oct 3 quarter 1 at 1.05x production's real load",
-   "change": "load",
-   "verdict": "baseline",
-   "why": "13/15 at 7.58 M/GPU (production 0/15). Fails minute 0 (start burst, TPS 50.2) and minute 5 (first token 4.44 s, the 786k-token giant burst). On the requests shared with the 0.985x run: TPS -1.3 tok/s, first token x0.994 (inside the A/A spread). First run with the gateway image named innoferra-minimax-m31-gateway:local; clean."
   }
  ],
  "g67_rule": {

@@ -2681,7 +2681,7 @@
    "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 3 (0.985x production's real load)",
    "change": "scheduling",
    "verdict": "kept",
-   "why": "15/15 at 6.98 M/GPU (production 0/15 on these requests); first run of this quarter. TPS p50 86.7, first token p50 0.84 s; worst minute 3 (first token 2.76 s, TPS 73.3). Host gate normal (boot 594 s). With it, the whole faithful Oct 3 replay passes 58 of 60 minutes with the full stack (q0 15, q1 14, q2 14, q3 15) (production on the same requests: 0 of 60)."
+   "why": "15/15 at 6.98 M/GPU (production 0/15 on these requests); first run of this quarter. TPS p50 86.7, first token p50 0.84 s; worst minute 3 (first token 2.76 s, TPS 73.3). Host gate normal (boot 594 s). With it, the whole faithful Oct 3 replay passes 59 of 60 minutes with the full stack (q0 15, q1 14, q2 14, q3 15) (production on the same requests: 0 of 60)."
   },
   {
    "tag": "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q1_r2",
