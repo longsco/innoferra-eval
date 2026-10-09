@@ -2602,6 +2602,16 @@
    "change": "kernel",
    "verdict": "adopted",
    "why": "15/15 at 7.49 M/GPU vs 14/15 without B+D (production 13/15 on these requests). Paired: TPS +9.9 tok/s (CI +8.8..+10.8, x1.156), first token x0.932. With Oct 3 at 7.48 M (15/15), the full stack passes every minute of both real-traffic windows near 7.5 M per GPU."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_bd_knee749_q0_r2",
+   "at": "2026-10-08 23:24",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine (GPUs 6,7): best stack + B+D, Oct 3 knee 7.48 M/GPU, repeat under heavy neighbour load",
+   "change": "repeat",
+   "verdict": "under review",
+   "why": "14/15 at 7.48 M/GPU (first run 15/15; production 0/15). Paired with the first run: TPS -11.6 tok/s, first token x1.205, accept 3.49 vs 3.67 - far outside the A/A noise. Other users' jobs loaded the node during this run (GPUs 4,5 at 85-99% and 620-700 W, load average 69, free host RAM 19-48 GiB). Same-time pairs are queued."
   }
  ],
  "g67_rule": {

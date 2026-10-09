@@ -1348,6 +1348,27 @@
    "tiny": "Repeat",
    "load": "≈7.48 M (planned)",
    "share": 0.93
+  },
+  "g67_tp2mm_d1g1_hc30_knee749_q0_r3": {
+   "name": "One engine: cache 3.0 reference, same-time pair",
+   "short": "Ref, same time",
+   "tiny": "Ref r3",
+   "load": "≈7.48 M (planned)",
+   "share": 0.93
+  },
+  "g67_tp2mm_d1g1_hc30_bd_knee749_q0_r3": {
+   "name": "One engine: B+D, same-time pair",
+   "short": "B+D, same time",
+   "tiny": "B+D r3",
+   "load": "≈7.48 M (planned)",
+   "share": 0.93
+  },
+  "g67_tp2mm_d1g1_hc30_bd_v5rrc_knee78_q1": {
+   "name": "One engine: B+D, faithful Oct 3, quarter 1",
+   "short": "B+D, faithful q1",
+   "tiny": "B+D q1",
+   "load": "≈7.8 M (planned)",
+   "share": 0.97
   }
  },
  "plain_words": [
