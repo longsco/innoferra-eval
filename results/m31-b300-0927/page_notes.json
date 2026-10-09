@@ -1434,14 +1434,14 @@
    "share": 0.97
   },
   "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q0": {
-   "name": "One engine: giant-prompt bundle, faithful q0 at 1.05x production load",
+   "name": "One engine: giant-prompt bundle, faithful q0 at 1.05x",
    "short": "Faithful 1.05x q0",
    "tiny": "F1.05 q0",
    "load": "≈8.2 M (planned)",
    "share": 1.05
   },
   "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q1": {
-   "name": "One engine: giant-prompt bundle, faithful q1 at 1.05x production load",
+   "name": "One engine: giant-prompt bundle, faithful q1 at 1.05x",
    "short": "Faithful 1.05x q1",
    "tiny": "F1.05 q1",
    "load": "≈8.2 M (planned)",
@@ -1455,14 +1455,14 @@
    "share": 1.05
   },
   "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q2": {
-   "name": "One engine: faithful q2 at 1.05x production load",
+   "name": "One engine: faithful q2 at 1.05x",
    "short": "Faithful 1.05x q2",
    "tiny": "F1.05 q2",
    "load": "≈8.2 M (planned)",
    "share": 1.05
   },
   "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q3": {
-   "name": "One engine: faithful q3 at 1.05x production load",
+   "name": "One engine: faithful q3 at 1.05x",
    "short": "Faithful 1.05x q3",
    "tiny": "F1.05 q3",
    "load": "≈8.2 M (planned)",
