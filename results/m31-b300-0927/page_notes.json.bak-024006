@@ -1397,20 +1397,6 @@
    "tiny": "GW",
    "load": "≈8.4 M (planned)",
    "share": 1.31
-  },
-  "g67_tp2mm_d1g1_hc30_bd_gw_jc_knee77_q0": {
-   "name": "One engine: giant bundle + warm compile cache, Oct 3 at 7.96 M",
-   "short": "Warm JIT, 7.94 M",
-   "tiny": "JIT",
-   "load": "≈7.96 M (planned)",
-   "share": 0.99
-  },
-  "g67_tp2mm_d1g1_hc30_bd_gw_jc_s30_127x_q0": {
-   "name": "One engine: giant bundle + warm compile cache, Sep 30 at 8.4 M",
-   "short": "Warm JIT, Sep 30",
-   "tiny": "JIT",
-   "load": "≈8.4 M (planned)",
-   "share": 1.31
   }
  },
  "plain_words": [
@@ -2278,13 +2264,6 @@
   "2026-10-01 04:50"
  ],
  "engineering": [
-  {
-   "name": "Kernel compiles during the test (warm compile cache)",
-   "state": "running",
-   "at": "2026-10-09 02:40",
-   "text": "Oct 9 02:40: the first-hit stalls are GPU kernel compiles. Each new engine container starts with an empty Triton cache. It compiles about 150 kernel variants at start-up and about 70 more while it serves. A new variant appears when a request gives a sparse-attention kernel a new integer class (for example a token count divisible by 16). Each compile takes 0.06-6 s, and decoding stops for every running stream meanwhile. On the live engine, all 11 short cache hits slower than 1 s had a compile inside them; none of the 109 fast hits had one. Production engines run for days, so they are warm. Fix under test: keep the compile caches on the host disk. A harvester copies each run's compiled kernels to the host (250 variants so far). Two runs with a warm cache are queued, each back to back with the same words without it.",
-   "ref": "serving/next250/stall/mechanism/MECHANISM.md · g67m/tcache_harvest.py"
-  },
   {
    "name": "Test setup: GPUs 6-7 only (owner request)",
    "state": "running",
