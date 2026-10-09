@@ -1320,6 +1320,13 @@
    "tiny": "B+D",
    "load": "≈8.4 M (planned)",
    "share": 1.31
+  },
+  "g67_tp2mm_d1g1_hc30_bd_v5rrc_knee78_q0": {
+   "name": "One engine: fast collectives, faithful Oct 3",
+   "short": "Fast coll., faithful",
+   "tiny": "B+D",
+   "load": "≈7.8 M (planned)",
+   "share": 0.97
   }
  },
  "plain_words": [
@@ -2187,6 +2194,13 @@
    "at": "2026-10-07 14:41",
    "text": "Oct 7 14:41 PDT: by owner request our tests use only GPUs 6 and 7 of node 0008. The full-node chain, its watchdog, all engines and the gateway were stopped (nvidia-smi: all GPUs free). Next results come from one engine (quarter node) at the same load per GPU; A/B tests become sequential pairs on the same requests. Harness build: workflow wf_915777ef-68f. 16:40: the one-engine chain (g67/chain_g67.sh) started. Its runs form test v5.1q (Results tab), apart from the full-node headline. 20:40: the chain's scorer (g67/score_g67.py) now uses the rule of this page (extract_runs.py), so the chain log and this page show the same minutes.",
    "ref": "PROGRESS.md Oct 7 14:45; next230/G67-HARNESS.md; PROGRESS.md Oct 7 16:40"
+  },
+  {
+   "name": "Faster TP2 decode collectives (B+D): step -7%, outputs identical",
+   "state": "under review",
+   "at": "2026-10-08 17:30",
+   "text": "Oct 8 17:30 PDT: the decode all-gathers and reduce-scatters of the TP2 layout now go through our custom all-reduce, and the logits all-gather uses 32 thread blocks instead of 4. Step bench on GPUs 6,7: 47.8 -> 44.5 ms per step at 56 running (x0.93) and 38.5 -> 36.4 ms at 32 (x0.945); generation tok/s +7%. 50 of 50 greedy outputs identical to the reference; A/A identical. Paired replays on Oct 3 and Sep 30 are queued.",
+   "ref": "PROGRESS.md Oct 8 17:30"
   },
   {
    "name": "Host KV cache ratio 3.0 (was 2.51): adopted for single-engine tests",
