@@ -1505,13 +1505,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-09 03:47",
+  "at": "2026-10-09 04:31",
   "items": [
    {
     "rule": "ttft_p50",
-    "title": "Giant cold prompts caused the last misses on the most faithful replay; a fix bundle now passes 15/15 on quarter 0",
-    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0) and faster decode collectives (B+D), one engine passes 15/15 at 7.48 M on Oct 3 and at 7.49 M on Sep 30, and 14/15 at 7.94 M and 8.41 M. On the most faithful Oct 3 replay (0.97x production's real load), the remaining misses followed cold prompts of 400k-800k tokens: decoding stopped for every running stream while they were chunked, and our chunk cost cap made it worse and had a correctness bug. The fix bundle passes 15/15 on quarter 0 (B+D alone 13/15). Quarter 1 sits on the device-KV limit: running requests hold the whole pool, and evictions can cascade.",
-    "src": "PROGRESS.md Oct 9 01:22, 03:45; next250/giant"
+    "title": "Giant cold prompts caused the last misses on the most faithful replay; the fix bundle passes 15/15 and 14/15 on quarters 0 and 1",
+    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0) and faster decode collectives (B+D), one engine passes 15/15 at 7.48 M on Oct 3 and at 7.49 M on Sep 30, and 14/15 at 7.94 M and 8.41 M. On the most faithful Oct 3 replay (0.97x production's real load), the remaining misses followed cold prompts of 400k-800k tokens: decoding stopped for every running stream while they were chunked, and our chunk cost cap made it worse and had a correctness bug. The fix bundle passes 15/15 on quarter 0 (B+D alone 13/15) and 14/15 on quarter 1 (B+D alone 6/15), where running requests hold the whole device KV pool; its one miss is minute 0 at TPS 58.7.",
+    "src": "PROGRESS.md Oct 9 01:22, 03:45, 04:31; next250/giant"
    },
    {
     "rule": "decode",
@@ -2295,8 +2295,8 @@
   {
    "name": "Giant cold prompts: chunking fix bundle",
    "state": "adopted",
-   "at": "2026-10-09 03:45",
-   "text": "Oct 9 01:22: a cold prompt of 400k-800k tokens stops decoding for every running stream while it is chunked, and our chunk cost cap (Oct 2) cut it into 3-6k-token pieces (141 passes instead of about 50). When the cap left budget in a pass, a second request could take the chunk slot, and the first was marked done with part of its prompt never computed. The bundle turns the cap off, skips the delayer wait in chunk passes, lets small requests pass a request that waits for KV (bounded) and runs one chunk per pass. 03:45: on faithful Oct 3 quarter 0 it passes 15/15 at 6.90 M (B+D alone 13/15, production 0/15): TPS +5.8 tok/s, first token x0.936; the minute after the giant prompts drops from 8.1 s to 1.81 s first token. Quarter 1 is next.",
+   "at": "2026-10-09 04:29",
+   "text": "Oct 9 01:22: a cold prompt of 400k-800k tokens stops decoding for every running stream while it is chunked, and our chunk cost cap (Oct 2) cut it into 3-6k-token pieces (141 passes instead of about 50). When the cap left budget in a pass, a second request could take the chunk slot, and the first was marked done with part of its prompt never computed. The bundle turns the cap off, skips the delayer wait in chunk passes, lets small requests pass a request that waits for KV (bounded) and runs one chunk per pass. 03:45: on faithful Oct 3 quarter 0 it passes 15/15 at 6.90 M (B+D alone 13/15, production 0/15): TPS +5.8 tok/s, first token x0.936; the minute after the giant prompts drops from 8.1 s to 1.81 s first token. Quarter 1 is next. 04:29: quarter 1, the quarter at the KV limit, passes 14/15 (B+D alone 6/15, without B+D 11/15); only minute 0 fails (TPS 58.7). Quarters 2 and 3 are next.",
    "ref": "serving/next250/giant/ (tree, src/apply_gp_patch.py, queue_lines_giant.txt)"
   },
   {
@@ -2316,8 +2316,8 @@
   {
    "name": "Faster TP2 decode collectives (B+D): step -7%, outputs identical",
    "state": "adopted",
-   "at": "2026-10-09 03:05",
-   "text": "Oct 8 19:00 PDT: the decode all-gathers and reduce-scatters of the TP2 layout go through our custom all-reduce, and the logits all-gather uses 32 thread blocks. Step bench: 47.8 -> 44.5 ms per step at 56 running, outputs identical (50/50). Paired replay at the Oct 3 knee (7.48 M): 15/15, generation +9.3 tok/s, first token x0.96 (without it: 13/15 and 14/15; production 0/15 on these requests). Oct 9 02:12: a same-time pair confirmed it (15/15 vs 13/15, +14.0 tok/s, equal neighbour load). 03:05: on faithful Oct 3 quarter 1 it scored 6/15 against 11/15 without B+D (-15.1 tok/s). There the device KV pool is full for most of the window and this run retracted 15 requests against 6. Under review: the giant-bundle run on that quarter, then a same-time pair if needed.",
+   "at": "2026-10-09 04:29",
+   "text": "Oct 8 19:00 PDT: the decode all-gathers and reduce-scatters of the TP2 layout go through our custom all-reduce, and the logits all-gather uses 32 thread blocks. Step bench: 47.8 -> 44.5 ms per step at 56 running, outputs identical (50/50). Paired replay at the Oct 3 knee (7.48 M): 15/15, generation +9.3 tok/s, first token x0.96 (without it: 13/15 and 14/15; production 0/15 on these requests). Oct 9 02:12: a same-time pair confirmed it (15/15 vs 13/15, +14.0 tok/s, equal neighbour load). 03:05: on faithful Oct 3 quarter 1 it scored 6/15 against 11/15 without B+D (-15.1 tok/s). There the device KV pool is full for most of the window and this run retracted 15 requests against 6. Under review: the giant-bundle run on that quarter, then a same-time pair if needed. 04:29: with the giant bundle, the same quarter passes 14/15, so that collapse came with the old chunk path, not with B+D alone.",
    "ref": "PROGRESS.md Oct 8 17:30"
   },
   {

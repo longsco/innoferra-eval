@@ -2641,7 +2641,7 @@
    "name": "one engine (GPUs 6,7): best stack + B+D, faithful Oct 3 quarter 1 (0.97x production's real load)",
    "change": "kernel",
    "verdict": "under review",
-   "why": "6/15 at 6.92 M/GPU (the same stack without B+D: 11/15 on these requests, 15:49 PDT Oct 8; production 0/15). Paired: TPS -15.1 tok/s, first token x1.79. This disagrees with the three other B+D pairs (+6.2 to +14.0 tok/s). On this quarter the device KV pool is full (usage 1.00) for most of the window in both runs; this run retracted 15 requests against 6, and its queue reached 36-48 in the failed minutes. Neighbour load was moderate (GPUs 0-5 at 25%). Likely a retraction cascade at the KV limit, not a B+D effect; the giant-bundle run on this quarter and a same-time pair will decide. 04:29: the giant bundle on the same quarter passed 14/15, so the collapse came with the old chunk path (its cap and truncated-tail bug), not with B+D alone."
+   "why": "6/15 at 6.92 M/GPU (the same stack without B+D: 11/15 on these requests, 15:49 PDT Oct 8; production 0/15). Paired: TPS -15.1 tok/s, first token x1.79. This disagrees with the three other B+D pairs (+6.2 to +14.0 tok/s). On this quarter the device KV pool is full (usage 1.00) for most of the window in both runs; this run retracted 15 requests against 6, and its queue reached 36-48 in the failed minutes. Neighbour load was moderate (GPUs 0-5 at 25%). Likely a retraction cascade at the KV limit, not a B+D effect; the giant-bundle run on this quarter and a same-time pair will decide."
   },
   {
    "tag": "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q0",
@@ -2652,16 +2652,6 @@
    "change": "scheduling",
    "verdict": "adopted",
    "why": "15/15 at 6.90 M/GPU: the first full pass on the most faithful Oct 3 replay (rebuilt bodies and lost turns); production 0/15 on these requests. Paired with B+D alone (13/15): TPS +5.8 tok/s (CI +3.2..+8.4, x1.072), first token x0.936. The minutes after the giant cold prompts recover: minute 12 first token 1.81 s (B+D alone 8.1 s), minute 14 1.55 s (3.4 s). Bundle: chunk cost cap off (fixes its correctness bug), no delayer wait in chunk passes, bounded KV skip, one chunk per pass. Quarter 1 runs next."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q1",
-   "at": "2026-10-09 04:29",
-   "protocol": "v5.1rq",
-   "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 1 (0.97x production's real load)",
-   "change": "scheduling",
-   "verdict": "adopted",
-   "why": "14/15 at 6.92 M/GPU on the KV-limit quarter (B+D alone 6/15, the stack without B+D 11/15; production 0/15). Only minute 0 fails (TPS 58.7, first token 2.18 s). TPS p50 91.0 and first token p50 0.98 s, against 75.4 and 1.23 s without B+D. Paired with B+D alone: TPS +31.6 tok/s, first token x0.444 (that reference collapsed, so the size of this gain is not a clean estimate)."
   }
  ],
  "g67_rule": {
