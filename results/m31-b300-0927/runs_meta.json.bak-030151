@@ -2632,16 +2632,6 @@
    "change": "repeat",
    "verdict": "adopted",
    "why": "15/15 at 7.48 M/GPU (production 0/15). Same-time pair with the stack without B+D, run just before (13/15): TPS +14.0 tok/s (CI +11.7..+15.9, x1.197), first token x0.932 (CI 0.913..0.951). Neighbour load was equal in both runs (GPUs 0-5 at 22% vs 25% use, about 1,750 W each; load average p50 19 vs 23). Against the first B+D run: TPS +1.7 tok/s, first token x0.947, so the 14/15 repeat was neighbour load. B+D stays adopted."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_hc30_bd_v5rrc_knee78_q1",
-   "at": "2026-10-09 02:58",
-   "protocol": "v5.1rq",
-   "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + B+D, faithful Oct 3 quarter 1 (0.97x production's real load)",
-   "change": "kernel",
-   "verdict": "under review",
-   "why": "6/15 at 6.92 M/GPU (the same stack without B+D: 11/15 on these requests, 15:49 PDT Oct 8; production 0/15). Paired: TPS -15.1 tok/s, first token x1.79. This disagrees with the three other B+D pairs (+6.2 to +14.0 tok/s). On this quarter the device KV pool is full (usage 1.00) for most of the window in both runs; this run retracted 15 requests against 6, and its queue reached 36-48 in the failed minutes. Neighbour load was moderate (GPUs 0-5 at 25%). Likely a retraction cascade at the KV limit, not a B+D effect; the giant-bundle run on this quarter and a same-time pair will decide."
   }
  ],
  "g67_rule": {
