@@ -1411,6 +1411,20 @@
    "tiny": "JIT",
    "load": "≈8.4 M (planned)",
    "share": 1.31
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q2": {
+   "name": "One engine: giant-prompt bundle, faithful q2",
+   "short": "Giant fix q2",
+   "tiny": "GW q2",
+   "load": "≈7.8 M (planned)",
+   "share": 0.97
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q3": {
+   "name": "One engine: giant-prompt bundle, faithful q3",
+   "short": "Giant fix q3",
+   "tiny": "GW q3",
+   "load": "≈7.8 M (planned)",
+   "share": 0.97
   }
  },
  "plain_words": [
