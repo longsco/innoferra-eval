@@ -1,4 +1,4 @@
-# read_utc 2026-10-09T01:08:58Z
+# read_utc 2026-10-09T01:10:06Z
 # chain g67
 ## queue
 g67_tp2mm_d1g1_hc30_bd_s30_127x_q0 /tr/v5/w0930_1310/b00.jsonl,/tr/v5/w0930_1310/b01.jsonl,/tr/v5/w0930_1310/b02.jsonl 0.5 QUARTER=0 REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA=--closed-loop --paced --t

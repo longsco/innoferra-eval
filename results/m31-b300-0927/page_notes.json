@@ -1309,21 +1309,21 @@
   },
   "g67_tp2mm_d1g1_hc30_bd_knee749_q0": {
    "name": "One engine: faster decode collectives, Oct 3",
-   "short": "Fast collectives, Oct 3",
+   "short": "B+D, Oct 3",
    "tiny": "B+D",
    "load": "≈7.47 M (planned)",
    "share": 0.93
   },
   "g67_tp2mm_d1g1_hc30_bd_s30_127x_q0": {
    "name": "One engine: faster decode collectives, Sep 30",
-   "short": "Fast collectives, Sep 30",
+   "short": "B+D, Sep 30",
    "tiny": "B+D",
    "load": "≈8.4 M (planned)",
    "share": 1.31
   },
   "g67_tp2mm_d1g1_hc30_bd_v5rrc_knee78_q0": {
    "name": "One engine: fast collectives, faithful Oct 3",
-   "short": "Fast coll., faithful",
+   "short": "B+D, faithful",
    "tiny": "B+D",
    "load": "≈7.8 M (planned)",
    "share": 0.97
