@@ -2612,6 +2612,16 @@
    "change": "repeat",
    "verdict": "under review",
    "why": "14/15 at 7.48 M/GPU (first run 15/15; production 0/15). Paired with the first run: TPS -11.6 tok/s, first token x1.205, accept 3.49 vs 3.67 - far outside the A/A noise. Other users' jobs loaded the node during this run (GPUs 4,5 at 85-99% and 620-700 W, load average 69, free host RAM 19-48 GiB). Same-time pairs are queued."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_knee749_q0_r3",
+   "at": "2026-10-09 01:21",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine (GPUs 6,7): cache 3.0 stack without B+D, Oct 3 knee 7.48 M/GPU, same-time reference for B+D r3",
+   "change": "repeat",
+   "verdict": "baseline",
+   "why": "13/15 at 7.48 M/GPU (production 0/15). Paired with the original run of these words (13/15, yesterday 09:49 PDT): first token x1.076, TPS -6.0 tok/s, under moderate neighbour load (load average 23, GPUs 0-5 about 1,660 W). It is the same-time reference for the B+D r3 run that follows."
   }
  ],
  "g67_rule": {
