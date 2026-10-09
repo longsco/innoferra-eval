@@ -2316,8 +2316,8 @@
   {
    "name": "Faster TP2 decode collectives (B+D): step -7%, outputs identical",
    "state": "adopted",
-   "at": "2026-10-09 04:29",
-   "text": "Oct 8 19:00 PDT: the decode all-gathers and reduce-scatters of the TP2 layout go through our custom all-reduce, and the logits all-gather uses 32 thread blocks. Step bench: 47.8 -> 44.5 ms per step at 56 running, outputs identical (50/50). Paired replay at the Oct 3 knee (7.48 M): 15/15, generation +9.3 tok/s, first token x0.96 (without it: 13/15 and 14/15; production 0/15 on these requests). Oct 9 02:12: a same-time pair confirmed it (15/15 vs 13/15, +14.0 tok/s, equal neighbour load). 03:05: on faithful Oct 3 quarter 1 it scored 6/15 against 11/15 without B+D (-15.1 tok/s). There the device KV pool is full for most of the window and this run retracted 15 requests against 6. Under review: the giant-bundle run on that quarter, then a same-time pair if needed. 04:29: with the giant bundle, the same quarter passes 14/15, so that collapse came with the old chunk path, not with B+D alone.",
+   "at": "2026-10-09 04:40",
+   "text": "Oct 8 19:00 PDT: the decode all-gathers and reduce-scatters of the TP2 layout go through our custom all-reduce, and the logits all-gather uses 32 thread blocks. Step bench: 47.8 -> 44.5 ms per step at 56 running, outputs identical (50/50). Paired replay at the Oct 3 knee (7.48 M): 15/15, generation +9.3 tok/s, first token x0.96 (without it: 13/15 and 14/15; production 0/15 on these requests). Oct 9 02:12: a same-time pair confirmed it (15/15 vs 13/15, +14.0 tok/s, equal neighbour load). 03:05: on faithful Oct 3 quarter 1 it scored 6/15 against 11/15 without B+D (-15.1 tok/s). There the device KV pool is full for most of the window and this run retracted 15 requests against 6. Under review: the giant-bundle run on that quarter, then a same-time pair if needed. 04:40: a study found that run had a slow host (load average 25 against 5.6 in later runs), and the full KV pool turned a 10-15% slower decode into 5 lost minutes. B+D did not cause it; B+D stays adopted.",
    "ref": "PROGRESS.md Oct 8 17:30"
   },
   {
