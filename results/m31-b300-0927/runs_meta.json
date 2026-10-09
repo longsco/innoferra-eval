@@ -2572,6 +2572,16 @@
    "change": "kernel",
    "verdict": "adopted",
    "why": "14/15 at 8.41 M/GPU vs 12/15 without B+D (production 13/15 on these requests). Paired: TPS +9.2 tok/s (CI +8.3..+10.2, x1.165), first token x0.938. On the decode-bound Sep 30 window the stack now beats production's minute count at 1.31x the day's real load."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_bd_v5rrc_knee78_q0",
+   "at": "2026-10-08 20:30",
+   "protocol": "v5.1rq",
+   "share": 0.98,
+   "name": "one engine (GPUs 6,7): best stack + B+D, faithful Oct 3 replay (quarter 0) at 0.98x production's real load",
+   "change": "kernel",
+   "verdict": "adopted",
+   "why": "13/15 at 7.81 M/GPU including rebuilt turns (6.90 M logged); without B+D 12/15; production 0/15. Paired: TPS +6.2 tok/s (CI +4.2..+8.5), first token x0.983. Both misses (minutes 12 and 14) follow the giant cold prompts of 811k and 593k tokens."
   }
  ],
  "g67_rule": {
