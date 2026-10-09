@@ -2321,6 +2321,13 @@
    "ref": "serving/next250/giant/ (tree, src/apply_gp_patch.py, queue_lines_giant.txt)"
   },
   {
+   "name": "Host cache reloads: graph fallback and 4-5 s whole-engine stalls",
+   "state": "running",
+   "at": "2026-10-09 08:10",
+   "text": "Oct 9 08:05: every prefill pass that reloads a cached prefix from host memory runs without its CUDA graph (+0.12-0.17 s per pass with 8k or fewer new tokens). The copy itself runs at 32-43 GB/s per GPU, about 60% of the link. NUMA placement of the 779 GB host pool changes from boot to boot and costs at most about 2%. A new finding: in 7 of 15 reloads of 2 M cached tokens or more on a nearly full pool, the whole engine stops for 4.0-5.4 s, while the copy takes 1 s or less. One such stall made the faithful q1 repeat fail minute 5. A CPU-only study now looks for its cause. Levers on paper: replay the graph after the load, prefetch while queued, a wider copy kernel.",
+   "ref": "serving/next250/loadback/ · next250/gstall/ · next250/LOADBACK-REPORT.md"
+  },
+  {
    "name": "Decode cost of long contexts (index scoring)",
    "state": "parked",
    "at": "2026-10-09 06:35",
