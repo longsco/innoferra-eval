@@ -92834,6 +92834,296 @@
 "done_epoch": 1791558528
 },
 {
+"tag": "g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x105_q0",
+"partial": true,
+"done_utc": null,
+"requests": 897,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 4.82,
+"prod_tpm_gpu": 4.952,
+"hit": 0.9677,
+"prod_hit": 0.9513,
+"ttft": [
+0.8112129378132522,
+2.6244395710527897,
+15.652316007995978
+],
+"prod_ttft": [
+4.814,
+10.206,
+10.599
+],
+"decode_p50": 89.39984042822228,
+"prod_decode_p50": 47.91086350974932,
+"passed": 9,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 110,
+"err": 0,
+"ttft_p50": 0.8518548118881881,
+"ttft_p99": 2.692494865041226,
+"decode_p50": 97.39602042225474,
+"pass": true,
+"fails": []
+},
+{
+"min": 1,
+"n": 103,
+"err": 0,
+"ttft_p50": 0.8112129378132522,
+"ttft_p99": 8.650017524836585,
+"decode_p50": 74.23891732739774,
+"pass": true,
+"fails": []
+},
+{
+"min": 2,
+"n": 94,
+"err": 0,
+"ttft_p50": 0.8193303099833429,
+"ttft_p99": 6.320038659032434,
+"decode_p50": 109.60031787052912,
+"pass": true,
+"fails": []
+},
+{
+"min": 3,
+"n": 92,
+"err": 0,
+"ttft_p50": 0.7110569288488477,
+"ttft_p99": 4.8052672741469,
+"decode_p50": 79.96985771958548,
+"pass": true,
+"fails": []
+},
+{
+"min": 4,
+"n": 84,
+"err": 0,
+"ttft_p50": 1.2640802529640496,
+"ttft_p99": 21.56112987990491,
+"decode_p50": 94.02689838158744,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+},
+{
+"min": 5,
+"n": 85,
+"err": 0,
+"ttft_p50": 1.0475706399884075,
+"ttft_p99": 6.25662937015295,
+"decode_p50": 101.37859764606884,
+"pass": false,
+"fails": [
+"ttft_p50"
+]
+},
+{
+"min": 6,
+"n": 70,
+"err": 0,
+"ttft_p50": 0.5833887550979853,
+"ttft_p99": 3.3581427298486233,
+"decode_p50": 99.67421265045544,
+"pass": true,
+"fails": []
+},
+{
+"min": 7,
+"n": 85,
+"err": 0,
+"ttft_p50": 0.6414303921628743,
+"ttft_p99": 3.235703431069851,
+"decode_p50": 90.64306346736079,
+"pass": true,
+"fails": []
+},
+{
+"min": 8,
+"n": 86,
+"err": 0,
+"ttft_p50": 0.8051565731875598,
+"ttft_p99": 12.926760308910161,
+"decode_p50": 74.65470020373934,
+"pass": true,
+"fails": []
+},
+{
+"min": 9,
+"n": 67,
+"err": 0,
+"ttft_p50": 0.6265416950918734,
+"ttft_p99": 3.0535743930377066,
+"decode_p50": 99.16450057411527,
+"pass": true,
+"fails": []
+},
+{
+"min": 10,
+"n": 21,
+"err": 0,
+"ttft_p50": 0.7428357619792223,
+"ttft_p99": 1.8046436628792435,
+"decode_p50": 94.04688761955316,
+"pass": true,
+"fails": []
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 110,
+"err": 0,
+"ttft_p50": 4.916,
+"ttft_p99": 10.735,
+"decode_p50": 47.48082106572672,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 103,
+"err": 0,
+"ttft_p50": 7.069,
+"ttft_p99": 10.725,
+"decode_p50": 40.45092838196287,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 94,
+"err": 0,
+"ttft_p50": 4.863,
+"ttft_p99": 10.545,
+"decode_p50": 37.36041542208538,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 92,
+"err": 0,
+"ttft_p50": 6.307,
+"ttft_p99": 10.478,
+"decode_p50": 43.57479877879545,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 84,
+"err": 0,
+"ttft_p50": 5.096,
+"ttft_p99": 10.705,
+"decode_p50": 55.112730585288084,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 5,
+"n": 85,
+"err": 0,
+"ttft_p50": 4.95,
+"ttft_p99": 10.416,
+"decode_p50": 50.013970382788486,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 6,
+"n": 70,
+"err": 0,
+"ttft_p50": 3.446,
+"ttft_p99": 10.396,
+"decode_p50": 55.81395348837209,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 7,
+"n": 85,
+"err": 0,
+"ttft_p50": 3.871,
+"ttft_p99": 10.479,
+"decode_p50": 50.84440035173953,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 8,
+"n": 86,
+"err": 0,
+"ttft_p50": 3.098,
+"ttft_p99": 10.923,
+"decode_p50": 55.42857142857143,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 9,
+"n": 67,
+"err": 0,
+"ttft_p50": 3.108,
+"ttft_p99": 10.354,
+"decode_p50": 52.64431804429383,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 10,
+"n": 21,
+"err": 0,
+"ttft_p50": 3.453,
+"ttft_p99": 10.883,
+"decode_p50": 50.153433064825464,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+],
+"gpus": 2,
+"harness": "g67"
+},
+{
 "tag": "g67_tp2mm_d1g1_hc30_bd_gw_knee77_q0",
 "partial": false,
 "done_utc": "14:25:45",
