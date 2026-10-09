@@ -1531,7 +1531,7 @@
    {
     "rule": "ttft_p50",
     "title": "The most faithful Oct 3 replay now passes 59 of 60 minutes on one engine; the two misses sit at a full KV pool or a giant burst",
-    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0), faster decode collectives (B+D) and the giant-prompt bundle, one engine passes the most faithful Oct 3 replay (0.97x production's real load) in 59 of 60 minutes: q0 15/15, q1 14/15, q2 14/15, q3 15/15 at 6.39-6.98 M per GPU. (Production on the same requests: 0 of 60.) The misses: q1 minute 0, a start burst where running requests hold the whole device KV pool (TPS 58.7), and q2 minute 14 (first token 5.42 s). Giant cold prompts of 400k-800k tokens start every bad period: decoding stops while they are chunked, and the full pool makes warm follow-ups wait.",
+    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0), faster decode collectives (B+D) and the giant-prompt bundle, one engine passes the most faithful Oct 3 replay (0.985x production's real load) in 59 of 60 minutes: q0 15/15, q1 14/15, q2 14/15, q3 15/15 at 6.39-6.98 M per GPU. (Production on the same requests: 0 of 60.) The misses: q1 minute 0, a start burst where running requests hold the whole device KV pool (TPS 58.7), and q2 minute 14 (first token 5.42 s). Giant cold prompts of 400k-800k tokens start every bad period: decoding stops while they are chunked, and the full pool makes warm follow-ups wait.",
     "src": "PROGRESS.md Oct 9 01:22, 03:45, 04:31, 05:12, 05:58; next250/giant; next250/KV-LIMIT-REPORT.md"
    },
    {

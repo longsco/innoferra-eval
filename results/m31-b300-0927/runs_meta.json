@@ -2478,7 +2478,7 @@
    "at": "2026-10-08 11:19",
    "protocol": "v5.1rq",
    "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack (TP2 + fast path + D1 + G1 + host ratio 3.0), FAITHFUL Oct 3 replay (rebuilt bodies + rebuilt lost turns) at 0.97x production's real load",
+   "name": "one engine (GPUs 6,7): best stack (TP2 + fast path + D1 + G1 + host ratio 3.0), FAITHFUL Oct 3 replay (rebuilt bodies + rebuilt lost turns) at 0.985x production's real load",
    "change": "load",
    "verdict": "baseline",
    "why": "12/15 at 7.80 M/GPU including rebuilt turns (6.89 M logged; production's real load 8.01 M); production 0/15 on these requests. Minutes 0-11 pass at up to 8.4 M/GPU. Minutes 12-14 fail behind two genuine cold giant prompts (811k and 593k tokens; production had them cold too): a chunked giant takes the whole prefill budget, so other new prompts wait 20-30 s. Fair chunk share 0.5 queued."
@@ -2498,7 +2498,7 @@
    "at": "2026-10-08 13:21",
    "protocol": "v5.1rq",
    "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + fair chunk share 0.5, faithful Oct 3 at 0.97x production's real load",
+   "name": "one engine (GPUs 6,7): best stack + fair chunk share 0.5, faithful Oct 3 at 0.985x production's real load",
    "change": "scheduler",
    "verdict": "rejected",
    "why": "12/15, the same count as share 1.0 (production 0/15), but paired first token x1.176 (CI 1.146..1.231) and TPS -8.6 tok/s (CI -11.7..-6.2). The giant-prompt minutes got worse (minute 12 first token 14.6 s vs 8.2 s). Splitting each pass's prefill budget makes the giant prefill last longer and keeps decode mixed with prefill for longer."
@@ -2638,7 +2638,7 @@
    "at": "2026-10-09 02:58",
    "protocol": "v5.1rq",
    "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + B+D, faithful Oct 3 quarter 1 (0.97x production's real load)",
+   "name": "one engine (GPUs 6,7): best stack + B+D, faithful Oct 3 quarter 1 (0.985x production's real load)",
    "change": "kernel",
    "verdict": "under review",
    "why": "6/15 at 6.92 M/GPU (the same stack without B+D: 11/15 on these requests, 15:49 PDT Oct 8; production 0/15). Paired: TPS -15.1 tok/s, first token x1.79. This disagrees with the three other B+D pairs (+6.2 to +14.0 tok/s). On this quarter the device KV pool is full (usage 1.00) for most of the window in both runs; this run retracted 15 requests against 6, and its queue reached 36-48 in the failed minutes. Neighbour load was moderate (GPUs 0-5 at 25%). Likely a retraction cascade at the KV limit, not a B+D effect; the giant-bundle run on this quarter and a same-time pair will decide. 04:40 (KV-limit study): this run had a slow host (load average 24.9 against 5.6-5.7 in the bundle runs; host path 1.7-2.6x slower, decode step +9-14% against B+D on q0 with the same code). A replay model turns a +10-15% slower decode into 5-7/15 at the KV limit. B+D did not cause the loss."
@@ -2648,7 +2648,7 @@
    "at": "2026-10-09 03:45",
    "protocol": "v5.1rq",
    "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 0 (0.97x production's real load)",
+   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 0 (0.985x production's real load)",
    "change": "scheduling",
    "verdict": "adopted",
    "why": "15/15 at 6.90 M/GPU: the first full pass on the most faithful Oct 3 replay (rebuilt bodies and lost turns); production 0/15 on these requests. Paired with B+D alone (13/15): TPS +5.8 tok/s (CI +3.2..+8.4, x1.072), first token x0.936. The minutes after the giant cold prompts recover: minute 12 first token 1.81 s (B+D alone 8.1 s), minute 14 1.55 s (3.4 s). Bundle: chunk cost cap off (fixes its correctness bug), no delayer wait in chunk passes, bounded KV skip, one chunk per pass. Quarter 1 runs next."
@@ -2658,7 +2658,7 @@
    "at": "2026-10-09 04:29",
    "protocol": "v5.1rq",
    "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 1 (0.97x production's real load)",
+   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 1 (0.985x production's real load)",
    "change": "scheduling",
    "verdict": "adopted",
    "why": "14/15 at 6.92 M/GPU on the KV-limit quarter (B+D alone 6/15, the stack without B+D 11/15; production 0/15). Only minute 0 fails (TPS 58.7, first token 2.18 s). TPS p50 91.0 and first token p50 0.98 s, against 75.4 and 1.23 s without B+D. Paired with B+D alone: TPS +31.6 tok/s, first token x0.444 (that reference collapsed, so the size of this gain is not a clean estimate)."
@@ -2668,7 +2668,7 @@
    "at": "2026-10-09 05:12",
    "protocol": "v5.1rq",
    "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 2 (0.97x production's real load)",
+   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 2 (0.985x production's real load)",
    "change": "scheduling",
    "verdict": "kept",
    "why": "14/15 at 6.39 M/GPU (the old stack without B+D or the bundle: 14/15 on these requests; production 0/15). Only minute 14 fails (first token 5.42 s). Paired with the old run: TPS -7.0 tok/s, first token x1.24; host gate normal (boot 594 s, small prefill p50 0.29 s at 10-19 running). The bundle neither helps nor costs a minute on this quarter, which has few giant bursts."
@@ -2678,7 +2678,7 @@
    "at": "2026-10-09 05:56",
    "protocol": "v5.1rq",
    "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 3 (0.97x production's real load)",
+   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 3 (0.985x production's real load)",
    "change": "scheduling",
    "verdict": "kept",
    "why": "15/15 at 6.98 M/GPU (production 0/15 on these requests); first run of this quarter. TPS p50 86.7, first token p50 0.84 s; worst minute 3 (first token 2.76 s, TPS 73.3). Host gate normal (boot 594 s). With it, the whole faithful Oct 3 replay passes 59 of 60 minutes with the full stack (q0 15, q1 14, q2 14, q3 15) (production on the same requests: 0 of 60)."
