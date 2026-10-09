@@ -2732,16 +2732,6 @@
    "change": "load",
    "verdict": "baseline",
    "why": "13/15 at 7.58 M/GPU (production 0/15). Fails minute 0 (start burst, TPS 50.2) and minute 5 (first token 4.44 s, the 786k-token giant burst). On the requests shared with the 0.985x run: TPS -1.3 tok/s, first token x0.994 (inside the A/A spread). First run with the gateway image named innoferra-minimax-m31-gateway:local; clean."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_hc30_bd_gw_s30_127x_q0",
-   "at": "2026-10-09 10:27",
-   "protocol": "v5.1q",
-   "share": 1.31,
-   "name": "one engine (GPUs 6,7): full stack + giant bundle + warm compile cache, Sep 30 at 8.45 M/GPU",
-   "change": "scheduling",
-   "verdict": "adopted",
-   "why": "15/15 at 8.45 M/GPU on the Sep 30 window (B+D alone 14/15 at 8.41 M; production 13/15 on these requests). Every minute has margin: TPS 67.7-99.3, first token 0.57-0.99 s; minute 0, which B+D alone failed at TPS 57.3, now passes at 67.7. Paired with B+D alone: TPS +2.2 tok/s, first token x0.985."
   }
  ],
  "g67_rule": {
