@@ -1,9 +1,10 @@
-# read_utc 2026-10-09T19:43:12Z
+# read_utc 2026-10-09T20:27:09Z
 # chain g67
 ## queue
 g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x060_q0 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl 0.20 QUARTER=0 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA
 g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x075_q0 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl 0.50 QUARTER=0 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA
 g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x090_q0 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl 0.80 QUARTER=0 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA
+g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q2_aa /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl,/tr/v5r/w1003_1330/b02.jsonl 0.10 QUARTER=2 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY_FILE=
 ## done
 18:13:46 g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q2 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl,/tr/v5r/w1003_1330/b02.jsonl 0.10 QUARTER=2 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY
 18:58:05 g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q3 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl,/tr/v5r/w1003_1330/b02.jsonl 0.10 QUARTER=3 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY
