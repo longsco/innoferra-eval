@@ -1341,6 +1341,13 @@
    "tiny": "B+D",
    "load": "≈7.52 M (planned)",
    "share": 1.17
+  },
+  "g67_tp2mm_d1g1_hc30_bd_knee749_q0_r2": {
+   "name": "One engine: B+D, Oct 3 knee, repeat",
+   "short": "B+D repeat",
+   "tiny": "Repeat",
+   "load": "≈7.48 M (planned)",
+   "share": 0.93
   }
  },
  "plain_words": [
