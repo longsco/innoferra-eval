@@ -1502,6 +1502,27 @@
    "tiny": "F1.05 q2aa",
    "load": "≈8.2 M (planned)",
    "share": 1.05
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x090_q2": {
+   "name": "One engine: Phase 2 load sweep, faithful q2 at 0.90x with the warm compile cache",
+   "short": "Sweep 0.90x q2 warm",
+   "tiny": "S0.90 q2",
+   "load": "≈7.0 M (planned)",
+   "share": 0.9
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q2_plan": {
+   "name": "One engine: faithful q2 at 1.05x + overlap plan stream",
+   "short": "F1.05 q2 + plan stream",
+   "tiny": "q2 plan",
+   "load": "≈8.2 M (planned)",
+   "share": 1.05
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q2_dap4": {
+   "name": "One engine: faithful q2 at 1.05x + decode after prefill (4 steps)",
+   "short": "F1.05 q2 + decode-after-prefill 4",
+   "tiny": "q2 dap4",
+   "load": "≈8.2 M (planned)",
+   "share": 1.05
   }
  },
  "plain_words": [
