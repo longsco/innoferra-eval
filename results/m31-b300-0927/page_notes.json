@@ -1330,14 +1330,14 @@
   },
   "g67_tp2mm_d1g1_hc30_bd_knee77_q0": {
    "name": "One engine: B+D, Oct 3 at 7.96 M",
-   "short": "B+D, 7.96 M",
+   "short": "B+D, 7.94 M",
    "tiny": "B+D",
    "load": "≈7.96 M (planned)",
    "share": 0.99
   },
   "g67_tp2mm_d1g1_hc30_bd_s30_114x_q0": {
    "name": "One engine: B+D, Sep 30 at 7.52 M",
-   "short": "B+D, Sep 30 7.5 M",
+   "short": "B+D, 7.49 M",
    "tiny": "B+D",
    "load": "≈7.52 M (planned)",
    "share": 1.17
