@@ -93222,6 +93222,185 @@
 "done_epoch": 1791545347
 },
 {
+"tag": "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q2",
+"partial": true,
+"done_utc": null,
+"requests": 496,
+"errors": 0,
+"prod_non200": 0,
+"tpm_gpu": 2.652,
+"prod_tpm_gpu": 2.704,
+"hit": 0.9501,
+"prod_hit": 0.9387,
+"ttft": [
+1.068063243990764,
+6.3548014890402555,
+17.38535547000356
+],
+"prod_ttft": [
+5.93,
+10.26,
+10.843
+],
+"decode_p50": 92.12713814740945,
+"prod_decode_p50": 45.26704298740773,
+"passed": 2,
+"prod_passed": 0,
+"minutes": [
+{
+"min": 0,
+"n": 91,
+"err": 0,
+"ttft_p50": 1.1592464169953018,
+"ttft_p99": 14.029914701124653,
+"decode_p50": 72.78705654989882,
+"pass": false,
+"fails": [
+"ttft_p50"
+]
+},
+{
+"min": 1,
+"n": 84,
+"err": 0,
+"ttft_p50": 0.8684366608504206,
+"ttft_p99": 8.410652487073094,
+"decode_p50": 115.66781671782829,
+"pass": true,
+"fails": []
+},
+{
+"min": 2,
+"n": 92,
+"err": 0,
+"ttft_p50": 0.9101917750667781,
+"ttft_p99": 6.992753098951653,
+"decode_p50": 111.55946725043097,
+"pass": true,
+"fails": []
+},
+{
+"min": 3,
+"n": 85,
+"err": 0,
+"ttft_p50": 0.9476115780416876,
+"ttft_p99": 23.372982664965093,
+"decode_p50": 97.13250443808,
+"pass": false,
+"fails": [
+"ttft_p99"
+]
+},
+{
+"min": 4,
+"n": 73,
+"err": 0,
+"ttft_p50": 1.201927968999371,
+"ttft_p99": 12.738913764012977,
+"decode_p50": 79.38174021507008,
+"pass": false,
+"fails": [
+"ttft_p50"
+]
+},
+{
+"min": 5,
+"n": 71,
+"err": 0,
+"ttft_p50": 1.7469745429698378,
+"ttft_p99": 17.38535547000356,
+"decode_p50": 71.9214915807743,
+"pass": false,
+"fails": [
+"ttft_p50",
+"ttft_p99"
+]
+}
+],
+"prod_minutes": [
+{
+"min": 0,
+"n": 91,
+"err": 0,
+"ttft_p50": 4.893,
+"ttft_p99": 10.966,
+"decode_p50": 49.16778266692175,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 1,
+"n": 84,
+"err": 0,
+"ttft_p50": 6.881,
+"ttft_p99": 10.95,
+"decode_p50": 46.07195598902972,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 2,
+"n": 92,
+"err": 0,
+"ttft_p50": 4.5,
+"ttft_p99": 10.763,
+"decode_p50": 40.75235109717869,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 3,
+"n": 85,
+"err": 0,
+"ttft_p50": 7.469,
+"ttft_p99": 10.843,
+"decode_p50": 49.490354645775426,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 4,
+"n": 73,
+"err": 0,
+"ttft_p50": 5.196,
+"ttft_p99": 11.116,
+"decode_p50": 43.13160954542938,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+},
+{
+"min": 5,
+"n": 71,
+"err": 0,
+"ttft_p50": 5.547,
+"ttft_p99": 10.838,
+"decode_p50": 49.2391198991955,
+"pass": false,
+"fails": [
+"ttft_p50",
+"decode"
+]
+}
+],
+"gpus": 2,
+"harness": "g67"
+},
+{
 "tag": "g67_tp2mm_d1g1_hc30_bd_knee749_q0",
 "partial": false,
 "done_utc": "01:54:55",

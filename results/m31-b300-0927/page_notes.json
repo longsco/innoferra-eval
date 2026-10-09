@@ -1425,6 +1425,27 @@
    "tiny": "GW q3",
    "load": "≈7.8 M (planned)",
    "share": 0.97
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q1_r2": {
+   "name": "One engine: giant-prompt bundle, faithful q1, repeat (first faithful A/A)",
+   "short": "Giant fix q1 r2",
+   "tiny": "GW q1 r2",
+   "load": "≈7.8 M (planned)",
+   "share": 0.97
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee81_q0": {
+   "name": "One engine: giant-prompt bundle, faithful q0 at 1.01 (about 7.2 M)",
+   "short": "Faithful 7.2 M q0",
+   "tiny": "F7.2 q0",
+   "load": "≈8.1 M (planned)",
+   "share": 1.01
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee81_q1": {
+   "name": "One engine: giant-prompt bundle, faithful q1 at 1.01 (about 7.2 M)",
+   "short": "Faithful 7.2 M q1",
+   "tiny": "F7.2 q1",
+   "load": "≈8.1 M (planned)",
+   "share": 1.01
   }
  },
  "plain_words": [
