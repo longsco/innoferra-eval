@@ -2321,6 +2321,13 @@
    "ref": "serving/next250/giant/ (tree, src/apply_gp_patch.py, queue_lines_giant.txt)"
   },
   {
+   "name": "Decode cost of long contexts (index scoring)",
+   "state": "parked",
+   "at": "2026-10-09 06:35",
+   "text": "Oct 9 06:35: each extra 1 M tokens held by running requests adds 2.35-2.46 ms to a decode step (fits on 22 real-traffic runs), about 4x the time to read their index keys once. Inside the step only the index-score kernel's share is measured: 1.1-1.2 ms per 1 M tokens, twice its memory floor. The best exact fix (split index scoring across the two GPUs, drop a fill) would add 0.2-2.6% to the median minute speed and save at most one of 60 faithful minutes; even a free context path saves only one. The failing minutes lose more time outside decode: in q1 minute 0, reloading 19 M cached tokens from host memory costs about 10-13 s. Parked; a 25-minute kernel benchmark is ready.",
+   "ref": "serving/next250/decctx/ (report, bench) · next250/DECCTX-REPORT.md"
+  },
+  {
    "name": "Kernel compiles during the test (warm compile cache)",
    "state": "running",
    "at": "2026-10-09 03:45",
