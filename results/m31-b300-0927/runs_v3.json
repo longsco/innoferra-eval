@@ -92835,17 +92835,17 @@
 },
 {
 "tag": "g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x105_q0",
-"partial": true,
-"done_utc": null,
-"requests": 1315,
+"partial": false,
+"done_utc": "18:13:46",
+"requests": 1316,
 "errors": 0,
 "prod_non200": 0,
-"tpm_gpu": 7.304,
-"prod_tpm_gpu": 7.5,
+"tpm_gpu": 7.308,
+"prod_tpm_gpu": 7.504,
 "hit": 0.9591,
 "prod_hit": 0.9481,
 "ttft": [
-0.8760379881132394,
+0.8756997988093644,
 4.819425157038495,
 20.86707848403603
 ],
@@ -92855,7 +92855,7 @@
 10.639
 ],
 "decode_p50": 87.22749716397406,
-"prod_decode_p50": 47.534586732884016,
+"prod_decode_p50": 47.59386567953465,
 "passed": 9,
 "prod_passed": 0,
 "minutes": [
@@ -93012,11 +93012,11 @@
 },
 {
 "min": 14,
-"n": 92,
+"n": 93,
 "err": 0,
-"ttft_p50": 2.351471032947302,
+"ttft_p50": 2.255025221966207,
 "ttft_p99": 18.15813206601888,
-"decode_p50": 95.93521218536308,
+"decode_p50": 97.7018748538226,
 "pass": false,
 "fails": [
 "ttft_p50",
@@ -93209,11 +93209,11 @@
 },
 {
 "min": 14,
-"n": 92,
+"n": 93,
 "err": 0,
 "ttft_p50": 5.623,
 "ttft_p99": 10.992,
-"decode_p50": 46.182846371347786,
+"decode_p50": 47.686583678813236,
 "pass": false,
 "fails": [
 "ttft_p50",
@@ -93222,7 +93222,8 @@
 }
 ],
 "gpus": 2,
-"harness": "g67"
+"harness": "g67",
+"done_epoch": 1791569623
 },
 {
 "tag": "g67_tp2mm_d1g1_hc30_bd_gw_knee77_q0",
