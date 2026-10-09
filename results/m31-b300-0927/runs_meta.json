@@ -2542,6 +2542,16 @@
    "change": "repeat",
    "verdict": "baseline",
    "why": "14/15 at 7.48 M/GPU (first run 13/15, one minute lost to the gateway keep-alive 502, now fixed; production 0/15). Paired A/A: first token x0.987, TPS +1.5 tok/s, inside the one-engine noise. The new stack gives 13-14/15 on this window."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_v5rrc_knee78_q2",
+   "at": "2026-10-08 18:08",
+   "protocol": "v5.1rq",
+   "share": 0.9,
+   "name": "one engine (GPUs 6,7): best stack, faithful Oct 3 replay on quarter 2 at 0.90x production's real load",
+   "change": "load",
+   "verdict": "baseline",
+   "why": "14/15 at 7.19 M/GPU including rebuilt turns (6.37 M logged); production 0/15. The one miss is minute 14 (first token 6.8 s). This quarter's draw carries less load at the same frac. Faithful quarters so far: q0 12/15 at 0.97x, q1 11/15 at 0.98x, q2 14/15 at 0.90x."
   }
  ],
  "g67_rule": {
