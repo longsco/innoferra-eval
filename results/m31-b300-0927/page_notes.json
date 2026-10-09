@@ -1411,9 +1411,9 @@
   "items": [
    {
     "rule": "ttft_p50",
-    "title": "Oct 3 at 7.5-7.9 M: idle conversations lost their cache after about 4 minutes (fixed on one engine)",
-    "text": "One engine with production's layout (TP2) and our best settings passed 12/15 at 7.47 M and 7/15 at 7.94 M. The misses sat in the busy minutes. There, 22 and 35 follow-ups processed their whole prompt again: about 4 minutes after our last answer, their cached prefix was gone. Write-through keeps a host copy of every cache entry, so the host pool (12.2 M tokens) is the whole cache. With a 14.6 M-token host pool (ratio 3.0), Oct 3 passes 13/15 at 7.47 M and at 7.96 M, and our uncached prompt tokens match production's. A full node has room for about ratio 2.85 unless each token's host copy gets smaller.",
-    "src": "PROGRESS.md Oct 8 07:30, 08:20, 09:05"
+    "title": "Oct 3 at 7.5 M now passes 15/15 on one engine; the faithful replay still misses minutes behind giant cold prompts",
+    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0) and faster decode collectives, one engine passes 15/15 at 7.48 M on the Oct 3 peak. Earlier misses came from idle conversations that lost their cache after about 4 minutes, and from decode speed in busy minutes. On the most faithful Oct 3 replay (rebuilt bodies and lost turns), quarters score 11-14/15 at 0.90-0.98x production's real load. Every remaining miss follows a cold prompt of 400k-800k tokens that holds the engine for 15-20 s.",
+    "src": "PROGRESS.md Oct 8 07:30-19:00"
    },
    {
     "rule": "ttft_p50",
@@ -2197,9 +2197,9 @@
   },
   {
    "name": "Faster TP2 decode collectives (B+D): step -7%, outputs identical",
-   "state": "under review",
-   "at": "2026-10-08 17:30",
-   "text": "Oct 8 17:30 PDT: the decode all-gathers and reduce-scatters of the TP2 layout now go through our custom all-reduce, and the logits all-gather uses 32 thread blocks instead of 4. Step bench on GPUs 6,7: 47.8 -> 44.5 ms per step at 56 running (x0.93) and 38.5 -> 36.4 ms at 32 (x0.945); generation tok/s +7%. 50 of 50 greedy outputs identical to the reference; A/A identical. Paired replays on Oct 3 and Sep 30 are queued.",
+   "state": "adopted",
+   "at": "2026-10-08 19:00",
+   "text": "Oct 8 19:00 PDT: the decode all-gathers and reduce-scatters of the TP2 layout go through our custom all-reduce, and the logits all-gather uses 32 thread blocks. Step bench: 47.8 -> 44.5 ms per step at 56 running, outputs identical (50/50). Paired replay at the Oct 3 knee (7.48 M): 15/15, generation +9.3 tok/s, first token x0.96 (without it: 13/15 and 14/15; production 0/15 on these requests).",
    "ref": "PROGRESS.md Oct 8 17:30"
   },
   {

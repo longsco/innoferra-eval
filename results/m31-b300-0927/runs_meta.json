@@ -2552,6 +2552,16 @@
    "change": "load",
    "verdict": "baseline",
    "why": "14/15 at 7.19 M/GPU including rebuilt turns (6.37 M logged); production 0/15. The one miss is minute 14 (first token 6.8 s). This quarter's draw carries less load at the same frac. Faithful quarters so far: q0 12/15 at 0.97x, q1 11/15 at 0.98x, q2 14/15 at 0.90x."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_bd_knee749_q0",
+   "at": "2026-10-08 18:54",
+   "protocol": "v5.1q",
+   "share": 0.93,
+   "name": "one engine (GPUs 6,7): best stack + faster TP2 decode collectives (B+D), Oct 3 knee 7.48 M/GPU",
+   "change": "kernel",
+   "verdict": "adopted",
+   "why": "15/15 at 7.48 M/GPU: the first full pass on the Oct 3 peak window above 7 M per GPU (one engine); production 0/15 on these requests. Paired with the same stack without B+D (13/15, its repeat 14/15): TPS +9.3 tok/s (CI +7.0..+11.4, x1.137), first token x0.956. Worst minute: first token 1.1 s, TPS 75. Outputs identical in the step bench (50/50)."
   }
  ],
  "g67_rule": {
