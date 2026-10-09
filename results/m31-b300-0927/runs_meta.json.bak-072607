@@ -2692,16 +2692,6 @@
    "change": "repeat",
    "verdict": "baseline",
    "why": "13/15 at 6.93 M/GPU (first run 14/15; production 0/15). A/A pair with the first run: first token x0.991 (CI 0.985..0.999), TPS +1.2 tok/s (CI -0.7..+3.3), so the request-level medians repeat closely, but the minute score moves by one: minute 0 fails in both (TPS 55.7 here), and minute 5 (the 786k-token giant burst) fails here at 3.69 s first token (1.66 s in the first run). Host gate normal (boot 593 s)."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_hc30_bd_gw_knee77_q0",
-   "at": "2026-10-09 07:25",
-   "protocol": "v5.1q",
-   "share": 0.99,
-   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, Oct 3 at 7.92 M/GPU",
-   "change": "scheduling",
-   "verdict": "adopted",
-   "why": "15/15 at 7.92 M/GPU on the Oct 3 peak (B+D alone 14/15 on these requests; production 0/15). Every minute has margin: TPS 77.1-120.5, first token 0.77-1.38 s. The start minutes 0-2 (9.2-9.6 M per minute) now pass at TPS 77-78 and first token 1.0-1.2 s; B+D alone failed minute 1 at TPS 57.3. Paired with B+D alone: TPS +2.4 tok/s, first token x1.02 (inside the A/A spread at the request level). Host gate normal (boot 593 s)."
   }
  ],
  "g67_rule": {
