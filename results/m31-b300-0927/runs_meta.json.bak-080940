@@ -2702,16 +2702,6 @@
    "change": "scheduling",
    "verdict": "adopted",
    "why": "15/15 at 7.92 M/GPU on the Oct 3 peak (B+D alone 14/15 on these requests; production 0/15). Every minute has margin: TPS 77.1-120.5, first token 0.77-1.38 s. The start minutes 0-2 (9.2-9.6 M per minute) now pass at TPS 77-78 and first token 1.0-1.2 s; B+D alone failed minute 1 at TPS 57.3. Paired with B+D alone: TPS +2.4 tok/s, first token x1.02 (inside the A/A spread at the request level). Host gate normal (boot 593 s)."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_hc30_bd_gw_jc_knee77_q0",
-   "at": "2026-10-09 08:09",
-   "protocol": "v5.1q",
-   "share": 0.99,
-   "name": "one engine (GPUs 6,7): bundle stack + warm compile cache, Oct 3 at 7.94 M/GPU (back to back with the same line without it)",
-   "change": "kernel",
-   "verdict": "adopted",
-   "why": "15/15 at 7.94 M/GPU (production 0/15). Paired with the same line without the cache, run just before: TPS -0.4 tok/s (CI -2.0..+1.5), first token x0.987 (CI 0.977..0.999), so requests are unchanged; the engine booted in 469 s instead of 593 s because about 220 kernel variants loaded from the host instead of compiling. Adopted for all lines."
   }
  ],
  "g67_rule": {
