@@ -1383,20 +1383,6 @@
    "tiny": "GW q1",
    "load": "≈7.8 M (planned)",
    "share": 0.97
-  },
-  "g67_tp2mm_d1g1_hc30_bd_gw_knee77_q0": {
-   "name": "One engine: giant-prompt bundle, Oct 3 at 7.96 M",
-   "short": "Giant fix, 7.94 M",
-   "tiny": "GW",
-   "load": "≈7.96 M (planned)",
-   "share": 0.99
-  },
-  "g67_tp2mm_d1g1_hc30_bd_gw_s30_127x_q0": {
-   "name": "One engine: giant-prompt bundle, Sep 30 at 8.4 M",
-   "short": "Giant fix, Sep 30",
-   "tiny": "GW",
-   "load": "≈8.4 M (planned)",
-   "share": 1.31
   }
  },
  "plain_words": [
@@ -1477,31 +1463,25 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-09 02:12",
+  "at": "2026-10-08 07:30",
   "items": [
    {
     "rule": "ttft_p50",
-    "title": "Giant cold prompts cause the last misses on the most faithful replay",
-    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0) and faster decode collectives (B+D), one engine passes 15/15 at 7.48 M on Oct 3 and at 7.49 M on Sep 30, and 14/15 at 7.94 M and 8.41 M. The most faithful Oct 3 replay, at 0.98x production's real load, passes 13/15. Each remaining miss follows a cold prompt of 400k-800k tokens. Decoding stops for every running stream while such a prompt is chunked. Our chunk cost cap made this worse and has a correctness bug. A fix bundle runs now as paired tests.",
-    "src": "PROGRESS.md Oct 8 22:10; Oct 9 01:22; next250/giant"
-   },
-   {
-    "rule": "decode",
-    "title": "Other users' jobs on the node change our results",
-    "text": "Other users' jobs on GPUs 0-5 share the node's CPUs, memory and power. A B+D repeat under heavy load lost 11.6 tok/s and one minute. In a same-time pair under equal load, B+D passed 15/15 and gained 14 tok/s over the stack without it. We now run each pair back to back and log the node load every 30 s.",
-    "src": "PROGRESS.md Oct 8 23:30; Oct 9 02:12"
+    "title": "Oct 3 at 7.5 M now passes 15/15 on one engine; the faithful replay still misses minutes behind giant cold prompts",
+    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0) and faster decode collectives, one engine passes 15/15 at 7.48 M on the Oct 3 peak. Earlier misses came from idle conversations that lost their cache after about 4 minutes, and from decode speed in busy minutes. On the most faithful Oct 3 replay (rebuilt bodies and lost turns), quarters score 11-14/15 at 0.90-0.98x production's real load. Every remaining miss follows a cold prompt of 400k-800k tokens that holds the engine for 15-20 s.",
+    "src": "PROGRESS.md Oct 8 07:30-19:00"
    },
    {
     "rule": "ttft_p50",
-    "title": "The first short follow-up on some long prompts stalls the engine",
-    "text": "Some long prompts stall the engine for 0.5-1.9 s on their first cache hit with 128 or fewer new tokens. Later hits on the same prompt take 0.05-0.15 s. During the stall, decoding stops for every running stream. A study of its cause and of its share in real traffic runs now.",
-    "src": "PROGRESS.md Oct 9 01:29"
+    "title": "Oct 3 peak at 7.33 M: first token in the peak minutes",
+    "text": "At 7.33 M (0.92x of production's real load), DP2 runs passed 1-7 of 15 minutes; the TP2 layout (production's) passed 12/15 in its first run. In minutes 0-3, device KV fills on the hot ranks and requests queue. Outside that burst, the median request loses about equal time to the queue, to tokenization and to tool-call output that our stack holds back. Requests with images tokenize their text twice (1.6-2.9 s median); a bit-exact fix is in test. Scored on the first streamed chunk, as production seems to score, the DP2 runs pass 9-13 of 15. That definition needs an owner decision.",
+    "src": "PROGRESS.md Oct 6 15:05 - Oct 7 02:35; next200/PREFILL-BREAKDOWN(.verify).md, PREFILL-ROUTES(.verify).md; next210/"
    },
    {
     "rule": "decode",
-    "title": "Decode slows as more requests share a GPU pair",
-    "text": "Per-request decode falls from 135 tok/s at 1-4 requests per rank to 62 at 13-16 (measured with DP2, Oct 6). The draft model gets about 3.5 tokens accepted per step on real traffic. The faster TP2 collectives (B+D) cut the decode step by about 7% and add about 7-14 tok/s per request on real traffic.",
-    "src": "PROGRESS.md Oct 6 05:15, 17:10; Oct 8 19:00; next200/LEAD-ADAPTIVE.md"
+    "title": "Decode saturates per rank at high concurrency",
+    "text": "Per-request decode falls from 135 tok/s at 1-4 requests per rank to 62 at 13-16; a rank's total decode flattens near 870-1,000 tok/s. The draft model gets 3.5 tokens accepted per step on real traffic. A batch-adaptive draft block would not pay (closed).",
+    "src": "PROGRESS.md Oct 6 05:15, 17:10; next200/LEAD-ADAPTIVE.md"
    },
    {
     "rule": "errors",
