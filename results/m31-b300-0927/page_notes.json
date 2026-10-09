@@ -1446,6 +1446,27 @@
    "tiny": "F1.05 q1",
    "load": "≈8.2 M (planned)",
    "share": 1.05
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x105_q0": {
+   "name": "One engine: faithful q0 at 1.05x with the warm compile cache",
+   "short": "Faithful 1.05x q0 warm",
+   "tiny": "F1.05 q0w",
+   "load": "≈8.2 M (planned)",
+   "share": 1.05
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q2": {
+   "name": "One engine: faithful q2 at 1.05x production load",
+   "short": "Faithful 1.05x q2",
+   "tiny": "F1.05 q2",
+   "load": "≈8.2 M (planned)",
+   "share": 1.05
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_x105_q3": {
+   "name": "One engine: faithful q3 at 1.05x production load",
+   "short": "Faithful 1.05x q3",
+   "tiny": "F1.05 q3",
+   "load": "≈8.2 M (planned)",
+   "share": 1.05
   }
  },
  "plain_words": [
@@ -2323,8 +2344,8 @@
   {
    "name": "Host cache reloads: graph fallback and 4-5 s whole-engine stalls",
    "state": "running",
-   "at": "2026-10-09 08:10",
-   "text": "Oct 9 08:05: every prefill pass that reloads a cached prefix from host memory runs without its CUDA graph (+0.12-0.17 s per pass with 8k or fewer new tokens). The copy itself runs at 32-43 GB/s per GPU, about 60% of the link. NUMA placement of the 779 GB host pool changes from boot to boot and costs at most about 2%. A new finding: in 7 of 15 reloads of 2 M cached tokens or more on a nearly full pool, the whole engine stops for 4.0-5.4 s, while the copy takes 1 s or less. One such stall made the faithful q1 repeat fail minute 5. A CPU-only study now looks for its cause. Levers on paper: replay the graph after the load, prefetch while queued, a wider copy kernel.",
+   "at": "2026-10-09 10:10",
+   "text": "Oct 9 08:05: every prefill pass that reloads a cached prefix from host memory runs without its CUDA graph (+0.12-0.17 s per pass with 8k or fewer new tokens). The copy itself runs at 32-43 GB/s per GPU, about 60% of the link. NUMA placement of the 779 GB host pool changes from boot to boot and costs at most about 2%. A new finding: in 7 of 15 reloads of 2 M cached tokens or more on a nearly full pool, the whole engine stops for 4.0-5.4 s, while the copy takes 1 s or less. One such stall made the faithful q1 repeat fail minute 5. A CPU-only study now looks for its cause. Levers on paper: replay the graph after the load, prefetch while queued, a wider copy kernel. 10:10: the 4-5 s whole-engine stalls are not reload costs. They are first-use compiles of a top-k kernel variant: a prefill pass with 16 or more requests needs a new variant, and the engine compiles it on the spot (3.7-5.3 s). The warm compile cache removes them for every variant it holds: the 1.05x quarter-1 run had 0 stalls, and its 16+ passes took 0.55-1.28 s. Minutes with such a stall failed in 12 of 13 cases.",
    "ref": "serving/next250/loadback/ · next250/gstall/ · next250/LOADBACK-REPORT.md"
   },
   {
