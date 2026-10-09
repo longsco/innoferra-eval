@@ -2672,16 +2672,6 @@
    "change": "scheduling",
    "verdict": "kept",
    "why": "14/15 at 6.39 M/GPU (the old stack without B+D or the bundle: 14/15 on these requests; production 0/15). Only minute 14 fails (first token 5.42 s). Paired with the old run: TPS -7.0 tok/s, first token x1.24; host gate normal (boot 594 s, small prefill p50 0.29 s at 10-19 running). The bundle neither helps nor costs a minute on this quarter, which has few giant bursts."
-  },
-  {
-   "tag": "g67_tp2mm_d1g1_hc30_bd_gw_v5rrc_knee78_q3",
-   "at": "2026-10-09 05:56",
-   "protocol": "v5.1rq",
-   "share": 0.97,
-   "name": "one engine (GPUs 6,7): best stack + B+D + giant-prompt bundle, faithful Oct 3 quarter 3 (0.97x production's real load)",
-   "change": "scheduling",
-   "verdict": "kept",
-   "why": "15/15 at 6.98 M/GPU (production 0/15 on these requests); first run of this quarter. TPS p50 86.7, first token p50 0.84 s; worst minute 3 (first token 2.76 s, TPS 73.3). Host gate normal (boot 594 s). With it, the whole faithful Oct 3 replay passes 59 of 60 minutes with the full stack (q0 15, q1 14, q2 14, q3 15) (production on the same requests: 0 of 60)."
   }
  ],
  "g67_rule": {

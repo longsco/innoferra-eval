@@ -1526,13 +1526,13 @@
   "baseline for the 3.34 M levers"
  ],
  "why_we_miss": {
-  "at": "2026-10-09 04:31",
+  "at": "2026-10-09 05:58",
   "items": [
    {
     "rule": "ttft_p50",
-    "title": "Giant cold prompts caused the last misses on the most faithful replay; the fix bundle passes 15/15 and 14/15 on quarters 0 and 1",
-    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0) and faster decode collectives (B+D), one engine passes 15/15 at 7.48 M on Oct 3 and at 7.49 M on Sep 30, and 14/15 at 7.94 M and 8.41 M. On the most faithful Oct 3 replay (0.97x production's real load), the remaining misses followed cold prompts of 400k-800k tokens: decoding stopped for every running stream while they were chunked, and our chunk cost cap made it worse and had a correctness bug. The fix bundle passes 15/15 on quarter 0 (B+D alone 13/15) and 14/15 on quarter 1 (B+D alone 6/15), where running requests hold the whole device KV pool; its one miss is minute 0 at TPS 58.7.",
-    "src": "PROGRESS.md Oct 9 01:22, 03:45, 04:31; next250/giant"
+    "title": "The most faithful Oct 3 replay now passes 59 of 60 minutes on one engine; the two misses sit at a full KV pool or a giant burst",
+    "text": "With production's layout (TP2), a host KV pool of 14.6 M tokens (ratio 3.0), faster decode collectives (B+D) and the giant-prompt bundle, one engine passes the most faithful Oct 3 replay (0.97x production's real load) in 59 of 60 minutes: q0 15/15, q1 14/15, q2 14/15, q3 15/15 at 6.39-6.98 M per GPU. (Production on the same requests: 0 of 60.) The misses: q1 minute 0, a start burst where running requests hold the whole device KV pool (TPS 58.7), and q2 minute 14 (first token 5.42 s). Giant cold prompts of 400k-800k tokens start every bad period: decoding stops while they are chunked, and the full pool makes warm follow-ups wait.",
+    "src": "PROGRESS.md Oct 9 01:22, 03:45, 04:31, 05:12, 05:58; next250/giant; next250/KV-LIMIT-REPORT.md"
    },
    {
     "rule": "decode",
@@ -2316,8 +2316,8 @@
   {
    "name": "Giant cold prompts: chunking fix bundle",
    "state": "adopted",
-   "at": "2026-10-09 04:29",
-   "text": "Oct 9 01:22: a cold prompt of 400k-800k tokens stops decoding for every running stream while it is chunked, and our chunk cost cap (Oct 2) cut it into 3-6k-token pieces (141 passes instead of about 50). When the cap left budget in a pass, a second request could take the chunk slot, and the first was marked done with part of its prompt never computed. The bundle turns the cap off, skips the delayer wait in chunk passes, lets small requests pass a request that waits for KV (bounded) and runs one chunk per pass. 03:45: on faithful Oct 3 quarter 0 it passes 15/15 at 6.90 M (B+D alone 13/15, production 0/15): TPS +5.8 tok/s, first token x0.936; the minute after the giant prompts drops from 8.1 s to 1.81 s first token. Quarter 1 is next. 04:29: quarter 1, the quarter at the KV limit, passes 14/15 (B+D alone 6/15, without B+D 11/15); only minute 0 fails (TPS 58.7). Quarters 2 and 3 are next.",
+   "at": "2026-10-09 05:56",
+   "text": "Oct 9 01:22: a cold prompt of 400k-800k tokens stops decoding for every running stream while it is chunked, and our chunk cost cap (Oct 2) cut it into 3-6k-token pieces (141 passes instead of about 50). When the cap left budget in a pass, a second request could take the chunk slot, and the first was marked done with part of its prompt never computed. The bundle turns the cap off, skips the delayer wait in chunk passes, lets small requests pass a request that waits for KV (bounded) and runs one chunk per pass. 03:45: on faithful Oct 3 quarter 0 it passes 15/15 at 6.90 M (B+D alone 13/15, production 0/15): TPS +5.8 tok/s, first token x0.936; the minute after the giant prompts drops from 8.1 s to 1.81 s first token. Quarter 1 is next. 04:29: quarter 1, the quarter at the KV limit, passes 14/15 (B+D alone 6/15, without B+D 11/15); only minute 0 fails (TPS 58.7). Quarters 2 and 3 are next. 05:12: quarter 2 passes 14/15 (old stack 14/15). 05:56: quarter 3 passes 15/15. The whole faithful Oct 3 replay passes 59 of 60 minutes with the full stack (production on the same requests: 0 of 60).",
    "ref": "serving/next250/giant/ (tree, src/apply_gp_patch.py, queue_lines_giant.txt)"
   },
   {
