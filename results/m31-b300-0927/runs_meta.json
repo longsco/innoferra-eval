@@ -2592,6 +2592,16 @@
    "change": "kernel",
    "verdict": "adopted",
    "why": "14/15 at 7.94 M/GPU vs 13/15 without B+D (production 0/15). Paired: TPS +7.5 tok/s (CI +5.8..+9.3, x1.115), first token x0.980. Oct 3 ladder of the full stack: 7.48 M 15/15, 7.94 M 14/15."
+  },
+  {
+   "tag": "g67_tp2mm_d1g1_hc30_bd_s30_114x_q0",
+   "at": "2026-10-08 22:05",
+   "protocol": "v5.1q",
+   "share": 1.16,
+   "name": "one engine (GPUs 6,7): best stack + B+D, Sep 30 at 1.16x real load (7.49 M/GPU)",
+   "change": "kernel",
+   "verdict": "adopted",
+   "why": "15/15 at 7.49 M/GPU vs 14/15 without B+D (production 13/15 on these requests). Paired: TPS +9.9 tok/s (CI +8.8..+10.8, x1.156), first token x0.932. With Oct 3 at 7.48 M (15/15), the full stack passes every minute of both real-traffic windows near 7.5 M per GPU."
   }
  ],
  "g67_rule": {
