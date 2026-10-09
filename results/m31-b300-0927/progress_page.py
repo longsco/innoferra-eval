@@ -2513,6 +2513,7 @@ abbr{text-decoration:underline dotted;text-decoration-color:var(--muted);cursor:
 .hd .meta{color:var(--muted);font-size:.9rem;margin:0}
 .gpu{display:inline-block;font-size:.85rem;line-height:1.35;padding:2px 10px;border-radius:12px;border:1.5px solid var(--muted);color:var(--ink);text-decoration:none}
 .gpu-what{display:inline-block;max-width:34ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+@media (min-width:1000px){.hd .hdline{flex-wrap:nowrap}.hd .hdline .meta{flex:0 0 auto}.hd .gpu{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 .gpu.running{border-color:var(--ink)}
 .gpu.idle{background:var(--bad);border-color:var(--bad);color:var(--panel)}
 .gpu.stale{border-color:var(--bad)}
