@@ -1523,6 +1523,20 @@
    "tiny": "q2 dap4",
    "load": "≈8.2 M (planned)",
    "share": 1.05
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x090_q1": {
+   "name": "One engine: Phase 2 load sweep, faithful q1 at 0.90x with the warm compile cache",
+   "short": "Sweep 0.90x q1 warm",
+   "tiny": "S0.90 q1",
+   "load": "≈7.0 M (planned)",
+   "share": 0.9
+  },
+  "g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x090_q3": {
+   "name": "One engine: Phase 2 load sweep, faithful q3 at 0.90x with the warm compile cache",
+   "short": "Sweep 0.90x q3 warm",
+   "tiny": "S0.90 q3",
+   "load": "≈7.0 M (planned)",
+   "share": 0.9
   }
  },
  "plain_words": [
