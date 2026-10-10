@@ -1,4 +1,4 @@
-# read_utc 2026-10-10T02:08:18Z
+# read_utc 2026-10-10T02:18:19Z
 # chain g67
 ## queue
 g67_tp2mm_d1g1_hc30_bd_gw_jc_v5rrc_x090_q1 /tr/v5r/w1003_1330/b00.jsonl,/tr/v5r/w1003_1330/b01.jsonl 0.80 QUARTER=1 QPLAN=/k/g67/quad_plan_v5r_w1003_1330.json REPLAY_FILE=replay_v2_cl.py "REPLAY_EXTRA
